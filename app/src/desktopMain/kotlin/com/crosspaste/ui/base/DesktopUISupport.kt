@@ -278,10 +278,17 @@ class DesktopUISupport(
     }
 
     override fun jumpPrivacyAccessibility() {
-        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            Desktop
-                .getDesktop()
-                .browse(URI("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"))
+        // Desktop.browse() launches System Settings but drops the pane deep link on
+        // macOS 26 (it lands on General), so hand the URL to `open` instead.
+        runCatching {
+            ProcessBuilder("open", PRIVACY_ACCESSIBILITY_URL).start()
+        }.onFailure { e ->
+            logger.error(e) { "Failed to open the Accessibility privacy settings" }
         }
+    }
+
+    companion object {
+        private const val PRIVACY_ACCESSIBILITY_URL =
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
     }
 }
