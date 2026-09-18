@@ -4,13 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
@@ -144,26 +143,26 @@ private fun PlatformScope.DeviceRowBody(
         ) {
             // The Row measures the unweighted marker before the weighted
             // name, so cap the marker at half the line to keep the name
-            // from being starved on narrow rows with large fonts.
-            BoxWithConstraints {
-                val markerMaxWidth = maxWidth / 2
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(tiny),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        modifier = Modifier.weight(1f, fill = false),
-                        text = getDeviceDisplayName(),
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = style.nameMaxLines,
-                        overflow = TextOverflow.Ellipsis,
-                        color = style.titleColor,
-                    )
-                    nameTrailing?.let {
-                        Box(modifier = Modifier.widthIn(max = markerMaxWidth)) {
-                            it()
-                        }
+            // from being starved on narrow rows with large fonts. The cap
+            // is a layout modifier, not BoxWithConstraints: hosts that
+            // measure the row intrinsically (the mobile swipeable row uses
+            // height(IntrinsicSize.Min)) cannot query a SubcomposeLayout.
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(tiny),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    modifier = Modifier.weight(1f, fill = false),
+                    text = getDeviceDisplayName(),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = style.nameMaxLines,
+                    overflow = TextOverflow.Ellipsis,
+                    color = style.titleColor,
+                )
+                nameTrailing?.let {
+                    Box(modifier = Modifier.halfWidthCap()) {
+                        it()
                     }
                 }
             }
@@ -185,6 +184,29 @@ private fun PlatformScope.DeviceRowBody(
         }
     }
 }
+
+/**
+ * Caps the content at half the width offered by the parent. Unlike
+ * `BoxWithConstraints` it takes part in intrinsic measurement, which the
+ * hosts of [DeviceRowContent] rely on.
+ */
+private fun Modifier.halfWidthCap(): Modifier =
+    layout { measurable, constraints ->
+        val capped =
+            if (constraints.hasBoundedWidth) {
+                val maxWidth = constraints.maxWidth / 2
+                constraints.copy(
+                    minWidth = constraints.minWidth.coerceAtMost(maxWidth),
+                    maxWidth = maxWidth,
+                )
+            } else {
+                constraints
+            }
+        val placeable = measurable.measure(capped)
+        layout(placeable.width, placeable.height) {
+            placeable.placeRelative(0, 0)
+        }
+    }
 
 /**
  * A short plain-text marker for [DeviceRowContent]'s `nameTrailing` slot,
