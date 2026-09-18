@@ -98,8 +98,6 @@ fun CrossPasteMainWindowContent() {
 
         screenProvider.TokenView()
 
-        screenProvider.DragTargetView()
-
         NetworkWarningDialogHost()
 
         UpdateDialogHost()

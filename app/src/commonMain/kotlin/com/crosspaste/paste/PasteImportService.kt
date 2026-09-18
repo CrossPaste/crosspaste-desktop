@@ -21,7 +21,6 @@ import com.crosspaste.utils.noOptionParent
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import okio.Path
 
 class PasteImportService(
@@ -49,8 +48,14 @@ class PasteImportService(
         onResult: (PasteImportResult) -> Unit = {},
     ) {
         ioCoroutineDispatcher.launch {
-            mutex.withLock {
+            if (!mutex.tryLock()) {
+                logger.warn { "Import is already in progress, ignoring duplicate import request" }
+                return@launch
+            }
+            try {
                 doImport(pasteImportParam, updateProgress, onResult)
+            } finally {
+                mutex.unlock()
             }
         }
     }
@@ -72,10 +77,10 @@ class PasteImportService(
                 fileUtils
                     .listFiles(basePath) {
                         it.name.endsWith(".count")
-                    }.first()
-                    .name
-                    .removeSuffix(".count")
-                    .toLong()
+                    }.firstOrNull()
+                    ?.name
+                    ?.removeSuffix(".count")
+                    ?.toLongOrNull() ?: 0L
             val pasteDataFile = basePath.resolve("paste.data")
             if (!fileUtils.existFile(pasteDataFile)) {
                 throw PasteException(
@@ -96,7 +101,8 @@ class PasteImportService(
                 } ?: run {
                     logger.error { "Error parsing paste data, index = $totalCount" }
                 }
-                updateProgress(totalCount.toFloat() / importCount.toFloat())
+                val progress = if (importCount > 0L) totalCount.toFloat() / importCount.toFloat() else 0f
+                updateProgress(progress)
             }
             if (successCount > 0 && successCount < totalCount) {
                 notificationManager.sendNotification(

@@ -9,6 +9,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createRtfPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.DateUtils
@@ -366,5 +367,45 @@ class PasteExportImportServiceTest {
             assertNotNull(restored)
             assertEquals(PasteType.TEXT_TYPE.type, restored.pasteType)
             assertEquals("service export test", (restored.pasteAppearItem as? PasteText)?.text)
+        }
+
+    @Test
+    fun `PasteImportService import reports Failed for non-existent file`() =
+        runTest {
+            val notificationManager = mockk<NotificationManager>(relaxed = true)
+            val pasteDao = mockk<PasteDao>(relaxed = true)
+            val pasteItemReader = mockk<PasteItemReader>(relaxed = true)
+            val searchContentService = mockk<SearchContentService>(relaxed = true)
+            val userDataPathProvider =
+                mockk<UserDataPathProvider> {
+                    every { resolve(appFileType = AppFileType.TEMP) } returns File("/tmp").toOkioPath()
+                    every { autoCreateDir(any()) } answers {}
+                }
+
+            val importService =
+                PasteImportService(
+                    notificationManager = notificationManager,
+                    pasteDao = pasteDao,
+                    pasteItemReader = pasteItemReader,
+                    searchContentService = searchContentService,
+                    userDataPathProvider = userDataPathProvider,
+                )
+
+            val fakeParam = DesktopPasteImportParam(File("/tmp/non-existent-archive.data").toOkioPath())
+
+            var result: PasteImportResult? = null
+            importService.import(
+                pasteImportParam = fakeParam,
+                updateProgress = {},
+                onResult = { r -> result = r },
+            )
+
+            var tries = 0
+            while (result == null && tries < 50) {
+                Thread.sleep(50)
+                tries++
+            }
+
+            assertEquals(PasteImportResult.Failed, result)
         }
 }

@@ -23,9 +23,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +37,7 @@ import com.composables.icons.materialsymbols.rounded.Upload_file
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
+import com.crosspaste.paste.ImportOutcome
 import com.crosspaste.paste.PasteImportParamFactory
 import com.crosspaste.paste.PasteImportResult
 import com.crosspaste.paste.PasteImportSelection
@@ -50,7 +49,6 @@ import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.InnerScaffold
 import com.crosspaste.ui.settings.SettingSectionCard
 import com.crosspaste.ui.theme.AppUISize.enormous
-import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -58,65 +56,32 @@ import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.getFileUtils
-import kotlinx.coroutines.launch
 import okio.Path
 import org.koin.compose.koinInject
 
-/** What the last import run did, kept on screen until the next file is chosen. */
-private data class ImportOutcome(
-    val fileName: String,
-    val result: PasteImportResult,
-)
-
 @Composable
-fun PasteImportContentView() {
+fun PasteImportContentView(pasteImportSelection: PasteImportSelection = koinInject()) {
     val appFileChooser = koinInject<AppFileChooser>()
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteImportParamFactory = koinInject<PasteImportParamFactory<Any>>()
-    val pasteImportSelection = koinInject<PasteImportSelection>()
     val pasteImportService = koinInject<PasteImportService>()
 
     val selectedPath by pasteImportSelection.path.collectAsState()
-
-    var importing by remember { mutableStateOf(false) }
-    var progress by remember { mutableStateOf(0f) }
-    var outcome by remember { mutableStateOf<ImportOutcome?>(null) }
+    val importing by pasteImportSelection.isImporting.collectAsState()
+    val progress by pasteImportSelection.progress.collectAsState()
+    val outcome by pasteImportSelection.outcome.collectAsState()
 
     val browse = {
         appFileChooser.openFileChooserToImport { path ->
             (path as? Path)?.let {
                 pasteImportSelection.select(it)
-                outcome = null
             }
         }
     }
 
     val startImport = {
-        selectedPath?.let { path ->
-            progress = 0f
-            importing = true
-            outcome = null
-            pasteImportService.import(
-                pasteImportParam = pasteImportParamFactory.createPasteImportParam(path),
-                updateProgress = { currentProgress ->
-                    mainCoroutineDispatcher.launch {
-                        progress = currentProgress.coerceIn(0f, 1f)
-                    }
-                },
-                onResult = { result ->
-                    mainCoroutineDispatcher.launch {
-                        importing = false
-                        progress = 0f
-                        outcome = ImportOutcome(path.name, result)
-                        // Drop the file so a second click cannot import it again.
-                        pasteImportSelection.clear()
-                    }
-                },
-            )
-        }
-        Unit
+        pasteImportSelection.startImport(pasteImportService, pasteImportParamFactory)
     }
 
     InnerScaffold(
@@ -128,12 +93,12 @@ fun PasteImportContentView() {
                 onImport = startImport,
             )
         },
-    ) {
+    ) { paddingValues ->
         LazyColumn(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(bottom = if (importing) huge + medium else huge),
+                    .padding(paddingValues),
             verticalArrangement = Arrangement.spacedBy(medium),
         ) {
             item {
@@ -153,7 +118,7 @@ fun PasteImportContentView() {
                 item {
                     ImportOutcomeCard(
                         outcome = current,
-                        onDismiss = { outcome = null },
+                        onDismiss = { pasteImportSelection.dismissOutcome() },
                     )
                 }
             }
@@ -234,8 +199,9 @@ private fun SelectedFileRow(
             )
         },
         supportingContent = {
+            val details = if (location.isNotEmpty()) "$fileSize · $location" else fileSize
             Text(
-                text = "$fileSize · $location",
+                text = details,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodySmall,
@@ -276,13 +242,13 @@ private fun ImportOutcomeCard(
             }
             is PasteImportResult.Completed -> {
                 when {
-                    result.totalCount == 0L -> {
+                    result.isEmpty -> {
                         copywriter.getText("nothing_to_import") to MessageType.Warning
                     }
-                    result.successCount == 0L -> {
+                    result.isAllFailed -> {
                         copywriter.getText("import_fail") to MessageType.Error
                     }
-                    result.successCount < result.totalCount -> {
+                    result.isPartial -> {
                         copywriter.getText(
                             "import_result_partial",
                             result.successCount,
