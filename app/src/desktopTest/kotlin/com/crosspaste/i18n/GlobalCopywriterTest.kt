@@ -19,6 +19,8 @@ import kotlin.test.assertTrue
 
 class GlobalCopywriterTest {
 
+    private val dummyArgs: Array<Any?> = arrayOfNulls<Any?>(4).also { it.fill("") }
+
     @Test
     fun testDefaultLanguage() {
         val configDirPath = Files.createTempDirectory("configDir").toOkioPath()
@@ -64,8 +66,11 @@ class GlobalCopywriterTest {
                 "All keys in $key should be a subset of English keys. Missing keys: ${keys - enKeys.joinToString(",")}",
             )
 
+            // String.format ignores surplus arguments, so hand every key more
+            // placeholders than any value uses; the argument count itself is
+            // checked against English in I18nConsistencyTest.
             keys.forEach {
-                assertTrue { copywriter.getText(it, "") != EMPTY_STRING }
+                assertTrue { copywriter.getText(it, *dummyArgs) != EMPTY_STRING }
             }
         }
     }

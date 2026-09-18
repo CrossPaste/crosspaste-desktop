@@ -79,6 +79,7 @@ fun MainWindow(windowIcon: Painter?) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val configManager = koinInject<DesktopConfigManager>()
     val platform = koinInject<Platform>()
+    val screenProvider = koinInject<DesktopScreenProvider>()
 
     val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
     val mainWindowInfo by appWindowManager.mainWindowInfo.collectAsState()
@@ -135,101 +136,105 @@ fun MainWindow(windowIcon: Painter?) {
             }
         }
 
-        Column(modifier = Modifier.fillMaxWidth()) {
-            val titleBarOuterModifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(appSizeValue.windowDecorationHeight)
-                    .background(AppUIColors.contentBackground)
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                val titleBarOuterModifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(appSizeValue.windowDecorationHeight)
+                        .background(AppUIColors.contentBackground)
 
-            // Single Row layout for all platforms.
-            //   - macOS: pin only; padding(start) reserves space for the traffic lights.
-            //   - Windows/Linux: pin followed by a full-height close button on the right.
-            val titleBarContent: @Composable () -> Unit = {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(start = if (isMacos) MAC_TRAFFIC_LIGHT_INSET else 0.dp),
-                    verticalAlignment = Alignment.Top,
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    GeneralIconButton(
+                // Single Row layout for all platforms.
+                //   - macOS: pin only; padding(start) reserves space for the traffic lights.
+                //   - Windows/Linux: pin followed by a full-height close button on the right.
+                val titleBarContent: @Composable () -> Unit = {
+                    Row(
                         modifier =
-                            Modifier.padding(
-                                top = medium,
-                                end = pushpinPadding,
-                            ),
-                        imageVector =
-                            if (alwaysOnTop) {
-                                MaterialSymbols.RoundedFilled.Push_pin
-                            } else {
-                                MaterialSymbols.Rounded.Push_pin
-                            },
-                        desc = "always_on_top",
-                        colors =
-                            IconButtonDefaults.iconButtonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = MaterialTheme.colorScheme.onSurface,
-                            ),
-                        buttonSize = xxLarge,
-                        iconSize = large2X,
-                        shape = tiny2XRoundedCornerShape,
-                        onClick = {
-                            appWindowManager.switchAlwaysOnTopMainWindow()
-                        },
-                    )
-
-                    if (!isMacos) {
-                        // Close is handled by the system traffic lights on macOS;
-                        // Windows/Linux paint their own close button at the top-right.
-                        TitleBarCloseButton(
+                            Modifier
+                                .fillMaxSize()
+                                .padding(start = if (isMacos) MAC_TRAFFIC_LIGHT_INSET else 0.dp),
+                        verticalAlignment = Alignment.Top,
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        GeneralIconButton(
                             modifier =
-                                Modifier
-                                    .width(CLOSE_BUTTON_WIDTH)
-                                    .fillMaxHeight(),
-                            onClick = { appWindowManager.hideMainWindow() },
+                                Modifier.padding(
+                                    top = medium,
+                                    end = pushpinPadding,
+                                ),
+                            imageVector =
+                                if (alwaysOnTop) {
+                                    MaterialSymbols.RoundedFilled.Push_pin
+                                } else {
+                                    MaterialSymbols.Rounded.Push_pin
+                                },
+                            desc = "always_on_top",
+                            colors =
+                                IconButtonDefaults.iconButtonColors(
+                                    containerColor = Color.Transparent,
+                                    contentColor = MaterialTheme.colorScheme.onSurface,
+                                ),
+                            buttonSize = xxLarge,
+                            iconSize = large2X,
+                            shape = tiny2XRoundedCornerShape,
+                            onClick = {
+                                appWindowManager.switchAlwaysOnTopMainWindow()
+                            },
                         )
+
+                        if (!isMacos) {
+                            // Close is handled by the system traffic lights on macOS;
+                            // Windows/Linux paint their own close button at the top-right.
+                            TitleBarCloseButton(
+                                modifier =
+                                    Modifier
+                                        .width(CLOSE_BUTTON_WIDTH)
+                                        .fillMaxHeight(),
+                                onClick = { appWindowManager.hideMainWindow() },
+                            )
+                        }
                     }
                 }
-            }
 
-            if (isMacos) {
-                // macOS already provides title bar dragging via the system frame.
-                Box(modifier = titleBarOuterModifier) { titleBarContent() }
-            } else {
-                // Windows/Linux: undecorated window, drag handled by Compose.
-                WindowDraggableArea {
+                if (isMacos) {
+                    // macOS already provides title bar dragging via the system frame.
                     Box(modifier = titleBarOuterModifier) { titleBarContent() }
-                }
-            }
-
-            if (isMacos) {
-                DesktopMenuBar()
-            }
-
-            MainWindowContext(mainWindowInfo) {
-                CrossPasteMainWindowContent()
-                val accessibilityDialogShowing =
-                    config.showGrantAccessibility && !appLaunchState.accessibilityPermissions
-                if (accessibilityDialogShowing) {
-                    GrantAccessibilityDialog {
-                        configManager.updateConfig("showGrantAccessibility", false)
+                } else {
+                    // Windows/Linux: undecorated window, drag handled by Compose.
+                    WindowDraggableArea {
+                        Box(modifier = titleBarOuterModifier) { titleBarContent() }
                     }
-                } else if (isMacos && config.showInstallCliPrompt) {
-                    // One-time offer to install the `crosspaste` terminal
-                    // command (D6 PATH integration; symlink state probed once
-                    // at app startup). Deferred while the accessibility
-                    // dialog is up so prompts never stack.
-                    val cliSymlinkService = koinInject<CliSymlinkService>()
-                    val cliSymlinkState by cliSymlinkService.state.collectAsState()
-                    if (cliSymlinkState == CliSymlinkState.NOT_INSTALLED) {
-                        InstallCliDialog {
-                            configManager.updateConfig("showInstallCliPrompt", false)
+                }
+
+                if (isMacos) {
+                    DesktopMenuBar()
+                }
+
+                MainWindowContext(mainWindowInfo) {
+                    CrossPasteMainWindowContent()
+                    val accessibilityDialogShowing =
+                        config.showGrantAccessibility && !appLaunchState.accessibilityPermissions
+                    if (accessibilityDialogShowing) {
+                        GrantAccessibilityDialog {
+                            configManager.updateConfig("showGrantAccessibility", false)
+                        }
+                    } else if (isMacos && config.showInstallCliPrompt) {
+                        // One-time offer to install the `crosspaste` terminal
+                        // command (D6 PATH integration; symlink state probed once
+                        // at app startup). Deferred while the accessibility
+                        // dialog is up so prompts never stack.
+                        val cliSymlinkService = koinInject<CliSymlinkService>()
+                        val cliSymlinkState by cliSymlinkService.state.collectAsState()
+                        if (cliSymlinkState == CliSymlinkState.NOT_INSTALLED) {
+                            InstallCliDialog {
+                                configManager.updateConfig("showInstallCliPrompt", false)
+                            }
                         }
                     }
                 }
             }
+
+            screenProvider.DragTargetView()
         }
     }
 }

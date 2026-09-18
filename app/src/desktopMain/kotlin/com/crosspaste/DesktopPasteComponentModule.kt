@@ -22,6 +22,7 @@ import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.PasteExportParamFactory
 import com.crosspaste.paste.PasteExportService
 import com.crosspaste.paste.PasteImportParamFactory
+import com.crosspaste.paste.PasteImportSelection
 import com.crosspaste.paste.PasteImportService
 import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteSyncProcessManager
@@ -156,6 +157,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
         single<PasteExportParamFactory<Path>> { DesktopPasteExportParamFactory() }
         single<PasteExportService> { PasteExportService(get(), get(), get()) }
         single<PasteImportParamFactory<Path>> { DesktopPasteImportParamFactory() }
+        single<PasteImportSelection> { PasteImportSelection() }
         single<PasteImportService> { PasteImportService(get(), get(), get(), get(), get()) }
         // endregion
 

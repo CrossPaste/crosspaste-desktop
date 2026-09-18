@@ -29,40 +29,15 @@ class DesktopAppFileChooser(
         cancel: (() -> Unit)?,
         action: (Any) -> Unit,
     ) {
-        desktopAppWindowManager.mainComposeWindow?.let {
-            _showFileDialog.value = true
-            ioCoroutineDispatcher
-                .launch {
-                    try {
-                        when (fileSelectionMode) {
-                            FileSelectionMode.FILE_ONLY -> {
-                                FileKit
-                                    .openFilePicker(
-                                        directory = initPath?.let { path -> PlatformFile(path.toFile()) },
-                                    )?.let { platformFile ->
-                                        action(platformFile.file.toOkioPath(true))
-                                    } ?: run {
-                                    cancel?.let { cancelAction -> cancelAction() }
-                                }
-                            }
-                            FileSelectionMode.DIRECTORY_ONLY -> {
-                                FileKit
-                                    .openDirectoryPicker(
-                                        directory = initPath?.let { path -> PlatformFile(path.toFile()) },
-                                    )?.let { platformFile ->
-                                        action(platformFile.file.toOkioPath(true))
-                                    } ?: run {
-                                    cancel?.let { cancelAction -> cancelAction() }
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        logger.error(e) { "Exception when open file chooser dialog" }
-                        cancel?.let { cancelAction -> cancelAction() }
-                    } finally {
-                        _showFileDialog.value = false
-                    }
+        showDialog(cancel, action) {
+            when (fileSelectionMode) {
+                FileSelectionMode.FILE_ONLY -> {
+                    FileKit.openFilePicker(directory = initPath?.toPlatformFile())
                 }
+                FileSelectionMode.DIRECTORY_ONLY -> {
+                    FileKit.openDirectoryPicker(directory = initPath?.toPlatformFile())
+                }
+            }
         }
     }
 
@@ -75,24 +50,11 @@ class DesktopAppFileChooser(
         initPath: Path?,
         action: (Path) -> Unit,
     ) {
-        desktopAppWindowManager.mainComposeWindow?.let {
-            _showFileDialog.value = true
-            ioCoroutineDispatcher
-                .launch {
-                    try {
-                        FileKit
-                            .openFilePicker(
-                                type = FileKitType.File(extensions),
-                                directory = initPath?.let { path -> PlatformFile(path.toFile()) },
-                            )?.let { platformFile ->
-                                action(platformFile.file.toOkioPath(true))
-                            }
-                    } catch (e: Exception) {
-                        logger.error(e) { "Exception when open app chooser dialog" }
-                    } finally {
-                        _showFileDialog.value = false
-                    }
-                }
+        showDialog(cancel = null, action = action) {
+            FileKit.openFilePicker(
+                type = FileKitType.File(extensions),
+                directory = initPath?.toPlatformFile(),
+            )
         }
     }
 
@@ -114,11 +76,44 @@ class DesktopAppFileChooser(
         cancel: (() -> Unit)?,
         action: (Any) -> Unit,
     ) {
-        openFileChooser(
-            fileSelectionMode = FileSelectionMode.FILE_ONLY,
-            initPath,
-            cancel,
-            action,
-        )
+        showDialog(cancel, action) {
+            FileKit.openFilePicker(
+                type = FileKitType.File(IMPORT_FILE_EXTENSION),
+                directory = initPath?.toPlatformFile(),
+            )
+        }
+    }
+
+    /**
+     * Runs [pick] on the IO dispatcher while [showFileDialog] is raised, then hands
+     * the chosen path to [action] or calls [cancel] when nothing was chosen or the
+     * dialog failed.
+     */
+    private fun showDialog(
+        cancel: (() -> Unit)?,
+        action: (Path) -> Unit,
+        pick: suspend () -> PlatformFile?,
+    ) {
+        desktopAppWindowManager.mainComposeWindow ?: return
+        _showFileDialog.value = true
+        ioCoroutineDispatcher.launch {
+            try {
+                pick()?.let { platformFile ->
+                    action(platformFile.file.toOkioPath(true))
+                } ?: cancel?.invoke()
+            } catch (e: Exception) {
+                logger.error(e) { "Exception when open file chooser dialog" }
+                cancel?.invoke()
+            } finally {
+                _showFileDialog.value = false
+            }
+        }
+    }
+
+    private fun Path.toPlatformFile(): PlatformFile = PlatformFile(toFile())
+
+    companion object {
+        /** Extension of the archives written by PasteExportService. */
+        const val IMPORT_FILE_EXTENSION = "data"
     }
 }
