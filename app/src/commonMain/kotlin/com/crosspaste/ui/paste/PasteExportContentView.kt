@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -157,7 +158,7 @@ fun PasteExportContentView() {
         LazyColumn(
             modifier =
                 Modifier
-                    .fillMaxWidth()
+                    .fillMaxSize()
                     .padding(paddingValues),
             verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
@@ -178,7 +179,9 @@ fun PasteExportContentView() {
                         PasteType.TYPES.forEach { type ->
                             ExportTypeChip(
                                 type = type,
+                                label = copywriter.getText(type.name),
                                 selected = type in selectedTypes,
+                                enabled = !progressing,
                                 onToggle = {
                                     selectedTypes =
                                         if (type in selectedTypes) {
@@ -241,15 +244,17 @@ fun PasteExportContentView() {
 @Composable
 private fun ExportTypeChip(
     type: PasteType,
+    label: String,
     selected: Boolean,
+    enabled: Boolean,
     onToggle: () -> Unit,
 ) {
-    val copywriter = koinInject<GlobalCopywriter>()
     val iconData = type.getIconData()
     FilterChip(
         modifier = Modifier.height(xxLarge),
         selected = selected,
         onClick = onToggle,
+        enabled = enabled,
         shape = CircleShape,
         elevation = null,
         leadingIcon = {
@@ -261,7 +266,7 @@ private fun ExportTypeChip(
         },
         label = {
             Text(
-                text = copywriter.getText(type.name),
+                text = label,
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 1,
             )
@@ -270,7 +275,7 @@ private fun ExportTypeChip(
             if (selected) {
                 null
             } else {
-                FilterChipDefaults.filterChipBorder(enabled = true, selected = false)
+                FilterChipDefaults.filterChipBorder(enabled = enabled, selected = false)
             },
         colors =
             FilterChipDefaults.filterChipColors(
