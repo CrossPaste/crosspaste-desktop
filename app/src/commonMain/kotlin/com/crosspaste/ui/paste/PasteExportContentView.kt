@@ -2,15 +2,20 @@ package com.crosspaste.ui.paste
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,20 +28,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Sell
 import com.composables.icons.materialsymbols.rounded.Storage
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteExportParamFactory
 import com.crosspaste.paste.PasteExportService
-import com.crosspaste.paste.PasteType.Companion.COLOR_TYPE
-import com.crosspaste.paste.PasteType.Companion.FILE_TYPE
-import com.crosspaste.paste.PasteType.Companion.HTML_TYPE
-import com.crosspaste.paste.PasteType.Companion.IMAGE_TYPE
-import com.crosspaste.paste.PasteType.Companion.RTF_TYPE
-import com.crosspaste.paste.PasteType.Companion.TEXT_TYPE
-import com.crosspaste.paste.PasteType.Companion.URL_TYPE
+import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.getIconData
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.IconData
@@ -45,11 +47,13 @@ import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.settings.SettingListItem
 import com.crosspaste.ui.settings.SettingListSwitchItem
 import com.crosspaste.ui.settings.SettingSectionCard
-import com.crosspaste.ui.theme.AppUISize.huge
+import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.medium
+import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny4XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
@@ -66,14 +70,7 @@ fun PasteExportContentView() {
     val pasteExportParamFactory = koinInject<PasteExportParamFactory<Any>>()
     val fileUtils = getFileUtils()
 
-    // State for type filters
-    var textTypeSelected by remember { mutableStateOf(true) }
-    var urlTypeSelected by remember { mutableStateOf(true) }
-    var htmlTypeSelected by remember { mutableStateOf(true) }
-    var fileTypeSelected by remember { mutableStateOf(true) }
-    var imageTypeSelected by remember { mutableStateOf(true) }
-    var rtfTypeSelected by remember { mutableStateOf(true) }
-    var colorTypeSelected by remember { mutableStateOf(true) }
+    var selectedTypes by remember { mutableStateOf(PasteType.TYPES.toSet()) }
 
     // State for additional filters
     var taggedSelected by remember { mutableStateOf(false) }
@@ -111,79 +108,58 @@ fun PasteExportContentView() {
                         )
                     }
                 }
-                Row(
+                Button(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !progressing,
-                        onClick = {
-                            handleExportClick(
-                                appFileChooser = appFileChooser,
-                                types =
-                                    collectSelectedTypes(
-                                        textTypeSelected,
-                                        urlTypeSelected,
-                                        htmlTypeSelected,
-                                        fileTypeSelected,
-                                        imageTypeSelected,
-                                        rtfTypeSelected,
-                                        colorTypeSelected,
-                                    ),
-                                taggedSelected = taggedSelected,
-                                sizeFilterSelected = sizeFilterSelected,
-                                maxFileSize = maxFileSize,
-                                fileUtils = fileUtils,
-                                pasteExportService = pasteExportService,
-                                pasteExportParamFactory = pasteExportParamFactory,
-                                onProgressChange = {
-                                    progress = it
-                                    // 1f means export finished
-                                    // < 0f means export failed
-                                    if (progress == 1f || progress < 0f) {
-                                        progressing = false
-                                        progress = 0f
-                                    }
-                                },
-                                onExportStart = {
+                    enabled = !progressing && selectedTypes.isNotEmpty(),
+                    onClick = {
+                        handleExportClick(
+                            appFileChooser = appFileChooser,
+                            types = selectedTypes.map { it.type.toLong() }.toSet(),
+                            taggedSelected = taggedSelected,
+                            sizeFilterSelected = sizeFilterSelected,
+                            maxFileSize = maxFileSize,
+                            fileUtils = fileUtils,
+                            pasteExportService = pasteExportService,
+                            pasteExportParamFactory = pasteExportParamFactory,
+                            onProgressChange = {
+                                progress = it
+                                // 1f means export finished
+                                // < 0f means export failed
+                                if (progress == 1f || progress < 0f) {
+                                    progressing = false
                                     progress = 0f
-                                    progressing = true
-                                },
-                            )
-                        },
-                    ) {
-                        Text(
-                            if (progressing) {
-                                "${(progress * 100).toInt()}%"
-                            } else {
-                                copywriter.getText("export")
+                                }
                             },
-                            style =
-                                if (progressing) {
-                                    MaterialTheme.typography.bodyMedium
-                                        .copy(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
-                                } else {
-                                    MaterialTheme.typography.bodyMedium
-                                },
+                            onExportStart = {
+                                progress = 0f
+                                progressing = true
+                            },
                         )
-                    }
+                    },
+                ) {
+                    Text(
+                        if (progressing) {
+                            "${(progress * 100).toInt()}%"
+                        } else {
+                            copywriter.getText("export")
+                        },
+                        style =
+                            if (progressing) {
+                                MaterialTheme.typography.bodyMedium
+                                    .copy(color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                            } else {
+                                MaterialTheme.typography.bodyMedium
+                            },
+                    )
                 }
             }
         },
-    ) {
+    ) { paddingValues ->
         LazyColumn(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(
-                        bottom =
-                            if (!progressing) {
-                                huge
-                            } else {
-                                huge + medium
-                            },
-                    ),
+                    .padding(paddingValues),
             verticalArrangement = Arrangement.spacedBy(tiny),
         ) {
             item {
@@ -192,117 +168,31 @@ fun PasteExportContentView() {
 
             item {
                 SettingSectionCard {
-                    SettingListItem(
-                        title = "text",
-                        icon = themeExt.textTypeIconData,
-                        trailingContent = {
-                            Checkbox(
-                                checked = textTypeSelected,
-                                onCheckedChange = { checked ->
-                                    textTypeSelected = checked
+                    FlowRow(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = medium, vertical = small2X),
+                        horizontalArrangement = Arrangement.spacedBy(tiny),
+                        verticalArrangement = Arrangement.spacedBy(tiny),
+                    ) {
+                        PasteType.TYPES.forEach { type ->
+                            ExportTypeChip(
+                                type = type,
+                                label = copywriter.getText(type.name),
+                                selected = type in selectedTypes,
+                                enabled = !progressing,
+                                onToggle = {
+                                    selectedTypes =
+                                        if (type in selectedTypes) {
+                                            selectedTypes - type
+                                        } else {
+                                            selectedTypes + type
+                                        }
                                 },
                             )
-                        },
-                        onClick = {
-                            textTypeSelected = !textTypeSelected
-                        },
-                    )
-                    HorizontalDivider()
-                    SettingListItem(
-                        title = "link",
-                        icon = themeExt.urlTypeIconData,
-                        trailingContent = {
-                            Checkbox(
-                                checked = urlTypeSelected,
-                                onCheckedChange = { checked ->
-                                    urlTypeSelected = checked
-                                },
-                            )
-                        },
-                        onClick = {
-                            urlTypeSelected = !urlTypeSelected
-                        },
-                    )
-                    HorizontalDivider()
-                    SettingListItem(
-                        title = "html",
-                        icon = themeExt.htmlTypeIconData,
-                        trailingContent = {
-                            Checkbox(
-                                checked = htmlTypeSelected,
-                                onCheckedChange = { checked ->
-                                    htmlTypeSelected = checked
-                                },
-                            )
-                        },
-                        onClick = {
-                            htmlTypeSelected = !htmlTypeSelected
-                        },
-                    )
-                    HorizontalDivider()
-                    SettingListItem(
-                        title = "file",
-                        icon = themeExt.fileTypeIconData,
-                        trailingContent = {
-                            Checkbox(
-                                checked = fileTypeSelected,
-                                onCheckedChange = { checked ->
-                                    fileTypeSelected = checked
-                                },
-                            )
-                        },
-                        onClick = {
-                            fileTypeSelected = !fileTypeSelected
-                        },
-                    )
-                    HorizontalDivider()
-                    SettingListItem(
-                        title = "image",
-                        icon = themeExt.imageTypeIconData,
-                        trailingContent = {
-                            Checkbox(
-                                checked = imageTypeSelected,
-                                onCheckedChange = { checked ->
-                                    imageTypeSelected = checked
-                                },
-                            )
-                        },
-                        onClick = {
-                            imageTypeSelected = !imageTypeSelected
-                        },
-                    )
-                    HorizontalDivider()
-                    SettingListItem(
-                        title = "rtf",
-                        icon = themeExt.rtfTypeIconData,
-                        trailingContent = {
-                            Checkbox(
-                                checked = rtfTypeSelected,
-                                onCheckedChange = { checked ->
-                                    rtfTypeSelected = checked
-                                },
-                            )
-                        },
-                        onClick = {
-                            rtfTypeSelected = !rtfTypeSelected
-                        },
-                    )
-                    HorizontalDivider()
-                    SettingListItem(
-                        title = "color",
-                        icon = themeExt.colorTypeIconData,
-                        trailingContent = {
-                            Checkbox(
-                                checked = colorTypeSelected,
-                                onCheckedChange = { checked ->
-                                    colorTypeSelected = checked
-                                },
-                            )
-                        },
-                        onClick = {
-                            colorTypeSelected = !colorTypeSelected
-                        },
-                    )
+                        }
+                    }
                 }
             }
 
@@ -314,7 +204,9 @@ fun PasteExportContentView() {
                 SettingSectionCard {
                     SettingListSwitchItem(
                         title = "export_tagged_only",
+                        icon = IconData(MaterialSymbols.Rounded.Sell, themeExt.greenIconColor),
                         checked = taggedSelected,
+                        enabled = !progressing,
                         onCheckedChange = { taggedSelected = it },
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
@@ -322,6 +214,7 @@ fun PasteExportContentView() {
                         title = "max_back_up_file_size",
                         icon = IconData(MaterialSymbols.Rounded.Storage, themeExt.amberIconColor),
                         checked = sizeFilterSelected,
+                        enabled = !progressing,
                         onCheckedChange = { sizeFilterSelected = it },
                     )
                     if (sizeFilterSelected) {
@@ -334,6 +227,7 @@ fun PasteExportContentView() {
                                     defaultValue = maxFileSize,
                                     unit = "MB",
                                     rule = { it >= 0 },
+                                    enabled = !progressing,
                                 ) {
                                     maxFileSize = it
                                 }
@@ -344,6 +238,58 @@ fun PasteExportContentView() {
             }
         }
     }
+}
+
+/**
+ * A type filter chip tinted with the paste type's own icon palette when selected,
+ * so the row reads the same way the type icons do everywhere else in the app.
+ */
+@Composable
+private fun ExportTypeChip(
+    type: PasteType,
+    label: String,
+    selected: Boolean,
+    enabled: Boolean,
+    onToggle: () -> Unit,
+) {
+    val iconData = type.getIconData()
+    FilterChip(
+        modifier = Modifier.height(xxLarge),
+        selected = selected,
+        onClick = onToggle,
+        enabled = enabled,
+        shape = CircleShape,
+        elevation = null,
+        leadingIcon = {
+            Icon(
+                imageVector = iconData.imageVector,
+                contentDescription = null,
+                modifier = Modifier.size(large),
+            )
+        },
+        label = {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+            )
+        },
+        border =
+            if (selected) {
+                null
+            } else {
+                FilterChipDefaults.filterChipBorder(enabled = enabled, selected = false)
+            },
+        colors =
+            FilterChipDefaults.filterChipColors(
+                containerColor = Color.Transparent,
+                labelColor = MaterialTheme.colorScheme.onSurface,
+                iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                selectedContainerColor = iconData.bgColor,
+                selectedLabelColor = iconData.color,
+                selectedLeadingIconColor = iconData.color,
+            ),
+    )
 }
 
 /**
@@ -383,43 +329,4 @@ private fun handleExportClick(
             }
         }
     }
-}
-
-/**
- * Collect all selected paste types
- */
-private fun collectSelectedTypes(
-    textTypeSelected: Boolean,
-    urlTypeSelected: Boolean,
-    htmlTypeSelected: Boolean,
-    fileTypeSelected: Boolean,
-    imageTypeSelected: Boolean,
-    rtfTypeSelected: Boolean,
-    colorTypeSelected: Boolean,
-): MutableSet<Long> {
-    val types = mutableSetOf<Long>()
-
-    if (textTypeSelected) {
-        types.add(TEXT_TYPE.type.toLong())
-    }
-    if (urlTypeSelected) {
-        types.add(URL_TYPE.type.toLong())
-    }
-    if (htmlTypeSelected) {
-        types.add(HTML_TYPE.type.toLong())
-    }
-    if (fileTypeSelected) {
-        types.add(FILE_TYPE.type.toLong())
-    }
-    if (imageTypeSelected) {
-        types.add(IMAGE_TYPE.type.toLong())
-    }
-    if (rtfTypeSelected) {
-        types.add(RTF_TYPE.type.toLong())
-    }
-    if (colorTypeSelected) {
-        types.add(COLOR_TYPE.type.toLong())
-    }
-
-    return types
 }

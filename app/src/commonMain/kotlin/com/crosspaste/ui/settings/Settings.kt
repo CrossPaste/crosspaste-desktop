@@ -87,6 +87,7 @@ expect fun SettingListSwitchItem(
     subtitle: String? = null,
     icon: IconData? = null,
     checked: Boolean,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
 )
 

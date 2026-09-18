@@ -42,17 +42,24 @@ import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxLarge
 
+private const val DISABLED_CONTENT_ALPHA = 0.38f
+
 @Composable
 fun Counter(
     defaultValue: Long,
     unit: String = "",
     rule: (Long) -> Boolean,
+    enabled: Boolean = true,
     onChange: (Long) -> Unit,
 ) {
     // Keyed on the persisted value so an update from elsewhere (another screen,
     // the CLI) is reflected instead of showing the value captured on first show
     var count by remember(defaultValue) { mutableStateOf(defaultValue) }
     val colorScheme = MaterialTheme.colorScheme
+    val contentColor =
+        if (enabled) colorScheme.onSurface else colorScheme.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA)
+    val iconTint =
+        if (enabled) colorScheme.onSurfaceVariant else colorScheme.onSurfaceVariant.copy(alpha = DISABLED_CONTENT_ALPHA)
 
     Surface(
         modifier = Modifier.wrapContentSize(),
@@ -75,7 +82,7 @@ fun Counter(
                                 topStart = tiny,
                                 bottomStart = tiny,
                             ),
-                        ).clickable {
+                        ).clickable(enabled = enabled) {
                             val newCount = count - 1
                             if (rule(newCount)) {
                                 count = newCount
@@ -87,7 +94,7 @@ fun Counter(
                     imageVector = MaterialSymbols.Rounded.Remove,
                     contentDescription = "Decrease",
                     modifier = Modifier.size(medium),
-                    tint = colorScheme.onSurfaceVariant,
+                    tint = iconTint,
                 )
             }
 
@@ -106,6 +113,7 @@ fun Counter(
                 ) {
                     BasicTextField(
                         value = count.toString(),
+                        enabled = enabled,
                         onValueChange = { s ->
                             if (s.isNotEmpty() && s.all { it.isDigit() }) {
                                 val newCount = s.toLongOrNull() ?: count
@@ -117,7 +125,7 @@ fun Counter(
                         },
                         textStyle =
                             TextStyle(
-                                color = colorScheme.onSurface,
+                                color = contentColor,
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 textAlign = TextAlign.End,
@@ -132,7 +140,7 @@ fun Counter(
                             text = " $unit",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
-                            color = colorScheme.onSurface,
+                            color = contentColor,
                         )
                     }
                 }
@@ -153,7 +161,7 @@ fun Counter(
                                 topEnd = tiny,
                                 bottomEnd = tiny,
                             ),
-                        ).clickable {
+                        ).clickable(enabled = enabled) {
                             val newCount = count + 1
                             if (rule(newCount)) {
                                 count = newCount
@@ -165,7 +173,7 @@ fun Counter(
                     imageVector = MaterialSymbols.Rounded.Add,
                     contentDescription = "Increase",
                     modifier = Modifier.size(medium),
-                    tint = colorScheme.onSurfaceVariant,
+                    tint = iconTint,
                 )
             }
         }

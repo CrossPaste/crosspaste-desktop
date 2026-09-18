@@ -21,6 +21,8 @@ import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
+private const val DISABLED_CONTENT_ALPHA = 0.38f
+
 @Composable
 actual fun SettingListItem(
     title: String,
@@ -148,10 +150,17 @@ actual fun SettingListSwitchItem(
     subtitle: String?,
     icon: IconData?,
     checked: Boolean,
+    enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
     val isSmallItem = LocalSmallSettingItemState.current
+    val textColor =
+        if (enabled) {
+            Color.Unspecified
+        } else {
+            MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_CONTENT_ALPHA)
+        }
     ListItem(
         modifier =
             Modifier
@@ -162,6 +171,7 @@ actual fun SettingListSwitchItem(
                 // tiny hit target, and this is how every other settings row behaves.
                 .toggleable(
                     value = checked,
+                    enabled = enabled,
                     role = Role.Switch,
                     onValueChange = onCheckedChange,
                 ),
@@ -171,6 +181,7 @@ actual fun SettingListSwitchItem(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium,
+                color = textColor,
             )
         },
         supportingContent =
@@ -181,6 +192,7 @@ actual fun SettingListSwitchItem(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodySmall,
+                        color = textColor,
                     )
                 }
             },
@@ -195,6 +207,7 @@ actual fun SettingListSwitchItem(
                         if (isSmallItem) 0.7f else 0.8f,
                     ),
                 checked = checked,
+                enabled = enabled,
                 // Row-level toggleable owns the interaction; a null callback keeps the
                 // Switch purely visual so the two never double-fire.
                 onCheckedChange = null,
