@@ -2,6 +2,7 @@ package com.crosspaste.ui.extension.ocr
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +57,7 @@ import com.crosspaste.module.ocr.DesktopOCRModule.Companion.getTrainedDataName
 import com.crosspaste.module.ocr.DesktopOCRModule.Companion.splitOcrLanguages
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.AlertCard
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.settings.SettingSectionCard
@@ -119,18 +122,18 @@ fun OCRContentView() {
         verticalArrangement = Arrangement.spacedBy(tiny),
     ) {
         if (loadedLanguages.isNotEmpty()) {
-            item {
+            item(key = "ocr_alert_notice") {
                 AlertCard(
                     title = copywriter.getText("ocr_language_module_order_notice"),
                     messageType = MessageType.Info,
                 )
             }
 
-            item {
+            item(key = "ocr_loaded_header") {
                 SectionHeader("language_module_loaded", topPadding = medium)
             }
 
-            item {
+            item(key = "ocr_loaded_section") {
                 LoadedLanguageSection(
                     languages = loadedLanguages,
                     onRemove = { language ->
@@ -148,42 +151,44 @@ fun OCRContentView() {
         }
 
         if (notLoadedLanguages.isNotEmpty()) {
-            item {
+            item(key = "ocr_not_loaded_header") {
                 SectionHeader(
                     "language_module_not_loaded",
                     topPadding = if (loadedLanguages.isNotEmpty()) medium else zero,
                 )
             }
 
-            item {
+            item(key = "ocr_not_loaded_section") {
                 SettingSectionCard {
                     notLoadedLanguages.forEachIndexed { index, language ->
-                        if (index > 0) {
-                            LanguageRowDivider()
+                        key(language.abridge) {
+                            if (index > 0) {
+                                LanguageRowDivider()
+                            }
+                            LanguageItem(
+                                language = language,
+                                state = downloadState.fileStates[language.abridge],
+                                onDownloadClick = {
+                                    ocrModule.createDownloadTask(language.abridge)?.let { task ->
+                                        moduleDownloadManager.downloadFile(task)
+                                    }
+                                },
+                                onCancelClick = {
+                                    moduleDownloadManager.cancelDownload(language.abridge)
+                                },
+                                onDeleteClick = {
+                                    moduleDownloadManager.removeDownload(
+                                        moduleId = "OCR",
+                                        taskId = language.abridge,
+                                    )
+                                },
+                                onLoadClick = {
+                                    scope.launch {
+                                        ocrModule.addLanguage(language.abridge)
+                                    }
+                                },
+                            )
                         }
-                        LanguageItem(
-                            language = language,
-                            state = downloadState.fileStates[language.abridge],
-                            onDownloadClick = {
-                                ocrModule.createDownloadTask(language.abridge)?.let { task ->
-                                    moduleDownloadManager.downloadFile(task)
-                                }
-                            },
-                            onCancelClick = {
-                                moduleDownloadManager.cancelDownload(language.abridge)
-                            },
-                            onDeleteClick = {
-                                moduleDownloadManager.removeDownload(
-                                    moduleId = "OCR",
-                                    taskId = language.abridge,
-                                )
-                            },
-                            onLoadClick = {
-                                scope.launch {
-                                    ocrModule.addLanguage(language.abridge)
-                                }
-                            },
-                        )
                     }
                 }
             }
@@ -200,7 +205,7 @@ private fun LoadedLanguageSection(
     val density = LocalDensity.current
     var draggedIndex by remember { mutableStateOf<Int?>(null) }
     var dragOffsetY by remember { mutableFloatStateOf(0f) }
-    var rowHeightPx by remember { mutableIntStateOf(0) }
+    var rowHeightPx by remember(density) { mutableIntStateOf(0) }
     val dividerPx = with(density) { tiny5X.toPx() }
     val rowStepPx = rowHeightPx + dividerPx
 
@@ -223,47 +228,58 @@ private fun LoadedLanguageSection(
 
     SettingSectionCard {
         languages.forEachIndexed { index, language ->
-            if (index > 0) {
-                LanguageRowDivider()
-            }
-
-            val translationY =
-                when {
-                    source == null -> 0f
-                    index == source -> clampedOffsetY
-                    target != null && source < target && index in (source + 1)..target -> -rowStepPx
-                    target != null && source > target && index in target..(source - 1) -> rowStepPx
-                    else -> 0f
+            key(language.abridge) {
+                if (index > 0) {
+                    LanguageRowDivider()
                 }
 
-            LoadedLanguageItem(
-                index = index + 1,
-                language = language,
-                translationY = translationY,
-                isDragging = index == source,
-                onMeasured = { measured ->
-                    if (rowHeightPx == 0) rowHeightPx = measured
-                },
-                onDragStart = {
-                    draggedIndex = index
-                    dragOffsetY = 0f
-                },
-                onDragDelta = { dragOffsetY += it },
-                onDragEnd = {
-                    val from = source
-                    val to = target
-                    if (from != null && to != null && from != to) {
-                        val newList =
-                            languages.toMutableList().apply {
-                                add(to, removeAt(from))
-                            }
-                        onReorder(newList)
+                val translationY =
+                    when {
+                        source == null -> 0f
+                        index == source -> clampedOffsetY
+                        target != null && source < target && index in (source + 1)..target -> -rowStepPx
+                        target != null && source > target && index in target..(source - 1) -> rowStepPx
+                        else -> 0f
                     }
-                    draggedIndex = null
-                    dragOffsetY = 0f
-                },
-                onRemoveClick = { onRemove(language) },
-            )
+
+                LoadedLanguageItem(
+                    index = index + 1,
+                    language = language,
+                    translationY = translationY,
+                    isDragging = index == source,
+                    onMeasured = { measured ->
+                        if (measured > 0 && rowHeightPx != measured) rowHeightPx = measured
+                    },
+                    onDragStart = {
+                        draggedIndex = index
+                        dragOffsetY = 0f
+                    },
+                    onDragDelta = { delta ->
+                        val from = source ?: index
+                        if (rowStepPx > 0f && languages.isNotEmpty()) {
+                            val min = -from * rowStepPx
+                            val max = (languages.lastIndex - from) * rowStepPx
+                            dragOffsetY = (dragOffsetY + delta).coerceIn(min, max)
+                        } else {
+                            dragOffsetY += delta
+                        }
+                    },
+                    onDragEnd = {
+                        val from = source
+                        val to = target
+                        if (from != null && to != null && from != to) {
+                            val newList =
+                                languages.toMutableList().apply {
+                                    add(to, removeAt(from))
+                                }
+                            onReorder(newList)
+                        }
+                        draggedIndex = null
+                        dragOffsetY = 0f
+                    },
+                    onRemoveClick = { onRemove(language) },
+                )
+            }
         }
     }
 }
@@ -280,7 +296,8 @@ private fun LanguageRowDivider() {
 /**
  * One row inside a grouped language card. Rows are transparent so the card's colour shows
  * through; a row being dragged gets its own opaque background and a small shadow so it
- * reads as lifted while it slides over its neighbours.
+ * reads as lifted while it slides over its neighbours. In dark theme, a hairline border is
+ * added so the lifted row stays distinct from the dark card ground.
  */
 @Composable
 private fun LanguageRow(
@@ -288,11 +305,18 @@ private fun LanguageRow(
     isDragging: Boolean = false,
     content: @Composable RowScope.() -> Unit,
 ) {
+    val isDark = LocalThemeState.current.isCurrentThemeDark
     val liftedModifier =
         if (isDragging) {
             Modifier
                 .shadow(tiny4X, tinyRoundedCornerShape)
-                .background(AppUIColors.sectionCardBackground)
+                .then(
+                    if (isDark) {
+                        Modifier.border(tiny5X, AppUIColors.sectionCardBorder, tinyRoundedCornerShape)
+                    } else {
+                        Modifier
+                    },
+                ).background(AppUIColors.sectionCardBackground, tinyRoundedCornerShape)
         } else {
             Modifier
         }
