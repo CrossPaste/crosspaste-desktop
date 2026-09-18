@@ -42,7 +42,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Content_paste
@@ -75,6 +77,7 @@ fun DragTargetContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteConsumer = koinInject<TransferableConsumer>()
     val pasteImportSelection = koinInject<PasteImportSelection>()
+    val appSizeValue = LocalDesktopAppSizeValueState.current
     val navController = LocalNavHostController.current
     val backStackEntry by navController.currentBackStackEntryAsState()
     // On the Import page a dropped export file is offered to the page instead of
@@ -129,6 +132,7 @@ fun DragTargetContentView() {
         modifier =
             Modifier
                 .fillMaxSize()
+                .extendAbove(appSizeValue.windowDecorationHeight)
                 .dragAndDropTarget(
                     shouldStartDragAndDrop = { true },
                     target = dragAndDropTarget,
@@ -238,6 +242,26 @@ fun DragTargetContentView() {
         }
     }
 }
+
+/**
+ * The overlay is composed below the window's title strip, which the main window
+ * draws as a separate row above the content. Grow the node upward by [height]
+ * so the dimmed backdrop and the drop area cover that strip too.
+ */
+private fun Modifier.extendAbove(height: Dp): Modifier =
+    layout { measurable, constraints ->
+        val extra = height.roundToPx()
+        val placeable =
+            measurable.measure(
+                constraints.copy(
+                    minHeight = constraints.maxHeight + extra,
+                    maxHeight = constraints.maxHeight + extra,
+                ),
+            )
+        layout(constraints.maxWidth, constraints.maxHeight) {
+            placeable.place(0, -extra)
+        }
+    }
 
 /** The one regular file in [transferable], or null when it carries anything else. */
 private fun singleDroppedFile(transferable: Transferable): Path? =
