@@ -346,7 +346,9 @@ class DesktopScreenProvider(
     @Composable
     private fun ImportScreen() {
         DesktopScreenLayout {
-            PasteImportContentView()
+            CompositionLocalProvider(LocalSmallSettingItemState provides true) {
+                PasteImportContentView()
+            }
         }
     }
 

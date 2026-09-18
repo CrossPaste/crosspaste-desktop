@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -42,11 +43,14 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Content_paste
+import com.composables.icons.materialsymbols.rounded.Upload_file
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopReadTransferable
+import com.crosspaste.paste.PasteImportSelection
 import com.crosspaste.paste.PasteSourceContext
 import com.crosspaste.paste.TransferableConsumer
 import com.crosspaste.ui.theme.AppUISize.enormous
@@ -57,7 +61,12 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xLargeRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import kotlinx.coroutines.runBlocking
+import okio.Path
+import okio.Path.Companion.toOkioPath
 import org.koin.compose.koinInject
+import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.Transferable
+import java.io.File
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -65,6 +74,13 @@ fun DragTargetContentView() {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteConsumer = koinInject<TransferableConsumer>()
+    val pasteImportSelection = koinInject<PasteImportSelection>()
+    val navController = LocalNavHostController.current
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    // On the Import page a dropped export file is offered to the page instead of
+    // being added to the clipboard.
+    val onImportPage = backStackEntry?.let { getRouteName(it.destination) } == Import.NAME
+    val onImportPageState = rememberUpdatedState(onImportPage)
     var isDragging by remember { mutableStateOf(false) }
     val animatedAlpha by animateFloatAsState(
         targetValue = if (isDragging) 0.85f else 0f,
@@ -87,6 +103,12 @@ fun DragTargetContentView() {
                 // so runBlocking is unavoidable here due to the framework API contract.
                 override fun onDrop(event: DragAndDropEvent): Boolean {
                     val transferable = event.awtTransferable
+                    if (onImportPageState.value) {
+                        singleDroppedFile(transferable)?.let { path ->
+                            pasteImportSelection.select(path)
+                            return true
+                        }
+                    }
                     val source: String? = appWindowManager.getCurrentActiveAppName()
                     val pasteTransferable = DesktopReadTransferable(transferable)
                     return runBlocking {
@@ -182,7 +204,12 @@ fun DragTargetContentView() {
                         color = MaterialTheme.colorScheme.primaryContainer,
                     ) {
                         Icon(
-                            imageVector = MaterialSymbols.Rounded.Content_paste,
+                            imageVector =
+                                if (onImportPage) {
+                                    MaterialSymbols.Rounded.Upload_file
+                                } else {
+                                    MaterialSymbols.Rounded.Content_paste
+                                },
                             contentDescription = null,
                             modifier = Modifier.padding(medium),
                             tint = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -192,7 +219,7 @@ fun DragTargetContentView() {
                     Spacer(modifier = Modifier.height(medium))
 
                     Text(
-                        text = copywriter.getText("drop_to_clipboard_and_sync"),
+                        text = copywriter.getText(if (onImportPage) "drop_to_import" else "drop_to_clipboard_and_sync"),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center,
@@ -201,7 +228,7 @@ fun DragTargetContentView() {
                     Spacer(modifier = Modifier.height(tiny))
 
                     Text(
-                        text = copywriter.getText("drop_hint"),
+                        text = copywriter.getText(if (onImportPage) "drop_import_hint" else "drop_hint"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
@@ -211,3 +238,13 @@ fun DragTargetContentView() {
         }
     }
 }
+
+/** The one regular file in [transferable], or null when it carries anything else. */
+private fun singleDroppedFile(transferable: Transferable): Path? =
+    runCatching {
+        if (!transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) return null
+        val files = transferable.getTransferData(DataFlavor.javaFileListFlavor) as? List<*> ?: return null
+        (files.singleOrNull() as? File)
+            ?.takeIf { it.isFile }
+            ?.toOkioPath(true)
+    }.getOrNull()

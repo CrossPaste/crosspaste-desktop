@@ -46,10 +46,11 @@ class PasteImportService(
     fun import(
         pasteImportParam: PasteImportParam,
         updateProgress: (Float) -> Unit,
+        onResult: (PasteImportResult) -> Unit = {},
     ) {
         ioCoroutineDispatcher.launch {
             mutex.withLock {
-                doImport(pasteImportParam, updateProgress)
+                doImport(pasteImportParam, updateProgress, onResult)
             }
         }
     }
@@ -57,6 +58,7 @@ class PasteImportService(
     private suspend fun doImport(
         pasteImportParam: PasteImportParam,
         updateProgress: (Float) -> Unit,
+        onResult: (PasteImportResult) -> Unit,
     ) {
         var importTempPath: Path? = null
         runCatching {
@@ -118,8 +120,10 @@ class PasteImportService(
                 )
             }
             updateProgress(1f)
+            onResult(PasteImportResult.Completed(successCount, totalCount))
         }.onFailure { e ->
             updateProgress(-1f)
+            onResult(PasteImportResult.Failed)
             logger.error(e) { "Error importing paste data" }
             notificationManager.sendNotification(
                 title = { it.getText("import_fail") },

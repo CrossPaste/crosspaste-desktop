@@ -16,6 +16,7 @@ fun AlertCard(
     messageType: MessageType,
     shape: Shape = MaterialTheme.shapes.large,
     modifier: Modifier = Modifier,
+    onCancel: (() -> Unit)? = null,
 ) {
     val (containerColor, contentColor) = messageType.getMessageColor()
 
@@ -29,6 +30,7 @@ fun AlertCard(
             title = title,
             message = message,
             messageType = messageType,
+            onCancel = onCancel,
             contentColor = contentColor,
         )
     }
