@@ -206,6 +206,7 @@ fun PasteExportContentView() {
                         title = "export_tagged_only",
                         icon = IconData(MaterialSymbols.Rounded.Sell, themeExt.greenIconColor),
                         checked = taggedSelected,
+                        enabled = !progressing,
                         onCheckedChange = { taggedSelected = it },
                     )
                     HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
@@ -213,6 +214,7 @@ fun PasteExportContentView() {
                         title = "max_back_up_file_size",
                         icon = IconData(MaterialSymbols.Rounded.Storage, themeExt.amberIconColor),
                         checked = sizeFilterSelected,
+                        enabled = !progressing,
                         onCheckedChange = { sizeFilterSelected = it },
                     )
                     if (sizeFilterSelected) {
@@ -225,6 +227,7 @@ fun PasteExportContentView() {
                                     defaultValue = maxFileSize,
                                     unit = "MB",
                                     rule = { it >= 0 },
+                                    enabled = !progressing,
                                 ) {
                                     maxFileSize = it
                                 }
