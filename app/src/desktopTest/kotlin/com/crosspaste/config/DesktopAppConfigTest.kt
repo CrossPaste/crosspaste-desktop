@@ -45,6 +45,7 @@ class DesktopAppConfigTest {
         assertEquals("", config.storagePath)
         assertTrue(config.enableSoundEffect)
         assertTrue(config.enableUrlPreview)
+        assertTrue(config.saveLargeFilesToDownloads)
         assertFalse(config.legacySoftwareCompatibility)
         assertTrue(config.pastePrimaryTypeOnly)
     }
@@ -159,6 +160,24 @@ class DesktopAppConfigTest {
             )
 
         assertTrue(config.enableUrlPreview)
+    }
+
+    @Test
+    fun `copy with boolean key updates saveLargeFilesToDownloads`() {
+        val config: AppConfig = createDefaultConfig()
+        val updated = config.copy("saveLargeFilesToDownloads", false)
+        assertFalse(updated.saveLargeFilesToDownloads)
+    }
+
+    @Test
+    fun `legacy config without saveLargeFilesToDownloads keeps Downloads routing`() {
+        val config =
+            getJsonUtils().JSON.decodeFromString(
+                DesktopAppConfig.serializer(),
+                """{"language":"zh"}""",
+            )
+
+        assertTrue(config.saveLargeFilesToDownloads)
     }
 
     @Test

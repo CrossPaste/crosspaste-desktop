@@ -29,6 +29,7 @@ data class E2eAppConfig(
     override val lastPasteboardChangeCount: Int = -1,
     override val enablePasteboardListening: Boolean = false,
     override val maxBackupFileSize: Long = 32,
+    override val saveLargeFilesToDownloads: Boolean = true,
     override val enabledSyncFileSizeLimit: Boolean = true,
     override val maxSyncFileSize: Long = 512,
     override val maxNonFilePasteSize: Long = 8,

@@ -319,13 +319,11 @@ class PasteReleaseService(
         val id = pasteDao.createPasteData(pasteData, PasteState.LOADING)
 
         val fileSize = pasteFiles.size
-        val maxBackupFileSize =
-            fileUtils.bytesSize(
-                commonConfigManager.getCurrentConfig().maxBackupFileSize,
-            )
+        val config = commonConfigManager.getCurrentConfig()
+        val maxBackupFileSize = fileUtils.bytesSize(config.maxBackupFileSize)
 
         val syncToDownload =
-            fileSize > maxBackupFileSize ||
+            (config.saveLargeFilesToDownloads && fileSize > maxBackupFileSize) ||
                 pasteData.pasteAppearItem
                     ?.extraInfo
                     ?.get(PasteItemProperties.SYNC_TO_DOWNLOAD)
