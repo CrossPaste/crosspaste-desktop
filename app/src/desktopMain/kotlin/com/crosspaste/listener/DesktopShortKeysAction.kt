@@ -54,7 +54,7 @@ class DesktopShortKeysAction(
             PASTE_REMOTE_LAST -> pasteLast(false)
             SHOW_MAIN -> showMainWindow()
             SHOW_SEARCH -> switchSearchWindow()
-            SHOW_PASTE_PANEL -> switchPastePanelWindow()
+            SHOW_PASTE_PANEL -> switchPastePanelButton()
             HIDE_WINDOW -> hideWindow()
             TOGGLE_PASTEBOARD_MONITORING -> togglePasteboardMonitoring()
             TOGGLE_ENCRYPT -> toggleEncrypt()
@@ -100,12 +100,13 @@ class DesktopShortKeysAction(
         }
     }
 
-    private fun switchPastePanelWindow() {
+    private fun switchPastePanelButton() {
         mainRunAction(
-            actionName = "SwitchPastePanelWindow",
-            actionLogMessage = "Switch paste panel window",
+            actionName = "SwitchPastePanelButton",
+            actionLogMessage = "Switch paste panel button",
         ) {
-            appWindowManager.switchPastePanelWindow(WindowTrigger.SHORTCUT)
+            val shown = appWindowManager.switchPastePanelButton()
+            configManager.updateConfig("showPastePanelButton", shown)
         }
     }
 

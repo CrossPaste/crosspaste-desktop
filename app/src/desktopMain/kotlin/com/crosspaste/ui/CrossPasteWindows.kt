@@ -14,6 +14,7 @@ import com.crosspaste.app.WindowTrigger
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.app.generated.resources.crosspaste_mac
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.tray.TrayView
 import org.jetbrains.compose.resources.painterResource
@@ -54,8 +55,12 @@ fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
     val appLaunch = koinInject<DesktopAppLaunch>()
     val appLaunchState = koinInject<AppLaunchState>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val configManager = koinInject<DesktopConfigManager>()
 
     LaunchedEffect(Unit) {
+        if (configManager.config.value.showPastePanelButton) {
+            appWindowManager.showPastePanelButton()
+        }
         handleFirstLaunch(
             firstLaunch = appLaunchState.firstLaunch,
             firstLaunchCompleted = appLaunch.firstLaunchCompleted.value,
@@ -71,6 +76,8 @@ fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
     MainWindow(windowIcon)
 
     SearchWindow(windowIcon)
+
+    PastePanelButtonWindow(windowIcon)
 
     PastePanelWindow(windowIcon)
 

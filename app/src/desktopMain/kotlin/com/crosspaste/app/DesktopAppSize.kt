@@ -2,8 +2,12 @@ package com.crosspaste.app
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
@@ -23,10 +27,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import java.awt.GraphicsConfiguration
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
 import java.awt.Point
 import java.awt.Toolkit
+import kotlin.math.roundToInt
 
 class DesktopAppSize(
     private val platform: Platform,
@@ -117,8 +123,8 @@ class DesktopAppSize(
 
             // --- Paste Panel ---
             val pastePanelSize = DpSize(300.dp, 420.dp)
-            val pastePanelHeaderHeight: Dp = 40.dp
             val pastePanelRowHeight: Dp = 44.dp
+            val pastePanelButtonSize: Dp = 48.dp
 
             // --- Bubble Window ---
             val bubbleBodySize = DpSize(480.dp, 360.dp)
@@ -164,8 +170,8 @@ class DesktopAppSize(
                 sideTitleHeight = sideTitleHeight,
                 // Paste panel
                 pastePanelSize = pastePanelSize,
-                pastePanelHeaderHeight = pastePanelHeaderHeight,
                 pastePanelRowHeight = pastePanelRowHeight,
+                pastePanelButtonSize = pastePanelButtonSize,
                 // Bubble window
                 bubbleBodySize = bubbleBodySize,
                 bubbleCornerRadius = bubbleCornerRadius,
@@ -274,22 +280,56 @@ class DesktopAppSize(
     }
 
     /**
-     * Floating paste panel: docked to the right edge of the active display, vertically
-     * centred in the usable area (menu bar / taskbar excluded).
+     * Floating paste panel button: docked to the right edge of the active display,
+     * vertically centred in the usable area (menu bar / taskbar excluded).
      */
-    fun getPastePanelWindowState(): WindowState {
-        val configuration = getGraphicsDevice().defaultConfiguration
-        val bounds = configuration.bounds
-        val insets = Toolkit.getDefaultToolkit().getScreenInsets(configuration)
-        val size = _appSizeValue.value.pastePanelSize
-        val usableTop = (bounds.y + insets.top).dp
-        val usableHeight = (bounds.height - insets.top - insets.bottom).dp
-        val x = (bounds.x + bounds.width - insets.right).dp - size.width - medium
-        val y = usableTop + (usableHeight - size.height) / 2
+    fun getPastePanelButtonWindowState(): WindowState {
+        val usable = usableBounds(getGraphicsDevice().defaultConfiguration)
+        val size = _appSizeValue.value.pastePanelButtonSize
+        val x = usable.right - size - medium
+        val y = usable.top + (usable.height - size) / 2
         return WindowState(
             placement = WindowPlacement.Floating,
             position = WindowPosition(x, y),
+            size = DpSize(size, size),
+        )
+    }
+
+    /** Paste panel beside the floating button, kept on the display the button is on. */
+    fun getPastePanelWindowState(button: WindowState): WindowState {
+        val buttonRect =
+            DpRect(
+                origin = DpOffset(button.position.x, button.position.y),
+                size = button.size,
+            )
+        val center =
+            Point(
+                (buttonRect.left + buttonRect.width / 2).value.roundToInt(),
+                (buttonRect.top + buttonRect.height / 2).value.roundToInt(),
+            )
+        val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+        val configuration =
+            ge.screenDevices
+                .map { it.defaultConfiguration }
+                .firstOrNull { it.bounds.contains(center) }
+                ?: ge.defaultScreenDevice.defaultConfiguration
+        val size = _appSizeValue.value.pastePanelSize
+        val position = pastePanelPositionBeside(buttonRect, size, usableBounds(configuration), medium)
+        return WindowState(
+            placement = WindowPlacement.Floating,
+            position = WindowPosition(position.x, position.y),
             size = size,
+        )
+    }
+
+    private fun usableBounds(configuration: GraphicsConfiguration): DpRect {
+        val bounds = configuration.bounds
+        val insets = Toolkit.getDefaultToolkit().getScreenInsets(configuration)
+        return DpRect(
+            left = (bounds.x + insets.left).dp,
+            top = (bounds.y + insets.top).dp,
+            right = (bounds.x + bounds.width - insets.right).dp,
+            bottom = (bounds.y + bounds.height - insets.bottom).dp,
         )
     }
 
@@ -324,8 +364,8 @@ class DesktopAppSizeValue(
     val sideSearchWindowHeight: Dp,
     val sideTitleHeight: Dp,
     val pastePanelSize: DpSize,
-    val pastePanelHeaderHeight: Dp,
     val pastePanelRowHeight: Dp,
+    val pastePanelButtonSize: Dp,
     val bubbleBodySize: DpSize,
     val bubbleCornerRadius: Dp,
     val bubbleTailWidth: Dp,
@@ -340,3 +380,24 @@ class DesktopAppSizeValue(
         notificationViewMaxWidth,
         tokenViewWidth,
     )
+
+/**
+ * Where the paste panel goes for a button at [button]: to its left when that fits inside
+ * [screen], otherwise to its right; top-aligned with the button and clamped so the whole
+ * panel stays on screen.
+ */
+internal fun pastePanelPositionBeside(
+    button: DpRect,
+    panel: DpSize,
+    screen: DpRect,
+    gap: Dp,
+): DpOffset {
+    val leftOfButton = button.left - gap - panel.width
+    val x = if (leftOfButton >= screen.left) leftOfButton else button.right + gap
+    val maxX = maxOf(screen.left, screen.right - panel.width)
+    val maxY = maxOf(screen.top, screen.bottom - panel.height)
+    return DpOffset(
+        x = x.coerceIn(screen.left, maxX),
+        y = button.top.coerceIn(screen.top, maxY),
+    )
+}

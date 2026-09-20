@@ -1,11 +1,13 @@
 package com.crosspaste.ui.paste.panel
 
+import androidx.compose.foundation.ScrollbarStyle
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,8 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.window.WindowDraggableArea
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.rememberScrollbarAdapter
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,7 +26,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,43 +36,54 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.window.FrameWindowScope
-import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.rounded.Close
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.getIconData
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.AppSourceIcon
-import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.model.PastePanelViewModel
 import com.crosspaste.ui.paste.PasteEmptyScreenView
 import com.crosspaste.ui.theme.AppUIColors
-import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny2X
+import com.crosspaste.ui.theme.AppUISize.tiny3X
+import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.zeroRoundedCornerShape
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import kotlin.time.Duration.Companion.milliseconds
+
+private val SCROLLBAR_LINGER = 1000.milliseconds
 
 @Composable
-fun FrameWindowScope.PastePanelContent(
-    transparent: Boolean,
-    onClose: () -> Unit,
-) {
-    val copywriter = koinInject<GlobalCopywriter>()
+fun FrameWindowScope.PastePanelContent(transparent: Boolean) {
     val viewModel = koinInject<PastePanelViewModel>()
-
-    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val items by viewModel.items.collectAsState()
     val nextIndex by viewModel.nextIndex.collectAsState()
     val loadAll by viewModel.loadAll.collectAsState()
 
     val listState = rememberLazyListState()
+
+    // Like the search window: the bar shows while the list moves and fades out after
+    // a pause, but its track and thumb always report how much is loaded and where
+    // the viewport is, so hovering the edge reveals it at any time.
+    var scrolling by remember { mutableStateOf(false) }
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .collect {
+                scrolling = true
+                delay(SCROLLBAR_LINGER)
+                scrolling = false
+            }
+    }
 
     // Ask for the next page once the tail comes into view
     val nearEnd by remember {
@@ -93,46 +107,13 @@ fun FrameWindowScope.PastePanelContent(
         }
     val shape = if (transparent) small2XRoundedCornerShape else zeroRoundedCornerShape
 
-    Column(
+    Box(
         modifier =
             Modifier
                 .fillMaxSize()
                 .clip(shape)
                 .background(background),
     ) {
-        WindowDraggableArea {
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(appSizeValue.pastePanelHeaderHeight)
-                        .padding(start = medium, end = small2X),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = copywriter.getText("paste_panel"),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                PasteIconButton(
-                    size = large2X,
-                    onClick = onClose,
-                ) {
-                    Icon(
-                        imageVector = MaterialSymbols.Rounded.Close,
-                        contentDescription = "close",
-                        modifier = Modifier.size(large2X),
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                }
-            }
-        }
-
-        HorizontalDivider()
-
         if (items.isEmpty()) {
             PasteEmptyScreenView()
         } else {
@@ -156,6 +137,29 @@ fun FrameWindowScope.PastePanelContent(
                     )
                 }
             }
+
+            VerticalScrollbar(
+                modifier =
+                    Modifier
+                        .align(Alignment.CenterEnd)
+                        .fillMaxHeight()
+                        .padding(vertical = tiny3X, horizontal = tiny4X),
+                adapter = rememberScrollbarAdapter(listState),
+                style =
+                    ScrollbarStyle(
+                        minimalHeight = medium,
+                        thickness = tiny2X,
+                        shape = tiny3XRoundedCornerShape,
+                        hoverDurationMillis = 300,
+                        unhoverColor =
+                            if (scrolling) {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.48f)
+                            } else {
+                                Color.Transparent
+                            },
+                        hoverColor = MaterialTheme.colorScheme.onSurface,
+                    ),
+            )
         }
     }
 }

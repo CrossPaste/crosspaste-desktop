@@ -60,6 +60,8 @@ data class DesktopAppConfig(
     // One-time macOS prompt offering to install the /usr/local/bin/crosspaste
     // CLI symlink; cleared after the user installs or dismisses it once.
     val showInstallCliPrompt: Boolean = true,
+    // Floating button that opens the paste panel; toggled by the show_paste_panel shortcut
+    val showPastePanelButton: Boolean = false,
     val enableClipboardRelay: Boolean = false,
     // Sync content type controls
     override val enableSyncText: Boolean = true,
@@ -180,6 +182,7 @@ data class DesktopAppConfig(
             proxyPort = if (key == "proxyPort") toString(value) else proxyPort,
             showGrantAccessibility = if (key == "showGrantAccessibility") toBoolean(value) else showGrantAccessibility,
             showInstallCliPrompt = if (key == "showInstallCliPrompt") toBoolean(value) else showInstallCliPrompt,
+            showPastePanelButton = if (key == "showPastePanelButton") toBoolean(value) else showPastePanelButton,
             enableSyncText = if (key == "enableSyncText") toBoolean(value) else enableSyncText,
             enableSyncUrl = if (key == "enableSyncUrl") toBoolean(value) else enableSyncUrl,
             enableSyncHtml = if (key == "enableSyncHtml") toBoolean(value) else enableSyncHtml,
