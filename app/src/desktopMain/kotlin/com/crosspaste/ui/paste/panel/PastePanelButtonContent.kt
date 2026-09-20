@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -23,6 +24,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste_svg
@@ -32,6 +34,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 import java.awt.MouseInfo
 import kotlin.math.hypot
+import kotlin.math.roundToInt
 
 // The app icon's blue gradient; the white clipboard glyph is drawn straight onto it.
 private val BUTTON_GRADIENT_TOP = Color(0xFF2F7BFE)
@@ -45,13 +48,14 @@ private const val GLYPH_FRACTION = 0.75f
  * Round, translucent button: the app icon's gradient with its white glyph on top, so
  * the two read as one shape. Opaque while hovered or while the panel it controls is
  * open. A press that moves past the touch slop drags the window, anything shorter is
- * a click.
+ * a click; a secondary-button click reports its position in window coordinates.
  */
 @Composable
 fun PastePanelButtonContent(
     window: ComposeWindow,
     panelOpen: Boolean,
     onClick: () -> Unit,
+    onSecondaryClick: (x: Int, y: Int) -> Unit,
     onMoved: (x: Int, y: Int) -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
@@ -71,6 +75,23 @@ fun PastePanelButtonContent(
                 .pointerInput(window) {
                     awaitEachGesture {
                         val down = awaitFirstDown()
+                        if (currentEvent.buttons.isSecondaryPressed) {
+                            down.consume()
+                            waitForUpOrCancellation()?.let { up ->
+                                up.consume()
+                                onSecondaryClick(
+                                    up.position.x
+                                        .toDp()
+                                        .value
+                                        .roundToInt(),
+                                    up.position.y
+                                        .toDp()
+                                        .value
+                                        .roundToInt(),
+                                )
+                            }
+                            return@awaitEachGesture
+                        }
                         val startPointer = MouseInfo.getPointerInfo()?.location ?: return@awaitEachGesture
                         val startWindow = window.location
                         var dragging = false

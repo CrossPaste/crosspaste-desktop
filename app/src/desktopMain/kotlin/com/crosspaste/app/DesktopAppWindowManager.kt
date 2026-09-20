@@ -180,8 +180,8 @@ abstract class DesktopAppWindowManager(
     // The paste panel and its floating button are non-activating windows: they never
     // take focus away from the app the user is pasting into, so unlike the search
     // window they need no previous-app bookkeeping and no platform focus hand-off.
-    // The button keeps its position for the session; the panel is placed beside the
-    // button on every show.
+    // The button keeps its position for the session and is shown while the
+    // showPastePanelButton setting is on; the panel is placed beside it on every show.
     private val _pastePanelButtonInfo =
         MutableStateFlow(
             WindowInfo(
@@ -207,16 +207,6 @@ abstract class DesktopAppWindowManager(
     fun hidePastePanelButton() {
         hidePastePanelWindow()
         _pastePanelButtonInfo.update { current -> current.copy(show = false) }
-    }
-
-    /** Returns whether the button is shown afterwards. */
-    fun switchPastePanelButton(): Boolean {
-        if (_pastePanelButtonInfo.value.show) {
-            hidePastePanelButton()
-        } else {
-            showPastePanelButton()
-        }
-        return _pastePanelButtonInfo.value.show
     }
 
     fun movePastePanelButton(position: WindowPosition.Absolute) {

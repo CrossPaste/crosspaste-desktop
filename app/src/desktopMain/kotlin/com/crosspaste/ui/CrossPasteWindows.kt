@@ -17,6 +17,8 @@ import com.crosspaste.app.generated.resources.crosspaste_mac
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.tray.TrayView
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 
@@ -58,9 +60,19 @@ fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
     val configManager = koinInject<DesktopConfigManager>()
 
     LaunchedEffect(Unit) {
-        if (configManager.config.value.showPastePanelButton) {
-            appWindowManager.showPastePanelButton()
-        }
+        configManager.config
+            .map { it.showPastePanelButton }
+            .distinctUntilChanged()
+            .collect { shown ->
+                if (shown) {
+                    appWindowManager.showPastePanelButton()
+                } else {
+                    appWindowManager.hidePastePanelButton()
+                }
+            }
+    }
+
+    LaunchedEffect(Unit) {
         handleFirstLaunch(
             firstLaunch = appLaunchState.firstLaunch,
             firstLaunchCompleted = appLaunch.firstLaunchCompleted.value,

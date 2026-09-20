@@ -3,7 +3,7 @@ package com.crosspaste.listener
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
-import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.HIDE_WINDOW
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
@@ -30,7 +30,7 @@ import kotlinx.coroutines.withContext
 class DesktopShortKeysAction(
     private val appFileChooser: AppFileChooser,
     private val appWindowManager: DesktopAppWindowManager,
-    private val configManager: CommonConfigManager,
+    private val configManager: DesktopConfigManager,
     private val currentPaste: CurrentPaste,
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
@@ -105,8 +105,11 @@ class DesktopShortKeysAction(
             actionName = "SwitchPastePanelButton",
             actionLogMessage = "Switch paste panel button",
         ) {
-            val shown = appWindowManager.switchPastePanelButton()
-            configManager.updateConfig("showPastePanelButton", shown)
+            // The button window follows this setting, see CrossPasteWindows
+            configManager.updateConfig(
+                "showPastePanelButton",
+                !configManager.config.value.showPastePanelButton,
+            )
         }
     }
 
