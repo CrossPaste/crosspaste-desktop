@@ -2,6 +2,7 @@ package com.crosspaste.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -36,6 +37,11 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
     val platform = koinInject<Platform>()
 
     val applicationExit = LocalExitApplication.current
+
+    val buttonSize = LocalDesktopAppSizeValueState.current.pastePanelButtonSize
+    LaunchedEffect(buttonSize) {
+        appWindowManager.resizePastePanelButton(buttonSize)
+    }
 
     val buttonInfo by appWindowManager.pastePanelButtonInfo.collectAsState()
     val panelInfo by appWindowManager.pastePanelWindowInfo.collectAsState()

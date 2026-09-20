@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
+import com.crosspaste.config.DesktopAppConfig
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ActiveGraphicsDevice
 import com.crosspaste.platform.Platform
@@ -46,6 +47,9 @@ class DesktopAppSize(
         // Reasonable range around the 332dp default (roughly ±25%)
         const val MIN_SEARCH_WINDOW_HEIGHT: Int = 250
         const val MAX_SEARCH_WINDOW_HEIGHT: Int = 420
+
+        const val PASTE_PANEL_BUTTON_SIZE_NORMAL = "normal"
+        const val PASTE_PANEL_BUTTON_SIZE_SMALL = "small"
 
         // Gap kept between a clamped height and the usable screen edge, so the
         // window never renders edge-to-edge even when the platform reports no screen
@@ -88,7 +92,10 @@ class DesktopAppSize(
         // matching the original 60dp title on a 252dp card at the 332dp default
         private const val SIDE_TITLE_HEIGHT_RATIO: Float = 60f / 252f
 
-        private fun createAppSizeValue(searchWindowHeight: Int): DesktopAppSizeValue {
+        private fun createAppSizeValue(
+            searchWindowHeight: Int,
+            pastePanelButtonSize: String,
+        ): DesktopAppSizeValue {
             // --- Basic Constants ---
             val deviceHeight: Dp = huge
             val settingsItemHeight: Dp = 40.dp
@@ -124,7 +131,8 @@ class DesktopAppSize(
             // --- Paste Panel ---
             val pastePanelSize = DpSize(300.dp, 420.dp)
             val pastePanelRowHeight: Dp = 44.dp
-            val pastePanelButtonSize: Dp = 48.dp
+            val pastePanelButtonSize: Dp =
+                if (pastePanelButtonSize == PASTE_PANEL_BUTTON_SIZE_SMALL) 36.dp else 48.dp
 
             // --- Bubble Window ---
             val bubbleBodySize = DpSize(480.dp, 360.dp)
@@ -181,7 +189,7 @@ class DesktopAppSize(
         }
     }
 
-    private val initAppSizeValue = createAppSizeValue(configManager.config.value.searchWindowHeight)
+    private val initAppSizeValue = createAppSizeValue(configManager.config.value)
 
     private val _appSizeValue: MutableStateFlow<DesktopAppSizeValue> = MutableStateFlow(initAppSizeValue)
 
@@ -190,10 +198,10 @@ class DesktopAppSize(
     init {
         ioCoroutineDispatcher.launch {
             configManager.config
-                .map { it.searchWindowHeight }
+                .map { it.searchWindowHeight to it.pastePanelButtonSize }
                 .distinctUntilChanged()
-                .collect { searchWindowHeight ->
-                    _appSizeValue.value = createAppSizeValue(searchWindowHeight)
+                .collect { (searchWindowHeight, pastePanelButtonSize) ->
+                    _appSizeValue.value = createAppSizeValue(searchWindowHeight, pastePanelButtonSize)
                 }
         }
     }
@@ -204,13 +212,17 @@ class DesktopAppSize(
      * The value is overwritten by the config flow on the next persisted change.
      */
     fun previewSearchWindowHeight(searchWindowHeight: Int) {
-        _appSizeValue.value = createAppSizeValue(searchWindowHeight)
+        _appSizeValue.value =
+            createAppSizeValue(searchWindowHeight, configManager.config.value.pastePanelButtonSize)
     }
 
     /** Discards any preview value by recomputing sizes from the persisted config. */
     fun clearSearchWindowHeightPreview() {
-        _appSizeValue.value = createAppSizeValue(configManager.config.value.searchWindowHeight)
+        _appSizeValue.value = createAppSizeValue(configManager.config.value)
     }
+
+    private fun createAppSizeValue(config: DesktopAppConfig): DesktopAppSizeValue =
+        createAppSizeValue(config.searchWindowHeight, config.pastePanelButtonSize)
 
     private var point: Point? = null
 

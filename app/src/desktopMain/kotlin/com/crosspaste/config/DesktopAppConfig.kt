@@ -62,6 +62,8 @@ data class DesktopAppConfig(
     val showInstallCliPrompt: Boolean = true,
     // Floating button that opens the paste panel; toggled by the show_paste_panel shortcut
     val showPastePanelButton: Boolean = false,
+    // "normal" or "small", see DesktopAppSize.PASTE_PANEL_BUTTON_SIZE_*
+    val pastePanelButtonSize: String = "normal",
     val enableClipboardRelay: Boolean = false,
     // Sync content type controls
     override val enableSyncText: Boolean = true,
@@ -183,6 +185,7 @@ data class DesktopAppConfig(
             showGrantAccessibility = if (key == "showGrantAccessibility") toBoolean(value) else showGrantAccessibility,
             showInstallCliPrompt = if (key == "showInstallCliPrompt") toBoolean(value) else showInstallCliPrompt,
             showPastePanelButton = if (key == "showPastePanelButton") toBoolean(value) else showPastePanelButton,
+            pastePanelButtonSize = if (key == "pastePanelButtonSize") toString(value) else pastePanelButtonSize,
             enableSyncText = if (key == "enableSyncText") toBoolean(value) else enableSyncText,
             enableSyncUrl = if (key == "enableSyncUrl") toBoolean(value) else enableSyncUrl,
             enableSyncHtml = if (key == "enableSyncHtml") toBoolean(value) else enableSyncHtml,

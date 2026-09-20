@@ -1,6 +1,8 @@
 package com.crosspaste.app
 
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
@@ -207,6 +209,24 @@ abstract class DesktopAppWindowManager(
     fun hidePastePanelButton() {
         hidePastePanelWindow()
         _pastePanelButtonInfo.update { current -> current.copy(show = false) }
+    }
+
+    /** Applies a new button size from the appearance settings, keeping the top-left corner. */
+    fun resizePastePanelButton(size: Dp) {
+        _pastePanelButtonInfo.update { current ->
+            if (current.state.size.width == size) return
+            current.copy(
+                state =
+                    WindowState(
+                        placement = current.state.placement,
+                        position = current.state.position,
+                        size = DpSize(size, size),
+                    ),
+            )
+        }
+        if (_pastePanelWindowInfo.value.show) {
+            showPastePanelWindow(WindowTrigger.SYSTEM)
+        }
     }
 
     fun movePastePanelButton(position: WindowPosition.Absolute) {

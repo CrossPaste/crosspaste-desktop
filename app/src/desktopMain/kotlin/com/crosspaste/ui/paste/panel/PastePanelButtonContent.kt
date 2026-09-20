@@ -43,7 +43,7 @@ private val BUTTON_GRADIENT_BOTTOM = Color(0xFF0A48FC)
 
 private const val IDLE_ALPHA = 0.6f
 
-private const val GLYPH_FRACTION = 0.75f
+private const val GLYPH_FRACTION = 0.55f
 
 /**
  * Round, translucent button: the app icon's gradient with its white glyph on top, so
