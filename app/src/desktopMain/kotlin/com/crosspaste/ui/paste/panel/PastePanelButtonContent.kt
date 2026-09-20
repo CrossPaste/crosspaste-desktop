@@ -3,9 +3,7 @@ package com.crosspaste.ui.paste.panel
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -24,6 +22,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.AwaitPointerEventScope
+import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import com.crosspaste.app.generated.resources.Res
@@ -74,22 +75,22 @@ fun PastePanelButtonContent(
                 .hoverable(interactionSource)
                 .pointerInput(window) {
                     awaitEachGesture {
-                        val down = awaitFirstDown()
-                        if (currentEvent.buttons.isSecondaryPressed) {
+                        val press = awaitEventOfType(PointerEventType.Press)
+                        val down = press.changes.first()
+                        if (press.buttons.isSecondaryPressed) {
                             down.consume()
-                            waitForUpOrCancellation()?.let { up ->
-                                up.consume()
-                                onSecondaryClick(
-                                    up.position.x
-                                        .toDp()
-                                        .value
-                                        .roundToInt(),
-                                    up.position.y
-                                        .toDp()
-                                        .value
-                                        .roundToInt(),
-                                )
-                            }
+                            val up = awaitEventOfType(PointerEventType.Release).changes.first()
+                            up.consume()
+                            onSecondaryClick(
+                                up.position.x
+                                    .toDp()
+                                    .value
+                                    .roundToInt(),
+                                up.position.y
+                                    .toDp()
+                                    .value
+                                    .roundToInt(),
+                            )
                             return@awaitEachGesture
                         }
                         val startPointer = MouseInfo.getPointerInfo()?.location ?: return@awaitEachGesture
@@ -124,4 +125,16 @@ fun PastePanelButtonContent(
             modifier = Modifier.fillMaxSize(GLYPH_FRACTION),
         )
     }
+}
+
+/**
+ * Compose's awaitFirstDown / waitForUpOrCancellation only react to the primary mouse
+ * button on desktop, so the secondary button is read from the raw event stream.
+ */
+private suspend fun AwaitPointerEventScope.awaitEventOfType(type: PointerEventType): PointerEvent {
+    var event = awaitPointerEvent()
+    while (event.type != type) {
+        event = awaitPointerEvent()
+    }
+    return event
 }
