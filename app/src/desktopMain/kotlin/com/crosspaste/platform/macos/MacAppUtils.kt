@@ -49,6 +49,10 @@ object MacAppUtils {
         INSTANCE.setWindowLevelPopUpMenu(windowPtr)
     }
 
+    fun makeWindowNonActivating(windowPtr: Pointer?) {
+        INSTANCE.makeWindowNonActivating(windowPtr)
+    }
+
     fun applyAcrylicBackground(
         windowPtr: Pointer?,
         isDark: Boolean,

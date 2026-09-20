@@ -13,15 +13,19 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.platform.Platform
+import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.windows.WindowsFocusUtils
 import com.crosspaste.platform.windows.WindowsVersionHelper
 import com.crosspaste.ui.DesktopContext.PastePanelWindowContext
 import com.crosspaste.ui.model.PastePanelViewModel
 import com.crosspaste.ui.paste.panel.PastePanelContent
 import com.crosspaste.ui.theme.ThemeDetector
+import com.crosspaste.utils.cpuDispatcher
 import com.sun.jna.Native
+import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.WinDef
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
@@ -33,11 +37,14 @@ import kotlin.math.roundToInt
  * clipboard history. Clicking a row pastes into the app that currently has keyboard
  * focus; because the panel never becomes the active window, that focus is never lost.
  *
- * The window is created through the low-level [Window] overload so the AWT window type
- * can be fixed before the native peer exists: on macOS a POPUP-typed window is backed
- * by a non-activating NSPanel, which is the only way a click can reach it without
- * activating CrossPaste. Non-focusable state plus WS_EX_NOACTIVATE cover Windows;
- * X11 honours the non-focusable hint on its own.
+ * The window is created through the low-level [Window] overload so the native peer can
+ * be configured before it exists. On macOS the only way a click can reach a window
+ * without activating the app is an NSPanel carrying NSWindowStyleMaskNonactivatingPanel.
+ * JBR does not expose that flag (Window.Type.POPUP is an ordinary NSWindow there), but it
+ * does allocate an NSPanel for a root pane marked `Window.hidesOnDeactivate`; the flag is
+ * then switched on natively once the peer exists, see [MacNonActivatingEffect].
+ * Non-focusable state plus WS_EX_NOACTIVATE cover Windows; X11 honours the non-focusable
+ * hint on its own.
  */
 @Composable
 fun PastePanelWindow(windowIcon: Painter?) {
@@ -70,7 +77,9 @@ fun PastePanelWindow(windowIcon: Painter?) {
         create = {
             ComposeWindow().apply {
                 if (isMac) {
-                    type = java.awt.Window.Type.POPUP
+                    // Makes AWT back the window with an NSPanel; the flag itself is
+                    // reset in MacNonActivatingEffect.
+                    rootPane.putClientProperty("Window.hidesOnDeactivate", true)
                 }
                 defaultCloseOperation = WindowConstants.DO_NOTHING_ON_CLOSE
                 title = appWindowManager.pastePanelWindowTitle
@@ -104,6 +113,7 @@ fun PastePanelWindow(windowIcon: Painter?) {
         },
     ) {
         if (isMac) {
+            MacNonActivatingEffect(window = this.window)
             MacAcrylicEffect(
                 window = this.window,
                 isDark = isDarkTheme,
@@ -123,6 +133,18 @@ fun PastePanelWindow(windowIcon: Painter?) {
                 transparent = transparent,
                 onClose = { appWindowManager.hidePastePanelWindow() },
             )
+        }
+    }
+}
+
+@Composable
+private fun MacNonActivatingEffect(window: ComposeWindow) {
+    LaunchedEffect(window) {
+        snapshotFlow { window.isDisplayable }.first { it }
+        withContext(cpuDispatcher) {
+            runCatching {
+                MacAppUtils.makeWindowNonActivating(Pointer(window.windowHandle))
+            }
         }
     }
 }

@@ -404,6 +404,22 @@ public func setWindowLevelPopUpMenu(_ rawPtr: UnsafeRawPointer?) {
     }
 }
 
+@_cdecl("makeWindowNonActivating")
+public func makeWindowNonActivating(_ rawPtr: UnsafeRawPointer?) {
+    guard let rawPtr = rawPtr else { return }
+
+    let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
+
+    DispatchQueue.main.async {
+        // Only NSPanel accepts the flag. AWT allocates a panel for windows whose root pane
+        // carries Window.hidesOnDeactivate, so reset that side effect: a non-activating
+        // panel is clicked while the app is inactive and must stay on screen then.
+        guard window is NSPanel else { return }
+        window.styleMask.insert(.nonactivatingPanel)
+        window.hidesOnDeactivate = false
+    }
+}
+
 #if arch(arm64)
 @available(macOS 26.0, *)
 private func setupLiquidGlass(containerView: NSView, contentView: NSView, identifier: NSUserInterfaceItemIdentifier) {
