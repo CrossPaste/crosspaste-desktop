@@ -103,12 +103,10 @@ class PastePanelViewModelTest {
     fun `pasting a row writes it, simulates paste and advances to the row copied after it`() =
         runTest {
             val vm = createViewModel()
-            val scrolls = mutableListOf<Int>()
             val jobs =
                 listOf(
                     launch { vm.items.collect {} },
                     launch { vm.nextIndex.collect {} },
-                    launch { vm.scrollToIndex.collect { scrolls.add(it) } },
                 )
             advanceUntilIdle()
             assertEquals(0, vm.nextIndex.value)
@@ -126,12 +124,10 @@ class PastePanelViewModelTest {
             }
             coVerify(exactly = 1) { windowManager.toPaste() }
             assertEquals(1, vm.nextIndex.value)
-            assertEquals(listOf(1), scrolls)
 
             vm.paste(pasteData(2))
             advanceUntilIdle()
             assertEquals(0, vm.nextIndex.value)
-            assertEquals(listOf(1, 0), scrolls)
 
             jobs.forEach { it.cancel() }
         }
@@ -140,12 +136,10 @@ class PastePanelViewModelTest {
     fun `pasting the newest row keeps the marker on it`() =
         runTest {
             val vm = createViewModel()
-            val scrolls = mutableListOf<Int>()
             val jobs =
                 listOf(
                     launch { vm.items.collect {} },
                     launch { vm.nextIndex.collect {} },
-                    launch { vm.scrollToIndex.collect { scrolls.add(it) } },
                 )
             advanceUntilIdle()
 
@@ -153,7 +147,29 @@ class PastePanelViewModelTest {
             advanceUntilIdle()
 
             assertEquals(0, vm.nextIndex.value)
-            assertEquals(emptyList(), scrolls)
+
+            jobs.forEach { it.cancel() }
+        }
+
+    @Test
+    fun `a double click pastes once`() =
+        runTest {
+            val vm = createViewModel()
+            val jobs =
+                listOf(
+                    launch { vm.items.collect {} },
+                    launch { vm.nextIndex.collect {} },
+                )
+            advanceUntilIdle()
+
+            val presses = listOf(launch { vm.paste(pasteData(1)) }, launch { vm.paste(pasteData(1)) })
+            presses.forEach { it.join() }
+
+            coVerify(exactly = 1) {
+                pasteboardService.tryWritePasteboard(any<PasteData>(), any(), any(), any())
+            }
+            coVerify(exactly = 1) { windowManager.toPaste() }
+            assertEquals(1, vm.nextIndex.value)
 
             jobs.forEach { it.cancel() }
         }

@@ -71,12 +71,6 @@ fun FrameWindowScope.PastePanelContent(
 
     val listState = rememberLazyListState()
 
-    LaunchedEffect(Unit) {
-        viewModel.scrollToIndex.collect { index ->
-            listState.animateScrollToItem(index)
-        }
-    }
-
     // Ask for the next page once the tail comes into view
     val nearEnd by remember {
         derivedStateOf {
