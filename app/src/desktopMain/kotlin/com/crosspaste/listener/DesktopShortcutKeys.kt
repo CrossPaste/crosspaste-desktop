@@ -36,6 +36,7 @@ class DesktopShortcutKeys(
         // but also to close the search window. However, this key is used in user configuration
         // so it remains unchanged
         const val SHOW_SEARCH = "show_search"
+        const val SHOW_PASTE_PANEL = "show_paste_panel"
         const val HIDE_WINDOW = "hide_window"
         const val TOGGLE_PASTEBOARD_MONITORING = "toggle_pasteboard_monitoring"
         const val TOGGLE_ENCRYPT = "toggle_encrypt"

@@ -89,6 +89,8 @@ abstract class DesktopAppWindowManager(
         private const val SEARCH_WINDOW_TITLE = "CrossPaste Search"
 
         private const val BUBBLE_WINDOW_TITLE = "CrossPaste Editor"
+
+        private const val PASTE_PANEL_WINDOW_TITLE = "CrossPaste Paste Panel"
     }
 
     protected val logger: KLogger = KotlinLogging.logger {}
@@ -98,6 +100,8 @@ abstract class DesktopAppWindowManager(
     val searchWindowTitle: String = SEARCH_WINDOW_TITLE
 
     val bubbleWindowTitle: String = BUBBLE_WINDOW_TITLE
+
+    val pastePanelWindowTitle: String = PASTE_PANEL_WINDOW_TITLE
 
     protected val ioScope = namedScope(ioDispatcher, "DesktopAppWindowManager")
 
@@ -167,6 +171,41 @@ abstract class DesktopAppWindowManager(
     fun isBubbleWindowVisible(): Boolean = _bubbleWindowInfo.value.show
 
     abstract suspend fun focusBubbleWindow()
+
+    // The paste panel is a non-activating floating window: it never takes focus away
+    // from the app the user is pasting into, so unlike the search window it needs no
+    // previous-app bookkeeping and no platform focus hand-off. The geometry is
+    // resolved on every show because the panel is placed on the active display.
+    private val _pastePanelWindowInfo =
+        MutableStateFlow(
+            WindowInfo(
+                show = false,
+                state = WindowState(),
+                trigger = WindowTrigger.INIT,
+            ),
+        )
+    val pastePanelWindowInfo: StateFlow<WindowInfo> = _pastePanelWindowInfo
+
+    fun getCurrentPastePanelWindowInfo(): WindowInfo = _pastePanelWindowInfo.value
+
+    fun showPastePanelWindow(windowTrigger: WindowTrigger) {
+        val state = appSize.getPastePanelWindowState()
+        _pastePanelWindowInfo.update { current ->
+            current.copy(show = true, state = state, trigger = windowTrigger)
+        }
+    }
+
+    fun hidePastePanelWindow() {
+        _pastePanelWindowInfo.update { current -> current.copy(show = false) }
+    }
+
+    fun switchPastePanelWindow(windowTrigger: WindowTrigger) {
+        if (_pastePanelWindowInfo.value.show) {
+            hidePastePanelWindow()
+        } else {
+            showPastePanelWindow(windowTrigger)
+        }
+    }
 
     abstract fun startWindowService()
 

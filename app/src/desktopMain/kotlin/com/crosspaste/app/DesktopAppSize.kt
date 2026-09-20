@@ -115,6 +115,11 @@ class DesktopAppSize(
             val sideSearchTopBarHeight: Dp = 64.dp
             val sideSearchPaddingSize: Dp = 16.dp
 
+            // --- Paste Panel ---
+            val pastePanelSize = DpSize(300.dp, 420.dp)
+            val pastePanelHeaderHeight: Dp = 40.dp
+            val pastePanelRowHeight: Dp = 44.dp
+
             // --- Bubble Window ---
             val bubbleBodySize = DpSize(480.dp, 360.dp)
             val bubbleCornerRadius: Dp = 12.dp
@@ -157,6 +162,10 @@ class DesktopAppSize(
                 sideSearchPaddingSize = sideSearchPaddingSize,
                 sideSearchWindowHeight = sideSearchWindowHeight,
                 sideTitleHeight = sideTitleHeight,
+                // Paste panel
+                pastePanelSize = pastePanelSize,
+                pastePanelHeaderHeight = pastePanelHeaderHeight,
+                pastePanelRowHeight = pastePanelRowHeight,
                 // Bubble window
                 bubbleBodySize = bubbleBodySize,
                 bubbleCornerRadius = bubbleCornerRadius,
@@ -264,6 +273,26 @@ class DesktopAppSize(
         )
     }
 
+    /**
+     * Floating paste panel: docked to the right edge of the active display, vertically
+     * centred in the usable area (menu bar / taskbar excluded).
+     */
+    fun getPastePanelWindowState(): WindowState {
+        val configuration = getGraphicsDevice().defaultConfiguration
+        val bounds = configuration.bounds
+        val insets = Toolkit.getDefaultToolkit().getScreenInsets(configuration)
+        val size = _appSizeValue.value.pastePanelSize
+        val usableTop = (bounds.y + insets.top).dp
+        val usableHeight = (bounds.height - insets.top - insets.bottom).dp
+        val x = (bounds.x + bounds.width - insets.right).dp - size.width - medium
+        val y = usableTop + (usableHeight - size.height) / 2
+        return WindowState(
+            placement = WindowPlacement.Floating,
+            position = WindowPosition(x, y),
+            size = size,
+        )
+    }
+
     fun getPinPushEndPadding(): Dp =
         if (platform.isMacos()) {
             // Native Window has no Jewel leftInset compensation, so this is the
@@ -294,6 +323,9 @@ class DesktopAppSizeValue(
     val sideSearchPaddingSize: Dp,
     val sideSearchWindowHeight: Dp,
     val sideTitleHeight: Dp,
+    val pastePanelSize: DpSize,
+    val pastePanelHeaderHeight: Dp,
+    val pastePanelRowHeight: Dp,
     val bubbleBodySize: DpSize,
     val bubbleCornerRadius: Dp,
     val bubbleTailWidth: Dp,

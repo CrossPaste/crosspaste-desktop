@@ -11,6 +11,7 @@ import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PLAIN_TEXT
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PRIMARY_TYPE
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_REMOTE_LAST
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.SHOW_MAIN
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.SHOW_PASTE_PANEL
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.SHOW_SEARCH
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_ENCRYPT
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_MONITORING
@@ -53,6 +54,7 @@ class DesktopShortKeysAction(
             PASTE_REMOTE_LAST -> pasteLast(false)
             SHOW_MAIN -> showMainWindow()
             SHOW_SEARCH -> switchSearchWindow()
+            SHOW_PASTE_PANEL -> switchPastePanelWindow()
             HIDE_WINDOW -> hideWindow()
             TOGGLE_PASTEBOARD_MONITORING -> togglePasteboardMonitoring()
             TOGGLE_ENCRYPT -> toggleEncrypt()
@@ -95,6 +97,15 @@ class DesktopShortKeysAction(
             appWindowManager.switchSearchWindow(WindowTrigger.SHORTCUT) {
                 appWindowManager.saveCurrentActiveAppInfo()
             }
+        }
+    }
+
+    private fun switchPastePanelWindow() {
+        mainRunAction(
+            actionName = "SwitchPastePanelWindow",
+            actionLogMessage = "Switch paste panel window",
+        ) {
+            appWindowManager.switchPastePanelWindow(WindowTrigger.SHORTCUT)
         }
     }
 
