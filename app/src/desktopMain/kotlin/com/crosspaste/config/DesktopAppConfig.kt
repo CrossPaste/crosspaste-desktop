@@ -39,6 +39,7 @@ data class DesktopAppConfig(
     val showTutorial: Boolean = true,
     // MB
     override val maxBackupFileSize: Long = 32,
+    override val saveLargeFilesToDownloads: Boolean = true,
     override val enabledSyncFileSizeLimit: Boolean = true,
     override val maxSyncFileSize: Long = 512,
     // MB
@@ -143,6 +144,12 @@ data class DesktopAppConfig(
                 if (key == "sourceExclusionPatterns") toString(value) else sourceExclusionPatterns,
             showTutorial = if (key == "showTutorial") toBoolean(value) else showTutorial,
             maxBackupFileSize = if (key == "maxBackupFileSize") toLong(value) else maxBackupFileSize,
+            saveLargeFilesToDownloads =
+                if (key == "saveLargeFilesToDownloads") {
+                    toBoolean(value)
+                } else {
+                    saveLargeFilesToDownloads
+                },
             enabledSyncFileSizeLimit =
                 if (key == "enabledSyncFileSizeLimit") {
                     toBoolean(

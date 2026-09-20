@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Archive
 import com.composables.icons.materialsymbols.rounded.Content_paste
+import com.composables.icons.materialsymbols.rounded.Download
 import com.composables.icons.materialsymbols.rounded.Link
 import com.composables.icons.materialsymbols.rounded.Music_note
 import com.composables.icons.materialsymbols.rounded.Skip_next
@@ -104,6 +105,18 @@ fun PasteboardSettingsContentView(extContent: @Composable () -> Unit = {}) {
                         }
                     },
                 )
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListSwitchItem(
+                    title = "save_large_files_to_downloads",
+                    subtitle = "save_large_files_to_downloads_desc",
+                    icon = IconData(MaterialSymbols.Rounded.Download, themeExt.amberIconColor),
+                    checked = config.saveLargeFilesToDownloads,
+                ) { saveLargeFilesToDownloads ->
+                    configManager.updateConfig(
+                        "saveLargeFilesToDownloads",
+                        saveLargeFilesToDownloads,
+                    )
+                }
                 HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
                 SettingListItem(
                     title = "max_non_file_paste_size",
