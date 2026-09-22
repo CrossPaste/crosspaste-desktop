@@ -325,15 +325,21 @@ private fun initJvmArgs(
     // native access up front instead of shipping a runtime that warns.
     jvmArgs(arrayOf("--enable-native-access=ALL-UNNAMED"))
 
-    // Open modules required for all platforms
-    jvmArgs(arrayOf("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED"))
-    jvmArgs(arrayOf("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED"))
+    // Open modules required for all platforms.
+    // Written as a single "--add-opens=<module>/<package>=<target>" token, not as
+    // two array elements: Conveyor's launcher hands every option straight to
+    // JNI_CreateJavaVM, which has no notion of an option's value living in the
+    // next argument. JBR 25 rejects the bare "--add-opens" with
+    // "Unrecognized option: --add-opens" and the app dies before it can log
+    // anything (JBR 21 silently tolerated it).
+    jvmArgs(arrayOf("--add-opens=java.desktop/sun.awt=ALL-UNNAMED"))
+    jvmArgs(arrayOf("--add-opens=java.desktop/java.awt.peer=ALL-UNNAMED"))
 
     val os: OperatingSystem = DefaultNativePlatform.getCurrentOperatingSystem()
 
     if (os.isMacOsX || buildFullPlatform) {
-        jvmArgs(arrayOf("--add-opens", "java.desktop/sun.lwawt=ALL-UNNAMED"))
-        jvmArgs(arrayOf("--add-opens", "java.desktop/sun.lwawt.macosx=ALL-UNNAMED"))
+        jvmArgs(arrayOf("--add-opens=java.desktop/sun.lwawt=ALL-UNNAMED"))
+        jvmArgs(arrayOf("--add-opens=java.desktop/sun.lwawt.macosx=ALL-UNNAMED"))
         jvmArgs(
             arrayOf(
                 "-Dapple.awt.enableTemplateImages=true",
