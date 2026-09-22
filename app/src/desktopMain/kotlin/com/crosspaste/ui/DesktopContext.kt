@@ -82,6 +82,13 @@ object DesktopContext {
     }
 
     @Composable
+    fun PastePanelWindowContext(content: @Composable () -> Unit) {
+        BaseContext {
+            content()
+        }
+    }
+
+    @Composable
     fun BubbleWindowContext(content: @Composable () -> Unit) {
         BaseContext {
             content()

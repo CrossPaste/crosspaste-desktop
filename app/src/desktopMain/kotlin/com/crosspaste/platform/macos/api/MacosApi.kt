@@ -84,6 +84,8 @@ interface MacosApi : Library {
 
     fun setWindowLevelPopUpMenu(windowPtr: Pointer?)
 
+    fun makeWindowNonActivating(windowPtr: Pointer?)
+
     fun applyAcrylicBackground(
         windowPtr: Pointer?,
         isDark: Boolean,

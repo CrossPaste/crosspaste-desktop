@@ -3,7 +3,7 @@ package com.crosspaste.listener
 import com.crosspaste.app.AppFileChooser
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.WindowTrigger
-import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.HIDE_WINDOW
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_LOCAL_LAST
@@ -11,6 +11,7 @@ import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PLAIN_TEXT
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PRIMARY_TYPE
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_REMOTE_LAST
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.SHOW_MAIN
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.SHOW_PASTE_PANEL
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.SHOW_SEARCH
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_ENCRYPT
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_MONITORING
@@ -29,7 +30,7 @@ import kotlinx.coroutines.withContext
 class DesktopShortKeysAction(
     private val appFileChooser: AppFileChooser,
     private val appWindowManager: DesktopAppWindowManager,
-    private val configManager: CommonConfigManager,
+    private val configManager: DesktopConfigManager,
     private val currentPaste: CurrentPaste,
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
@@ -53,6 +54,7 @@ class DesktopShortKeysAction(
             PASTE_REMOTE_LAST -> pasteLast(false)
             SHOW_MAIN -> showMainWindow()
             SHOW_SEARCH -> switchSearchWindow()
+            SHOW_PASTE_PANEL -> switchPastePanelButton()
             HIDE_WINDOW -> hideWindow()
             TOGGLE_PASTEBOARD_MONITORING -> togglePasteboardMonitoring()
             TOGGLE_ENCRYPT -> toggleEncrypt()
@@ -95,6 +97,19 @@ class DesktopShortKeysAction(
             appWindowManager.switchSearchWindow(WindowTrigger.SHORTCUT) {
                 appWindowManager.saveCurrentActiveAppInfo()
             }
+        }
+    }
+
+    private fun switchPastePanelButton() {
+        mainRunAction(
+            actionName = "SwitchPastePanelButton",
+            actionLogMessage = "Switch paste panel button",
+        ) {
+            // The button window follows this setting, see CrossPasteWindows
+            configManager.updateConfig(
+                "showPastePanelButton",
+                !configManager.config.value.showPastePanelButton,
+            )
         }
     }
 

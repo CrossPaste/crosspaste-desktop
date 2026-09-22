@@ -14,8 +14,11 @@ import com.crosspaste.app.WindowTrigger
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste
 import com.crosspaste.app.generated.resources.crosspaste_mac
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.tray.TrayView
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 
@@ -54,6 +57,20 @@ fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
     val appLaunch = koinInject<DesktopAppLaunch>()
     val appLaunchState = koinInject<AppLaunchState>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val configManager = koinInject<DesktopConfigManager>()
+
+    LaunchedEffect(Unit) {
+        configManager.config
+            .map { it.showPastePanelButton }
+            .distinctUntilChanged()
+            .collect { shown ->
+                if (shown) {
+                    appWindowManager.showPastePanelButton()
+                } else {
+                    appWindowManager.hidePastePanelButton()
+                }
+            }
+    }
 
     LaunchedEffect(Unit) {
         handleFirstLaunch(
@@ -71,6 +88,10 @@ fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
     MainWindow(windowIcon)
 
     SearchWindow(windowIcon)
+
+    PastePanelButtonWindow(windowIcon)
+
+    PastePanelWindow(windowIcon)
 
     val bubbleWindowInfo by appWindowManager.bubbleWindowInfo.collectAsState()
     if (bubbleWindowInfo.show) {

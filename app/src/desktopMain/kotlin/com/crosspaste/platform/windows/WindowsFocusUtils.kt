@@ -19,6 +19,10 @@ object WindowsFocusUtils {
 
     private val user32 = User32.INSTANCE
 
+    private const val WS_EX_TOOLWINDOW = 0x00000080
+
+    private const val WS_EX_NOACTIVATE = 0x08000000
+
     @Synchronized
     fun bringToFront(
         prevThreadId: Int?,
@@ -122,6 +126,19 @@ object WindowsFocusUtils {
         user32.SendInput(DWORD(inputs.size.toLong()), inputs, inputs[0].size())
     }
 
+    /**
+     * Keeps the window off the taskbar and stops a click on it from making it the
+     * foreground window, so the app the user is pasting into keeps keyboard focus.
+     */
+    fun makeNonActivating(hwnd: HWND) {
+        val style = user32.GetWindowLong(hwnd, WinUser.GWL_EXSTYLE)
+        user32.SetWindowLong(
+            hwnd,
+            WinUser.GWL_EXSTYLE,
+            style or WS_EX_TOOLWINDOW or WS_EX_NOACTIVATE,
+        )
+    }
+
     fun findPasteWindow(windowTitle: String): HWND? =
         user32.FindWindow(null, windowTitle)?.also { hwnd ->
             // Set the window icon not to be displayed on the taskbar
@@ -133,7 +150,7 @@ object WindowsFocusUtils {
             user32.SetWindowLong(
                 hwnd,
                 WinUser.GWL_EXSTYLE,
-                style or 0x00000080,
+                style or WS_EX_TOOLWINDOW,
             )
         }
 }

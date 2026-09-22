@@ -28,6 +28,7 @@ import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PLAIN_TEXT
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_PRIMARY_TYPE
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE_REMOTE_LAST
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.SHOW_MAIN
+import com.crosspaste.listener.DesktopShortcutKeys.Companion.SHOW_PASTE_PANEL
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.SHOW_SEARCH
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_ENCRYPT
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_MONITORING
@@ -88,6 +89,8 @@ fun ShortcutKeysContentView() {
                 ShortcutKeyRow(SHOW_MAIN)
                 HorizontalDivider()
                 ShortcutKeyRow(SHOW_SEARCH)
+                HorizontalDivider()
+                ShortcutKeyRow(SHOW_PASTE_PANEL)
                 HorizontalDivider()
                 ShortcutKeyRow(HIDE_WINDOW)
             }

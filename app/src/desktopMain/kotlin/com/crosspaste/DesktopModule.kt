@@ -51,6 +51,7 @@ import com.crosspaste.secure.SecureStoreFactory
 import com.crosspaste.ui.model.GeneralPasteSearchViewModel
 import com.crosspaste.ui.model.MarketingPasteData
 import com.crosspaste.ui.model.MarketingPasteSearchViewModel
+import com.crosspaste.ui.model.PastePanelViewModel
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.utils.DeviceUtils
@@ -166,6 +167,7 @@ class DesktopModule(
                     GeneralPasteSearchViewModel(get(), get(), get())
                 }
             }
+            single<PastePanelViewModel> { PastePanelViewModel(get(), get(), get()) }
             single<PasteSelectionViewModel> { PasteSelectionViewModel(get(), get(), get()) }
         }
 

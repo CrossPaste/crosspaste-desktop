@@ -1,6 +1,9 @@
 package com.crosspaste.app
 
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ShortcutKeys
@@ -89,6 +92,10 @@ abstract class DesktopAppWindowManager(
         private const val SEARCH_WINDOW_TITLE = "CrossPaste Search"
 
         private const val BUBBLE_WINDOW_TITLE = "CrossPaste Editor"
+
+        private const val PASTE_PANEL_WINDOW_TITLE = "CrossPaste Paste Panel"
+
+        private const val PASTE_PANEL_BUTTON_WINDOW_TITLE = "CrossPaste Paste Panel Button"
     }
 
     protected val logger: KLogger = KotlinLogging.logger {}
@@ -98,6 +105,10 @@ abstract class DesktopAppWindowManager(
     val searchWindowTitle: String = SEARCH_WINDOW_TITLE
 
     val bubbleWindowTitle: String = BUBBLE_WINDOW_TITLE
+
+    val pastePanelWindowTitle: String = PASTE_PANEL_WINDOW_TITLE
+
+    val pastePanelButtonWindowTitle: String = PASTE_PANEL_BUTTON_WINDOW_TITLE
 
     protected val ioScope = namedScope(ioDispatcher, "DesktopAppWindowManager")
 
@@ -167,6 +178,103 @@ abstract class DesktopAppWindowManager(
     fun isBubbleWindowVisible(): Boolean = _bubbleWindowInfo.value.show
 
     abstract suspend fun focusBubbleWindow()
+
+    // The paste panel and its floating button are non-activating windows: they never
+    // take focus away from the app the user is pasting into, so unlike the search
+    // window they need no previous-app bookkeeping and no platform focus hand-off.
+    // The button keeps its position for the session and is shown while the
+    // showPastePanelButton setting is on; the panel is placed beside it on every show.
+    private val _pastePanelButtonInfo =
+        MutableStateFlow(
+            WindowInfo(
+                show = false,
+                state = WindowState(),
+                trigger = WindowTrigger.INIT,
+            ),
+        )
+    val pastePanelButtonInfo: StateFlow<WindowInfo> = _pastePanelButtonInfo
+
+    fun showPastePanelButton() {
+        _pastePanelButtonInfo.update { current ->
+            val state =
+                if (current.state.position is WindowPosition.Absolute) {
+                    current.state
+                } else {
+                    appSize.getPastePanelButtonWindowState()
+                }
+            current.copy(show = true, state = state, trigger = WindowTrigger.SHORTCUT)
+        }
+    }
+
+    fun hidePastePanelButton() {
+        hidePastePanelWindow()
+        _pastePanelButtonInfo.update { current -> current.copy(show = false) }
+    }
+
+    /** Applies a new button size from the appearance settings, keeping the top-left corner. */
+    fun resizePastePanelButton(size: Dp) {
+        _pastePanelButtonInfo.update { current ->
+            if (current.state.size.width == size) return
+            current.copy(
+                state =
+                    WindowState(
+                        placement = current.state.placement,
+                        position = current.state.position,
+                        size = DpSize(size, size),
+                    ),
+            )
+        }
+        if (_pastePanelWindowInfo.value.show) {
+            showPastePanelWindow(WindowTrigger.SYSTEM)
+        }
+    }
+
+    fun movePastePanelButton(position: WindowPosition.Absolute) {
+        _pastePanelButtonInfo.update { current ->
+            current.copy(
+                state =
+                    WindowState(
+                        placement = current.state.placement,
+                        position = position,
+                        size = current.state.size,
+                    ),
+            )
+        }
+        if (_pastePanelWindowInfo.value.show) {
+            showPastePanelWindow(WindowTrigger.SYSTEM)
+        }
+    }
+
+    private val _pastePanelWindowInfo =
+        MutableStateFlow(
+            WindowInfo(
+                show = false,
+                state = WindowState(),
+                trigger = WindowTrigger.INIT,
+            ),
+        )
+    val pastePanelWindowInfo: StateFlow<WindowInfo> = _pastePanelWindowInfo
+
+    fun getCurrentPastePanelWindowInfo(): WindowInfo = _pastePanelWindowInfo.value
+
+    fun showPastePanelWindow(windowTrigger: WindowTrigger) {
+        val state = appSize.getPastePanelWindowState(_pastePanelButtonInfo.value.state)
+        _pastePanelWindowInfo.update { current ->
+            current.copy(show = true, state = state, trigger = windowTrigger)
+        }
+    }
+
+    fun hidePastePanelWindow() {
+        _pastePanelWindowInfo.update { current -> current.copy(show = false) }
+    }
+
+    fun switchPastePanelWindow(windowTrigger: WindowTrigger) {
+        if (_pastePanelWindowInfo.value.show) {
+            hidePastePanelWindow()
+        } else {
+            showPastePanelWindow(windowTrigger)
+        }
+    }
 
     abstract fun startWindowService()
 

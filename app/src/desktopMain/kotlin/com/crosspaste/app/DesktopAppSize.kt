@@ -2,11 +2,16 @@ package com.crosspaste.app
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
+import com.crosspaste.config.DesktopAppConfig
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ActiveGraphicsDevice
 import com.crosspaste.platform.Platform
@@ -23,10 +28,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import java.awt.GraphicsConfiguration
 import java.awt.GraphicsDevice
 import java.awt.GraphicsEnvironment
 import java.awt.Point
 import java.awt.Toolkit
+import kotlin.math.roundToInt
 
 class DesktopAppSize(
     private val platform: Platform,
@@ -40,6 +47,9 @@ class DesktopAppSize(
         // Reasonable range around the 332dp default (roughly ±25%)
         const val MIN_SEARCH_WINDOW_HEIGHT: Int = 250
         const val MAX_SEARCH_WINDOW_HEIGHT: Int = 420
+
+        const val PASTE_PANEL_BUTTON_SIZE_NORMAL = "normal"
+        const val PASTE_PANEL_BUTTON_SIZE_SMALL = "small"
 
         // Gap kept between a clamped height and the usable screen edge, so the
         // window never renders edge-to-edge even when the platform reports no screen
@@ -82,7 +92,10 @@ class DesktopAppSize(
         // matching the original 60dp title on a 252dp card at the 332dp default
         private const val SIDE_TITLE_HEIGHT_RATIO: Float = 60f / 252f
 
-        private fun createAppSizeValue(searchWindowHeight: Int): DesktopAppSizeValue {
+        private fun createAppSizeValue(
+            searchWindowHeight: Int,
+            pastePanelButtonSize: String,
+        ): DesktopAppSizeValue {
             // --- Basic Constants ---
             val deviceHeight: Dp = huge
             val settingsItemHeight: Dp = 40.dp
@@ -114,6 +127,12 @@ class DesktopAppSize(
                     .dp
             val sideSearchTopBarHeight: Dp = 64.dp
             val sideSearchPaddingSize: Dp = 16.dp
+
+            // --- Paste Panel ---
+            val pastePanelSize = DpSize(300.dp, 420.dp)
+            val pastePanelRowHeight: Dp = 44.dp
+            val pastePanelButtonSize: Dp =
+                if (pastePanelButtonSize == PASTE_PANEL_BUTTON_SIZE_SMALL) 36.dp else 48.dp
 
             // --- Bubble Window ---
             val bubbleBodySize = DpSize(480.dp, 360.dp)
@@ -157,6 +176,10 @@ class DesktopAppSize(
                 sideSearchPaddingSize = sideSearchPaddingSize,
                 sideSearchWindowHeight = sideSearchWindowHeight,
                 sideTitleHeight = sideTitleHeight,
+                // Paste panel
+                pastePanelSize = pastePanelSize,
+                pastePanelRowHeight = pastePanelRowHeight,
+                pastePanelButtonSize = pastePanelButtonSize,
                 // Bubble window
                 bubbleBodySize = bubbleBodySize,
                 bubbleCornerRadius = bubbleCornerRadius,
@@ -166,7 +189,7 @@ class DesktopAppSize(
         }
     }
 
-    private val initAppSizeValue = createAppSizeValue(configManager.config.value.searchWindowHeight)
+    private val initAppSizeValue = createAppSizeValue(configManager.config.value)
 
     private val _appSizeValue: MutableStateFlow<DesktopAppSizeValue> = MutableStateFlow(initAppSizeValue)
 
@@ -175,10 +198,10 @@ class DesktopAppSize(
     init {
         ioCoroutineDispatcher.launch {
             configManager.config
-                .map { it.searchWindowHeight }
+                .map { it.searchWindowHeight to it.pastePanelButtonSize }
                 .distinctUntilChanged()
-                .collect { searchWindowHeight ->
-                    _appSizeValue.value = createAppSizeValue(searchWindowHeight)
+                .collect { (searchWindowHeight, pastePanelButtonSize) ->
+                    _appSizeValue.value = createAppSizeValue(searchWindowHeight, pastePanelButtonSize)
                 }
         }
     }
@@ -189,13 +212,17 @@ class DesktopAppSize(
      * The value is overwritten by the config flow on the next persisted change.
      */
     fun previewSearchWindowHeight(searchWindowHeight: Int) {
-        _appSizeValue.value = createAppSizeValue(searchWindowHeight)
+        _appSizeValue.value =
+            createAppSizeValue(searchWindowHeight, configManager.config.value.pastePanelButtonSize)
     }
 
     /** Discards any preview value by recomputing sizes from the persisted config. */
     fun clearSearchWindowHeightPreview() {
-        _appSizeValue.value = createAppSizeValue(configManager.config.value.searchWindowHeight)
+        _appSizeValue.value = createAppSizeValue(configManager.config.value)
     }
+
+    private fun createAppSizeValue(config: DesktopAppConfig): DesktopAppSizeValue =
+        createAppSizeValue(config.searchWindowHeight, config.pastePanelButtonSize)
 
     private var point: Point? = null
 
@@ -264,6 +291,60 @@ class DesktopAppSize(
         )
     }
 
+    /**
+     * Floating paste panel button: docked to the right edge of the active display,
+     * vertically centred in the usable area (menu bar / taskbar excluded).
+     */
+    fun getPastePanelButtonWindowState(): WindowState {
+        val usable = usableBounds(getGraphicsDevice().defaultConfiguration)
+        val size = _appSizeValue.value.pastePanelButtonSize
+        val x = usable.right - size - medium
+        val y = usable.top + (usable.height - size) / 2
+        return WindowState(
+            placement = WindowPlacement.Floating,
+            position = WindowPosition(x, y),
+            size = DpSize(size, size),
+        )
+    }
+
+    /** Paste panel beside the floating button, kept on the display the button is on. */
+    fun getPastePanelWindowState(button: WindowState): WindowState {
+        val buttonRect =
+            DpRect(
+                origin = DpOffset(button.position.x, button.position.y),
+                size = button.size,
+            )
+        val center =
+            Point(
+                (buttonRect.left + buttonRect.width / 2).value.roundToInt(),
+                (buttonRect.top + buttonRect.height / 2).value.roundToInt(),
+            )
+        val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+        val configuration =
+            ge.screenDevices
+                .map { it.defaultConfiguration }
+                .firstOrNull { it.bounds.contains(center) }
+                ?: ge.defaultScreenDevice.defaultConfiguration
+        val size = _appSizeValue.value.pastePanelSize
+        val position = pastePanelPositionBeside(buttonRect, size, usableBounds(configuration), medium)
+        return WindowState(
+            placement = WindowPlacement.Floating,
+            position = WindowPosition(position.x, position.y),
+            size = size,
+        )
+    }
+
+    private fun usableBounds(configuration: GraphicsConfiguration): DpRect {
+        val bounds = configuration.bounds
+        val insets = Toolkit.getDefaultToolkit().getScreenInsets(configuration)
+        return DpRect(
+            left = (bounds.x + insets.left).dp,
+            top = (bounds.y + insets.top).dp,
+            right = (bounds.x + bounds.width - insets.right).dp,
+            bottom = (bounds.y + bounds.height - insets.bottom).dp,
+        )
+    }
+
     fun getPinPushEndPadding(): Dp =
         if (platform.isMacos()) {
             // Native Window has no Jewel leftInset compensation, so this is the
@@ -294,6 +375,9 @@ class DesktopAppSizeValue(
     val sideSearchPaddingSize: Dp,
     val sideSearchWindowHeight: Dp,
     val sideTitleHeight: Dp,
+    val pastePanelSize: DpSize,
+    val pastePanelRowHeight: Dp,
+    val pastePanelButtonSize: Dp,
     val bubbleBodySize: DpSize,
     val bubbleCornerRadius: Dp,
     val bubbleTailWidth: Dp,
@@ -308,3 +392,24 @@ class DesktopAppSizeValue(
         notificationViewMaxWidth,
         tokenViewWidth,
     )
+
+/**
+ * Where the paste panel goes for a button at [button]: to its left when that fits inside
+ * [screen], otherwise to its right; top-aligned with the button and clamped so the whole
+ * panel stays on screen.
+ */
+internal fun pastePanelPositionBeside(
+    button: DpRect,
+    panel: DpSize,
+    screen: DpRect,
+    gap: Dp,
+): DpOffset {
+    val leftOfButton = button.left - gap - panel.width
+    val x = if (leftOfButton >= screen.left) leftOfButton else button.right + gap
+    val maxX = maxOf(screen.left, screen.right - panel.width)
+    val maxY = maxOf(screen.top, screen.bottom - panel.height)
+    return DpOffset(
+        x = x.coerceIn(screen.left, maxX),
+        y = button.top.coerceIn(screen.top, maxY),
+    )
+}

@@ -26,11 +26,16 @@ import androidx.compose.ui.text.style.TextAlign
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Dock
 import com.composables.icons.materialsymbols.rounded.Height
+import com.composables.icons.materialsymbols.rounded.Photo_size_select_small
+import com.composables.icons.materialsymbols.rounded.Smart_button
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppSize.Companion.MAX_SEARCH_WINDOW_HEIGHT
 import com.crosspaste.app.DesktopAppSize.Companion.MIN_SEARCH_WINDOW_HEIGHT
+import com.crosspaste.app.DesktopAppSize.Companion.PASTE_PANEL_BUTTON_SIZE_NORMAL
+import com.crosspaste.app.DesktopAppSize.Companion.PASTE_PANEL_BUTTON_SIZE_SMALL
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.IconData
@@ -50,6 +55,7 @@ fun AppearanceSettingsContentView() {
     val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val configManager = koinInject<DesktopConfigManager>()
+    val copywriter = koinInject<GlobalCopywriter>()
     val platform = koinInject<Platform>()
     val themeExt = LocalThemeExtState.current
 
@@ -138,6 +144,36 @@ fun AppearanceSettingsContentView() {
                                 modifier = Modifier.width(xxLarge),
                             )
                         }
+                    },
+                )
+            }
+        }
+
+        item {
+            SectionHeader("paste_panel", topPadding = medium)
+        }
+
+        item {
+            SettingSectionCard {
+                SettingListSwitchItem(
+                    title = "show_paste_panel_button",
+                    subtitle = "show_paste_panel_button_description",
+                    icon = IconData(MaterialSymbols.Rounded.Smart_button, themeExt.indigoIconColor),
+                    checked = config.showPastePanelButton,
+                    onCheckedChange = { shown ->
+                        configManager.updateConfig("showPastePanelButton", shown)
+                    },
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                val sizeOptions = listOf(PASTE_PANEL_BUTTON_SIZE_NORMAL, PASTE_PANEL_BUTTON_SIZE_SMALL)
+                SegmentedControlSettingsRow(
+                    title = copywriter.getText("paste_panel_button_size"),
+                    icon = IconData(MaterialSymbols.Rounded.Photo_size_select_small, themeExt.amberIconColor),
+                    options = sizeOptions,
+                    selectedOptionIndex = sizeOptions.indexOf(config.pastePanelButtonSize).coerceAtLeast(0),
+                    optionLabel = { size -> copywriter.getText("paste_panel_button_size_$size") },
+                    onOptionSelected = { _, size ->
+                        configManager.updateConfig("pastePanelButtonSize", size)
                     },
                 )
             }

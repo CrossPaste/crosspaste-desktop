@@ -25,6 +25,8 @@ class DesktopAppConfigTest {
         assertEquals(332, config.searchWindowHeight)
         assertTrue(config.showDockIcon)
         assertTrue(config.showInstallCliPrompt)
+        assertFalse(config.showPastePanelButton)
+        assertEquals("normal", config.pastePanelButtonSize)
         assertEquals(13129, config.port)
         assertFalse(config.enableEncryptSync)
         assertTrue(config.enableExpirationCleanup)
@@ -91,6 +93,22 @@ class DesktopAppConfigTest {
         val config = createDefaultConfig()
         val updated = config.copy("showInstallCliPrompt", false)
         assertFalse(updated.showInstallCliPrompt)
+    }
+
+    @Test
+    fun `copy with boolean key updates showPastePanelButton`() {
+        val config = createDefaultConfig()
+        val updated = config.copy("showPastePanelButton", true)
+        assertTrue(updated.showPastePanelButton)
+    }
+
+    @Test
+    fun `copy with string key updates pastePanelButtonSize`() {
+        // Typed as the interface: on the data class two String arguments would pick the
+        // generated copy(language, font) instead of copy(key, value)
+        val config: AppConfig = createDefaultConfig()
+        val updated = config.copy("pastePanelButtonSize", "small") as DesktopAppConfig
+        assertEquals("small", updated.pastePanelButtonSize)
     }
 
     @Test
