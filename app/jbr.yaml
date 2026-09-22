@@ -1,19 +1,19 @@
 jbr:
   osx-x64:
-    url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-21.0.9-osx-x64-b1163.94.tar.gz
-    sha512: 238a9ca9b3123f7c49669244d4d531ee4ca29eb1b0058c6b52dd2c8d7cb7cd701e60e2b3999f2e358c034afc627e31c63601887bbe79d740fa63750c152e56a3
+    url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-25.0.4.1-osx-x64-b610.67.tar.gz
+    sha512: 9fbc03a1007a0ca669289baafdc275e803b11fc3dc617ac173982a8190d151fbb5b8da351528f58ab6d8ce449ab0f32138b6c67ba274f9e82cd7f4779ce06841
   osx-aarch64:
-    url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-21.0.9-osx-aarch64-b1163.94.tar.gz
-    sha512: 54e3b8b04198526b57e0e8cbf2ae7df5c124773cd98beedd4fc861c9d1c68ac22d708b2b7570f42a0c41ad2de6fb8bc824803549cde8978b31ea1a3f41e1de04
+    url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-25.0.4.1-osx-aarch64-b610.67.tar.gz
+    sha512: 4322c9164f8247f2f884cc34bb6970ab9e689a23bd9757c046866280ab810914079205b0b5c1677dcbba05a53e2cc77a9a469bab6bb3e2c403e48e67c3a0680c
   windows-x64:
-    url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-21.0.9-windows-x64-b1163.94.tar.gz
-    sha512: 3dc716d5f7a014b71eb338a77d8460713564af4b38186b1135c6ab0866e056ae2d298591bc35f927f7af691e49fb3fedcf53e9af35aad26838e857c2bfd54af3
+    url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-25.0.4.1-windows-x64-b610.67.tar.gz
+    sha512: e6f2575c89e866a438c10f1115b232f5ebbc03bbcf6dfb64a71312ab37366550955d324224d576112f3fe684275c695fcd6bd5c49ef3c0f898140096c27b5ea5
   windows-aarch64:
-    url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-21.0.9-windows-aarch64-b1163.94.tar.gz
-    sha512: ca6bd30b6a77eb1d452935ccf9a58f7f4cf832cb65f2f229d66d629b7062cb499d93f08d4d187e33c132a77fc1dae4e505928c7fc8aa8779febaad3fac1f2cbd
+    url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-25.0.4.1-windows-aarch64-b610.67.tar.gz
+    sha512: 8db41c65662560c799b7352626151aea31e7ac5b31acc4f7877459d08ade197d16ae7e39bbf4acf9173b1e2025698950b158b1c12c91d52d2bc2ec449f56a9bb
   linux-x64:
-    url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-21.0.9-linux-x64-b1163.94.tar.gz
-    sha512: 4e7f2ee6845c969d29235838a4a696854030192ac83970bdb9a87f979b28fcc4aafd98290408ea75ffb81c09f499961bfb9e357a26d0131ff3800b8b319d2a73
+    url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-25.0.4.1-linux-x64-b610.67.tar.gz
+    sha512: 440649c609c5d90ce5395bcfe26994803d47f414546a4a5b24df2e85eb35322685cbf62a1a3352b2b6bed443878e87ecf1fa46b94f6101bdc7012b22af8e483b
   linux-aarch64:
-    url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-21.0.9-linux-aarch64-b1163.94.tar.gz
-    sha512: 6fcac880c50c4adc83ceb8c25cb2ec49e7fbc272dbf1a465f1acd6d751f3a3b789a4ca0a4f15148856c6b93be33c50ba6dee444dedbacc5fbba5e92e5831d36f
+    url: https://cache-redirector.jetbrains.com/intellij-jbr/jbrsdk-25.0.4.1-linux-aarch64-b610.67.tar.gz
+    sha512: 27cd060d4f0675cfa75fdd566bc085d195b1d26ff711824bd02a28ec77618e0dc225064360ada88ccab5ad7fda4b3f1b8ef61aa9474e391e2a2ded624c9f8362
