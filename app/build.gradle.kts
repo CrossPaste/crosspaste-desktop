@@ -317,6 +317,14 @@ private fun initJvmArgs(
     // default to Serial GC are unaffected.
     jvmArgs(arrayOf("-XX:+ExplicitGCInvokesConcurrent"))
 
+    // JDK 24+ (JEP 472) treats System.load / System.loadLibrary as restricted
+    // methods: every JNA and jnativehook call site prints a four-line warning
+    // block on startup, and the restriction turns into a hard failure in a
+    // future release. We load native code deliberately (JNA for the Windows and
+    // Linux platform APIs, jnativehook for the global key listener), so grant
+    // native access up front instead of shipping a runtime that warns.
+    jvmArgs(arrayOf("--enable-native-access=ALL-UNNAMED"))
+
     // Open modules required for all platforms
     jvmArgs(arrayOf("--add-opens", "java.desktop/sun.awt=ALL-UNNAMED"))
     jvmArgs(arrayOf("--add-opens", "java.desktop/java.awt.peer=ALL-UNNAMED"))
