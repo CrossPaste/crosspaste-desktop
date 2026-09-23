@@ -65,7 +65,10 @@ fun PasteDataScope.ImageSidePreviewView() {
     val fileLayout = imagePasteItem.basePath to imagePasteItem.relativePathList
 
     val imageCount = remember(pasteData.id, fileLayout) { imagePasteItem.getDirectChildrenCount() }
-    val externalFolderName = remember(pasteData.id, fileLayout) { imagePasteItem.externalFolderName() }
+    val externalFolderName =
+        remember(pasteData.id, fileLayout) {
+            imagePasteItem.externalFolderName(userDataPathProvider)
+        }
 
     var index by remember(pasteData.id) { mutableStateOf(0) }
 

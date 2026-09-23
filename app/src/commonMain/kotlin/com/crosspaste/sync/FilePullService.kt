@@ -40,16 +40,20 @@ sealed class FilePullResult {
     data class Failure(
         val failedChunks: Map<Int, FailureResult>,
         val pullChunks: IntArray,
+        val renameMap: Map<String, String> = emptyMap(),
     ) : FilePullResult() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is Failure) return false
-            return failedChunks == other.failedChunks && pullChunks.contentEquals(other.pullChunks)
+            return failedChunks == other.failedChunks &&
+                pullChunks.contentEquals(other.pullChunks) &&
+                renameMap == other.renameMap
         }
 
         override fun hashCode(): Int {
             var result = failedChunks.hashCode()
             result = 31 * result + pullChunks.contentHashCode()
+            result = 31 * result + renameMap.hashCode()
             return result
         }
     }
@@ -253,7 +257,7 @@ class FilePullService(
         } else {
             // For WS whole-file mode, pullChunks is not meaningful (no chunk system),
             // but return an empty array to satisfy the Failure contract.
-            FilePullResult.Failure(failedFiles, intArrayOf())
+            FilePullResult.Failure(failedFiles, intArrayOf(), renameMap)
         }
     }
 
@@ -266,6 +270,10 @@ class FilePullService(
         pullChunks: IntArray,
         syncHandler: SyncHandler,
     ): FilePullResult {
+        val host =
+            syncHandler.getConnectHostAddress()
+                ?: return FilePullResult.NoSyncAddress(appInstanceId)
+
         val isRetry = pullChunks.isNotEmpty()
         val filesIndexBuilder = FilesIndexBuilder(CHUNK_SIZE)
         val renameMap =
@@ -287,10 +295,6 @@ class FilePullService(
                 }
                 pullChunks
             }
-
-        val host =
-            syncHandler.getConnectHostAddress()
-                ?: return FilePullResult.NoSyncAddress(appInstanceId)
 
         val port = syncHandler.currentSyncRuntimeInfo.port
 
@@ -351,7 +355,7 @@ class FilePullService(
         }
 
         return if (effectivePullChunks.contains(0)) {
-            FilePullResult.Failure(fails, effectivePullChunks)
+            FilePullResult.Failure(fails, effectivePullChunks, renameMap)
         } else {
             pasteSyncProcessManager.cleanProcess(pasteId)
             FilePullResult.Success(renameMap)

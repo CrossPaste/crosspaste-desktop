@@ -7,12 +7,11 @@ import com.crosspaste.db.task.TaskType
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.createFailureResult
-import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteFiles
-import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.applyRenameMap
 import com.crosspaste.paste.item.getAppFileType
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.UserDataPathProvider
@@ -109,7 +108,7 @@ class PullFileTaskExecutor(
 
             is FilePullResult.Success -> {
                 if (result.renameMap.isNotEmpty()) {
-                    val updatedPasteData = applyRenameMapToPasteData(pasteData, result.renameMap)
+                    val updatedPasteData = pasteData.applyRenameMap(result.renameMap)
                     pasteDao.updateFilePath(updatedPasteData)
                 }
                 pasteboardService.tryWriteRemotePasteboardWithFile(pasteData.id)
@@ -118,8 +117,16 @@ class PullFileTaskExecutor(
             }
 
             is FilePullResult.Failure -> {
+                val effectivePasteData =
+                    if (result.renameMap.isNotEmpty()) {
+                        pasteData.applyRenameMap(result.renameMap).also {
+                            pasteDao.updateFilePath(it)
+                        }
+                    } else {
+                        pasteData
+                    }
                 pullExtraInfo.pullChunks = result.pullChunks
-                doFailure(pasteData, pullExtraInfo, result.failedChunks.values, startTime)
+                doFailure(effectivePasteData, pullExtraInfo, result.failedChunks.values, startTime)
             }
 
             is FilePullResult.NoSyncHandler -> {
@@ -150,31 +157,6 @@ class PullFileTaskExecutor(
                 )
             }
         }
-
-    /**
-     * Apply conflict-resolved file renames to the paste data model.
-     *
-     * When pulling files into a download directory, [FilePullService] may rename files
-     * to avoid conflicts (e.g. "a.txt" -> "a (1).txt"). This method propagates those
-     * renames into [PasteData.pasteAppearItem] and [PasteData.pasteCollection] so the
-     * stored metadata matches the actual filenames on disk.
-     */
-    private fun applyRenameMapToPasteData(
-        pasteData: PasteData,
-        renameMap: Map<String, String>,
-    ): PasteData {
-        val updatedAppearItem =
-            (pasteData.pasteAppearItem as? PasteFiles)?.applyRenameMap(renameMap) as? PasteItem
-                ?: pasteData.pasteAppearItem
-        val updatedCollectionItems =
-            pasteData.pasteCollection.pasteItems.map { item ->
-                (item as? PasteFiles)?.applyRenameMap(renameMap) as? PasteItem ?: item
-            }
-        return pasteData.copy(
-            pasteAppearItem = updatedAppearItem,
-            pasteCollection = PasteCollection(updatedCollectionItems),
-        )
-    }
 
     private suspend fun doFailure(
         pasteData: PasteData,

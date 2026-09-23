@@ -258,6 +258,40 @@ class PasteReleaseServicePushTest {
     }
 
     @Test
+    fun releaseRemotePasteDataForPush_persistsConflictRenameInCustomDestination(
+        @TempDir tempDir: File,
+    ) = runBlocking {
+        val destination =
+            File(tempDir, "big-files").also {
+                it.mkdirs()
+                File(it, "big.apk").writeText("existing-file")
+            }
+        val updates = mutableListOf<PasteData>()
+        val pasteDao =
+            mockk<PasteDao>(relaxed = true).also {
+                coEvery { it.createPasteData(any(), any()) } returns 7L
+                coEvery { it.updateFilePath(capture(updates)) } returns Unit
+            }
+        val service =
+            newService(
+                pasteDao = pasteDao,
+                commonConfigManager = defaultConfigManager(destination.absolutePath),
+                userDataPathProvider = realPathProvider(File(tempDir, "storage").also { it.mkdirs() }),
+            )
+
+        val result = service.releaseRemotePasteDataForPush(oversizedFilePasteData("big.apk"))
+        assertNotNull(result)
+
+        val finalFiles = updates.last().getPasteItem(PasteFiles::class)
+        assertNotNull(finalFiles)
+        assertEquals(destination.absolutePath, finalFiles.basePath)
+        assertEquals(listOf("big(1).apk"), finalFiles.relativePathList)
+        assertTrue(finalFiles.fileInfoTreeMap.containsKey("big(1).apk"))
+        assertTrue(File(destination, "big(1).apk").isFile)
+        assertEquals("existing-file", File(destination, "big.apk").readText())
+    }
+
+    @Test
     fun releaseRemotePasteDataForPush_routesMarkedFileOutsideStorageEvenUnderTheLimit(
         @TempDir tempDir: File,
     ) = runBlocking {

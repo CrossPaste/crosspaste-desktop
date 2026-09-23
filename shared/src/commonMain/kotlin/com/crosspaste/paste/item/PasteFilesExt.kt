@@ -1,6 +1,9 @@
 package com.crosspaste.paste.item
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.config.isInside
+import com.crosspaste.paste.PasteCollection
+import com.crosspaste.paste.PasteData
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
 import okio.Path
@@ -29,12 +32,18 @@ fun PasteFiles.hasExistingFiles(): Boolean {
 }
 
 /**
- * Name of the folder a received file was written to when it went outside managed
- * storage, or null when it lives in managed storage. The folder is whatever the
- * large-file destination was at receive time, so it cannot be recomputed from the
- * current config — it is read back from the row's own basePath.
+ * Name of the folder a file lives in when it sits outside managed storage, or
+ * null when it lives in managed storage. The folder is read back from the row's
+ * own [PasteFiles.basePath] rather than the current config so existing rows keep
+ * showing the folder they were actually written to.
  */
-fun PasteFiles.externalFolderName(): String? = basePath?.toPath()?.name
+fun PasteFiles.externalFolderName(userDataPathProvider: UserDataPathProvider): String? {
+    val base = basePath?.takeIf { it.isNotBlank() }?.toPath(normalize = true) ?: return null
+    if (isInside(base, userDataPathProvider.getUserDataPath())) {
+        return null
+    }
+    return base.name.ifEmpty { base.toString() }.takeIf { it.isNotEmpty() }
+}
 
 /**
  * [destinationPath] is the absolute directory the files must be written to, or
@@ -59,4 +68,24 @@ fun PasteFiles.bindFilePaths(
             }
         }
     return destinationPath to newRelativePathList
+}
+
+/**
+ * Propagate conflict-resolved file renames (e.g. `"a.txt"` -> `"a(1).txt"`) into
+ * [PasteData.pasteAppearItem] and [PasteData.pasteCollection] so stored metadata
+ * matches the actual filenames allocated on disk.
+ */
+fun PasteData.applyRenameMap(renameMap: Map<String, String>): PasteData {
+    if (renameMap.isEmpty()) return this
+    val updatedAppearItem =
+        (pasteAppearItem as? PasteFiles)?.applyRenameMap(renameMap) as? PasteItem
+            ?: pasteAppearItem
+    val updatedCollectionItems =
+        pasteCollection.pasteItems.map { item ->
+            (item as? PasteFiles)?.applyRenameMap(renameMap) as? PasteItem ?: item
+        }
+    return copy(
+        pasteAppearItem = updatedAppearItem,
+        pasteCollection = PasteCollection(updatedCollectionItems),
+    )
 }

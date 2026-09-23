@@ -15,11 +15,16 @@ import com.crosspaste.utils.getDateUtils
  * use [buildFilesIndexForReceive] so parent directories and empty file slots
  * get created before incoming chunks try to write into them.
  */
+data class ReceiveFilesIndexResult(
+    val filesIndex: FilesIndex,
+    val renameMap: Map<String, String>,
+)
+
 fun buildFilesIndex(
     pasteData: PasteData,
     userDataPathProvider: UserDataPathProvider,
     chunkSize: Long,
-): FilesIndex = buildFilesIndexInternal(pasteData, userDataPathProvider, chunkSize, prepareSlots = false)
+): FilesIndex = buildFilesIndexInternal(pasteData, userDataPathProvider, chunkSize, prepareSlots = false).filesIndex
 
 /**
  * Receive-side counterpart of [buildFilesIndex] for the push protocol.
@@ -31,39 +36,49 @@ fun buildFilesIndex(
  * chunk hits `FileNotFoundException` because `RandomAccessFile("rw")` does not
  * create missing parent directories.
  *
- * The pull-receive path achieves the same effect by calling
- * [com.crosspaste.path.UserDataPathProvider.resolve] with `isPull = true`
- * inside `FilePullService`. Push-receive lives in a different code path
- * ([com.crosspaste.paste.PasteReleaseService.releaseRemotePasteDataForPush]),
- * which is why it needs an explicit entry point.
+ * When a file lands in an external destination directory (`basePath != null`)
+ * where a file of the same name already exists, [UserDataPathProvider.resolve]
+ * renames it (e.g. `"big.apk"` -> `"big(1).apk"`). The resulting [ReceiveFilesIndexResult.renameMap]
+ * must be applied to the stored [PasteData] so database metadata matches the
+ * actual file slots allocated on disk.
  */
 fun buildFilesIndexForReceive(
     pasteData: PasteData,
     userDataPathProvider: UserDataPathProvider,
     chunkSize: Long,
-): FilesIndex = buildFilesIndexInternal(pasteData, userDataPathProvider, chunkSize, prepareSlots = true)
+): ReceiveFilesIndexResult = buildFilesIndexInternal(pasteData, userDataPathProvider, chunkSize, prepareSlots = true)
 
 private fun buildFilesIndexInternal(
     pasteData: PasteData,
     userDataPathProvider: UserDataPathProvider,
     chunkSize: Long,
     prepareSlots: Boolean,
-): FilesIndex {
+): ReceiveFilesIndexResult {
     val dateUtils = getDateUtils()
     val dateString =
         dateUtils.getYMD(
             dateUtils.epochMillisecondsToLocalDateTime(pasteData.createTime),
         )
     val builder = FilesIndexBuilder(chunkSize)
+    val combinedRenameMap = mutableMapOf<String, String>()
     pasteData.getPasteAppearItems().filterIsInstance<PasteFiles>().forEach { pasteFiles ->
-        userDataPathProvider.resolve(
-            pasteData.appInstanceId,
-            dateString,
-            pasteData.id,
-            pasteFiles,
-            prepareSlots,
-            builder,
-        )
+        val effectivePasteFiles =
+            if (combinedRenameMap.isEmpty()) {
+                pasteFiles
+            } else {
+                pasteFiles.applyRenameMap(combinedRenameMap)
+            }
+        val renameMap =
+            userDataPathProvider.resolve(
+                pasteData.appInstanceId,
+                dateString,
+                pasteData.id,
+                effectivePasteFiles,
+                prepareSlots,
+                builder,
+                resolveConflicts = prepareSlots && combinedRenameMap.isEmpty(),
+            )
+        combinedRenameMap.putAll(renameMap)
     }
-    return builder.build()
+    return ReceiveFilesIndexResult(builder.build(), combinedRenameMap)
 }

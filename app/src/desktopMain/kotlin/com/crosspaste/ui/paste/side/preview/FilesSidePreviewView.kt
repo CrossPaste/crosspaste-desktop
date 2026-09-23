@@ -59,7 +59,10 @@ fun PasteDataScope.FilesSidePreviewView() {
         return
     }
 
-    val externalFolderName = remember(pasteData.id, fileLayout) { filesPasteItem.externalFolderName() }
+    val externalFolderName =
+        remember(pasteData.id, fileLayout) {
+            filesPasteItem.externalFolderName(userDataPathProvider)
+        }
     val singleVideoPath = rememberSingleVideoPath(filePaths, fileCount)
 
     val fileDisplayInfo by produceState<FileDisplayInfo?>(

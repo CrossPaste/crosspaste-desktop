@@ -11,6 +11,7 @@ import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteItemProperties
 import com.crosspaste.paste.item.PasteItemReader
+import com.crosspaste.paste.item.applyRenameMap
 import com.crosspaste.paste.item.bindItem
 import com.crosspaste.paste.plugin.process.DiscardOversizedNonFilePlugin
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
@@ -336,7 +337,7 @@ class PasteReleaseService(
 
         val destinationPath =
             if (writeOutsideStorage) {
-                config.resolveLargeFileDestinationForReceive().toString()
+                config.resolveLargeFileDestinationForReceive(userDataPathProvider.getUserDataPath()).toString()
             } else {
                 null
             }
@@ -549,12 +550,15 @@ class PasteReleaseService(
                     }
                 val id = newPasteData.id
 
-                val filesIndex =
+                val (filesIndex, renameMap) =
                     buildFilesIndexForReceive(newPasteData, userDataPathProvider, FilePullService.CHUNK_SIZE)
                 if (filesIndex.getChunkCount() <= 0) {
                     logger.warn { "releaseRemotePasteDataForPush: empty filesIndex for pasteId=$id" }
                     pasteDao.markDeletePasteData(id)
                     return@runCatching null
+                }
+                if (renameMap.isNotEmpty()) {
+                    pasteDao.updateFilePath(newPasteData.applyRenameMap(renameMap))
                 }
 
                 taskSubmitter.submit {

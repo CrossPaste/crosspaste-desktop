@@ -42,17 +42,21 @@ fun AppConfig.resolveLargeFileDestination(): Path =
  * Note this cannot detect a mount point that still exists as an empty directory
  * after its volume was unmounted; that case still writes under the mount point.
  */
-fun AppConfig.resolveLargeFileDestinationForReceive(): Path {
+fun AppConfig.resolveLargeFileDestinationForReceive(managedStoragePath: Path): Path {
     val configured =
         largeFileDestinationPath.takeIf { it.isNotBlank() } ?: return getPlatformUtils().getSystemDownloadDir()
     val destination = configured.toPath(normalize = true)
     val fileUtils = getFileUtils()
-    return if (fileUtils.existFile(destination) && destination.safeIsDirectory) {
+    val usable =
+        !isInside(destination, managedStoragePath) &&
+            fileUtils.existFile(destination) &&
+            destination.safeIsDirectory
+    return if (usable) {
         destination
     } else {
         val fallback = getPlatformUtils().getSystemDownloadDir()
         logger.warn {
-            "Large file destination $destination is not an existing directory, falling back to $fallback"
+            "Large file destination $destination is unusable or inside managed storage, falling back to $fallback"
         }
         fallback
     }
@@ -106,7 +110,7 @@ fun validateLargeFileDestination(
  * costs is rejecting a directory whose name differs from managed storage only by
  * case — which is the safe direction to be wrong in.
  */
-private fun isInside(
+internal fun isInside(
     child: Path,
     parent: Path,
 ): Boolean {
