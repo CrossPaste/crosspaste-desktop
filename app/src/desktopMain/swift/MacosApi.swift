@@ -570,11 +570,17 @@ public func setAboutMenuItemTitle(title: UnsafePointer<CChar>) {
         // window's menu bar, so retitling its first item ("About <app>") sticks
         // across window switches. The item keeps whatever action AWT installed
         // (the java.awt.Desktop about handler once one is set).
-        guard let appMenu = NSApp.mainMenu?.items.first?.submenu,
-              let aboutItem = appMenu.items.first(where: { !$0.isSeparatorItem }) else {
+        // Match AWT's _aboutMenuHandler action (falling back to index 0 only if it
+        // is not a separator) so we never retitle "Services" if the About item is
+        // ever removed from the menu.
+        guard let appMenu = NSApp.mainMenu?.items.first?.submenu else {
             return
         }
-        aboutItem.title = titleString
+        let aboutSelector = Selector(("_aboutMenuHandler"))
+        let aboutItem =
+            appMenu.items.first(where: { $0.action == aboutSelector })
+            ?? appMenu.items.first.flatMap { $0.isSeparatorItem ? nil : $0 }
+        aboutItem?.title = titleString
     }
 }
 

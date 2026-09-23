@@ -50,6 +50,10 @@ fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
             null
         }
 
+    if (!exiting && isMacos) {
+        MacApplicationMenu()
+    }
+
     if (!exiting && windowIcon != null) {
         TrayView(windowIcon)
     }

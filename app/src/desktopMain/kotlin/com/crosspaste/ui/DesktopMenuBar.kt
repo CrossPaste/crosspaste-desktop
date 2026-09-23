@@ -12,27 +12,24 @@ import com.crosspaste.app.ExitMode
 import com.crosspaste.app.WindowTrigger
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.macos.MacAppUtils
+import com.crosspaste.ui.base.MenuHelper
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import java.awt.Desktop
 
+/**
+ * Configures the macOS application menu ("CrossPaste" menu at index 0 of the screen menu bar).
+ *
+ * Must be composed in `ApplicationScope` (e.g. [CrossPasteWindows]) rather than inside
+ * [MainWindow]'s `FrameWindowScope`, because Compose Desktop defers a hidden `Window`'s
+ * content composition until `addNotify()` runs on its first `visible = true`, whereas the
+ * macOS application menu is already reachable whenever an auxiliary window (such as
+ * `SearchWindow` or `BubbleWindow`) activates the app.
+ */
 @Composable
-fun FrameWindowScope.DesktopMenuBar() {
-    val appUpdateService = koinInject<AppUpdateService>()
-    val appWindowManager = koinInject<DesktopAppWindowManager>()
+fun MacApplicationMenu() {
     val copywriter = koinInject<GlobalCopywriter>()
-    val navigateManage = koinInject<NavigationManager>()
-
-    val applicationExit = LocalExitApplication.current
-
-    val scope = rememberCoroutineScope()
-
-    val openAbout: () -> Unit = {
-        scope.launch {
-            navigateManage.navigateAndClearStack(About)
-            appWindowManager.showMainWindow(WindowTrigger.MENU)
-        }
-    }
+    val menuHelper = koinInject<MenuHelper>()
 
     // The application menu's "About <app>" item is owned by AWT. Without a handler
     // it opens the JVM's own about panel (titled "java"), so route it to our About
@@ -41,7 +38,7 @@ fun FrameWindowScope.DesktopMenuBar() {
     DisposableEffect(Unit) {
         val desktop = Desktop.getDesktop()
         if (desktop.isSupported(Desktop.Action.APP_ABOUT)) {
-            desktop.setAboutHandler { openAbout() }
+            desktop.setAboutHandler { menuHelper.about.action() }
         }
         onDispose {
             if (desktop.isSupported(Desktop.Action.APP_ABOUT)) {
@@ -50,10 +47,23 @@ fun FrameWindowScope.DesktopMenuBar() {
         }
     }
 
-    val aboutTitle = copywriter.getText("about")
+    val aboutTitle = menuHelper.about.title(copywriter)
     LaunchedEffect(aboutTitle) {
         MacAppUtils.setAboutMenuItemTitle(aboutTitle)
     }
+}
+
+@Composable
+fun FrameWindowScope.DesktopMenuBar() {
+    val appUpdateService = koinInject<AppUpdateService>()
+    val appWindowManager = koinInject<DesktopAppWindowManager>()
+    val copywriter = koinInject<GlobalCopywriter>()
+    val menuHelper = koinInject<MenuHelper>()
+    val navigateManage = koinInject<NavigationManager>()
+
+    val applicationExit = LocalExitApplication.current
+
+    val scope = rememberCoroutineScope()
 
     MenuBar {
         Menu(copywriter.getText("sync")) {
@@ -103,7 +113,9 @@ fun FrameWindowScope.DesktopMenuBar() {
                     appWindowManager.showMainWindow(WindowTrigger.MENU)
                 }
             }
-            Item(aboutTitle) { openAbout() }
+            Item(menuHelper.about.title(copywriter)) {
+                menuHelper.about.action()
+            }
             Item(copywriter.getText("check_for_updates")) {
                 appUpdateService.tryTriggerUpdate()
             }
