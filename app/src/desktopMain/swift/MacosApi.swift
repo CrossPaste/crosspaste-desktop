@@ -562,6 +562,22 @@ public func setDockIconVisibility(showDockIcon: Int32) {
     }
 }
 
+@_cdecl("setAboutMenuItemTitle")
+public func setAboutMenuItemTitle(title: UnsafePointer<CChar>) {
+    let titleString = String(cString: title)
+    DispatchQueue.main.async {
+        // AWT builds the application menu once and moves the same NSMenu into every
+        // window's menu bar, so retitling its first item ("About <app>") sticks
+        // across window switches. The item keeps whatever action AWT installed
+        // (the java.awt.Desktop about handler once one is set).
+        guard let appMenu = NSApp.mainMenu?.items.first?.submenu,
+              let aboutItem = appMenu.items.first(where: { !$0.isSeparatorItem }) else {
+            return
+        }
+        aboutItem.title = titleString
+    }
+}
+
 @_cdecl("simulatePasteCommand")
 public func simulatePasteCommand(keyCodesPointer: UnsafePointer<Int32>, count: Int) {
     if (count <= 0) {

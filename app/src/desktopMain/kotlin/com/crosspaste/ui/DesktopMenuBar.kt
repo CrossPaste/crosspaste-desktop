@@ -1,6 +1,8 @@
 package com.crosspaste.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuBar
@@ -9,8 +11,10 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.WindowTrigger
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.platform.macos.MacAppUtils
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import java.awt.Desktop
 
 @Composable
 fun FrameWindowScope.DesktopMenuBar() {
@@ -22,6 +26,34 @@ fun FrameWindowScope.DesktopMenuBar() {
     val applicationExit = LocalExitApplication.current
 
     val scope = rememberCoroutineScope()
+
+    val openAbout: () -> Unit = {
+        scope.launch {
+            navigateManage.navigateAndClearStack(About)
+            appWindowManager.showMainWindow(WindowTrigger.MENU)
+        }
+    }
+
+    // The application menu's "About <app>" item is owned by AWT. Without a handler
+    // it opens the JVM's own about panel (titled "java"), so route it to our About
+    // page instead, and retitle it from the same i18n key the Help menu uses so it
+    // follows the in-app language rather than the system locale.
+    DisposableEffect(Unit) {
+        val desktop = Desktop.getDesktop()
+        if (desktop.isSupported(Desktop.Action.APP_ABOUT)) {
+            desktop.setAboutHandler { openAbout() }
+        }
+        onDispose {
+            if (desktop.isSupported(Desktop.Action.APP_ABOUT)) {
+                desktop.setAboutHandler(null)
+            }
+        }
+    }
+
+    val aboutTitle = copywriter.getText("about")
+    LaunchedEffect(aboutTitle) {
+        MacAppUtils.setAboutMenuItemTitle(aboutTitle)
+    }
 
     MenuBar {
         Menu(copywriter.getText("sync")) {
@@ -71,12 +103,7 @@ fun FrameWindowScope.DesktopMenuBar() {
                     appWindowManager.showMainWindow(WindowTrigger.MENU)
                 }
             }
-            Item(copywriter.getText("about")) {
-                scope.launch {
-                    navigateManage.navigateAndClearStack(About)
-                    appWindowManager.showMainWindow(WindowTrigger.MENU)
-                }
-            }
+            Item(aboutTitle) { openAbout() }
             Item(copywriter.getText("check_for_updates")) {
                 appUpdateService.tryTriggerUpdate()
             }
