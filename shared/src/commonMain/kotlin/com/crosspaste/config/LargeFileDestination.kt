@@ -46,12 +46,7 @@ fun AppConfig.resolveLargeFileDestinationForReceive(managedStoragePath: Path): P
     val configured =
         largeFileDestinationPath.takeIf { it.isNotBlank() } ?: return getPlatformUtils().getSystemDownloadDir()
     val destination = configured.toPath(normalize = true)
-    val fileUtils = getFileUtils()
-    val usable =
-        !isInside(destination, managedStoragePath) &&
-            fileUtils.existFile(destination) &&
-            destination.safeIsDirectory
-    return if (usable) {
+    return if (validateLargeFileDestination(destination, managedStoragePath) == null) {
         destination
     } else {
         val fallback = getPlatformUtils().getSystemDownloadDir()

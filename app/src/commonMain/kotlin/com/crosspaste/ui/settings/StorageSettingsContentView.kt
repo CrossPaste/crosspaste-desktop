@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -91,7 +92,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
         }
 
         item {
-            SizeLimitsCard()
+            SizeLimitsCard(canChooseLargeFileDestination = storagePathManager != null)
         }
 
         item {
@@ -186,44 +187,24 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
 /**
  * The thresholds that decide what enters managed storage in the first place.
  *
- * The large file destination row is always shown, never folded behind the
- * backup size: at 0 MB every file is treated as large, so that is exactly when
- * the destination matters most.
+ * The large file destination row is never folded behind the backup size: at
+ * 0 MB every file is treated as large, so that is exactly when the destination
+ * matters most. It is only offered when [canChooseLargeFileDestination], which
+ * follows the storage path section: a platform whose directory picker cannot
+ * hand back a plain writable filesystem directory (mobile pickers return
+ * SAF or security-scoped URLs) has no [StoragePathManager] either, and its
+ * large files always go to the system Downloads folder.
  */
 @Composable
-private fun SizeLimitsCard() {
-    val appFileChooser = koinInject<AppFileChooser>()
+private fun SizeLimitsCard(canChooseLargeFileDestination: Boolean) {
     val configManager = koinInject<CommonConfigManager>()
-    val copywriter = koinInject<GlobalCopywriter>()
-    val notificationManager = koinInject<NotificationManager>()
-    val userDataPathProvider = koinInject<UserDataPathProvider>()
     val themeExt = LocalThemeExtState.current
 
     val config by configManager.config.collectAsState()
 
-    val largeFileDestination =
-        remember(config.largeFileDestinationPath) {
-            config.resolveLargeFileDestination()
-        }
-
-    val chooseLargeFileDestination = {
-        appFileChooser.openFileChooser(
-            FileSelectionMode.DIRECTORY_ONLY,
-            largeFileDestination,
-        ) { path ->
-            val destination = path as Path
-            validateLargeFileDestination(
-                destination = destination,
-                managedStoragePath = userDataPathProvider.getUserDataPath(),
-            )?.let { errorMessage ->
-                notificationManager.sendNotification(
-                    title = { it.getText(errorMessage) },
-                    messageType = MessageType.Error,
-                    duration = null,
-                )
-            } ?: run {
-                configManager.updateConfig("largeFileDestinationPath", destination.toString())
-            }
+    if (!canChooseLargeFileDestination && config.largeFileDestinationPath.isNotBlank()) {
+        LaunchedEffect(config.largeFileDestinationPath) {
+            configManager.updateConfig("largeFileDestinationPath", "")
         }
     }
 
@@ -243,7 +224,7 @@ private fun SizeLimitsCard() {
         HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
         SettingListItem(
             title = "file_storage_limit",
-            subtitle = "file_storage_limit_desc",
+            subtitle = if (canChooseLargeFileDestination) "file_storage_limit_desc" else null,
             icon = IconData(MaterialSymbols.Rounded.Archive, themeExt.greenIconColor),
             trailingContent = {
                 Counter(defaultValue = config.maxBackupFileSize, unit = "MB", rule = {
@@ -253,49 +234,82 @@ private fun SizeLimitsCard() {
                 }
             },
         )
-        HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-        SettingListItem(
-            title = "large_file_destination",
-            subtitleContent = {
-                Text(
-                    text = largeFileDestination.toString(),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            },
-            icon = IconData(MaterialSymbols.Rounded.Download, themeExt.amberIconColor),
-            trailingContent = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(tiny),
-                ) {
-                    if (config.largeFileDestinationPath.isNotBlank()) {
-                        TextButton(
-                            onClick = {
-                                configManager.updateConfig("largeFileDestinationPath", "")
-                            },
+        if (canChooseLargeFileDestination) {
+            val appFileChooser = koinInject<AppFileChooser>()
+            val copywriter = koinInject<GlobalCopywriter>()
+            val notificationManager = koinInject<NotificationManager>()
+            val userDataPathProvider = koinInject<UserDataPathProvider>()
+
+            val largeFileDestination =
+                remember(config.largeFileDestinationPath) {
+                    config.resolveLargeFileDestination()
+                }
+
+            val chooseLargeFileDestination = {
+                appFileChooser.openFileChooser(
+                    FileSelectionMode.DIRECTORY_ONLY,
+                    largeFileDestination,
+                ) { path ->
+                    val destination = path as Path
+                    validateLargeFileDestination(
+                        destination = destination,
+                        managedStoragePath = userDataPathProvider.getUserDataPath(),
+                    )?.let { errorMessage ->
+                        notificationManager.sendNotification(
+                            title = { it.getText(errorMessage) },
+                            messageType = MessageType.Error,
+                            duration = null,
+                        )
+                    } ?: run {
+                        configManager.updateConfig("largeFileDestinationPath", destination.toString())
+                    }
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+            SettingListItem(
+                title = "large_file_destination",
+                subtitleContent = {
+                    Text(
+                        text = largeFileDestination.toString(),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                },
+                icon = IconData(MaterialSymbols.Rounded.Download, themeExt.amberIconColor),
+                trailingContent = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(tiny),
+                    ) {
+                        if (config.largeFileDestinationPath.isNotBlank()) {
+                            TextButton(
+                                onClick = {
+                                    configManager.updateConfig("largeFileDestinationPath", "")
+                                },
+                                modifier = Modifier.height(xxLarge),
+                                contentPadding = PaddingValues(horizontal = small2X),
+                            ) {
+                                Text(
+                                    text = copywriter.getText("use_default_folder"),
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            }
+                        }
+                        FilledTonalButton(
+                            onClick = chooseLargeFileDestination,
                             modifier = Modifier.height(xxLarge),
                             contentPadding = PaddingValues(horizontal = small2X),
                         ) {
                             Text(
-                                text = copywriter.getText("use_default_folder"),
+                                text = copywriter.getText("change"),
                                 style = MaterialTheme.typography.labelSmall,
                             )
                         }
                     }
-                    FilledTonalButton(
-                        onClick = chooseLargeFileDestination,
-                        modifier = Modifier.height(xxLarge),
-                        contentPadding = PaddingValues(horizontal = small2X),
-                    ) {
-                        Text(
-                            text = copywriter.getText("change"),
-                            style = MaterialTheme.typography.labelSmall,
-                        )
-                    }
-                }
-            },
-        )
+                },
+            )
+        }
     }
 }
