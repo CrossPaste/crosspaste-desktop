@@ -5,8 +5,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.awt.ComposeWindow
+import androidx.compose.ui.awt.SwingWindow
 import androidx.compose.ui.window.FrameWindowScope
-import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.platform.Platform
@@ -28,7 +28,7 @@ import kotlin.math.roundToInt
  * An undecorated, always-on-top window that never takes keyboard focus and never
  * activates CrossPaste when clicked, so the app the user is working in keeps its focus.
  *
- * The window is created through the low-level [Window] overload so the native peer can
+ * The window is created through the low-level [SwingWindow] overload so the native peer can
  * be configured before it exists. On macOS the only way a click can reach a window
  * without activating the app is an NSPanel carrying NSWindowStyleMaskNonactivatingPanel.
  * JBR does not expose that flag (Window.Type.POPUP is an ordinary NSWindow there), but it
@@ -50,7 +50,7 @@ fun NonActivatingWindow(
     val isMac = remember { platform.isMacos() }
     val isWindows = remember { platform.isWindows() }
 
-    Window(
+    SwingWindow(
         visible = visible,
         create = {
             ComposeWindow().apply {

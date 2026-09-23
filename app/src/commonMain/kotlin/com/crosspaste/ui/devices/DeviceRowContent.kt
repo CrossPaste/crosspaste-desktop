@@ -1,7 +1,16 @@
 package com.crosspaste.ui.devices
 
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.IndicationNodeFactory
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,16 +18,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.LocalTonalElevationEnabled
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,10 +34,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.sp
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.PlatformIcon
-import com.crosspaste.ui.base.cardPressRipple
 import com.crosspaste.ui.theme.AppUISize
 import com.crosspaste.ui.theme.AppUISize.small2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -46,7 +54,6 @@ import com.crosspaste.ui.theme.AppUISize.zero
  * to nothing. Use it for a short inline marker (e.g. "this device") that
  * should not compete with [trailingContent] for the row's end.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlatformScope.DeviceRowContent(
     style: DeviceStyle,
@@ -59,51 +66,82 @@ fun PlatformScope.DeviceRowContent(
 
     val enabled = style.isClickable && onClick != null
 
-    val colors =
-        CardDefaults.cardColors(
-            containerColor = style.containerColor,
-            contentColor = style.contentColor,
-            disabledContainerColor = style.containerColor,
-            disabledContentColor = style.contentColor,
-        )
-
     val isDark = LocalThemeState.current.isCurrentThemeDark
-    val parentRippleConfiguration = LocalRippleConfiguration.current
-    val cardRippleConfiguration = if (isDark) parentRippleConfiguration else cardPressRipple
 
     // In light theme, hover lifts the card with a shadow instead of tinting it: the light
     // card is pure white, so a grey overlay would blur its edge into the grey ground. Tonal
     // elevation is disabled in light theme because white equals surface and would be tinted
     // with primary. In dark theme, shadows on a dark ground are invisible, so tonal elevation
     // and standard hover ripple provide the required interactive feedback.
-    CompositionLocalProvider(
-        LocalTonalElevationEnabled provides isDark,
-        LocalRippleConfiguration provides cardRippleConfiguration,
-    ) {
-        Card(
-            onClick = onClick ?: {},
-            enabled = enabled,
+    //
+    // The clickable sits inside the Surface rather than on it so the ripple is clipped to the
+    // card shape; the Surface fills its content, so the two share the same bounds.
+    CompositionLocalProvider(LocalTonalElevationEnabled provides isDark) {
+        Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = style.shape,
-            colors = colors,
-            elevation =
-                CardDefaults.cardElevation(
-                    defaultElevation = zero,
-                    pressedElevation = zero,
-                    focusedElevation = zero,
-                    hoveredElevation = tiny4X,
-                    disabledElevation = zero,
-                ),
-            interactionSource = interactionSource,
+            color = style.containerColor,
+            contentColor = style.contentColor,
+            shadowElevation = hoverShadowElevation(enabled, interactionSource),
         ) {
-            CompositionLocalProvider(
-                LocalRippleConfiguration provides parentRippleConfiguration,
+            Box(
+                modifier =
+                    Modifier.clickable(
+                        interactionSource = interactionSource,
+                        indication = cardRipple(isDark),
+                        enabled = enabled,
+                        onClick = onClick ?: {},
+                    ),
             ) {
                 DeviceRowBody(style, iconTint, nameTrailing, trailingContent)
             }
         }
     }
 }
+
+/**
+ * Ripple for the device card. In light theme a single white card lies on the light grey
+ * content ground, and the default ripple overlays onSurface grey, which sinks a pressed white
+ * card into the ground (about #F0F0F0 on #F6F7F8). Tinting with primary instead gives a light
+ * blue press that stays clearly separate from the ground and matches the app's blue action
+ * language. Hover is disabled there: desktop lifts the card with a shadow instead, and touch
+ * has no hover. Dark theme keeps the standard ripple.
+ */
+@Composable
+private fun cardRipple(isDark: Boolean): IndicationNodeFactory =
+    if (isDark) {
+        ripple()
+    } else {
+        ripple(
+            color = MaterialTheme.colorScheme.primary,
+            enableHoverIndication = false,
+        )
+    }
+
+/**
+ * Shadow that lifts the card while hovered, mirroring Material 3 Card's hovered elevation
+ * with the same 120ms tweens. Pressing drops the card back down, and a disabled card never
+ * lifts.
+ */
+@Composable
+private fun hoverShadowElevation(
+    enabled: Boolean,
+    interactionSource: InteractionSource,
+): Dp {
+    val hovered by interactionSource.collectIsHoveredAsState()
+    val pressed by interactionSource.collectIsPressedAsState()
+    val lifted = enabled && hovered && !pressed
+    val elevation by
+        animateDpAsState(
+            targetValue = if (lifted) tiny4X else zero,
+            animationSpec = if (lifted) hoverInSpec else hoverOutSpec,
+        )
+    return elevation
+}
+
+private val hoverInSpec = tween<Dp>(durationMillis = 120, easing = FastOutSlowInEasing)
+private val hoverOutSpec =
+    tween<Dp>(durationMillis = 120, easing = CubicBezierEasing(0.40f, 0.00f, 0.60f, 1.00f))
 
 @Composable
 private fun PlatformScope.DeviceRowBody(
