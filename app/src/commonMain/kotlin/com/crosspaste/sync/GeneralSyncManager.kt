@@ -47,6 +47,12 @@ class GeneralSyncManager(
     private val syncClientApi: SyncClientApi,
     private val wsSessionManager: WsSessionManager,
     private val pairingCapabilityFlag: PairingCapabilityFlag,
+    // Each handler owns its scope — cancelScope() must only tear down that one
+    // handler — so this is a factory, not a shared scope. Tests substitute the
+    // test dispatcher here to keep the whole handler chain on virtual time.
+    private val syncHandlerScopeFactory: () -> CoroutineScope = {
+        namedScope(ioDispatcher, "GeneralSyncHandler")
+    },
 ) : SyncManager {
 
     private val logger = KotlinLogging.logger {}
@@ -195,7 +201,7 @@ class GeneralSyncManager(
     }
 
     override fun createSyncHandler(syncRuntimeInfo: SyncRuntimeInfo): SyncHandler =
-        GeneralSyncHandler(syncRuntimeInfo, ::emitEvent)
+        GeneralSyncHandler(syncRuntimeInfo, ::emitEvent, syncHandlerScopeFactory())
 
     override fun ignoreVerify(appInstanceId: String) {
         _ignoreVerifySet.update { it + appInstanceId }
