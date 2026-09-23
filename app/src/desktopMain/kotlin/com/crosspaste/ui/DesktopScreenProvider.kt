@@ -206,12 +206,6 @@ class DesktopScreenProvider(
                 ) {
                     StorageSettingsScreen()
                 }
-                composable<ShortcutKeys>(
-                    exitTransition = { slideOutRight() },
-                    enterTransition = { slideInLeft() },
-                ) {
-                    ShortcutKeysScreen()
-                }
                 composable<SourceControl>(
                     exitTransition = { slideOutRight() },
                     enterTransition = { slideInLeft() },
@@ -219,6 +213,7 @@ class DesktopScreenProvider(
                     SourceControlSettingsScreen()
                 }
             }
+            composable<ShortcutKeys> { ShortcutKeysScreen() }
         }
     }
 

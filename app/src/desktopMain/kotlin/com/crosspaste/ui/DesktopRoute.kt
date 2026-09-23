@@ -51,6 +51,6 @@ fun getRootRouteName(dest: NavDestination): String? =
         dest.hasRoute<PasteboardSettings>() -> Settings.NAME
         dest.hasRoute<NetworkSettings>() -> Settings.NAME
         dest.hasRoute<StorageSettings>() -> Settings.NAME
-        dest.hasRoute<ShortcutKeys>() -> Settings.NAME
+        dest.hasRoute<ShortcutKeys>() -> ShortcutKeys.NAME
         else -> null
     }
