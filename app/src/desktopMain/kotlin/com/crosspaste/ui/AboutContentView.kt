@@ -12,7 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -71,8 +73,14 @@ fun AboutContentView() {
 
     val config by configManager.config.collectAsState()
 
+    // The whole page scrolls: the brand block used to take the leftover height
+    // (weight), and on a 700dp window the two cards plus footer left it ~100dp,
+    // so the name, version and social links were measured down to zero height.
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // Brand Section
@@ -80,9 +88,8 @@ fun AboutContentView() {
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .weight(1f),
+                    .padding(vertical = xxLarge),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
         ) {
             CrossPasteLogoView(
                 size = giant,
