@@ -242,7 +242,8 @@ private fun SizeLimitsCard() {
         )
         HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
         SettingListItem(
-            title = "max_back_up_file_size",
+            title = "file_storage_limit",
+            subtitle = "file_storage_limit_desc",
             icon = IconData(MaterialSymbols.Rounded.Archive, themeExt.greenIconColor),
             trailingContent = {
                 Counter(defaultValue = config.maxBackupFileSize, unit = "MB", rule = {
