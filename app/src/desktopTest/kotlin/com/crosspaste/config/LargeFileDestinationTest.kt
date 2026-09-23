@@ -86,6 +86,25 @@ class LargeFileDestinationTest {
     }
 
     @Test
+    fun `receive falls back to Downloads when the configured directory is not writable`(
+        @TempDir tempDir: File,
+    ) {
+        val storage = File(tempDir, "storage").also { it.mkdirs() }
+        val readOnlyDir = File(tempDir, "read-only").also { it.mkdirs() }
+        if (!readOnlyDir.setWritable(false) || readOnlyDir.canWrite()) {
+            return
+        }
+        try {
+            assertEquals(
+                getPlatformUtils().getSystemDownloadDir(),
+                config(readOnlyDir.absolutePath).resolveLargeFileDestinationForReceive(storage.toOkioPath()),
+            )
+        } finally {
+            readOnlyDir.setWritable(true)
+        }
+    }
+
+    @Test
     fun `validate accepts a writable non-empty directory`(
         @TempDir tempDir: File,
     ) {

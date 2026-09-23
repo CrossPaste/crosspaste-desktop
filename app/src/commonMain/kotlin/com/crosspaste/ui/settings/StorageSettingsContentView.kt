@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -196,38 +197,14 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
  */
 @Composable
 private fun SizeLimitsCard(canChooseLargeFileDestination: Boolean) {
-    val appFileChooser = koinInject<AppFileChooser>()
     val configManager = koinInject<CommonConfigManager>()
-    val copywriter = koinInject<GlobalCopywriter>()
-    val notificationManager = koinInject<NotificationManager>()
-    val userDataPathProvider = koinInject<UserDataPathProvider>()
     val themeExt = LocalThemeExtState.current
 
     val config by configManager.config.collectAsState()
 
-    val largeFileDestination =
-        remember(config.largeFileDestinationPath) {
-            config.resolveLargeFileDestination()
-        }
-
-    val chooseLargeFileDestination = {
-        appFileChooser.openFileChooser(
-            FileSelectionMode.DIRECTORY_ONLY,
-            largeFileDestination,
-        ) { path ->
-            val destination = path as Path
-            validateLargeFileDestination(
-                destination = destination,
-                managedStoragePath = userDataPathProvider.getUserDataPath(),
-            )?.let { errorMessage ->
-                notificationManager.sendNotification(
-                    title = { it.getText(errorMessage) },
-                    messageType = MessageType.Error,
-                    duration = null,
-                )
-            } ?: run {
-                configManager.updateConfig("largeFileDestinationPath", destination.toString())
-            }
+    if (!canChooseLargeFileDestination && config.largeFileDestinationPath.isNotBlank()) {
+        LaunchedEffect(config.largeFileDestinationPath) {
+            configManager.updateConfig("largeFileDestinationPath", "")
         }
     }
 
@@ -247,7 +224,7 @@ private fun SizeLimitsCard(canChooseLargeFileDestination: Boolean) {
         HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
         SettingListItem(
             title = "file_storage_limit",
-            subtitle = "file_storage_limit_desc",
+            subtitle = if (canChooseLargeFileDestination) "file_storage_limit_desc" else null,
             icon = IconData(MaterialSymbols.Rounded.Archive, themeExt.greenIconColor),
             trailingContent = {
                 Counter(defaultValue = config.maxBackupFileSize, unit = "MB", rule = {
@@ -258,6 +235,37 @@ private fun SizeLimitsCard(canChooseLargeFileDestination: Boolean) {
             },
         )
         if (canChooseLargeFileDestination) {
+            val appFileChooser = koinInject<AppFileChooser>()
+            val copywriter = koinInject<GlobalCopywriter>()
+            val notificationManager = koinInject<NotificationManager>()
+            val userDataPathProvider = koinInject<UserDataPathProvider>()
+
+            val largeFileDestination =
+                remember(config.largeFileDestinationPath) {
+                    config.resolveLargeFileDestination()
+                }
+
+            val chooseLargeFileDestination = {
+                appFileChooser.openFileChooser(
+                    FileSelectionMode.DIRECTORY_ONLY,
+                    largeFileDestination,
+                ) { path ->
+                    val destination = path as Path
+                    validateLargeFileDestination(
+                        destination = destination,
+                        managedStoragePath = userDataPathProvider.getUserDataPath(),
+                    )?.let { errorMessage ->
+                        notificationManager.sendNotification(
+                            title = { it.getText(errorMessage) },
+                            messageType = MessageType.Error,
+                            duration = null,
+                        )
+                    } ?: run {
+                        configManager.updateConfig("largeFileDestinationPath", destination.toString())
+                    }
+                }
+            }
+
             HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
             SettingListItem(
                 title = "large_file_destination",
