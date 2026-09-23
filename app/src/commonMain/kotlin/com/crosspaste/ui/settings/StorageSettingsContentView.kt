@@ -91,7 +91,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
         }
 
         item {
-            SizeLimitsCard()
+            SizeLimitsCard(canChooseLargeFileDestination = storagePathManager != null)
         }
 
         item {
@@ -186,12 +186,16 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
 /**
  * The thresholds that decide what enters managed storage in the first place.
  *
- * The large file destination row is always shown, never folded behind the
- * backup size: at 0 MB every file is treated as large, so that is exactly when
- * the destination matters most.
+ * The large file destination row is never folded behind the backup size: at
+ * 0 MB every file is treated as large, so that is exactly when the destination
+ * matters most. It is only offered when [canChooseLargeFileDestination], which
+ * follows the storage path section: a platform whose directory picker cannot
+ * hand back a plain writable filesystem directory (mobile pickers return
+ * SAF or security-scoped URLs) has no [StoragePathManager] either, and its
+ * large files always go to the system Downloads folder.
  */
 @Composable
-private fun SizeLimitsCard() {
+private fun SizeLimitsCard(canChooseLargeFileDestination: Boolean) {
     val appFileChooser = koinInject<AppFileChooser>()
     val configManager = koinInject<CommonConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
@@ -253,49 +257,51 @@ private fun SizeLimitsCard() {
                 }
             },
         )
-        HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-        SettingListItem(
-            title = "large_file_destination",
-            subtitleContent = {
-                Text(
-                    text = largeFileDestination.toString(),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            },
-            icon = IconData(MaterialSymbols.Rounded.Download, themeExt.amberIconColor),
-            trailingContent = {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(tiny),
-                ) {
-                    if (config.largeFileDestinationPath.isNotBlank()) {
-                        TextButton(
-                            onClick = {
-                                configManager.updateConfig("largeFileDestinationPath", "")
-                            },
+        if (canChooseLargeFileDestination) {
+            HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+            SettingListItem(
+                title = "large_file_destination",
+                subtitleContent = {
+                    Text(
+                        text = largeFileDestination.toString(),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                },
+                icon = IconData(MaterialSymbols.Rounded.Download, themeExt.amberIconColor),
+                trailingContent = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(tiny),
+                    ) {
+                        if (config.largeFileDestinationPath.isNotBlank()) {
+                            TextButton(
+                                onClick = {
+                                    configManager.updateConfig("largeFileDestinationPath", "")
+                                },
+                                modifier = Modifier.height(xxLarge),
+                                contentPadding = PaddingValues(horizontal = small2X),
+                            ) {
+                                Text(
+                                    text = copywriter.getText("use_default_folder"),
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            }
+                        }
+                        FilledTonalButton(
+                            onClick = chooseLargeFileDestination,
                             modifier = Modifier.height(xxLarge),
                             contentPadding = PaddingValues(horizontal = small2X),
                         ) {
                             Text(
-                                text = copywriter.getText("use_default_folder"),
+                                text = copywriter.getText("change"),
                                 style = MaterialTheme.typography.labelSmall,
                             )
                         }
                     }
-                    FilledTonalButton(
-                        onClick = chooseLargeFileDestination,
-                        modifier = Modifier.height(xxLarge),
-                        contentPadding = PaddingValues(horizontal = small2X),
-                    ) {
-                        Text(
-                            text = copywriter.getText("change"),
-                            style = MaterialTheme.typography.labelSmall,
-                        )
-                    }
-                }
-            },
-        )
+                },
+            )
+        }
     }
 }
