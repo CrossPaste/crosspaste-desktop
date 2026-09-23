@@ -2,7 +2,7 @@ package com.crosspaste.paste
 
 import com.crosspaste.Database
 import com.crosspaste.config.CommonConfigManager
-import com.crosspaste.config.resolveLargeFileDestination
+import com.crosspaste.config.resolveLargeFileDestinationForReceive
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.notification.MessageType
@@ -336,7 +336,7 @@ class PasteReleaseService(
 
         val destinationPath =
             if (writeOutsideStorage) {
-                config.resolveLargeFileDestination().toString()
+                config.resolveLargeFileDestinationForReceive().toString()
             } else {
                 null
             }
