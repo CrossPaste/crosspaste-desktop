@@ -85,11 +85,11 @@ fun PasteItem.clear(
 
 fun PasteItem.bindItem(
     pasteCoordinate: PasteCoordinate,
-    syncToDownload: Boolean = false,
+    destinationPath: String? = null,
 ): PasteItem =
     when (this) {
         is FilesPasteItem -> {
-            val (newBasePath, newRelativePathList) = bindFilePaths(pasteCoordinate, syncToDownload)
+            val (newBasePath, newRelativePathList) = bindFilePaths(pasteCoordinate, destinationPath)
             FilesPasteItem(
                 identifiers = identifiers,
                 count = count,
@@ -102,7 +102,7 @@ fun PasteItem.bindItem(
             )
         }
         is ImagesPasteItem -> {
-            val (newBasePath, newRelativePathList) = bindFilePaths(pasteCoordinate, syncToDownload)
+            val (newBasePath, newRelativePathList) = bindFilePaths(pasteCoordinate, destinationPath)
             ImagesPasteItem(
                 identifiers = identifiers,
                 count = count,
@@ -114,5 +114,5 @@ fun PasteItem.bindItem(
                 extraInfo = extraInfo,
             )
         }
-        else -> this.bind(pasteCoordinate, syncToDownload)
+        else -> this.bind(pasteCoordinate, destinationPath)
     }

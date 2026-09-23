@@ -112,9 +112,13 @@ sealed interface PasteItem {
             extraInfo[MARKETING_PATH]?.jsonPrimitive?.content
         }
 
+    /**
+     * [destinationPath] is the absolute directory received files must be written
+     * to, or null to keep them in managed storage. Only file-bearing items use it.
+     */
     fun bind(
         pasteCoordinate: PasteCoordinate,
-        syncToDownload: Boolean = false,
+        destinationPath: String? = null,
     ): PasteItem = this
 
     fun copy(extraInfo: JsonObject? = null): PasteItem
