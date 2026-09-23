@@ -42,7 +42,7 @@ fun getRootRouteName(dest: NavDestination): String? =
         dest.hasRoute<NearbyDeviceDetail>() -> Devices.NAME
         dest.hasRoute<OCR>() -> Extension.NAME
         dest.hasRoute<MCP>() -> Extension.NAME
-        dest.hasRoute<SourceControl>() -> Extension.NAME
+        dest.hasRoute<SourceControl>() -> Settings.NAME
         dest.hasRoute<Pasteboard>() -> Pasteboard.NAME
         dest.hasRoute<PairingCode>() -> PairingCode.NAME
         dest.hasRoute<Share>() -> Share.NAME

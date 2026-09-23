@@ -26,11 +26,11 @@ fun SettingsContentView() {
         }
 
         item {
-            SectionHeader("advanced", topPadding = medium)
+            SectionHeader("pasteboard", topPadding = medium)
         }
 
         item {
-            AdvancedSettingsContentView()
+            ClipboardSettingsEntryView()
         }
     }
 }

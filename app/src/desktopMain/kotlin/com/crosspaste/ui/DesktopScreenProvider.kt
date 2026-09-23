@@ -47,7 +47,6 @@ import com.crosspaste.ui.paste.PasteImportContentView
 import com.crosspaste.ui.settings.AppearanceSettingsContentView
 import com.crosspaste.ui.settings.DesktopNetworkSettingsContentView
 import com.crosspaste.ui.settings.DesktopPasteboardSettingsContentView
-import com.crosspaste.ui.settings.PasteboardSettingsContentView
 import com.crosspaste.ui.settings.SettingsContentView
 import com.crosspaste.ui.settings.ShortcutKeysContentView
 import com.crosspaste.ui.settings.StoragePathManager
@@ -177,12 +176,6 @@ class DesktopScreenProvider(
                 ) {
                     OCRSettingsScreen()
                 }
-                composable<SourceControl>(
-                    exitTransition = { slideOutRight() },
-                    enterTransition = { slideInLeft() },
-                ) {
-                    SourceControlSettingsScreen()
-                }
             }
             composable<Import> { ImportScreen() }
             composable<PairingCode> { PairingCodeScreen() }
@@ -212,6 +205,12 @@ class DesktopScreenProvider(
                     enterTransition = { slideInLeft() },
                 ) {
                     StorageSettingsScreen()
+                }
+                composable<SourceControl>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
+                ) {
+                    SourceControlSettingsScreen()
                 }
             }
             composable<ShortcutKeys> { ShortcutKeysScreen() }
@@ -414,9 +413,7 @@ class DesktopScreenProvider(
     private fun PasteboardSettingsScreen() {
         DesktopScreenLayout {
             CompositionLocalProvider(LocalSmallSettingItemState provides true) {
-                PasteboardSettingsContentView {
-                    DesktopPasteboardSettingsContentView(platform)
-                }
+                DesktopPasteboardSettingsContentView(platform)
             }
         }
     }
