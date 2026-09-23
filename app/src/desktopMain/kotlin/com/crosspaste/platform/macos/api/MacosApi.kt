@@ -100,6 +100,8 @@ interface MacosApi : Library {
 
     fun setDockIconVisibility(showDockIcon: Int)
 
+    fun setAboutMenuItemTitle(title: String)
+
     fun simulatePasteCommand(
         array: Pointer,
         count: Int,

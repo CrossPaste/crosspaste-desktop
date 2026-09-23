@@ -71,6 +71,11 @@ object MacAppUtils {
         INSTANCE.setDockIconVisibility(if (showDockIcon) 1 else 0)
     }
 
+    /** Retitles the "About <app>" item in the macOS application menu. */
+    fun setAboutMenuItemTitle(title: String) {
+        INSTANCE.setAboutMenuItemTitle(title)
+    }
+
     fun getCurrentActiveAppInfo(): String? = MacosApi.getString(INSTANCE.getCurrentActiveAppInfo())
 
     fun getRunningApplications(): List<Pair<String, String>> {
