@@ -22,7 +22,9 @@ import io.mockk.runs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.job
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -36,6 +38,14 @@ import kotlin.test.assertTrue
 @OptIn(ExperimentalCoroutinesApi::class)
 class GeneralSyncManagerTest {
 
+    private companion object {
+        // The ws tests put the sync handlers on the test dispatcher, which brings
+        // SyncPollingManager's `while (isActive) { delay(...) }` loop onto virtual
+        // time — advanceUntilIdle() would never return. Advance a bounded amount
+        // instead: enough for the handler chain, short of the polling wall clock.
+        const val SMALL_ADVANCE_MS = 100L
+    }
+
     @Test
     fun pairingCredentialType_requiresBothPeersForV3() {
         assertEquals(PairingCredentialType.V3_PIN, selectPairingCredentialType(3, 3))
@@ -43,6 +53,14 @@ class GeneralSyncManagerTest {
         assertEquals(PairingCredentialType.SAS_CODE, selectPairingCredentialType(2, 3))
         assertEquals(PairingCredentialType.QR_BEARER_TOKEN, selectPairingCredentialType(3, null))
     }
+
+    /**
+     * A handler scope on the test dispatcher: a child of [this] so the test's
+     * childScope.cancel() stops the polling loops, but with its own Job so
+     * SyncHandler.cancelScope() still only tears down that one handler.
+     */
+    private fun CoroutineScope.handlerScope(): CoroutineScope =
+        CoroutineScope(coroutineContext + Job(coroutineContext.job))
 
     private fun createMocks(): Mocks =
         Mocks(
@@ -127,9 +145,10 @@ class GeneralSyncManagerTest {
                     syncClientApi = mocks.syncClientApi,
                     wsSessionManager = wsSessionManager,
                     pairingCapabilityFlag = PairingCapabilityFlag(2),
+                    syncHandlerScopeFactory = { childScope.handlerScope() },
                 )
             syncManager.start()
-            advanceUntilIdle()
+            advanceTimeBy(SMALL_ADVANCE_MS)
 
             val wsSession =
                 WsSession(
@@ -139,7 +158,7 @@ class GeneralSyncManagerTest {
                     syncRuntimeInfo.appInstanceId,
                 )
             wsSessionManager.registerSession(syncRuntimeInfo.appInstanceId, wsSession)
-            advanceUntilIdle()
+            advanceTimeBy(SMALL_ADVANCE_MS)
 
             coVerify(exactly = 1) {
                 mocks.syncResolver.emitEvent(
@@ -149,6 +168,7 @@ class GeneralSyncManagerTest {
                     },
                 )
             }
+            childScope.cancel()
         }
 
     @Test
@@ -185,9 +205,10 @@ class GeneralSyncManagerTest {
                     syncClientApi = mocks.syncClientApi,
                     wsSessionManager = wsSessionManager,
                     pairingCapabilityFlag = PairingCapabilityFlag(2),
+                    syncHandlerScopeFactory = { childScope.handlerScope() },
                 )
             syncManager.start()
-            advanceUntilIdle()
+            advanceTimeBy(SMALL_ADVANCE_MS)
 
             // The post-write isConnected re-check must fire even though the
             // opened callback never saw a handler.
@@ -199,6 +220,7 @@ class GeneralSyncManagerTest {
                     },
                 )
             }
+            childScope.cancel()
         }
 
     private fun createTestSyncRuntimeInfo(
