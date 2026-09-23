@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -108,6 +109,7 @@ fun PlatformScope.DeviceRowContent(
  * has no hover. Dark theme keeps the standard ripple.
  */
 @Composable
+@ReadOnlyComposable
 private fun cardRipple(isDark: Boolean): IndicationNodeFactory =
     if (isDark) {
         ripple()
@@ -128,9 +130,10 @@ private fun hoverShadowElevation(
     enabled: Boolean,
     interactionSource: InteractionSource,
 ): Dp {
+    if (!enabled) return zero
     val hovered by interactionSource.collectIsHoveredAsState()
     val pressed by interactionSource.collectIsPressedAsState()
-    val lifted = enabled && hovered && !pressed
+    val lifted = hovered && !pressed
     val elevation by
         animateDpAsState(
             targetValue = if (lifted) tiny4X else zero,
