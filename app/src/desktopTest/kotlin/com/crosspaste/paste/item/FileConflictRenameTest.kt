@@ -146,7 +146,7 @@ class FileConflictRenameTest {
         val pasteData = buildPasteData(pasteAppearItem = filesItem)
         val renameMap = mapOf("doc.pdf" to "doc(1).pdf")
 
-        val updated = applyRenameMapToPasteData(pasteData, renameMap)
+        val updated = pasteData.applyRenameMap(renameMap)
 
         val updatedItem = assertIs<FilesPasteItem>(updated.pasteAppearItem)
         assertEquals(listOf("doc(1).pdf"), updatedItem.relativePathList)
@@ -165,7 +165,7 @@ class FileConflictRenameTest {
             )
         val renameMap = mapOf("data.csv" to "data(1).csv")
 
-        val updated = applyRenameMapToPasteData(pasteData, renameMap)
+        val updated = pasteData.applyRenameMap(renameMap)
 
         // pasteAppearItem (text) unchanged
         assertIs<TextPasteItem>(updated.pasteAppearItem)
@@ -184,27 +184,9 @@ class FileConflictRenameTest {
             )
         val renameMap = mapOf("anything.txt" to "anything(1).txt")
 
-        val updated = applyRenameMapToPasteData(pasteData, renameMap)
+        val updated = pasteData.applyRenameMap(renameMap)
 
         assertEquals(pasteData.pasteAppearItem, updated.pasteAppearItem)
         assertEquals(pasteData.pasteCollection.pasteItems, updated.pasteCollection.pasteItems)
-    }
-
-    // Mirrors PullFileTaskExecutor.applyRenameMapToPasteData (private)
-    private fun applyRenameMapToPasteData(
-        pasteData: PasteData,
-        renameMap: Map<String, String>,
-    ): PasteData {
-        val updatedAppearItem =
-            (pasteData.pasteAppearItem as? PasteFiles)?.applyRenameMap(renameMap) as? PasteItem
-                ?: pasteData.pasteAppearItem
-        val updatedCollectionItems =
-            pasteData.pasteCollection.pasteItems.map { item ->
-                (item as? PasteFiles)?.applyRenameMap(renameMap) as? PasteItem ?: item
-            }
-        return pasteData.copy(
-            pasteAppearItem = updatedAppearItem,
-            pasteCollection = PasteCollection(updatedCollectionItems),
-        )
     }
 }

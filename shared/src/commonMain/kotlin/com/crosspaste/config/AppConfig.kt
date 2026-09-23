@@ -24,10 +24,12 @@ interface AppConfig {
     // MB
     val maxBackupFileSize: Long
 
-    // Received files above maxBackupFileSize land in the system Downloads folder
-    // instead of managed storage. Only affects new receives: each row stores its
-    // own basePath, so existing rows stay where they were written.
-    val saveLargeFilesToDownloads: Boolean
+    // Where received files above maxBackupFileSize are written. Empty means the
+    // system Downloads folder, otherwise an absolute directory the user picked.
+    // Resolve it with AppConfig.resolveLargeFileDestination() rather than reading
+    // the raw string. Only affects new receives: each row stores its own basePath,
+    // so existing rows stay where they were written.
+    val largeFileDestinationPath: String
     val enabledSyncFileSizeLimit: Boolean
     val maxSyncFileSize: Long
 

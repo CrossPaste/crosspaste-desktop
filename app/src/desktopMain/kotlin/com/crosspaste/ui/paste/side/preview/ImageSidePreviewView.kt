@@ -28,8 +28,8 @@ import com.crosspaste.image.ImageHandler
 import com.crosspaste.image.coil.ImageLoaderQualifiers
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteFileCoordinate
+import com.crosspaste.paste.item.externalFolderName
 import com.crosspaste.paste.item.getFilePaths
-import com.crosspaste.paste.item.isInDownloads
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.ImageFileFormat
@@ -65,7 +65,10 @@ fun PasteDataScope.ImageSidePreviewView() {
     val fileLayout = imagePasteItem.basePath to imagePasteItem.relativePathList
 
     val imageCount = remember(pasteData.id, fileLayout) { imagePasteItem.getDirectChildrenCount() }
-    val isInDownloads = remember(pasteData.id, fileLayout) { imagePasteItem.isInDownloads() }
+    val externalFolderName =
+        remember(pasteData.id, fileLayout) {
+            imagePasteItem.externalFolderName(userDataPathProvider)
+        }
 
     var index by remember(pasteData.id) { mutableStateOf(0) }
 
@@ -129,7 +132,7 @@ fun PasteDataScope.ImageSidePreviewView() {
             ImageCountBadge(imageCount)
 
             ImageInfoLabels(
-                isInDownloads = isInDownloads,
+                externalFolderName = externalFolderName,
                 fileFormat = fileFormat,
                 intSize = intSize,
                 fileSize = fileSize,
@@ -155,7 +158,7 @@ private fun BoxScope.ImageCountBadge(imageCount: Long) {
 
 @Composable
 private fun BoxScope.ImageInfoLabels(
-    isInDownloads: Boolean,
+    externalFolderName: String?,
     fileFormat: String,
     intSize: IntSize?,
     fileSize: Long,
@@ -169,8 +172,8 @@ private fun BoxScope.ImageInfoLabels(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(tiny3X),
     ) {
-        if (isInDownloads) {
-            ImageInfoLabel(text = copywriter.getText("in_downloads"))
+        externalFolderName?.let { folderName ->
+            ImageInfoLabel(text = copywriter.getText("in_folder", folderName))
         }
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(tiny3X, Alignment.CenterHorizontally),

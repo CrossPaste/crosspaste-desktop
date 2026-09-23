@@ -6,6 +6,7 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.PasteItemProperties
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
@@ -21,6 +22,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonPrimitive
 import okio.Path.Companion.toOkioPath
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
@@ -56,10 +58,10 @@ class PasteReleaseServicePushTest {
             userDataPathProvider = userDataPathProvider,
         )
 
-    private fun defaultConfigManager(saveLargeFilesToDownloads: Boolean = true): CommonConfigManager {
+    private fun defaultConfigManager(largeFileDestinationPath: String = ""): CommonConfigManager {
         val appConfig = mockk<AppConfig>(relaxed = true)
         every { appConfig.maxBackupFileSize } returns 100L // 100 MB after bytesSize() multiply
-        every { appConfig.saveLargeFilesToDownloads } returns saveLargeFilesToDownloads
+        every { appConfig.largeFileDestinationPath } returns largeFileDestinationPath
         val configManager = mockk<CommonConfigManager>(relaxed = true)
         every { configManager.getCurrentConfig() } returns appConfig
         return configManager
@@ -69,15 +71,11 @@ class PasteReleaseServicePushTest {
      * Build a real [UserDataPathProvider] rooted at [storageRoot]. Required for the
      * happy-path test, which asserts side effects on the real filesystem.
      */
-    private fun realPathProvider(
-        storageRoot: File,
-        saveLargeFilesToDownloads: Boolean = true,
-    ): UserDataPathProvider {
+    private fun realPathProvider(storageRoot: File): UserDataPathProvider {
         val appConfig =
             mockk<AppConfig>(relaxed = true).also {
                 every { it.useDefaultStoragePath } returns true
                 every { it.maxBackupFileSize } returns 100L
-                every { it.saveLargeFilesToDownloads } returns saveLargeFilesToDownloads
             }
         val configManager =
             mockk<CommonConfigManager>(relaxed = true).also {
@@ -179,6 +177,37 @@ class PasteReleaseServicePushTest {
         )
     }
 
+    private fun smallFilePasteData(
+        fileName: String,
+        markedSyncToDownload: Boolean = false,
+    ): PasteData {
+        // Well under the 100 MB backup limit, so it stays in managed storage
+        // unless the sender marked it (drag and drop)
+        val fileSize = 1024L
+        val created =
+            createFilesPasteItem(
+                relativePathList = listOf(fileName),
+                fileInfoTreeMap = mapOf(fileName to SingleFileInfoTree(size = fileSize, hash = "h")),
+            )
+        val filesItem =
+            if (markedSyncToDownload) {
+                created.copy {
+                    put(PasteItemProperties.SYNC_TO_DOWNLOAD, JsonPrimitive(true))
+                }
+            } else {
+                created
+            }
+        return PasteData(
+            appInstanceId = "test-mobile",
+            pasteAppearItem = filesItem,
+            pasteCollection = PasteCollection(emptyList()),
+            pasteType = PasteType.FILE_TYPE.type,
+            source = null,
+            size = fileSize,
+            hash = "h",
+        )
+    }
+
     @Test
     fun releaseRemotePasteDataForPush_routesOversizedFileToDownloadsByDefault() =
         runBlocking {
@@ -199,7 +228,99 @@ class PasteReleaseServicePushTest {
         }
 
     @Test
-    fun releaseRemotePasteDataForPush_keepsOversizedFileInManagedStorageWhenDisabled(
+    fun releaseRemotePasteDataForPush_routesOversizedFileToCustomDestination(
+        @TempDir tempDir: File,
+    ) = runBlocking {
+        val destination = File(tempDir, "big-files").also { it.mkdirs() }
+        val bound = slot<PasteData>()
+        val pasteDao =
+            mockk<PasteDao>(relaxed = true).also {
+                coEvery { it.createPasteData(any(), any()) } returns 7L
+                coEvery { it.updateFilePath(capture(bound)) } returns Unit
+            }
+        val service =
+            newService(
+                pasteDao = pasteDao,
+                commonConfigManager = defaultConfigManager(destination.absolutePath),
+                userDataPathProvider = realPathProvider(File(tempDir, "storage").also { it.mkdirs() }),
+            )
+
+        service.releaseRemotePasteDataForPush(oversizedFilePasteData("big.apk"))
+
+        val files = bound.captured.getPasteItem(PasteFiles::class)
+        assertNotNull(files)
+        assertEquals(destination.absolutePath, files.basePath)
+        assertEquals(listOf("big.apk"), files.relativePathList)
+        assertTrue(
+            File(destination, "big.apk").isFile,
+            "file slot must be pre-allocated in the configured destination",
+        )
+    }
+
+    @Test
+    fun releaseRemotePasteDataForPush_persistsConflictRenameInCustomDestination(
+        @TempDir tempDir: File,
+    ) = runBlocking {
+        val destination =
+            File(tempDir, "big-files").also {
+                it.mkdirs()
+                File(it, "big.apk").writeText("existing-file")
+            }
+        val updates = mutableListOf<PasteData>()
+        val pasteDao =
+            mockk<PasteDao>(relaxed = true).also {
+                coEvery { it.createPasteData(any(), any()) } returns 7L
+                coEvery { it.updateFilePath(capture(updates)) } returns Unit
+            }
+        val service =
+            newService(
+                pasteDao = pasteDao,
+                commonConfigManager = defaultConfigManager(destination.absolutePath),
+                userDataPathProvider = realPathProvider(File(tempDir, "storage").also { it.mkdirs() }),
+            )
+
+        val result = service.releaseRemotePasteDataForPush(oversizedFilePasteData("big.apk"))
+        assertNotNull(result)
+
+        val finalFiles = updates.last().getPasteItem(PasteFiles::class)
+        assertNotNull(finalFiles)
+        assertEquals(destination.absolutePath, finalFiles.basePath)
+        assertEquals(listOf("big(1).apk"), finalFiles.relativePathList)
+        assertTrue(finalFiles.fileInfoTreeMap.containsKey("big(1).apk"))
+        assertTrue(File(destination, "big(1).apk").isFile)
+        assertEquals("existing-file", File(destination, "big.apk").readText())
+    }
+
+    @Test
+    fun releaseRemotePasteDataForPush_routesMarkedFileOutsideStorageEvenUnderTheLimit(
+        @TempDir tempDir: File,
+    ) = runBlocking {
+        val destination = File(tempDir, "big-files").also { it.mkdirs() }
+        val bound = slot<PasteData>()
+        val pasteDao =
+            mockk<PasteDao>(relaxed = true).also {
+                coEvery { it.createPasteData(any(), any()) } returns 7L
+                coEvery { it.updateFilePath(capture(bound)) } returns Unit
+            }
+        val service =
+            newService(
+                pasteDao = pasteDao,
+                commonConfigManager = defaultConfigManager(destination.absolutePath),
+                userDataPathProvider = realPathProvider(File(tempDir, "storage").also { it.mkdirs() }),
+            )
+
+        service.releaseRemotePasteDataForPush(
+            smallFilePasteData("dragged.txt", markedSyncToDownload = true),
+        )
+
+        val files = bound.captured.getPasteItem(PasteFiles::class)
+        assertNotNull(files)
+        assertEquals(destination.absolutePath, files.basePath)
+        assertEquals(listOf("dragged.txt"), files.relativePathList)
+    }
+
+    @Test
+    fun releaseRemotePasteDataForPush_keepsFileUnderTheLimitInManagedStorage(
         @TempDir tempDir: File,
     ) = runBlocking {
         val storage = File(tempDir, "storage").also { it.mkdirs() }
@@ -213,10 +334,10 @@ class PasteReleaseServicePushTest {
         val service =
             newService(
                 pasteDao = pasteDao,
-                commonConfigManager = defaultConfigManager(saveLargeFilesToDownloads = false),
-                userDataPathProvider = realPathProvider(storage, saveLargeFilesToDownloads = false),
+                commonConfigManager = defaultConfigManager(),
+                userDataPathProvider = realPathProvider(storage),
             )
-        val pasteData = oversizedFilePasteData("big.apk")
+        val pasteData = smallFilePasteData("small.txt")
 
         service.releaseRemotePasteDataForPush(pasteData)
 
@@ -227,7 +348,7 @@ class PasteReleaseServicePushTest {
             com.crosspaste.utils.getDateUtils().run {
                 getYMD(epochMillisecondsToLocalDateTime(pasteData.createTime))
             }
-        assertEquals(listOf("test-mobile/$ymd/$newPasteId/big.apk"), files.relativePathList)
+        assertEquals(listOf("test-mobile/$ymd/$newPasteId/small.txt"), files.relativePathList)
         val slotFile =
             storage
                 .toOkioPath()
@@ -235,7 +356,7 @@ class PasteReleaseServicePushTest {
                 .resolve("test-mobile")
                 .resolve(ymd)
                 .resolve(newPasteId.toString())
-                .resolve("big.apk")
+                .resolve("small.txt")
                 .toFile()
         assertTrue(slotFile.isFile, "file slot must be pre-allocated under managed storage")
     }

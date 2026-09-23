@@ -16,10 +16,10 @@ fun PasteCollection.clear(
 
 fun PasteCollection.bindItems(
     pasteCoordinate: PasteCoordinate,
-    syncToDownload: Boolean = false,
+    destinationPath: String? = null,
 ): PasteCollection =
     PasteCollection(
         pasteItems.map {
-            it.bindItem(pasteCoordinate, syncToDownload)
+            it.bindItem(pasteCoordinate, destinationPath)
         },
     )

@@ -65,11 +65,11 @@ data class PasteCollection(
 
     fun bind(
         pasteCoordinate: PasteCoordinate,
-        syncToDownload: Boolean = false,
+        destinationPath: String? = null,
     ): PasteCollection =
         PasteCollection(
             pasteItems.map {
-                it.bind(pasteCoordinate, syncToDownload)
+                it.bind(pasteCoordinate, destinationPath)
             },
         )
 

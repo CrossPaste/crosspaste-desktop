@@ -2,6 +2,7 @@ package com.crosspaste.paste
 
 import com.crosspaste.Database
 import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.config.resolveLargeFileDestinationForReceive
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.notification.MessageType
@@ -10,6 +11,7 @@ import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteItemProperties
 import com.crosspaste.paste.item.PasteItemReader
+import com.crosspaste.paste.item.applyRenameMap
 import com.crosspaste.paste.item.bindItem
 import com.crosspaste.paste.plugin.process.DiscardOversizedNonFilePlugin
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
@@ -306,7 +308,7 @@ class PasteReleaseService(
      * Shared file-paste landing pad for both directions of remote receive:
      * pull ([releaseRemotePasteData]) and push ([releaseRemotePasteDataForPush]).
      *
-     * Creates the LOADING row, computes `syncToDownload`, rebinds the items to the
+     * Creates the LOADING row, resolves the destination directory, rebinds the items to the
      * new PasteCoordinate, and writes the storage paths. Returns the bound
      * PasteData (with the freshly-assigned id) or null when the input has no
      * [PasteFiles] item — defensive guard, file-type pastes should always carry one.
@@ -322,19 +324,29 @@ class PasteReleaseService(
         val config = commonConfigManager.getCurrentConfig()
         val maxBackupFileSize = fileUtils.bytesSize(config.maxBackupFileSize)
 
-        val syncToDownload =
-            (config.saveLargeFilesToDownloads && fileSize > maxBackupFileSize) ||
+        // A file leaves managed storage either because it is larger than the backup
+        // limit or because the sender marked it (drag and drop). Both land in the
+        // configured large-file destination, never in managed storage.
+        val writeOutsideStorage =
+            fileSize > maxBackupFileSize ||
                 pasteData.pasteAppearItem
                     ?.extraInfo
                     ?.get(PasteItemProperties.SYNC_TO_DOWNLOAD)
                     ?.jsonPrimitive
                     ?.booleanOrNull == true
 
+        val destinationPath =
+            if (writeOutsideStorage) {
+                config.resolveLargeFileDestinationForReceive(userDataPathProvider.getUserDataPath()).toString()
+            } else {
+                null
+            }
+
         val pasteCoordinate = pasteData.getPasteCoordinate(id)
         val newPasteAppearItem =
-            pasteData.pasteAppearItem?.bindItem(pasteCoordinate, syncToDownload)
+            pasteData.pasteAppearItem?.bindItem(pasteCoordinate, destinationPath)
         val newPasteCollection =
-            pasteData.pasteCollection.bindItems(pasteCoordinate, syncToDownload)
+            pasteData.pasteCollection.bindItems(pasteCoordinate, destinationPath)
         val newPasteData =
             pasteData.copy(
                 id = id,
@@ -538,12 +550,15 @@ class PasteReleaseService(
                     }
                 val id = newPasteData.id
 
-                val filesIndex =
+                val (filesIndex, renameMap) =
                     buildFilesIndexForReceive(newPasteData, userDataPathProvider, FilePullService.CHUNK_SIZE)
                 if (filesIndex.getChunkCount() <= 0) {
                     logger.warn { "releaseRemotePasteDataForPush: empty filesIndex for pasteId=$id" }
                     pasteDao.markDeletePasteData(id)
                     return@runCatching null
+                }
+                if (renameMap.isNotEmpty()) {
+                    pasteDao.updateFilePath(newPasteData.applyRenameMap(renameMap))
                 }
 
                 taskSubmitter.submit {

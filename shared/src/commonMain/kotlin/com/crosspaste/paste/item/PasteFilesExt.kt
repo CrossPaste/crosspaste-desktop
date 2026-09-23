@@ -1,9 +1,11 @@
 package com.crosspaste.paste.item
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.config.isInside
+import com.crosspaste.paste.PasteCollection
+import com.crosspaste.paste.PasteData
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
-import com.crosspaste.utils.getPlatformUtils
 import okio.Path
 import okio.Path.Companion.toPath
 
@@ -29,22 +31,34 @@ fun PasteFiles.hasExistingFiles(): Boolean {
     }
 }
 
-fun PasteFiles.isInDownloads(): Boolean {
-    val base = basePath ?: return false
-    return base == getPlatformUtils().getSystemDownloadDir().toString()
+/**
+ * Name of the folder a file lives in when it sits outside managed storage, or
+ * null when it lives in managed storage. The folder is read back from the row's
+ * own [PasteFiles.basePath] rather than the current config so existing rows keep
+ * showing the folder they were actually written to.
+ */
+fun PasteFiles.externalFolderName(userDataPathProvider: UserDataPathProvider): String? {
+    val base = basePath?.takeIf { it.isNotBlank() }?.toPath(normalize = true) ?: return null
+    if (isInside(base, userDataPathProvider.getUserDataPath())) {
+        return null
+    }
+    return base.name.ifEmpty { base.toString() }.takeIf { it.isNotEmpty() }
 }
 
+/**
+ * [destinationPath] is the absolute directory the files must be written to, or
+ * null to lay them out under managed storage. A non-null destination is stored as
+ * the row's basePath so the row keeps resolving there even if the setting changes.
+ */
 fun PasteFiles.bindFilePaths(
     pasteCoordinate: PasteCoordinate,
-    syncToDownload: Boolean,
+    destinationPath: String?,
 ): Pair<String?, List<String>> {
     val fileUtils = getFileUtils()
-    val newBasePath =
-        if (syncToDownload) getPlatformUtils().getSystemDownloadDir().toString() else null
     val newRelativePathList =
         relativePathList.map { relativePath ->
             val fileName = relativePath.toPath().name
-            if (syncToDownload) {
+            if (destinationPath != null) {
                 fileName
             } else {
                 fileUtils.createPasteRelativePath(
@@ -53,5 +67,25 @@ fun PasteFiles.bindFilePaths(
                 )
             }
         }
-    return newBasePath to newRelativePathList
+    return destinationPath to newRelativePathList
+}
+
+/**
+ * Propagate conflict-resolved file renames (e.g. `"a.txt"` -> `"a(1).txt"`) into
+ * [PasteData.pasteAppearItem] and [PasteData.pasteCollection] so stored metadata
+ * matches the actual filenames allocated on disk.
+ */
+fun PasteData.applyRenameMap(renameMap: Map<String, String>): PasteData {
+    if (renameMap.isEmpty()) return this
+    val updatedAppearItem =
+        (pasteAppearItem as? PasteFiles)?.applyRenameMap(renameMap) as? PasteItem
+            ?: pasteAppearItem
+    val updatedCollectionItems =
+        pasteCollection.pasteItems.map { item ->
+            (item as? PasteFiles)?.applyRenameMap(renameMap) as? PasteItem ?: item
+        }
+    return copy(
+        pasteAppearItem = updatedAppearItem,
+        pasteCollection = PasteCollection(updatedCollectionItems),
+    )
 }

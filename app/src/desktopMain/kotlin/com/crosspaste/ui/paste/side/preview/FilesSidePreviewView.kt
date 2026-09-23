@@ -17,8 +17,8 @@ import androidx.compose.ui.Modifier
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteFileCoordinate
+import com.crosspaste.paste.item.externalFolderName
 import com.crosspaste.paste.item.getFilePaths
-import com.crosspaste.paste.item.isInDownloads
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.MultiFileIcon
 import com.crosspaste.ui.paste.FileBottomSolid
@@ -59,7 +59,10 @@ fun PasteDataScope.FilesSidePreviewView() {
         return
     }
 
-    val isInDownloads = remember(pasteData.id, fileLayout) { filesPasteItem.isInDownloads() }
+    val externalFolderName =
+        remember(pasteData.id, fileLayout) {
+            filesPasteItem.externalFolderName(userDataPathProvider)
+        }
     val singleVideoPath = rememberSingleVideoPath(filePaths, fileCount)
 
     val fileDisplayInfo by produceState<FileDisplayInfo?>(
@@ -78,7 +81,7 @@ fun PasteDataScope.FilesSidePreviewView() {
             FilesPreviewBottomBar(
                 copywriter = copywriter,
                 fileDisplayInfo = fileDisplayInfo,
-                isInDownloads = isInDownloads,
+                externalFolderName = externalFolderName,
             )
         },
     ) {
@@ -105,11 +108,11 @@ private fun rememberSingleVideoPath(
 private fun FilesPreviewBottomBar(
     copywriter: GlobalCopywriter,
     fileDisplayInfo: FileDisplayInfo?,
-    isInDownloads: Boolean,
+    externalFolderName: String?,
 ) {
     val subtitle =
         listOfNotNull(
-            if (isInDownloads) copywriter.getText("in_downloads") else null,
+            externalFolderName?.let { copywriter.getText("in_folder", it) },
             fileDisplayInfo?.subtitle?.takeIf { it.isNotEmpty() },
         ).joinToString(" · ")
     FileBottomSolid(
