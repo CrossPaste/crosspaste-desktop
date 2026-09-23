@@ -27,6 +27,7 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Dock
 import com.composables.icons.materialsymbols.rounded.Height
 import com.composables.icons.materialsymbols.rounded.Photo_size_select_small
+import com.composables.icons.materialsymbols.rounded.Rocket_launch
 import com.composables.icons.materialsymbols.rounded.Smart_button
 import com.crosspaste.app.DesktopAppSize
 import com.crosspaste.app.DesktopAppSize.Companion.MAX_SEARCH_WINDOW_HEIGHT
@@ -91,7 +92,25 @@ fun AppearanceSettingsContentView() {
         verticalArrangement = Arrangement.spacedBy(tiny),
     ) {
         item {
-            SectionHeader("search_window")
+            SettingSectionCard {
+                LanguageSettingItemView()
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                ThemeSettingItem()
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                FontSettingItemView()
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListSwitchItem(
+                    title = "launch_at_startup",
+                    icon = IconData(MaterialSymbols.Rounded.Rocket_launch, themeExt.roseIconColor),
+                    checked = config.enableAutoStartUp,
+                ) {
+                    configManager.updateConfig("enableAutoStartUp", it)
+                }
+            }
+        }
+
+        item {
+            SectionHeader("search_window", topPadding = medium)
         }
 
         item {
