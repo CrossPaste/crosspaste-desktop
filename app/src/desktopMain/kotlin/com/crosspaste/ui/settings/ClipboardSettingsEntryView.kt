@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Content_paste
 import com.composables.icons.materialsymbols.rounded.Storage
-import com.composables.icons.materialsymbols.rounded.Wifi
+import com.composables.icons.materialsymbols.rounded.Sync
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.NetworkSettings
@@ -17,8 +17,12 @@ import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
 
+/**
+ * The three stages a clipboard item goes through, in order: what is recorded,
+ * what is synced to other devices, and how long it is kept.
+ */
 @Composable
-fun AdvancedSettingsContentView() {
+fun ClipboardSettingsEntryView() {
     val navigationManager = koinInject<NavigationManager>()
     val themeExt = LocalThemeExtState.current
     SettingSectionCard {
@@ -33,7 +37,7 @@ fun AdvancedSettingsContentView() {
         SettingListItem(
             title = "network_settings",
             subtitle = "network_settings_desc",
-            icon = IconData(MaterialSymbols.Rounded.Wifi, themeExt.greenIconColor),
+            icon = IconData(MaterialSymbols.Rounded.Sync, themeExt.greenIconColor),
         ) {
             navigationManager.navigate(NetworkSettings)
         }

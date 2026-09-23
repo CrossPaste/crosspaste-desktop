@@ -91,15 +91,7 @@ fun AppearanceSettingsContentView() {
         verticalArrangement = Arrangement.spacedBy(tiny),
     ) {
         item {
-            SettingSectionCard {
-                ThemeSettingItem()
-                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-                FontSettingItemView()
-            }
-        }
-
-        item {
-            SectionHeader("search_window", topPadding = medium)
+            SectionHeader("search_window")
         }
 
         item {

@@ -115,7 +115,11 @@ class MenuHelper(
             title = { copywriter -> copywriter.getText("shortcut_keys") },
             action = {
                 mainCoroutineDispatcher.launch(CoroutineName("Open shortcut keys")) {
-                    trayMenuAction(ShortcutKeys)
+                    // Shortcuts is a Settings sub-page: keep Settings under it so the
+                    // back arrow works and the sidebar highlights the right entry
+                    navigationManager.navigateAndClearStack(Settings)
+                    navigationManager.navigate(ShortcutKeys)
+                    appWindowManager.showMainWindow(WindowTrigger.MENU)
                 }
             },
         )

@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Info
+import com.composables.icons.materialsymbols.rounded.Keyboard
 import com.composables.icons.materialsymbols.rounded.Palette
 import com.composables.icons.materialsymbols.rounded.Rocket_launch
 import com.crosspaste.app.AppInfo
@@ -17,6 +18,7 @@ import com.crosspaste.ui.About
 import com.crosspaste.ui.AppearanceSettings
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.NavigationManager
+import com.crosspaste.ui.ShortcutKeys
 import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import org.koin.compose.koinInject
@@ -33,6 +35,18 @@ fun MainSettingsContentView() {
     SettingSectionCard {
         LanguageSettingItemView()
         HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+        ThemeSettingItem()
+        HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+        FontSettingItemView()
+        HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+        SettingListSwitchItem(
+            title = "launch_at_startup",
+            icon = IconData(MaterialSymbols.Rounded.Rocket_launch, themeExt.roseIconColor),
+            checked = config.enableAutoStartUp,
+        ) {
+            configManager.updateConfig("enableAutoStartUp", it)
+        }
+        HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
         SettingListItem(
             title = "appearance_settings",
             subtitle = "appearance_settings_desc",
@@ -41,12 +55,11 @@ fun MainSettingsContentView() {
             navigationManager.navigate(AppearanceSettings)
         }
         HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-        SettingListSwitchItem(
-            title = "launch_at_startup",
-            icon = IconData(MaterialSymbols.Rounded.Rocket_launch, themeExt.roseIconColor),
-            checked = config.enableAutoStartUp,
+        SettingListItem(
+            title = "shortcut_keys",
+            icon = IconData(MaterialSymbols.Rounded.Keyboard, themeExt.cyanIconColor),
         ) {
-            configManager.updateConfig("enableAutoStartUp", it)
+            navigationManager.navigate(ShortcutKeys)
         }
         HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
         SettingListItem(

@@ -95,6 +95,10 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
         verticalArrangement = Arrangement.spacedBy(tiny),
     ) {
         item {
+            SectionHeader("local_devices")
+        }
+
+        item {
             SettingSectionCard {
                 SettingListSwitchItem(
                     title = "allow_discovery_by_new_devices",
@@ -208,18 +212,20 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                 ) { newEnabledSyncFileSizeLimit ->
                     configManager.updateConfig("enabledSyncFileSizeLimit", newEnabledSyncFileSizeLimit)
                 }
-                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
-                SettingListItem(
-                    title = "max_sync_file_size",
-                    icon = IconData(MaterialSymbols.Rounded.Docs, themeExt.redIconColor),
-                    trailingContent = {
-                        Counter(defaultValue = config.maxSyncFileSize, unit = "MB", rule = {
-                            it >= 0
-                        }) { currentMaxSyncFileSize ->
-                            configManager.updateConfig("maxSyncFileSize", currentMaxSyncFileSize)
-                        }
-                    },
-                )
+                DependentSettings(visible = config.enabledSyncFileSizeLimit) {
+                    HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                    SettingListItem(
+                        title = "max_sync_file_size",
+                        icon = IconData(MaterialSymbols.Rounded.Docs, themeExt.redIconColor),
+                        trailingContent = {
+                            Counter(defaultValue = config.maxSyncFileSize, unit = "MB", rule = {
+                                it >= 0
+                            }) { currentMaxSyncFileSize ->
+                                configManager.updateConfig("maxSyncFileSize", currentMaxSyncFileSize)
+                            }
+                        },
+                    )
+                }
                 syncExtContent()
             }
         }

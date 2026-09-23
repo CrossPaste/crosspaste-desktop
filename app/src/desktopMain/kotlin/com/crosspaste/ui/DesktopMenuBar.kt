@@ -67,7 +67,10 @@ fun FrameWindowScope.DesktopMenuBar() {
         Menu(copywriter.getText("help")) {
             Item(copywriter.getText("shortcut_keys")) {
                 scope.launch {
-                    navigateManage.navigateAndClearStack(ShortcutKeys)
+                    // Shortcuts is a Settings sub-page: keep Settings under it so the
+                    // back arrow works and the sidebar highlights the right entry
+                    navigateManage.navigateAndClearStack(Settings)
+                    navigateManage.navigate(ShortcutKeys)
                     appWindowManager.showMainWindow(WindowTrigger.MENU)
                 }
             }
