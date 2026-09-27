@@ -11,7 +11,7 @@ import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinUser
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Win32 context menu drawn by the system, for windows that cannot use AWT's PopupMenu.
@@ -48,7 +48,10 @@ object WindowsPopupMenu {
         val dispatch: (() -> Unit) -> Unit,
     )
 
-    private val requests = ConcurrentLinkedQueue<Request>()
+    private val pendingRequest = AtomicReference<Request?>()
+
+    @Volatile
+    private var isTracking = false
 
     // Held in a field so the JNA callback stub outlives the window that uses it
     private val wndProc =
@@ -66,7 +69,7 @@ object WindowsPopupMenu {
         entries: List<NativeMenuEntry>,
         dispatch: (() -> Unit) -> Unit,
     ) {
-        requests.add(Request(entries, dispatch))
+        pendingRequest.set(Request(entries, dispatch))
         user32.PostMessage(owner, WM_SHOW_MENU, WPARAM(0), LPARAM(0))
     }
 
@@ -101,7 +104,19 @@ object WindowsPopupMenu {
         lParam: LPARAM?,
     ): Int {
         if (uMsg == WM_SHOW_MENU && hWnd != null) {
-            requests.poll()?.let { track(hWnd, it) }
+            if (isTracking) {
+                user32.EndMenu()
+                user32.PostMessage(hWnd, WM_SHOW_MENU, WPARAM(0), LPARAM(0))
+                return 0
+            }
+            pendingRequest.getAndSet(null)?.let { request ->
+                isTracking = true
+                try {
+                    track(hWnd, request)
+                } finally {
+                    isTracking = false
+                }
+            }
             return 0
         }
         return user32.DefWindowProc(hWnd, uMsg, wParam, lParam).toInt()
@@ -117,6 +132,7 @@ object WindowsPopupMenu {
             return
         }
         val actions = ArrayList<() -> Unit>()
+        val prevForeground = user32.GetForegroundWindow()
         val picked =
             try {
                 request.entries.forEach { entry ->
@@ -139,6 +155,13 @@ object WindowsPopupMenu {
             } finally {
                 user32.DestroyMenu(menu)
             }
+        if (picked == 0 &&
+            pendingRequest.get() == null &&
+            prevForeground != null &&
+            user32.GetForegroundWindow() == hwnd
+        ) {
+            user32.SetForegroundWindow(prevForeground)
+        }
         actions.getOrNull(picked - 1)?.let(request.dispatch)
     }
 }

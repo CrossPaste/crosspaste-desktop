@@ -68,9 +68,16 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
         }
 
         val window = this.window
-        val popupMenu = remember(window) { PopupMenu().also { window.add(it) } }
+        val popupMenu =
+            if (isWindows) {
+                null
+            } else {
+                remember(window) { PopupMenu().also { window.add(it) } }
+            }
         DisposableEffect(window) {
-            onDispose { window.remove(popupMenu) }
+            onDispose {
+                popupMenu?.let { window.remove(it) }
+            }
         }
 
         // Built on every open so the labels follow the current language
@@ -99,15 +106,16 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
                 }
                 return
             }
-            popupMenu.removeAll()
+            val menu = popupMenu ?: return
+            menu.removeAll()
             menuEntries().forEach { entry ->
                 when (entry) {
                     is NativeMenuEntry.Item ->
-                        popupMenu.add(MenuItem(entry.label).apply { addActionListener { entry.action() } })
-                    NativeMenuEntry.Separator -> popupMenu.addSeparator()
+                        menu.add(MenuItem(entry.label).apply { addActionListener { entry.action() } })
+                    NativeMenuEntry.Separator -> menu.addSeparator()
                 }
             }
-            popupMenu.show(window, x, y)
+            menu.show(window, x, y)
         }
 
         PastePanelWindowContext {

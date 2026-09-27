@@ -111,6 +111,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
 
     fun CreatePopupMenu(): HMENU?
 
+    fun EndMenu(): Boolean
+
     fun AppendMenu(
         hMenu: HMENU,
         uFlags: Int,
