@@ -9,10 +9,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.painter.Painter
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.platform.Platform
-import com.crosspaste.platform.windows.WindowsVersionHelper
 import com.crosspaste.ui.DesktopContext.PastePanelWindowContext
 import com.crosspaste.ui.model.PastePanelViewModel
 import com.crosspaste.ui.paste.panel.PastePanelContent
+import com.crosspaste.ui.paste.panel.PastePanelSurface
 import com.crosspaste.ui.theme.ThemeDetector
 import org.koin.compose.koinInject
 
@@ -35,11 +35,18 @@ fun PastePanelWindow(windowIcon: Painter?) {
     val isDarkTheme = themeConfig.resolveIsDark(isSystemInDarkTheme())
 
     val isMac = remember { platform.isMacos() }
-    val isWindowsAndSupportBlurEffect =
-        remember {
-            platform.isWindows() && WindowsVersionHelper.isWindows11_22H2OrGreater
+    val isWindows = remember { platform.isWindows() }
+
+    // macOS blurs the desktop behind the window itself. Windows gets a per-pixel-alpha
+    // window only so the panel can paint its own rounded card: DWM never rounds a layered
+    // window and its system backdrop would fill the whole rectangle behind the corners,
+    // so neither the corner preference nor the blur effect is usable here.
+    val surface =
+        when {
+            isMac -> PastePanelSurface.ACRYLIC
+            isWindows -> PastePanelSurface.CARD
+            else -> PastePanelSurface.PLAIN
         }
-    val transparent = isMac || isWindowsAndSupportBlurEffect
 
     LaunchedEffect(windowInfo.show) {
         if (windowInfo.show) {
@@ -51,7 +58,7 @@ fun PastePanelWindow(windowIcon: Painter?) {
         visible = windowInfo.show,
         state = windowInfo.state,
         title = appWindowManager.pastePanelWindowTitle,
-        transparent = transparent,
+        transparent = surface != PastePanelSurface.PLAIN,
         onClosing = { appWindowManager.hidePastePanelWindow() },
     ) {
         if (isMac) {
@@ -59,15 +66,10 @@ fun PastePanelWindow(windowIcon: Painter?) {
                 window = this.window,
                 isDark = isDarkTheme,
             )
-        } else if (isWindowsAndSupportBlurEffect) {
-            WindowsBlurEffect(
-                window = this.window,
-                isDark = isDarkTheme,
-            )
         }
 
         PastePanelWindowContext {
-            PastePanelContent(transparent = transparent)
+            PastePanelContent(surface = surface)
         }
     }
 }
