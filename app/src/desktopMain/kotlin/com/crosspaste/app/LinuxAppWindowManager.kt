@@ -181,9 +181,7 @@ class LinuxAppWindowManager(
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
-        if (!bringToBack(preparePaste())) {
-            return
-        }
+        bringToBack(preparePaste())
         hideMainWindow()
     }
 
@@ -205,9 +203,7 @@ class LinuxAppWindowManager(
         preparePaste: suspend (Int) -> Boolean,
     ) {
         logger.info { "unActive search window" }
-        if (!bringToBack(preparePaste(0))) {
-            return
-        }
+        bringToBack(preparePaste(0))
         for (i in 1 until size) {
             delay(1000.milliseconds)
             if (preparePaste(i)) {
@@ -217,29 +213,26 @@ class LinuxAppWindowManager(
         hideSearchWindow()
     }
 
-    /**
-     * @return false when the window has to stay up because the paste could not be
-     *   delivered and the hint telling the user to paste manually needs a surface
-     *   to be read on.
-     */
-    private suspend fun bringToBack(toPaste: Boolean): Boolean {
+    private suspend fun bringToBack(toPaste: Boolean) {
         val prevAppInfo = prevLinuxAppInfo.value
-        if (toPaste && prevAppInfo == null) {
-            notifyManualPasteRequired()
-            return false
-        }
         if (toPaste) {
+            if (prevAppInfo == null) {
+                if (isWaylandSession) {
+                    notifyManualPasteRequired()
+                }
+                return
+            }
             bringToBack(prevAppInfo, pasteKeyCodes())
         } else {
             bringToBack(prevAppInfo)
         }
-        return true
     }
 
     override suspend fun toPaste() {
-        // The panel never takes the focus away from the target app, so the app to
-        // paste into is whichever one holds the focus right now.
-        if (X11Api.getActiveWindow(requireXInputFocus = isWaylandSession) == null) {
+        // XTest delivers to whatever holds the X input focus, so an X11 session needs
+        // no target of its own. In a Wayland session that focus is withdrawn while a
+        // native Wayland window is focused, and injecting would hit a stale X window.
+        if (isWaylandSession && X11Api.getActiveWindow(requireXInputFocus = true) == null) {
             notifyManualPasteRequired()
             return
         }

@@ -3,15 +3,22 @@ package com.crosspaste.notification
 import com.crosspaste.i18n.GlobalCopywriter
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class NotificationManagerTest {
 
     private class TestNotificationManager(
         copywriter: GlobalCopywriter,
     ) : NotificationManager(copywriter) {
+        override val expiryGrace: Duration = Duration.ZERO
         val sentNotifications = mutableListOf<Message>()
         private var nextId = 0
 
@@ -85,4 +92,21 @@ class NotificationManagerTest {
         assertTrue(id2 > id1)
         assertTrue(id3 > id2)
     }
+
+    @Test
+    fun `pushNotification auto-removes expired notification after duration`() =
+        runBlocking {
+            val manager = TestNotificationManager(createCopywriter())
+            val msg = Message(messageId = 1, title = "Expires", messageType = MessageType.Info, duration = 20)
+            manager.pushNotification(msg)
+            assertEquals(1, manager.notificationList.value.size)
+            // Expiry runs on the global io dispatcher, out of reach of virtual time,
+            // so poll it briefly instead of sleeping for a fixed span.
+            withTimeout(1.seconds) {
+                while (manager.notificationList.value.isNotEmpty()) {
+                    delay(10.milliseconds)
+                }
+            }
+            assertTrue(manager.notificationList.value.isEmpty())
+        }
 }

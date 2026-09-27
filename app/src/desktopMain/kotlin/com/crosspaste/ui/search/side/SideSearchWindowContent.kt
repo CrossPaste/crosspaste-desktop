@@ -51,8 +51,8 @@ fun SideSearchWindowContent() {
             SideSearchInputView()
             SidePasteboardContentView()
         }
-        // The window stays up when a paste cannot be delivered, so that hint has
-        // somewhere to show.
+        // Mount NotificationHost without window decoration offset so any notifications
+        // sent while the search window is open are properly displayed.
         NotificationHost(subtractWindowDecoration = false)
     }
 }
