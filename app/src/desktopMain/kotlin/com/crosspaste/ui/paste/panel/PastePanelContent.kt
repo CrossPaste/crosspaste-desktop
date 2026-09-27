@@ -3,6 +3,7 @@ package com.crosspaste.ui.paste.panel
 import androidx.compose.foundation.ScrollbarStyle
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -52,6 +53,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny4X
+import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.zeroRoundedCornerShape
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
@@ -62,8 +64,18 @@ import kotlin.time.Duration.Companion.milliseconds
 
 private val SCROLLBAR_LINGER = 1000.milliseconds
 
+private const val ACRYLIC_TINT_ALPHA = 0.6f
+
+/**
+ * How the panel paints its own background. [ACRYLIC] is a translucent, rounded tint over
+ * the window blur macOS draws behind it; [CARD] is an opaque rounded card with a hairline
+ * border, for a transparent window that gets no system blur or corner rounding (Windows);
+ * [PLAIN] is opaque and square, for an ordinary window (Linux).
+ */
+enum class PastePanelSurface { ACRYLIC, CARD, PLAIN }
+
 @Composable
-fun FrameWindowScope.PastePanelContent(transparent: Boolean) {
+fun FrameWindowScope.PastePanelContent(surface: PastePanelSurface) {
     val viewModel = koinInject<PastePanelViewModel>()
 
     val items by viewModel.items.collectAsState()
@@ -100,19 +112,26 @@ fun FrameWindowScope.PastePanelContent(transparent: Boolean) {
     }
 
     val background =
-        if (transparent) {
-            AppUIColors.generalBackground.copy(alpha = 0.6f)
+        if (surface == PastePanelSurface.ACRYLIC) {
+            AppUIColors.generalBackground.copy(alpha = ACRYLIC_TINT_ALPHA)
         } else {
             AppUIColors.generalBackground
         }
-    val shape = if (transparent) small2XRoundedCornerShape else zeroRoundedCornerShape
+    val shape = if (surface == PastePanelSurface.PLAIN) zeroRoundedCornerShape else small2XRoundedCornerShape
+    val borderModifier =
+        if (surface == PastePanelSurface.CARD) {
+            Modifier.border(tiny5X, AppUIColors.sectionCardBorder, shape)
+        } else {
+            Modifier
+        }
 
     Box(
         modifier =
             Modifier
                 .fillMaxSize()
                 .clip(shape)
-                .background(background),
+                .background(background)
+                .then(borderModifier),
     ) {
         if (items.isEmpty()) {
             PasteEmptyScreenView()

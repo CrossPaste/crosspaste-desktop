@@ -2,6 +2,7 @@ package com.crosspaste.platform.windows.api
 
 import com.sun.jna.Native
 import com.sun.jna.Pointer
+import com.sun.jna.platform.win32.WinDef.HMENU
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
 import com.sun.jna.platform.win32.WinDef.WPARAM
@@ -108,6 +109,30 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         nMaxCount: Int,
     ): Int
 
+    fun CreatePopupMenu(): HMENU?
+
+    fun EndMenu(): Boolean
+
+    fun AppendMenu(
+        hMenu: HMENU,
+        uFlags: Int,
+        uIDNewItem: Int,
+        lpNewItem: String?,
+    ): Boolean
+
+    /** With [TPM_RETURNCMD] the result is the chosen item id, 0 when the menu was dismissed. */
+    fun TrackPopupMenu(
+        hMenu: HMENU,
+        uFlags: Int,
+        x: Int,
+        y: Int,
+        nReserved: Int,
+        hWnd: HWND,
+        prcRect: Pointer?,
+    ): Int
+
+    fun DestroyMenu(hMenu: HMENU): Boolean
+
     companion object {
         val INSTANCE =
             Native.load(
@@ -116,7 +141,9 @@ interface User32 : com.sun.jna.platform.win32.User32 {
                 DEFAULT_OPTIONS + mapOf("allow-get-last-error" to true),
             ) as User32
         const val GWL_WNDPROC = -4
+        const val WM_NULL = 0x0000
         const val WM_DESTROY = 0x0002
+        const val WM_USER = 0x0400
         const val WM_RENDERFORMAT = 0x0305
         const val WM_RENDERALLFORMATS = 0x0306
         const val WM_CLIPBOARDUPDATE = 0x031D
@@ -128,6 +155,17 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         const val PM_REMOVE = 0x0001
         const val PM_NOYIELD = 0x0002
         const val QS_KEY = 0x0001
+
+        /**
+         * Menu flags
+         */
+        const val MF_STRING = 0x0000
+        const val MF_SEPARATOR = 0x0800
+        const val TPM_LEFTALIGN = 0x0000
+        const val TPM_TOPALIGN = 0x0000
+        const val TPM_RIGHTBUTTON = 0x0002
+        const val TPM_NONOTIFY = 0x0080
+        const val TPM_RETURNCMD = 0x0100
         const val QS_MOUSEMOVE = 0x0002
         const val QS_MOUSEBUTTON = 0x0004
         const val QS_POSTMESSAGE = 0x0008
