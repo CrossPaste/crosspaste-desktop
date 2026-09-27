@@ -18,6 +18,7 @@ icons-material-symbols = "2.2.1"
 icu4j = "78.3"
 imageio = "3.15.0"
 jmdns = "3.6.3"
+dbus-java = "5.2.2"
 jna = "5.19.1"
 jnativehook = "2.2.2"
 koin = "4.2.2"
@@ -81,6 +82,8 @@ icu4j = { module = "com.ibm.icu:icu4j", version.ref = "icu4j" }
 imageio-core = { module = "com.twelvemonkeys.imageio:imageio-core", version.ref = "imageio" }
 imageio-jpeg = { module = "com.twelvemonkeys.imageio:imageio-jpeg", version.ref = "imageio" }
 jmdns = { module = "org.jmdns:jmdns", version.ref = "jmdns" }
+dbus-java-core = { module = "com.github.hypfvieh:dbus-java-core", version.ref = "dbus-java" }
+dbus-java-transport-native-unixsocket = { module = "com.github.hypfvieh:dbus-java-transport-native-unixsocket", version.ref = "dbus-java" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 jnativehook = { module = "com.github.kwhat:jnativehook", version.ref = "jnativehook" }

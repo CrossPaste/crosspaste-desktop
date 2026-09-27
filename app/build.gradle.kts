@@ -131,6 +131,8 @@ kotlin {
             implementation(libs.imageio.core)
             implementation(libs.imageio.jpeg)
             implementation(libs.jmdns)
+            implementation(libs.dbus.java.core)
+            implementation(libs.dbus.java.transport.native.unixsocket)
             implementation(libs.jna)
             implementation(libs.jna.platform)
             implementation(libs.jnativehook)

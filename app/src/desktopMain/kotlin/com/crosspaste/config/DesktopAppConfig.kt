@@ -83,6 +83,9 @@ data class DesktopAppConfig(
     // Highest app version whose changelog the user has already seen. Empty until seeded on
     // first launch; drives the highlight badge on the changelog menu entry after an upgrade.
     val lastSeenChangelogVersion: String = "",
+    // Linux/Wayland: single-use token handed back by the RemoteDesktop portal so the
+    // paste-injection session can be restored without prompting the user again.
+    val linuxRemoteDesktopRestoreToken: String = "",
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -212,6 +215,12 @@ data class DesktopAppConfig(
                     toString(value)
                 } else {
                     lastSeenChangelogVersion
+                },
+            linuxRemoteDesktopRestoreToken =
+                if (key == "linuxRemoteDesktopRestoreToken") {
+                    toString(value)
+                } else {
+                    linuxRemoteDesktopRestoreToken
                 },
         )
 }

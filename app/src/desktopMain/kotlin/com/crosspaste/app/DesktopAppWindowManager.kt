@@ -57,6 +57,7 @@ fun getDesktopAppWindowManager(
         LinuxAppWindowManager(
             appInfo,
             appSize,
+            lazyConfigManager,
             lazyShortcutKeys,
             lazyShortcutKeysAction,
             lazyShortcutKeysListener,

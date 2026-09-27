@@ -50,6 +50,7 @@ class DesktopAppConfigTest {
         assertEquals("", config.largeFileDestinationPath)
         assertFalse(config.legacySoftwareCompatibility)
         assertTrue(config.pastePrimaryTypeOnly)
+        assertEquals("", config.linuxRemoteDesktopRestoreToken)
     }
 
     @Test
@@ -244,5 +245,23 @@ class DesktopAppConfigTest {
         assertEquals(9999, updated.port)
         assertEquals("de", updated.language)
         assertTrue(updated.enableEncryptSync)
+    }
+
+    @Test
+    fun `copy with string key updates linuxRemoteDesktopRestoreToken`() {
+        val config: AppConfig = createDefaultConfig()
+        val updated = config.copy("linuxRemoteDesktopRestoreToken", "token_123") as DesktopAppConfig
+        assertEquals("token_123", updated.linuxRemoteDesktopRestoreToken)
+    }
+
+    @Test
+    fun `legacy config without linuxRemoteDesktopRestoreToken uses default`() {
+        val config =
+            getJsonUtils().JSON.decodeFromString(
+                DesktopAppConfig.serializer(),
+                """{"language":"zh"}""",
+            )
+
+        assertEquals("", config.linuxRemoteDesktopRestoreToken)
     }
 }

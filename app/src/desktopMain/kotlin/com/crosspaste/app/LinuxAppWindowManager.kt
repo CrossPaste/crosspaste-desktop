@@ -1,6 +1,7 @@
 package com.crosspaste.app
 
 import androidx.compose.ui.awt.ComposeWindow
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
@@ -11,6 +12,8 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.linux.LinuxActiveAppResolver
 import com.crosspaste.platform.linux.LinuxDesktopAppIcon
 import com.crosspaste.platform.linux.LinuxDesktopEntry
+import com.crosspaste.platform.linux.api.PortalHandles
+import com.crosspaste.platform.linux.api.RemoteDesktopPortalKeyboard
 import com.crosspaste.platform.linux.api.X11Api
 import com.crosspaste.platform.linux.api.X11Api.Companion.bringToBack
 import com.sun.jna.NativeLong
@@ -28,6 +31,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class LinuxAppWindowManager(
     private val appInfo: AppInfo,
     appSize: DesktopAppSize,
+    private val lazyConfigManager: Lazy<DesktopConfigManager>,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
     private val lazyShortcutKeysListener: Lazy<ShortcutKeysListener>,
@@ -43,8 +47,15 @@ class LinuxAppWindowManager(
     private val activeAppResolver = LinuxActiveAppResolver.detect()
 
     // Paste-back targets the X11 focus, so outside an X11 session the answer can
-    // be a stale one. See [notifyManualPasteRequired].
+    // be a stale one. See [pasteThroughPortal].
     private val isWaylandSession = LinuxActiveAppResolver.isWaylandSession()
+
+    private val portalKeyboard by lazy {
+        RemoteDesktopPortalKeyboard(
+            loadRestoreToken = { lazyConfigManager.value.config.value.linuxRemoteDesktopRestoreToken },
+            saveRestoreToken = { lazyConfigManager.value.updateConfig("linuxRemoteDesktopRestoreToken", it) },
+        )
+    }
 
     private val classNameSet: MutableSet<String> = ConcurrentSet()
 
@@ -163,7 +174,7 @@ class LinuxAppWindowManager(
     }
 
     override fun stopWindowService() {
-        // do nothing
+        portalKeyboard.close()
     }
 
     override fun saveCurrentActiveAppInfo() {
@@ -181,7 +192,15 @@ class LinuxAppWindowManager(
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
-        bringToBack(preparePaste())
+        val toPaste = preparePaste()
+        if (toPaste && needsPortalPaste()) {
+            // The main window holds the focus, so it has to be gone before the keystroke.
+            hideMainWindow()
+            delay(FOCUS_RETURN_DELAY)
+            pasteThroughPortal()
+            return
+        }
+        bringToBack(toPaste)
         hideMainWindow()
     }
 
@@ -203,7 +222,24 @@ class LinuxAppWindowManager(
         preparePaste: suspend (Int) -> Boolean,
     ) {
         logger.info { "unActive search window" }
-        bringToBack(preparePaste(0))
+        val toPaste = preparePaste(0)
+        if (needsPortalPaste()) {
+            hideSearchWindow()
+            if (toPaste) {
+                delay(FOCUS_RETURN_DELAY)
+                if (!pasteThroughPortal()) {
+                    return
+                }
+            }
+            for (i in 1 until size) {
+                delay(1000.milliseconds)
+                if (preparePaste(i)) {
+                    pasteThroughPortal()
+                }
+            }
+            return
+        }
+        bringToBack(toPaste)
         for (i in 1 until size) {
             delay(1000.milliseconds)
             if (preparePaste(i)) {
@@ -213,15 +249,15 @@ class LinuxAppWindowManager(
         hideSearchWindow()
     }
 
+    /**
+     * A Wayland session with no X11 window to hand the paste back to: the app that
+     * had the focus is a native Wayland window, out of XTest's reach.
+     */
+    private fun needsPortalPaste(): Boolean = isWaylandSession && prevLinuxAppInfo.value == null
+
     private suspend fun bringToBack(toPaste: Boolean) {
-        val prevAppInfo = prevLinuxAppInfo.value
+        val prevAppInfo = prevLinuxAppInfo.value ?: return
         if (toPaste) {
-            if (prevAppInfo == null) {
-                if (isWaylandSession) {
-                    notifyManualPasteRequired()
-                }
-                return
-            }
             bringToBack(prevAppInfo, pasteKeyCodes())
         } else {
             bringToBack(prevAppInfo)
@@ -232,8 +268,9 @@ class LinuxAppWindowManager(
         // XTest delivers to whatever holds the X input focus, so an X11 session needs
         // no target of its own. In a Wayland session that focus is withdrawn while a
         // native Wayland window is focused, and injecting would hit a stale X window.
+        // The panel never took the focus, so the keystroke can go out right away.
         if (isWaylandSession && X11Api.getActiveWindow(requireXInputFocus = true) == null) {
-            notifyManualPasteRequired()
+            pasteThroughPortal()
             return
         }
         lazyShortcutKeysListener.value.beginPasteSuppression(
@@ -242,27 +279,52 @@ class LinuxAppWindowManager(
         X11Api.toPaste(pasteKeyCodes())
     }
 
+    /**
+     * Sends the paste shortcut through the RemoteDesktop portal, the one route into
+     * a native Wayland window. The keystroke lands wherever the compositor's focus
+     * is, so any window of ours that held it must already be hidden. Falls back to
+     * the manual-paste hint when the portal is missing or the user declined it.
+     */
+    private suspend fun pasteThroughPortal(): Boolean {
+        val keyCodes = pasteKeyCodes()
+        if (keyCodes.isEmpty()) {
+            return false
+        }
+        lazyShortcutKeysListener.value.beginPasteSuppression(
+            ShortcutKeysListener.PASTE_INJECTION_SUPPRESS_TIMEOUT,
+        )
+        val delivered = portalKeyboard.pressAndRelease(keyCodes.map(PortalHandles::evdevKeycode))
+        if (!delivered) {
+            notifyManualPasteRequired()
+        }
+        return delivered
+    }
+
     private fun pasteKeyCodes(): List<Int> =
         lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]
             ?.map { key -> key.rawCode }
             ?: listOf()
 
     /**
-     * Auto-paste is a synthetic paste shortcut sent through XTest, which only ever
-     * reaches X11 and XWayland clients. While a native Wayland window is focused
-     * the X11 input focus is withdrawn, so there is no app we may safely target:
-     * injecting anyway would deliver the keystroke to whichever X client happened
-     * to hold the focus last, pasting into a window the user is not even looking
-     * at. The content is already on the clipboard by this point, so say so and let
-     * the user paste it.
+     * Last resort when neither XTest nor the portal can deliver the paste: XTest
+     * only reaches X11 and XWayland clients, and injecting blindly would hit
+     * whichever X client held the focus last — a window the user is not even
+     * looking at. The content is already on the clipboard by this point, so say
+     * so and let the user paste it.
      */
     private fun notifyManualPasteRequired() {
-        logger.info { "No X11 focus to paste into, asking the user to paste manually" }
+        logger.info { "No way to deliver the paste, asking the user to paste manually" }
         lazyNotificationManager.value.sendNotification(
             title = { it.getText("copy_successful") },
             message = { it.getText("paste_manually_required") },
             messageType = MessageType.Info,
         )
+    }
+
+    companion object {
+        // Time for the compositor to hand the focus back to the user's app after one
+        // of our windows unmaps, before the portal keystroke goes out.
+        private val FOCUS_RETURN_DELAY = 150.milliseconds
     }
 
     override fun onMainComposeWindowChanged(window: ComposeWindow?) {
