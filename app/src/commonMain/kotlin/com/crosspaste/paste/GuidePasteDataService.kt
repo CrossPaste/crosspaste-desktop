@@ -9,6 +9,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.utils.getCodecsUtils
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -28,6 +29,8 @@ abstract class GuidePasteDataService(
     companion object {
         const val CROSSPASTE_GUIDE = "CrossPaste Guide"
     }
+
+    private val logger = KotlinLogging.logger {}
 
     private val codecsUtils = getCodecsUtils()
 
@@ -129,12 +132,22 @@ abstract class GuidePasteDataService(
             )
         }
 
-    fun initData() =
-        runBlocking {
-            if (isFirstLaunch()) {
-                if (pasteDao.getSize(allOrTagged = true) == 0L) {
-                    saveData()
+    /**
+     * Seeds the guide records on first launch. Never throws: the mobile hosts call this from
+     * Swift/Android startup code that cannot catch a Kotlin exception, and a failed seed only
+     * costs the user the guide cards, not the app.
+     */
+    fun initData() {
+        runCatching {
+            runBlocking {
+                if (isFirstLaunch()) {
+                    if (pasteDao.getSize(allOrTagged = true) == 0L) {
+                        saveData()
+                    }
                 }
             }
+        }.onFailure { e ->
+            logger.error(e) { "Failed to seed guide paste data" }
         }
+    }
 }
