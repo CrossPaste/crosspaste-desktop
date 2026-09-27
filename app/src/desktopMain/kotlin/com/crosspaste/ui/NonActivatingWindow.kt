@@ -34,8 +34,12 @@ import kotlin.math.roundToInt
  * JBR does not expose that flag (Window.Type.POPUP is an ordinary NSWindow there), but it
  * does allocate an NSPanel for a root pane marked `Window.hidesOnDeactivate`; the flag is
  * then switched on natively once the peer exists, see [MacNonActivatingEffect].
- * Non-focusable state plus WS_EX_NOACTIVATE cover Windows; X11 honours the non-focusable
- * hint on its own.
+ * Non-focusable state plus WS_EX_NOACTIVATE cover Windows. On Linux the window is an
+ * override-redirect X window (that is what XAWT makes of Window.Type.POPUP): the window
+ * manager never sees it, so a click cannot go through its click-to-focus path. A managed
+ * window with only the non-focusable hint still did, and on X11 sessions that pulled
+ * keyboard focus off the app being pasted into, so the injected Ctrl+V landed nowhere.
+ * Compose's own popups and tooltips use the same mechanism.
  */
 @Composable
 fun NonActivatingWindow(
@@ -49,6 +53,7 @@ fun NonActivatingWindow(
     val platform = koinInject<Platform>()
     val isMac = remember { platform.isMacos() }
     val isWindows = remember { platform.isWindows() }
+    val isLinux = remember { platform.isLinux() }
 
     SwingWindow(
         visible = visible,
@@ -58,6 +63,8 @@ fun NonActivatingWindow(
                     // Makes AWT back the window with an NSPanel; the flag itself is
                     // reset in MacNonActivatingEffect.
                     rootPane.putClientProperty("Window.hidesOnDeactivate", true)
+                } else if (isLinux) {
+                    type = java.awt.Window.Type.POPUP
                 }
                 defaultCloseOperation = WindowConstants.DO_NOTHING_ON_CLOSE
                 this.title = title
