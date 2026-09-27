@@ -6,8 +6,10 @@ import kotlin.io.path.writeText
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class LinuxActiveAppResolverTest {
 
@@ -127,6 +129,36 @@ class LinuxActiveAppResolverTest {
     fun `x11 session picks unguarded x11 resolver`() {
         val resolver = LinuxActiveAppResolver.detect { name -> if (name == "XDG_SESSION_TYPE") "x11" else null }
         assertIs<X11ActiveAppResolver>(resolver)
+    }
+
+    // ---- session detection ----
+
+    @Test
+    fun `isWaylandSession detects wayland from XDG_SESSION_TYPE`() {
+        assertTrue(LinuxActiveAppResolver.isWaylandSession { if (it == "XDG_SESSION_TYPE") "wayland" else null })
+        assertTrue(LinuxActiveAppResolver.isWaylandSession { if (it == "XDG_SESSION_TYPE") "Wayland" else null })
+    }
+
+    @Test
+    fun `isWaylandSession detects wayland from WAYLAND_DISPLAY`() {
+        assertTrue(LinuxActiveAppResolver.isWaylandSession { if (it == "WAYLAND_DISPLAY") "wayland-0" else null })
+    }
+
+    @Test
+    fun `isWaylandSession returns false for x11 session`() {
+        assertFalse(
+            LinuxActiveAppResolver.isWaylandSession {
+                when (it) {
+                    "XDG_SESSION_TYPE" -> "x11"
+                    else -> null
+                }
+            },
+        )
+    }
+
+    @Test
+    fun `isWaylandSession returns false when environment is empty`() {
+        assertFalse(LinuxActiveAppResolver.isWaylandSession { null })
     }
 
     @Test

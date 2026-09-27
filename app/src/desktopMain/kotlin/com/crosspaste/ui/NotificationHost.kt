@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.crosspaste.notification.Message
@@ -33,8 +34,14 @@ import com.crosspaste.ui.theme.AppUISize.tiny
 import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 
+/**
+ * @param subtractWindowDecoration true for the main window, whose content starts
+ *   below a decoration the toast has to be lifted over. Undecorated hosts — the
+ *   paste panel, the side search window — pass false, otherwise the toast is
+ *   shifted off the top edge and clipped.
+ */
 @Composable
-fun NotificationHost() {
+fun NotificationHost(subtractWindowDecoration: Boolean = true) {
     val notificationManager = koinInject<NotificationManager>()
     val notificationList by notificationManager.notificationList.collectAsState()
 
@@ -42,7 +49,9 @@ fun NotificationHost() {
     val appSizeValue = LocalDesktopAppSizeValueState.current
     val topPadding =
         with(LocalDensity.current) {
-            (-appSizeValue.windowDecorationHeight + medium).roundToPx()
+            val decoration =
+                if (subtractWindowDecoration) appSizeValue.windowDecorationHeight else 0.dp
+            (-decoration + medium).roundToPx()
         }
 
     Popup(
