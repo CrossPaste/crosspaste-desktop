@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.*
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.windows.WindowsVersionHelper
+import com.crosspaste.ui.NotificationHost
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.paste.side.SidePasteboardContentView
 import com.crosspaste.ui.theme.AppUIColors
@@ -50,6 +51,9 @@ fun SideSearchWindowContent() {
             SideSearchInputView()
             SidePasteboardContentView()
         }
+        // The window stays up when a paste cannot be delivered, so that hint has
+        // somewhere to show.
+        NotificationHost(subtractWindowDecoration = false)
     }
 }
 

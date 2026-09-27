@@ -45,12 +45,39 @@ interface X11Api : X11 {
 
         val INSTANCE: X11Api = Native.load("X11", X11Api::class.java)
 
-        fun getActiveWindow(): LinuxAppInfo? {
+        /**
+         * True when a real X11 window holds the input focus.
+         *
+         * In a Wayland session the compositor withdraws the XWayland input focus
+         * while a native Wayland surface is focused, leaving None/PointerRoot.
+         * `_NET_ACTIVE_WINDOW` keeps pointing at the last X client in that state,
+         * so anything acting on "the focused window" — paste-back targeting,
+         * source attribution — has to check this first.
+         */
+        fun hasXInputFocus(display: Display): Boolean {
+            val focusReturn = X11.WindowByReference()
+            val revertToReturn = IntByReference()
+            INSTANCE.XGetInputFocus(display, focusReturn, revertToReturn)
+            // None (0) and PointerRoot (1) mean no real X window holds the focus.
+            return (focusReturn.value?.toLong() ?: 0L) > 1L
+        }
+
+        /**
+         * The focused app as seen through X11, or null when it cannot be named.
+         *
+         * With [requireXInputFocus] the answer is also null while a native Wayland
+         * window is focused, instead of the stale `_NET_ACTIVE_WINDOW` value.
+         */
+        fun getActiveWindow(requireXInputFocus: Boolean = false): LinuxAppInfo? {
             val display = INSTANCE.XOpenDisplay(null) ?: return null
             return try {
-                getActiveWindow(display)?.let { previousWindow ->
-                    WMCtrl.getWindowClass(display, previousWindow)?.let {
-                        LinuxAppInfo(previousWindow, it.second)
+                if (requireXInputFocus && !hasXInputFocus(display)) {
+                    null
+                } else {
+                    getActiveWindow(display)?.let { previousWindow ->
+                        WMCtrl.getWindowClass(display, previousWindow)?.let {
+                            LinuxAppInfo(previousWindow, it.second)
+                        }
                     }
                 }
             } finally {

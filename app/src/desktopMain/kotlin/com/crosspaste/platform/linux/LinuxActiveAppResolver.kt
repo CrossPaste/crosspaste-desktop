@@ -2,9 +2,7 @@ package com.crosspaste.platform.linux
 
 import com.crosspaste.platform.linux.api.WMCtrl
 import com.crosspaste.platform.linux.api.X11Api
-import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.Window
-import com.sun.jna.ptr.IntByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 /**
@@ -40,11 +38,12 @@ interface LinuxActiveAppResolver {
          * Picks the best resolver for the current session. The [env] parameter
          * exists for tests; production callers use the real environment.
          */
+        fun isWaylandSession(env: (String) -> String? = System::getenv): Boolean =
+            env("XDG_SESSION_TYPE")?.equals("wayland", ignoreCase = true) == true ||
+                env("WAYLAND_DISPLAY") != null
+
         fun detect(env: (String) -> String? = System::getenv): LinuxActiveAppResolver {
-            val isWayland =
-                env("XDG_SESSION_TYPE")?.equals("wayland", ignoreCase = true) == true ||
-                    env("WAYLAND_DISPLAY") != null
-            if (!isWayland) {
+            if (!isWaylandSession(env)) {
                 logger.info { "Active app resolver: X11 (X11 session)" }
                 return X11ActiveAppResolver(guardAgainstStaleFocus = false)
             }
@@ -89,7 +88,7 @@ class X11ActiveAppResolver(
             val x11 = X11Api.INSTANCE
             val display = x11.XOpenDisplay(null) ?: return null
             try {
-                if (guardAgainstStaleFocus && !hasXInputFocus(x11, display)) {
+                if (guardAgainstStaleFocus && !X11Api.hasXInputFocus(display)) {
                     logger.debug { "X input focus withdrawn (Wayland window focused), no source" }
                     null
                 } else {
@@ -106,15 +105,4 @@ class X11ActiveAppResolver(
             logger.warn(e) { "Failed to resolve active app via X11" }
             null
         }
-
-    private fun hasXInputFocus(
-        x11: X11Api,
-        display: X11.Display,
-    ): Boolean {
-        val focusReturn = X11.WindowByReference()
-        val revertToReturn = IntByReference()
-        x11.XGetInputFocus(display, focusReturn, revertToReturn)
-        // None (0) and PointerRoot (1) mean no real X window holds the focus.
-        return (focusReturn.value?.toLong() ?: 0L) > 1L
-    }
 }

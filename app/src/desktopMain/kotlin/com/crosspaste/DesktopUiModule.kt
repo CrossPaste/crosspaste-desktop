@@ -73,6 +73,7 @@ fun desktopUiModule(): Module =
                 lazy { get() },
                 lazy { get() },
                 lazy { get() },
+                lazy { get() },
                 get(),
                 get(),
             )

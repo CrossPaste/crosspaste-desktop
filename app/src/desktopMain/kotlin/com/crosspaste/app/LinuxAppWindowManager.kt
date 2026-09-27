@@ -5,6 +5,8 @@ import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
+import com.crosspaste.notification.MessageType
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.linux.LinuxActiveAppResolver
 import com.crosspaste.platform.linux.LinuxDesktopAppIcon
@@ -29,6 +31,7 @@ class LinuxAppWindowManager(
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
     private val lazyShortcutKeysListener: Lazy<ShortcutKeysListener>,
+    private val lazyNotificationManager: Lazy<NotificationManager>,
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize) {
 
@@ -38,6 +41,10 @@ class LinuxAppWindowManager(
     // available; X11 sessions (and the paste-back focus logic below, which is
     // X11-only either way) keep the _NET_ACTIVE_WINDOW path.
     private val activeAppResolver = LinuxActiveAppResolver.detect()
+
+    // Paste-back targets the X11 focus, so outside an X11 session the answer can
+    // be a stale one. See [notifyManualPasteRequired].
+    private val isWaylandSession = LinuxActiveAppResolver.isWaylandSession()
 
     private val classNameSet: MutableSet<String> = ConcurrentSet()
 
@@ -160,7 +167,7 @@ class LinuxAppWindowManager(
     }
 
     override fun saveCurrentActiveAppInfo() {
-        prevLinuxAppInfo.value = X11Api.getActiveWindow()
+        prevLinuxAppInfo.value = X11Api.getActiveWindow(requireXInputFocus = isWaylandSession)
     }
 
     override suspend fun focusMainWindow(windowTrigger: WindowTrigger) {
@@ -174,7 +181,9 @@ class LinuxAppWindowManager(
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
-        bringToBack(preparePaste())
+        if (!bringToBack(preparePaste())) {
+            return
+        }
         hideMainWindow()
     }
 
@@ -196,7 +205,9 @@ class LinuxAppWindowManager(
         preparePaste: suspend (Int) -> Boolean,
     ) {
         logger.info { "unActive search window" }
-        bringToBack(preparePaste(0))
+        if (!bringToBack(preparePaste(0))) {
+            return
+        }
         for (i in 1 until size) {
             delay(1000.milliseconds)
             if (preparePaste(i)) {
@@ -206,27 +217,59 @@ class LinuxAppWindowManager(
         hideSearchWindow()
     }
 
-    private suspend fun bringToBack(toPaste: Boolean) {
-        if (toPaste) {
-            val keyCodes =
-                lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]?.let {
-                    it.map { key -> key.rawCode }
-                } ?: listOf()
-            bringToBack(prevLinuxAppInfo.value, keyCodes)
-        } else {
-            bringToBack(prevLinuxAppInfo.value)
+    /**
+     * @return false when the window has to stay up because the paste could not be
+     *   delivered and the hint telling the user to paste manually needs a surface
+     *   to be read on.
+     */
+    private suspend fun bringToBack(toPaste: Boolean): Boolean {
+        val prevAppInfo = prevLinuxAppInfo.value
+        if (toPaste && prevAppInfo == null) {
+            notifyManualPasteRequired()
+            return false
         }
+        if (toPaste) {
+            bringToBack(prevAppInfo, pasteKeyCodes())
+        } else {
+            bringToBack(prevAppInfo)
+        }
+        return true
     }
 
     override suspend fun toPaste() {
-        val keyCodes =
-            lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]?.let {
-                it.map { key -> key.rawCode }
-            } ?: listOf()
+        // The panel never takes the focus away from the target app, so the app to
+        // paste into is whichever one holds the focus right now.
+        if (X11Api.getActiveWindow(requireXInputFocus = isWaylandSession) == null) {
+            notifyManualPasteRequired()
+            return
+        }
         lazyShortcutKeysListener.value.beginPasteSuppression(
             ShortcutKeysListener.PASTE_INJECTION_SUPPRESS_TIMEOUT,
         )
-        X11Api.toPaste(keyCodes)
+        X11Api.toPaste(pasteKeyCodes())
+    }
+
+    private fun pasteKeyCodes(): List<Int> =
+        lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]
+            ?.map { key -> key.rawCode }
+            ?: listOf()
+
+    /**
+     * Auto-paste is a synthetic paste shortcut sent through XTest, which only ever
+     * reaches X11 and XWayland clients. While a native Wayland window is focused
+     * the X11 input focus is withdrawn, so there is no app we may safely target:
+     * injecting anyway would deliver the keystroke to whichever X client happened
+     * to hold the focus last, pasting into a window the user is not even looking
+     * at. The content is already on the clipboard by this point, so say so and let
+     * the user paste it.
+     */
+    private fun notifyManualPasteRequired() {
+        logger.info { "No X11 focus to paste into, asking the user to paste manually" }
+        lazyNotificationManager.value.sendNotification(
+            title = { it.getText("copy_successful") },
+            message = { it.getText("paste_manually_required") },
+            messageType = MessageType.Info,
+        )
     }
 
     override fun onMainComposeWindowChanged(window: ComposeWindow?) {

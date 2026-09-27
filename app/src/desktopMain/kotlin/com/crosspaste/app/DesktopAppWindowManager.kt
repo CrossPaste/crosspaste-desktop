@@ -9,6 +9,7 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
@@ -31,6 +32,7 @@ fun getDesktopAppWindowManager(
     lazyShortcutKeys: Lazy<ShortcutKeys>,
     lazyShortcutKeysAction: Lazy<ShortcutKeysAction>,
     lazyShortcutKeysListener: Lazy<ShortcutKeysListener>,
+    lazyNotificationManager: Lazy<NotificationManager>,
     platform: Platform,
     userDataPathProvider: UserDataPathProvider,
 ): DesktopAppWindowManager =
@@ -58,6 +60,7 @@ fun getDesktopAppWindowManager(
             lazyShortcutKeys,
             lazyShortcutKeysAction,
             lazyShortcutKeysListener,
+            lazyNotificationManager,
             userDataPathProvider,
         )
     } else {

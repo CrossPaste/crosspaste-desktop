@@ -42,6 +42,7 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.getIconData
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
+import com.crosspaste.ui.NotificationHost
 import com.crosspaste.ui.base.AppSourceIcon
 import com.crosspaste.ui.model.PastePanelViewModel
 import com.crosspaste.ui.paste.PasteEmptyScreenView
@@ -180,6 +181,9 @@ fun FrameWindowScope.PastePanelContent(surface: PastePanelSurface) {
                     ),
             )
         }
+        // The panel keeps the focus on the target app, so it is the only surface
+        // on screen that can carry a hint about a paste we could not deliver.
+        NotificationHost(subtractWindowDecoration = false)
     }
 }
 
