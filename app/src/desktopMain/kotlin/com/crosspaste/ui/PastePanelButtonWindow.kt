@@ -1,12 +1,15 @@
 package com.crosspaste.ui
 
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import com.crosspaste.app.DesktopAppWindowManager
@@ -99,6 +102,7 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
         fun showMenu(
             x: Int,
             y: Int,
+            surface: Color,
         ) {
             if (isWindows) {
                 WindowsPopupMenu.show(menuEntries()) { action ->
@@ -115,15 +119,23 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
                     NativeMenuEntry.Separator -> menu.addSeparator()
                 }
             }
-            menu.show(window, x, y)
+            // XAWT paints the menu in the background colour of the component it is shown
+            // over, and a transparent window's own background is fully transparent, which left the
+            // Linux menu see-through. The content pane never paints inside a transparent
+            // window, so its colour is free to carry the theme surface for the menu; XAWT
+            // derives a readable text colour from it in either theme.
+            val contentPane = window.contentPane
+            contentPane.background = java.awt.Color(surface.toArgb())
+            menu.show(contentPane, x, y)
         }
 
         PastePanelWindowContext {
+            val menuSurface = MaterialTheme.colorScheme.surface
             PastePanelButtonContent(
                 window = window,
                 panelOpen = panelInfo.show,
                 onClick = { appWindowManager.switchPastePanelWindow(WindowTrigger.SYSTEM) },
-                onSecondaryClick = ::showMenu,
+                onSecondaryClick = { x, y -> showMenu(x, y, menuSurface) },
                 onMoved = { x, y ->
                     appWindowManager.movePastePanelButton(WindowPosition(x.dp, y.dp))
                 },
