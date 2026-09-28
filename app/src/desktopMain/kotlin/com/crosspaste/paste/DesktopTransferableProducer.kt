@@ -18,7 +18,7 @@ class DesktopTransferableProducer(
         val builder = DesktopWriteTransferableBuilder()
 
         pasteTypePluginMap[pasteItem.getPasteType()]?.let {
-            builder.add(it, pasteItem, mixedCategory = false)
+            builder.add(it, pasteItem, PasteWriteScope.PRIMARY_CATEGORY)
         }
 
         return if (builder.isEmpty()) {
@@ -34,31 +34,25 @@ class DesktopTransferableProducer(
     override suspend fun produce(
         pasteData: PasteData,
         localOnly: Boolean,
-        primary: Boolean,
+        scope: PasteWriteScope,
     ): DesktopWriteTransferable? {
         val builder = DesktopWriteTransferableBuilder()
 
         val pasteAppearItems = pasteData.getPasteAppearItems()
 
-        val pasteAppearItem = pasteAppearItems.firstOrNull() ?: return null
+        val primaryItem = pasteAppearItems.firstOrNull() ?: return null
 
-        val isFileCategory = pasteAppearItem is PasteFiles
-
-        // Reverse so the primary item (first in pasteAppearItems) is added last to the
-        // LinkedHashMap-backed builder, giving its DataFlavors the highest priority for
-        // clipboard consumers that pick the last supported flavor.
-        val itemsToProcess =
-            if (primary) {
-                pasteAppearItems.reversed().filter { (it is PasteFiles) == isFileCategory }
-            } else {
-                pasteAppearItems.reversed()
+        val itemsToWrite =
+            when (scope) {
+                PasteWriteScope.PRIMARY_CATEGORY -> pasteAppearItems.filter { it.category() == primaryItem.category() }
+                PasteWriteScope.ALL -> pasteAppearItems
             }
 
-        val mixedCategory = !primary
-
-        for (item in itemsToProcess) {
+        // Written in reverse so the primary item lands last: when two items put a
+        // value under the same flavor, the primary item's is the one that stays.
+        for (item in itemsToWrite.reversed()) {
             pasteTypePluginMap[item.getPasteType()]?.let {
-                builder.add(it, item, mixedCategory = mixedCategory)
+                builder.add(it, item, scope)
             }
         }
 
@@ -71,4 +65,9 @@ class DesktopTransferableProducer(
             builder.build()
         }
     }
+
+    /** The two categories a paste write keeps apart: files, and everything else. */
+    private enum class Category { FILES, CONTENT }
+
+    private fun PasteItem.category(): Category = if (this is PasteFiles) Category.FILES else Category.CONTENT
 }

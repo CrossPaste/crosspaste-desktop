@@ -12,6 +12,6 @@ interface TransferableProducer {
     suspend fun produce(
         pasteData: PasteData,
         localOnly: Boolean,
-        primary: Boolean,
+        scope: PasteWriteScope,
     ): PasteTransferable?
 }

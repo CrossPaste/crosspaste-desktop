@@ -45,7 +45,7 @@ interface PasteboardService : PasteboardMonitor {
     suspend fun tryWritePasteboard(
         pasteData: PasteData,
         localOnly: Boolean = false,
-        primary: Boolean = configManager.getCurrentConfig().pastePrimaryTypeOnly,
+        scope: PasteWriteScope = configManager.getCurrentConfig().pasteWriteScope(),
         updateCreateTime: Boolean = false,
     ): Result<Unit?>
 

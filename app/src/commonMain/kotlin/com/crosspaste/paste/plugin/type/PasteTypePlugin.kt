@@ -5,6 +5,7 @@ import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.PasteWriteScope
 import com.crosspaste.paste.item.PasteItem
 
 interface PasteTypePlugin {
@@ -69,9 +70,13 @@ interface PasteTypePlugin {
         pasteCollector.collectError(pasteId, itemIndex, error)
     }
 
+    /**
+     * Puts the item's representations on the transferable. [scope] tells the
+     * plugin whether items of the other category are written alongside.
+     */
     suspend fun buildTransferable(
         pasteItem: PasteItem,
-        mixedCategory: Boolean,
+        scope: PasteWriteScope,
         map: MutableMap<PasteDataFlavor, Any>,
     )
 }

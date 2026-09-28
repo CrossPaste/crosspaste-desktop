@@ -31,6 +31,7 @@ import com.crosspaste.paste.DesktopPasteMenuService
 import com.crosspaste.paste.DesktopWriteTransferable
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.TransferableProducer
+import com.crosspaste.paste.pasteWriteScope
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.PasteContextMenuView
 import com.crosspaste.ui.paste.PasteDataScope
@@ -87,7 +88,7 @@ fun PasteDataScope.SidePasteItemView(
                                         .produce(
                                             pasteData = pasteData,
                                             localOnly = true,
-                                            primary = configManager.getCurrentConfig().pastePrimaryTypeOnly,
+                                            scope = configManager.getCurrentConfig().pasteWriteScope(),
                                         )?.let {
                                             it as DesktopWriteTransferable
                                         } ?: DesktopWriteTransferable(LinkedHashMap())

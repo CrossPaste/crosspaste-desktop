@@ -107,6 +107,7 @@ fun PasteboardSettingsContentView(
             SettingSectionCard {
                 SettingListSwitchItem(
                     title = "paste_primary_type_only",
+                    subtitle = "paste_primary_type_only_desc",
                     icon = IconData(MaterialSymbols.Rounded.Stacks, themeExt.amberIconColor),
                     checked = config.pastePrimaryTypeOnly,
                 ) { newPastePrimaryTypeOnly ->

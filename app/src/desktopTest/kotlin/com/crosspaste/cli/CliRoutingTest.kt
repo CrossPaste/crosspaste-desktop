@@ -135,7 +135,7 @@ class CliRoutingTest {
                 currentConfig = currentConfig.copy(key = firstArg<String>(), value = secondArg<Any>())
             }
             coEvery { syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns listOf()
-            // The PasteData overload of tryWritePasteboard defaults `primary`
+            // The PasteData overload of tryWritePasteboard defaults `scope`
             // from configManager, which resolves through this property
             every { pasteboardService.configManager } returns
                 mockk<CommonConfigManager> {
@@ -869,7 +869,7 @@ class CliRoutingTest {
             fixture.pasteboardService.tryWritePasteboard(
                 pasteData = pasteData,
                 localOnly = true,
-                primary = any(),
+                scope = any(),
                 updateCreateTime = true,
             )
         } returns Result.success(null)
@@ -883,7 +883,7 @@ class CliRoutingTest {
             fixture.pasteboardService.tryWritePasteboard(
                 pasteData = pasteData,
                 localOnly = true,
-                primary = any(),
+                scope = any(),
                 updateCreateTime = true,
             )
         }
@@ -899,7 +899,7 @@ class CliRoutingTest {
             fixture.pasteboardService.tryWritePasteboard(
                 pasteData = failing,
                 localOnly = true,
-                primary = any(),
+                scope = any(),
                 updateCreateTime = true,
             )
         } returns Result.failure(RuntimeException("no clipboard"))

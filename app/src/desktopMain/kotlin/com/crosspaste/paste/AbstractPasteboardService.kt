@@ -72,11 +72,11 @@ abstract class AbstractPasteboardService :
     override suspend fun tryWritePasteboard(
         pasteData: PasteData,
         localOnly: Boolean,
-        primary: Boolean,
+        scope: PasteWriteScope,
         updateCreateTime: Boolean,
     ): Result<Unit?> =
         runCatching {
-            pasteProducer.produce(pasteData, localOnly, primary)?.let {
+            pasteProducer.produce(pasteData, localOnly, scope)?.let {
                 it as DesktopWriteTransferable
                 writePasteboard(pasteData, it)
                 ownerTransferable = it

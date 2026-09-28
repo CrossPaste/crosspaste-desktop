@@ -1,5 +1,7 @@
 package com.crosspaste.paste
 
+import com.crosspaste.paste.PasteWriteScope.ALL
+import com.crosspaste.paste.PasteWriteScope.PRIMARY_CATEGORY
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
@@ -25,10 +27,10 @@ class DesktopTransferableProducerTest {
     // Guard against PasteItem/JsonUtils circular class initialization
     private val jsonUtils = getJsonUtils()
 
-    /** One call the producer made into a plugin: the item and the mixedCategory flag. */
+    /** One call the producer made into a plugin: the item and the scope it was given. */
     private data class Call(
         val type: PasteType,
-        val mixedCategory: Boolean,
+        val scope: PasteWriteScope,
     )
 
     /**
@@ -67,10 +69,10 @@ class DesktopTransferableProducerTest {
 
         override suspend fun buildTransferable(
             pasteItem: PasteItem,
-            mixedCategory: Boolean,
+            scope: PasteWriteScope,
             map: MutableMap<PasteDataFlavor, Any>,
         ) {
-            calls += Call(pasteItem.getPasteType(), mixedCategory)
+            calls += Call(pasteItem.getPasteType(), scope)
             map[ownFlavor] = pasteItem.hash
             map[SHARED_FLAVOR.toPasteDataFlavor()] = pasteItem.hash
         }
@@ -95,16 +97,16 @@ class DesktopTransferableProducerTest {
             relativePathList = listOf("a.txt"),
         )
 
-    // ---- primary: the item's own category only ----
+    // ---- PRIMARY_CATEGORY: the primary item's category only ----
 
     @Test
-    fun `primary writes every item of the primary item's category, primary item last`() =
+    fun `primary category writes every item of the primary item's category, primary item last`() =
         runTest {
-            val transferable = producer.produce(pasteData(text, url), localOnly = false, primary = true)
+            val transferable = producer.produce(pasteData(text, url), localOnly = false, scope = PRIMARY_CATEGORY)
 
             assertNotNull(transferable)
             assertEquals(
-                listOf(Call(PasteType.URL_TYPE, false), Call(PasteType.TEXT_TYPE, false)),
+                listOf(Call(PasteType.URL_TYPE, PRIMARY_CATEGORY), Call(PasteType.TEXT_TYPE, PRIMARY_CATEGORY)),
                 calls,
             )
             // Both plugins wrote SHARED_FLAVOR; the primary item, written last, wins.
@@ -114,35 +116,35 @@ class DesktopTransferableProducerTest {
         }
 
     @Test
-    fun `primary drops non-file items when the primary item is a file`() =
+    fun `primary category drops non-file items when the primary item is a file`() =
         runTest {
-            val transferable = producer.produce(pasteData(files, text), localOnly = false, primary = true)
+            val transferable = producer.produce(pasteData(files, text), localOnly = false, scope = PRIMARY_CATEGORY)
 
             assertNotNull(transferable)
-            assertEquals(listOf(Call(PasteType.FILE_TYPE, false)), calls)
+            assertEquals(listOf(Call(PasteType.FILE_TYPE, PRIMARY_CATEGORY)), calls)
             assertFalse(transferable.isDataFlavorSupported(textPlugin.ownFlavor.dataFlavor()))
         }
 
     @Test
-    fun `primary drops file items when the primary item is not a file`() =
+    fun `primary category drops file items when the primary item is not a file`() =
         runTest {
-            val transferable = producer.produce(pasteData(text, files), localOnly = false, primary = true)
+            val transferable = producer.produce(pasteData(text, files), localOnly = false, scope = PRIMARY_CATEGORY)
 
             assertNotNull(transferable)
-            assertEquals(listOf(Call(PasteType.TEXT_TYPE, false)), calls)
+            assertEquals(listOf(Call(PasteType.TEXT_TYPE, PRIMARY_CATEGORY)), calls)
             assertFalse(transferable.isDataFlavorSupported(filesPlugin.ownFlavor.dataFlavor()))
         }
 
-    // ---- not primary: everything, flagged as mixed ----
+    // ---- ALL: everything ----
 
     @Test
-    fun `non-primary writes every item as mixed category, primary item last`() =
+    fun `all writes every item, primary item last`() =
         runTest {
-            val transferable = producer.produce(pasteData(files, text), localOnly = false, primary = false)
+            val transferable = producer.produce(pasteData(files, text), localOnly = false, scope = ALL)
 
             assertNotNull(transferable)
             assertEquals(
-                listOf(Call(PasteType.TEXT_TYPE, true), Call(PasteType.FILE_TYPE, true)),
+                listOf(Call(PasteType.TEXT_TYPE, ALL), Call(PasteType.FILE_TYPE, ALL)),
                 calls,
             )
             assertEquals(files.hash, transferable.getTransferData(SHARED_FLAVOR))
@@ -153,8 +155,8 @@ class DesktopTransferableProducerTest {
     @Test
     fun `local only adds the marker flavor, otherwise it is absent`() =
         runTest {
-            val local = producer.produce(pasteData(text), localOnly = true, primary = true)
-            val shared = producer.produce(pasteData(text), localOnly = false, primary = true)
+            val local = producer.produce(pasteData(text), localOnly = true, scope = PRIMARY_CATEGORY)
+            val shared = producer.produce(pasteData(text), localOnly = false, scope = PRIMARY_CATEGORY)
 
             assertEquals(true, assertNotNull(local).getTransferData(LocalOnlyFlavor))
             assertFalse(assertNotNull(shared).isDataFlavorSupported(LocalOnlyFlavor))
@@ -167,29 +169,29 @@ class DesktopTransferableProducerTest {
         runTest {
             val textOnlyProducer = DesktopTransferableProducer(listOf(textPlugin))
 
-            assertNull(textOnlyProducer.produce(pasteData(files), localOnly = false, primary = true))
-            assertNull(textOnlyProducer.produce(pasteData(files), localOnly = true, primary = true))
+            assertNull(textOnlyProducer.produce(pasteData(files), localOnly = false, scope = PRIMARY_CATEGORY))
+            assertNull(textOnlyProducer.produce(pasteData(files), localOnly = true, scope = PRIMARY_CATEGORY))
 
-            val transferable = textOnlyProducer.produce(pasteData(files, text), localOnly = false, primary = false)
+            val transferable = textOnlyProducer.produce(pasteData(files, text), localOnly = false, scope = ALL)
             assertNotNull(transferable)
-            assertEquals(listOf(Call(PasteType.TEXT_TYPE, true)), calls)
+            assertEquals(listOf(Call(PasteType.TEXT_TYPE, ALL)), calls)
         }
 
     @Test
     fun `a paste without items is null`() =
         runTest {
-            assertNull(producer.produce(pasteData(null), localOnly = false, primary = true))
+            assertNull(producer.produce(pasteData(null), localOnly = false, scope = PRIMARY_CATEGORY))
         }
 
     // ---- single item ----
 
     @Test
-    fun `a single item is never written as mixed category`() =
+    fun `a single item is written in the primary category scope`() =
         runTest {
             val transferable = producer.produce(url, localOnly = true)
 
             assertNotNull(transferable)
-            assertEquals(listOf(Call(PasteType.URL_TYPE, false)), calls)
+            assertEquals(listOf(Call(PasteType.URL_TYPE, PRIMARY_CATEGORY)), calls)
             assertEquals(true, transferable.getTransferData(LocalOnlyFlavor))
         }
 
