@@ -3,6 +3,7 @@ package com.crosspaste.headless
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteReleaseService
+import com.crosspaste.paste.PasteWriteScope
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.utils.ioDispatcher
@@ -57,7 +58,7 @@ class HeadlessPasteboardService(
     override suspend fun tryWritePasteboard(
         pasteData: PasteData,
         localOnly: Boolean,
-        primary: Boolean,
+        scope: PasteWriteScope,
         updateCreateTime: Boolean,
     ): Result<Unit?> =
         runCatching {

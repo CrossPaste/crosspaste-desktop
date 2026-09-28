@@ -9,6 +9,7 @@ import com.crosspaste.paste.PasteDataFlavors
 import com.crosspaste.paste.PasteDataFlavors.URL_FLAVOR
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.PasteWriteScope
 import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.paste.item.PasteCoordinate
@@ -155,13 +156,15 @@ class DesktopFilesTypePlugin(
 
     override suspend fun buildTransferable(
         pasteItem: PasteItem,
-        mixedCategory: Boolean,
+        scope: PasteWriteScope,
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
         pasteItem as FilesPasteItem
         val fileList: List<File> = pasteItem.getFilePaths(userDataPathProvider).map { it.toFile() }
         map[DataFlavor.javaFileListFlavor.toPasteDataFlavor()] = fileList
-        if (mixedCategory) {
+        // Next to items of the other category, offer the files as text and URIs
+        // too, so a consumer that only takes text still gets something to paste.
+        if (scope == PasteWriteScope.ALL) {
             map[PasteDataFlavors.URI_LIST_FLAVOR.toPasteDataFlavor()] =
                 ByteArrayInputStream(
                     fileList

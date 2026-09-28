@@ -2,6 +2,7 @@ package com.crosspaste.paste.plugin.type
 
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteDataFlavors.URL_FLAVOR
+import com.crosspaste.paste.PasteWriteScope
 import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.platform.Platform
@@ -27,7 +28,7 @@ class DesktopUrlTypePluginTest {
             val item = createUrlPasteItem(url = "https://example.com/a?b=1")
             val map = linkedMapOf<PasteDataFlavor, Any>()
 
-            plugin.buildTransferable(item, mixedCategory = false, map)
+            plugin.buildTransferable(item, scope = PasteWriteScope.PRIMARY_CATEGORY, map)
 
             @Suppress("DEPRECATION")
             assertEquals(URL(item.url), map[URL_FLAVOR.toPasteDataFlavor()])
@@ -40,7 +41,7 @@ class DesktopUrlTypePluginTest {
             val item = createUrlPasteItem(url = "https://example.com")
             val map = linkedMapOf<PasteDataFlavor, Any>(stringFlavor to "shared text")
 
-            plugin.buildTransferable(item, mixedCategory = true, map)
+            plugin.buildTransferable(item, scope = PasteWriteScope.ALL, map)
 
             assertEquals("shared text", map[stringFlavor])
         }

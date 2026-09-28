@@ -118,7 +118,7 @@ class PastePanelViewModelTest {
                 pasteboardService.tryWritePasteboard(
                     pasteData = match { it.id == 1L },
                     localOnly = true,
-                    primary = any(),
+                    scope = any(),
                     updateCreateTime = false,
                 )
             }

@@ -4,6 +4,7 @@ import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteTransferable
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.PasteWriteScope
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
@@ -61,7 +62,7 @@ class DesktopTextTypePlugin : TextTypePlugin {
 
     override suspend fun buildTransferable(
         pasteItem: PasteItem,
-        mixedCategory: Boolean,
+        scope: PasteWriteScope,
         map: MutableMap<PasteDataFlavor, Any>,
     ) {
         pasteItem as TextPasteItem

@@ -18,6 +18,7 @@ import com.crosspaste.listener.DesktopShortcutKeys.Companion.TOGGLE_PASTEBOARD_M
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.CurrentPaste
+import com.crosspaste.paste.PasteWriteScope
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteText
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
@@ -165,6 +166,7 @@ class DesktopShortKeysAction(
                             pasteboardService.tryWritePasteboard(
                                 pasteData = it,
                                 localOnly = true,
+                                scope = PasteWriteScope.PRIMARY_CATEGORY,
                                 updateCreateTime = true,
                             ),
                     )
