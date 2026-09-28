@@ -10,6 +10,7 @@ import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.toPasteDataFlavor
 import com.crosspaste.platform.Platform
+import java.awt.datatransfer.DataFlavor
 import java.net.MalformedURLException
 import java.net.URL
 
@@ -84,5 +85,10 @@ class DesktopUrlTypePlugin(
         pasteItem as UrlPasteItem
         @Suppress("DEPRECATION")
         map[URL_FLAVOR.toPasteDataFlavor()] = URL(pasteItem.url)
+        // application/x-java-url is a Java-private flavor. On Linux AWT exports it
+        // to the native clipboard as-is, so a browser or editor asked to paste finds
+        // no text and does nothing. Offer the URL as plain text as well; a text item
+        // written alongside (mixed category) carries the better text, so keep that.
+        map.putIfAbsent(DataFlavor.stringFlavor.toPasteDataFlavor(), pasteItem.url)
     }
 }
