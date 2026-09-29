@@ -23,7 +23,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -173,7 +172,11 @@ fun PastePanelMenuWindow(
         }
     }
 
-    val focusLostDuringGracePeriod = remember { AtomicBoolean(false) }
+    // Mapping the window does not hand it the focus; ask X11 for it as the other
+    // windows do. Focus can bounce while the window comes up, so a loss during
+    // the grace period is ignored; where the focus ended up is checked once at
+    // the end instead.
+    val gainedFocus = remember { AtomicBoolean(false) }
     val ignoreFocusLoss = remember { AtomicBoolean(true) }
 
     Window(
@@ -184,16 +187,28 @@ fun PastePanelMenuWindow(
         transparent = true,
         resizable = false,
         alwaysOnTop = true,
+        // On the window, not the content: nothing in the menu holds the focus,
+        // so a key handler on the column would never see the key.
+        onPreviewKeyEvent = { keyEvent ->
+            if (keyEvent.key == Key.Escape && keyEvent.type == KeyEventType.KeyDown) {
+                onDismiss()
+                true
+            } else {
+                false
+            }
+        },
     ) {
         val window = this.window
 
         DisposableEffect(window) {
             val listener =
                 object : WindowAdapter() {
+                    override fun windowGainedFocus(e: WindowEvent) {
+                        gainedFocus.set(true)
+                    }
+
                     override fun windowLostFocus(e: WindowEvent) {
-                        if (ignoreFocusLoss.get()) {
-                            focusLostDuringGracePeriod.set(true)
-                        } else {
+                        if (!ignoreFocusLoss.get()) {
                             onDismiss()
                         }
                     }
@@ -207,7 +222,11 @@ fun PastePanelMenuWindow(
             X11Api.bringToFront(X11Api.getWindow(title), source = NativeLong(1))
             delay(300.milliseconds)
             ignoreFocusLoss.set(false)
-            if (focusLostDuringGracePeriod.get() || !window.isFocused) {
+            // Had the focus and lost it again: the user clicked elsewhere while
+            // the window was coming up, and no further focus event will arrive.
+            // Never had it: the compositor refused, and the menu stays usable
+            // through its items and the button's toggle.
+            if (gainedFocus.get() && !window.isFocused) {
                 onDismiss()
             }
         }
@@ -218,14 +237,7 @@ fun PastePanelMenuWindow(
                     Modifier
                         .width(IntrinsicSize.Max)
                         .onSizeChanged { size -> menuSize = size }
-                        .onPreviewKeyEvent { keyEvent ->
-                            if (keyEvent.key == Key.Escape && keyEvent.type == KeyEventType.KeyDown) {
-                                onDismiss()
-                                true
-                            } else {
-                                false
-                            }
-                        }.clip(tiny3XRoundedCornerShape)
+                        .clip(tiny3XRoundedCornerShape)
                         .background(AppUIColors.generalBackground)
                         .border(tiny5X, AppUIColors.sectionCardBorder, tiny3XRoundedCornerShape)
                         .padding(vertical = tiny3X),
