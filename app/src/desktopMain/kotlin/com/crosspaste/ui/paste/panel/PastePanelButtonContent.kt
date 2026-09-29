@@ -29,6 +29,7 @@ import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import com.crosspaste.app.generated.resources.Res
@@ -42,6 +43,7 @@ import org.koin.compose.koinInject
 import java.awt.MouseInfo
 import kotlin.math.hypot
 import kotlin.math.roundToInt
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 // The app icon's blue gradient; the white clipboard glyph is drawn straight onto it.
@@ -71,29 +73,18 @@ fun PastePanelButtonContent(
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
     val platform = koinInject<Platform>()
-
     val appSizeValue = LocalDesktopAppSizeValueState.current
 
-    val interactionSource = remember { MutableInteractionSource() }
-    val hovered by interactionSource.collectIsHoveredAsState()
-
-    // X11 delivers motion to this override-redirect window but, with an absolute
-    // pointing device (VMs, tablets, touchscreens) under XWayland, never a crossing
-    // event, so Compose's hover state switches on with the first move and never
-    // off. On Linux count the button as hovered while pointer events keep coming
-    // and let it fade once they stop, instead of waiting for an exit that may not
-    // arrive.
     val isLinux = remember { platform.isLinux() }
-    var pointerSeenAt by remember { mutableLongStateOf(0L) }
-    val recentlyHovered by
-        produceState(false, pointerSeenAt) {
-            if (pointerSeenAt == 0L) return@produceState
-            value = true
-            delay(LINUX_HOVER_HOLD)
-            value = false
+    val interactionSource = remember { MutableInteractionSource() }
+    val pointerActivity = remember { PointerActivity() }
+    val hovered =
+        if (isLinux) {
+            pointerActivity.recentlyActive(LINUX_HOVER_HOLD)
+        } else {
+            interactionSource.collectIsHoveredAsState().value
         }
-    val opaque = (if (isLinux) recentlyHovered else hovered) || panelOpen
-    val alpha by animateFloatAsState(if (opaque) 1f else IDLE_ALPHA)
+    val alpha by animateFloatAsState(if (hovered || panelOpen) 1f else IDLE_ALPHA)
 
     Box(
         modifier =
@@ -101,56 +92,9 @@ fun PastePanelButtonContent(
                 .size(appSizeValue.pastePanelButtonSize)
                 .alpha(alpha)
                 .hoverable(interactionSource)
-                .pointerInput(isLinux) {
-                    if (!isLinux) return@pointerInput
-                    awaitPointerEventScope {
-                        while (true) {
-                            awaitPointerEvent(PointerEventPass.Initial)
-                            pointerSeenAt = System.nanoTime()
-                        }
-                    }
-                }.pointerInput(window) {
-                    awaitEachGesture {
-                        val press = awaitEventOfType(PointerEventType.Press)
-                        val down = press.changes.first()
-                        if (press.buttons.isSecondaryPressed) {
-                            down.consume()
-                            val up = awaitEventOfType(PointerEventType.Release).changes.first()
-                            up.consume()
-                            onSecondaryClick(
-                                up.position.x
-                                    .toDp()
-                                    .value
-                                    .roundToInt(),
-                                up.position.y
-                                    .toDp()
-                                    .value
-                                    .roundToInt(),
-                            )
-                            return@awaitEachGesture
-                        }
-                        val startPointer = MouseInfo.getPointerInfo()?.location ?: return@awaitEachGesture
-                        val startWindow = window.location
-                        var dragging = false
-                        drag(down.id) { change ->
-                            val pointer = MouseInfo.getPointerInfo()?.location ?: return@drag
-                            val dx = pointer.x - startPointer.x
-                            val dy = pointer.y - startPointer.y
-                            if (!dragging && hypot(dx.toDouble(), dy.toDouble()) > viewConfiguration.touchSlop) {
-                                dragging = true
-                            }
-                            if (dragging) {
-                                change.consume()
-                                window.setLocation(startWindow.x + dx, startWindow.y + dy)
-                            }
-                        }
-                        if (dragging) {
-                            onMoved(window.x, window.y)
-                        } else {
-                            onClick()
-                        }
-                    }
-                }.clip(CircleShape)
+                .then(if (isLinux) pointerActivity.tracking() else Modifier)
+                .pastePanelButtonGestures(window, onClick, onSecondaryClick, onMoved)
+                .clip(CircleShape)
                 .background(Brush.verticalGradient(listOf(BUTTON_GRADIENT_TOP, BUTTON_GRADIENT_BOTTOM))),
         contentAlignment = Alignment.Center,
     ) {
@@ -160,6 +104,112 @@ fun PastePanelButtonContent(
             tint = Color.White,
             modifier = Modifier.fillMaxSize(GLYPH_FRACTION),
         )
+    }
+}
+
+/**
+ * Hover as Linux can tell it. X11 delivers motion to this override-redirect window
+ * but, with an absolute pointing device (VMs, tablets, touchscreens) under XWayland,
+ * never a crossing event, so Compose's hover state switches on with the first move
+ * and never off. Instead, the button counts as hovered while pointer events keep
+ * coming and fades once they stop, without waiting for an exit that may not arrive.
+ */
+private class PointerActivity {
+    private var seenAt by mutableLongStateOf(0L)
+
+    /** Bumps the timestamp on every pointer event, without consuming any. */
+    fun tracking(): Modifier =
+        Modifier.pointerInput(Unit) {
+            awaitPointerEventScope {
+                while (true) {
+                    awaitPointerEvent(PointerEventPass.Initial)
+                    seenAt = System.nanoTime()
+                }
+            }
+        }
+
+    /** True from the latest pointer event until [hold] has passed without another. */
+    @Composable
+    fun recentlyActive(hold: Duration): Boolean =
+        produceState(false, seenAt) {
+            if (seenAt == 0L) return@produceState
+            value = true
+            delay(hold)
+            value = false
+        }.value
+}
+
+/**
+ * The button's mouse handling: a secondary click reports where it landed, a primary
+ * press either drags the window (past the touch slop) or, released in place, clicks.
+ */
+private fun Modifier.pastePanelButtonGestures(
+    window: ComposeWindow,
+    onClick: () -> Unit,
+    onSecondaryClick: (x: Int, y: Int) -> Unit,
+    onMoved: (x: Int, y: Int) -> Unit,
+): Modifier =
+    pointerInput(window) {
+        awaitEachGesture {
+            val press = awaitEventOfType(PointerEventType.Press)
+            val down = press.changes.first()
+            if (press.buttons.isSecondaryPressed) {
+                reportSecondaryClick(down, onSecondaryClick)
+            } else {
+                dragOrClick(window, down, onClick, onMoved)
+            }
+        }
+    }
+
+private suspend fun AwaitPointerEventScope.reportSecondaryClick(
+    down: PointerInputChange,
+    onSecondaryClick: (x: Int, y: Int) -> Unit,
+) {
+    down.consume()
+    val up = awaitEventOfType(PointerEventType.Release).changes.first()
+    up.consume()
+    onSecondaryClick(
+        up.position.x
+            .toDp()
+            .value
+            .roundToInt(),
+        up.position.y
+            .toDp()
+            .value
+            .roundToInt(),
+    )
+}
+
+/**
+ * Follows the pointer through AWT rather than the pointer change: the window moves
+ * under the pointer while dragging, which would make Compose's window-relative
+ * positions chase themselves.
+ */
+private suspend fun AwaitPointerEventScope.dragOrClick(
+    window: ComposeWindow,
+    down: PointerInputChange,
+    onClick: () -> Unit,
+    onMoved: (x: Int, y: Int) -> Unit,
+) {
+    val startPointer = MouseInfo.getPointerInfo()?.location ?: return
+    val startWindow = window.location
+    var dragging = false
+    drag(down.id) { change ->
+        val pointer = MouseInfo.getPointerInfo()?.location ?: return@drag
+        val dx = pointer.x - startPointer.x
+        val dy = pointer.y - startPointer.y
+        if (!dragging && hypot(dx.toDouble(), dy.toDouble()) > viewConfiguration.touchSlop) {
+            dragging = true
+        }
+        if (dragging) {
+            change.consume()
+            window.setLocation(startWindow.x + dx, startWindow.y + dy)
+        }
+    }
+    if (dragging) {
+        onMoved(window.x, window.y)
+    } else {
+        onClick()
     }
 }
 
