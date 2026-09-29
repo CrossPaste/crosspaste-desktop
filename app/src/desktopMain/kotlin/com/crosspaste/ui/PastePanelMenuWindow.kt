@@ -23,11 +23,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
@@ -47,6 +47,8 @@ import com.sun.jna.NativeLong
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import java.awt.GraphicsEnvironment
+import java.awt.Point
 import java.awt.Rectangle
 import java.awt.Toolkit
 import java.awt.event.WindowAdapter
@@ -57,8 +59,44 @@ import kotlin.time.Duration.Companion.milliseconds
 // Gap between the button and the menu beside it.
 private val MENU_GAP = 4.dp
 
-// Stand-in for the menu's width until its content has been measured.
-private val MENU_WIDTH_GUESS = 200.dp
+// Stand-in for the menu's size until its content has been measured.
+private val MENU_WIDTH_GUESS = 180.dp
+private val MENU_HEIGHT_GUESS = 200.dp
+
+/**
+ * Computes where the context menu window goes beside the button at [anchor].
+ *
+ * Places the menu to the right of the button if it fits within [usableScreen],
+ * otherwise to its left. Top edges are aligned with the button, clamped to ensure
+ * the whole menu remains within the vertical bounds of the usable screen area.
+ */
+internal fun pastePanelMenuPositionBeside(
+    anchor: Rectangle,
+    menuWidth: Int,
+    menuHeight: Int,
+    usableScreen: Rectangle,
+    gap: Int,
+): Point {
+    val rightOfButton = anchor.x + anchor.width + gap
+    val leftOfButton = anchor.x - gap - menuWidth
+    val screenRight = usableScreen.x + usableScreen.width
+    val screenBottom = usableScreen.y + usableScreen.height
+
+    val x =
+        if (rightOfButton + menuWidth <= screenRight) {
+            rightOfButton
+        } else if (leftOfButton >= usableScreen.x) {
+            leftOfButton
+        } else {
+            val maxX = maxOf(usableScreen.x, screenRight - menuWidth)
+            rightOfButton.coerceIn(usableScreen.x, maxX)
+        }
+
+    val maxY = maxOf(usableScreen.y, screenBottom - menuHeight)
+    val y = anchor.y.coerceIn(usableScreen.y, maxY)
+
+    return Point(x, y)
+}
 
 /**
  * The floating button's context menu on Linux, drawn in a window of its own.
@@ -78,51 +116,97 @@ fun PastePanelMenuWindow(
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val title = appWindowManager.pastePanelMenuWindowTitle
 
-    // Beside the button rather than over it: the button is an override-redirect
-    // window the compositor keeps above every managed one, so anything under it
-    // would be covered. Right of the button, top edges aligned, or to its left
-    // when it would run off the screen. The window packs to its content, so the
-    // final placement waits for the content's measured width; until then a
-    // guess keeps the first frame close.
     val gap = MENU_GAP.value.toInt()
-    val screenWidth = remember { Toolkit.getDefaultToolkit().screenSize.width }
     val density = LocalDensity.current
-    var menuWidth by remember { mutableStateOf<Int?>(null) }
 
-    fun leftFor(width: Int): Int {
-        val right = anchor.x + anchor.width + gap
-        return if (right + width > screenWidth) anchor.x - gap - width else right
-    }
+    val center = remember(anchor) { Point(anchor.x + anchor.width / 2, anchor.y + anchor.height / 2) }
+    val usableScreen =
+        remember(center) {
+            val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+            val configuration =
+                ge.screenDevices
+                    .map { it.defaultConfiguration }
+                    .firstOrNull { it.bounds.contains(center) }
+                    ?: ge.defaultScreenDevice.defaultConfiguration
+            val bounds = configuration.bounds
+            val insets = Toolkit.getDefaultToolkit().getScreenInsets(configuration)
+            Rectangle(
+                bounds.x + insets.left,
+                bounds.y + insets.top,
+                bounds.width - insets.left - insets.right,
+                bounds.height - insets.top - insets.bottom,
+            )
+        }
+
+    var menuSize by remember { mutableStateOf<IntSize?>(null) }
+
+    fun currentPosition(
+        width: Int,
+        height: Int,
+    ): Point =
+        pastePanelMenuPositionBeside(
+            anchor = anchor,
+            menuWidth = width,
+            menuHeight = height,
+            usableScreen = usableScreen,
+            gap = gap,
+        )
+
+    val initialPos =
+        remember(anchor, usableScreen) {
+            currentPosition(MENU_WIDTH_GUESS.value.toInt(), MENU_HEIGHT_GUESS.value.toInt())
+        }
+
     val windowState =
         rememberWindowState(
-            position = WindowPosition(leftFor(MENU_WIDTH_GUESS.value.toInt()).dp, anchor.y.dp),
+            position = WindowPosition(initialPos.x.dp, initialPos.y.dp),
             size = DpSize.Unspecified,
         )
-    LaunchedEffect(menuWidth) {
-        menuWidth?.let { windowState.position = WindowPosition(leftFor(it).dp, anchor.y.dp) }
+
+    LaunchedEffect(menuSize, usableScreen) {
+        menuSize?.let { size ->
+            val w = with(density) { size.width.toDp() }.value.toInt()
+            val h = with(density) { size.height.toDp() }.value.toInt()
+            val pos = currentPosition(w, h)
+            windowState.position = WindowPosition(pos.x.dp, pos.y.dp)
+        }
     }
 
     // Mapping the window does not hand it the focus; ask X11 for it as the other
-    // windows do, and ignore the focus shuffle on the way up.
+    // windows do. Focus can bounce while the window comes up, so a loss during
+    // the grace period is ignored; where the focus ended up is checked once at
+    // the end instead.
+    val gainedFocus = remember { AtomicBoolean(false) }
     val ignoreFocusLoss = remember { AtomicBoolean(true) }
-    LaunchedEffect(Unit) {
-        delay(100.milliseconds)
-        X11Api.bringToFront(X11Api.getWindow(title), source = NativeLong(1))
-        delay(300.milliseconds)
-        ignoreFocusLoss.set(false)
-    }
 
     Window(
         onCloseRequest = onDismiss,
         state = windowState,
         title = title,
         undecorated = true,
+        transparent = true,
         resizable = false,
         alwaysOnTop = true,
+        // On the window, not the content: nothing in the menu holds the focus,
+        // so a key handler on the column would never see the key.
+        onPreviewKeyEvent = { keyEvent ->
+            if (keyEvent.key == Key.Escape && keyEvent.type == KeyEventType.KeyDown) {
+                onDismiss()
+                true
+            } else {
+                false
+            }
+        },
     ) {
-        DisposableEffect(Unit) {
+        val window = this.window
+
+        DisposableEffect(window) {
             val listener =
                 object : WindowAdapter() {
+                    override fun windowGainedFocus(e: WindowEvent) {
+                        gainedFocus.set(true)
+                    }
+
                     override fun windowLostFocus(e: WindowEvent) {
                         if (!ignoreFocusLoss.get()) {
                             onDismiss()
@@ -133,20 +217,27 @@ fun PastePanelMenuWindow(
             onDispose { window.removeWindowFocusListener(listener) }
         }
 
+        LaunchedEffect(window) {
+            delay(100.milliseconds)
+            X11Api.bringToFront(X11Api.getWindow(title), source = NativeLong(1))
+            delay(300.milliseconds)
+            ignoreFocusLoss.set(false)
+            // Had the focus and lost it again: the user clicked elsewhere while
+            // the window was coming up, and no further focus event will arrive.
+            // Never had it: the compositor refused, and the menu stays usable
+            // through its items and the button's toggle.
+            if (gainedFocus.get() && !window.isFocused) {
+                onDismiss()
+            }
+        }
+
         PastePanelWindowContext {
             Column(
                 modifier =
                     Modifier
                         .width(IntrinsicSize.Max)
-                        .onSizeChanged { size -> menuWidth = with(density) { size.width.toDp() }.value.toInt() }
-                        .onPreviewKeyEvent { keyEvent ->
-                            if (keyEvent.key == Key.Escape && keyEvent.type == KeyEventType.KeyDown) {
-                                onDismiss()
-                                true
-                            } else {
-                                false
-                            }
-                        }.clip(tiny3XRoundedCornerShape)
+                        .onSizeChanged { size -> menuSize = size }
+                        .clip(tiny3XRoundedCornerShape)
                         .background(AppUIColors.generalBackground)
                         .border(tiny5X, AppUIColors.sectionCardBorder, tiny3XRoundedCornerShape)
                         .padding(vertical = tiny3X),

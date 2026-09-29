@@ -115,7 +115,7 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
                 return
             }
             if (isLinux) {
-                linuxMenuAnchor = Rectangle(window.bounds)
+                linuxMenuAnchor = if (linuxMenuAnchor == null) Rectangle(window.bounds) else null
                 return
             }
             val menu = popupMenu ?: return
@@ -130,6 +130,12 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
             menu.show(window.contentPane, x, y)
         }
 
+        LaunchedEffect(buttonInfo.show) {
+            if (!buttonInfo.show) {
+                linuxMenuAnchor = null
+            }
+        }
+
         PastePanelWindowContext {
             PastePanelButtonContent(
                 window = window,
@@ -140,6 +146,7 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
                 },
                 onSecondaryClick = { x, y -> showMenu(x, y) },
                 onMoved = { x, y ->
+                    linuxMenuAnchor = null
                     appWindowManager.movePastePanelButton(WindowPosition(x.dp, y.dp))
                 },
             )
