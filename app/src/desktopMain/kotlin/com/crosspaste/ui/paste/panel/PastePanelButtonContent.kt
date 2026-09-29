@@ -14,9 +14,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,7 +37,10 @@ import com.crosspaste.app.generated.resources.crosspaste_svg
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 import java.awt.MouseInfo
@@ -76,11 +79,11 @@ fun PastePanelButtonContent(
     val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val isLinux = remember { platform.isLinux() }
-    val interactionSource = remember { MutableInteractionSource() }
     val pointerActivity = remember { PointerActivity() }
+    val interactionSource = remember { MutableInteractionSource() }
     val hovered =
         if (isLinux) {
-            pointerActivity.recentlyActive(LINUX_HOVER_HOLD)
+            pointerActivity.isRecentlyActive
         } else {
             interactionSource.collectIsHoveredAsState().value
         }
@@ -91,10 +94,14 @@ fun PastePanelButtonContent(
             Modifier
                 .size(appSizeValue.pastePanelButtonSize)
                 .alpha(alpha)
-                .hoverable(interactionSource)
-                .then(if (isLinux) pointerActivity.tracking() else Modifier)
-                .pastePanelButtonGestures(window, onClick, onSecondaryClick, onMoved)
                 .clip(CircleShape)
+                .then(
+                    if (isLinux) {
+                        pointerActivity.tracking(LINUX_HOVER_HOLD)
+                    } else {
+                        Modifier.hoverable(interactionSource)
+                    },
+                ).pastePanelButtonGestures(window, onClick, onSecondaryClick, onMoved)
                 .background(Brush.verticalGradient(listOf(BUTTON_GRADIENT_TOP, BUTTON_GRADIENT_BOTTOM))),
         contentAlignment = Alignment.Center,
     ) {
@@ -113,53 +120,68 @@ fun PastePanelButtonContent(
  * never a crossing event, so Compose's hover state switches on with the first move
  * and never off. Instead, the button counts as hovered while pointer events keep
  * coming and fades once they stop, without waiting for an exit that may not arrive.
+ * When a crossing event (Exit) does arrive, it clears the hover state immediately.
  */
 private class PointerActivity {
-    private var seenAt by mutableLongStateOf(0L)
+    var isRecentlyActive by mutableStateOf(false)
+        private set
 
-    /** Bumps the timestamp on every pointer event, without consuming any. */
-    fun tracking(): Modifier =
-        Modifier.pointerInput(Unit) {
-            awaitPointerEventScope {
-                while (true) {
-                    awaitPointerEvent(PointerEventPass.Initial)
-                    seenAt = System.nanoTime()
+    /**
+     * Tracks pointer events and keeps the button lit while events arrive.
+     * Fades [hold] after the last event, or immediately if an Exit event arrives.
+     */
+    fun tracking(hold: Duration): Modifier =
+        Modifier.pointerInput(hold) {
+            coroutineScope {
+                var resetJob: Job? = null
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        if (event.type == PointerEventType.Exit) {
+                            resetJob?.cancel()
+                            isRecentlyActive = false
+                        } else {
+                            isRecentlyActive = true
+                            resetJob?.cancel()
+                            resetJob =
+                                launch {
+                                    delay(hold)
+                                    isRecentlyActive = false
+                                }
+                        }
+                    }
                 }
             }
         }
-
-    /** True from the latest pointer event until [hold] has passed without another. */
-    @Composable
-    fun recentlyActive(hold: Duration): Boolean =
-        produceState(false, seenAt) {
-            if (seenAt == 0L) return@produceState
-            value = true
-            delay(hold)
-            value = false
-        }.value
 }
 
 /**
  * The button's mouse handling: a secondary click reports where it landed, a primary
  * press either drags the window (past the touch slop) or, released in place, clicks.
  */
+@Composable
 private fun Modifier.pastePanelButtonGestures(
     window: ComposeWindow,
     onClick: () -> Unit,
     onSecondaryClick: (x: Int, y: Int) -> Unit,
     onMoved: (x: Int, y: Int) -> Unit,
-): Modifier =
-    pointerInput(window) {
+): Modifier {
+    val currentOnClick by rememberUpdatedState(onClick)
+    val currentOnSecondaryClick by rememberUpdatedState(onSecondaryClick)
+    val currentOnMoved by rememberUpdatedState(onMoved)
+
+    return pointerInput(window) {
         awaitEachGesture {
             val press = awaitEventOfType(PointerEventType.Press)
             val down = press.changes.first()
             if (press.buttons.isSecondaryPressed) {
-                reportSecondaryClick(down, onSecondaryClick)
+                reportSecondaryClick(down, currentOnSecondaryClick)
             } else {
-                dragOrClick(window, down, onClick, onMoved)
+                dragOrClick(window, down, currentOnClick, currentOnMoved)
             }
         }
     }
+}
 
 private suspend fun AwaitPointerEventScope.reportSecondaryClick(
     down: PointerInputChange,
