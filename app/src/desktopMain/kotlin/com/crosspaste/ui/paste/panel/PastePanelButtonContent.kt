@@ -14,7 +14,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
@@ -24,18 +27,27 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste_svg
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.platform.Platform
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 import java.awt.MouseInfo
 import kotlin.math.hypot
 import kotlin.math.roundToInt
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 // The app icon's blue gradient; the white clipboard glyph is drawn straight onto it.
 private val BUTTON_GRADIENT_TOP = Color(0xFF2F7BFE)
@@ -44,6 +56,9 @@ private val BUTTON_GRADIENT_BOTTOM = Color(0xFF0A48FC)
 private const val IDLE_ALPHA = 0.6f
 
 private const val GLYPH_FRACTION = 0.55f
+
+// How long the button stays lit after the last pointer event on Linux.
+private val LINUX_HOVER_HOLD = 800.milliseconds
 
 /**
  * Round, translucent button: the app icon's gradient with its white glyph on top, so
@@ -60,11 +75,18 @@ fun PastePanelButtonContent(
     onMoved: (x: Int, y: Int) -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
-
+    val platform = koinInject<Platform>()
     val appSizeValue = LocalDesktopAppSizeValueState.current
 
+    val isLinux = remember { platform.isLinux() }
+    val pointerActivity = remember { PointerActivity() }
     val interactionSource = remember { MutableInteractionSource() }
-    val hovered by interactionSource.collectIsHoveredAsState()
+    val hovered =
+        if (isLinux) {
+            pointerActivity.isRecentlyActive
+        } else {
+            interactionSource.collectIsHoveredAsState().value
+        }
     val alpha by animateFloatAsState(if (hovered || panelOpen) 1f else IDLE_ALPHA)
 
     Box(
@@ -72,49 +94,14 @@ fun PastePanelButtonContent(
             Modifier
                 .size(appSizeValue.pastePanelButtonSize)
                 .alpha(alpha)
-                .hoverable(interactionSource)
-                .pointerInput(window) {
-                    awaitEachGesture {
-                        val press = awaitEventOfType(PointerEventType.Press)
-                        val down = press.changes.first()
-                        if (press.buttons.isSecondaryPressed) {
-                            down.consume()
-                            val up = awaitEventOfType(PointerEventType.Release).changes.first()
-                            up.consume()
-                            onSecondaryClick(
-                                up.position.x
-                                    .toDp()
-                                    .value
-                                    .roundToInt(),
-                                up.position.y
-                                    .toDp()
-                                    .value
-                                    .roundToInt(),
-                            )
-                            return@awaitEachGesture
-                        }
-                        val startPointer = MouseInfo.getPointerInfo()?.location ?: return@awaitEachGesture
-                        val startWindow = window.location
-                        var dragging = false
-                        drag(down.id) { change ->
-                            val pointer = MouseInfo.getPointerInfo()?.location ?: return@drag
-                            val dx = pointer.x - startPointer.x
-                            val dy = pointer.y - startPointer.y
-                            if (!dragging && hypot(dx.toDouble(), dy.toDouble()) > viewConfiguration.touchSlop) {
-                                dragging = true
-                            }
-                            if (dragging) {
-                                change.consume()
-                                window.setLocation(startWindow.x + dx, startWindow.y + dy)
-                            }
-                        }
-                        if (dragging) {
-                            onMoved(window.x, window.y)
-                        } else {
-                            onClick()
-                        }
-                    }
-                }.clip(CircleShape)
+                .clip(CircleShape)
+                .then(
+                    if (isLinux) {
+                        pointerActivity.tracking(LINUX_HOVER_HOLD)
+                    } else {
+                        Modifier.hoverable(interactionSource)
+                    },
+                ).pastePanelButtonGestures(window, onClick, onSecondaryClick, onMoved)
                 .background(Brush.verticalGradient(listOf(BUTTON_GRADIENT_TOP, BUTTON_GRADIENT_BOTTOM))),
         contentAlignment = Alignment.Center,
     ) {
@@ -124,6 +111,127 @@ fun PastePanelButtonContent(
             tint = Color.White,
             modifier = Modifier.fillMaxSize(GLYPH_FRACTION),
         )
+    }
+}
+
+/**
+ * Hover as Linux can tell it. X11 delivers motion to this override-redirect window
+ * but, with an absolute pointing device (VMs, tablets, touchscreens) under XWayland,
+ * never a crossing event, so Compose's hover state switches on with the first move
+ * and never off. Instead, the button counts as hovered while pointer events keep
+ * coming and fades once they stop, without waiting for an exit that may not arrive.
+ * When a crossing event (Exit) does arrive, it clears the hover state immediately.
+ */
+private class PointerActivity {
+    var isRecentlyActive by mutableStateOf(false)
+        private set
+
+    /**
+     * Tracks pointer events and keeps the button lit while events arrive.
+     * Fades [hold] after the last event, or immediately if an Exit event arrives.
+     */
+    fun tracking(hold: Duration): Modifier =
+        Modifier.pointerInput(hold) {
+            coroutineScope {
+                var resetJob: Job? = null
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        if (event.type == PointerEventType.Exit) {
+                            resetJob?.cancel()
+                            isRecentlyActive = false
+                        } else {
+                            isRecentlyActive = true
+                            resetJob?.cancel()
+                            resetJob =
+                                launch {
+                                    delay(hold)
+                                    isRecentlyActive = false
+                                }
+                        }
+                    }
+                }
+            }
+        }
+}
+
+/**
+ * The button's mouse handling: a secondary click reports where it landed, a primary
+ * press either drags the window (past the touch slop) or, released in place, clicks.
+ */
+@Composable
+private fun Modifier.pastePanelButtonGestures(
+    window: ComposeWindow,
+    onClick: () -> Unit,
+    onSecondaryClick: (x: Int, y: Int) -> Unit,
+    onMoved: (x: Int, y: Int) -> Unit,
+): Modifier {
+    val currentOnClick by rememberUpdatedState(onClick)
+    val currentOnSecondaryClick by rememberUpdatedState(onSecondaryClick)
+    val currentOnMoved by rememberUpdatedState(onMoved)
+
+    return pointerInput(window) {
+        awaitEachGesture {
+            val press = awaitEventOfType(PointerEventType.Press)
+            val down = press.changes.first()
+            if (press.buttons.isSecondaryPressed) {
+                reportSecondaryClick(down, currentOnSecondaryClick)
+            } else {
+                dragOrClick(window, down, currentOnClick, currentOnMoved)
+            }
+        }
+    }
+}
+
+private suspend fun AwaitPointerEventScope.reportSecondaryClick(
+    down: PointerInputChange,
+    onSecondaryClick: (x: Int, y: Int) -> Unit,
+) {
+    down.consume()
+    val up = awaitEventOfType(PointerEventType.Release).changes.first()
+    up.consume()
+    onSecondaryClick(
+        up.position.x
+            .toDp()
+            .value
+            .roundToInt(),
+        up.position.y
+            .toDp()
+            .value
+            .roundToInt(),
+    )
+}
+
+/**
+ * Follows the pointer through AWT rather than the pointer change: the window moves
+ * under the pointer while dragging, which would make Compose's window-relative
+ * positions chase themselves.
+ */
+private suspend fun AwaitPointerEventScope.dragOrClick(
+    window: ComposeWindow,
+    down: PointerInputChange,
+    onClick: () -> Unit,
+    onMoved: (x: Int, y: Int) -> Unit,
+) {
+    val startPointer = MouseInfo.getPointerInfo()?.location ?: return
+    val startWindow = window.location
+    var dragging = false
+    drag(down.id) { change ->
+        val pointer = MouseInfo.getPointerInfo()?.location ?: return@drag
+        val dx = pointer.x - startPointer.x
+        val dy = pointer.y - startPointer.y
+        if (!dragging && hypot(dx.toDouble(), dy.toDouble()) > viewConfiguration.touchSlop) {
+            dragging = true
+        }
+        if (dragging) {
+            change.consume()
+            window.setLocation(startWindow.x + dx, startWindow.y + dy)
+        }
+    }
+    if (dragging) {
+        onMoved(window.x, window.y)
+    } else {
+        onClick()
     }
 }
 
