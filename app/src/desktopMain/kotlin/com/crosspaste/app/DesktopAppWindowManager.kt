@@ -99,6 +99,7 @@ abstract class DesktopAppWindowManager(
         private const val PASTE_PANEL_WINDOW_TITLE = "CrossPaste Paste Panel"
 
         private const val PASTE_PANEL_BUTTON_WINDOW_TITLE = "CrossPaste Paste Panel Button"
+        private const val PASTE_PANEL_MENU_WINDOW_TITLE = "CrossPaste Paste Panel Menu"
     }
 
     protected val logger: KLogger = KotlinLogging.logger {}
@@ -112,6 +113,8 @@ abstract class DesktopAppWindowManager(
     val pastePanelWindowTitle: String = PASTE_PANEL_WINDOW_TITLE
 
     val pastePanelButtonWindowTitle: String = PASTE_PANEL_BUTTON_WINDOW_TITLE
+
+    val pastePanelMenuWindowTitle: String = PASTE_PANEL_MENU_WINDOW_TITLE
 
     protected val ioScope = namedScope(ioDispatcher, "DesktopAppWindowManager")
 

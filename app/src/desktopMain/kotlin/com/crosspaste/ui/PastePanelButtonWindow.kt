@@ -1,15 +1,14 @@
 package com.crosspaste.ui
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
 import com.crosspaste.app.DesktopAppWindowManager
@@ -28,6 +27,7 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import java.awt.MenuItem
 import java.awt.PopupMenu
+import java.awt.Rectangle
 
 /**
  * Floating round button that opens and closes [PastePanelWindow]. It is toggled by the
@@ -57,6 +57,7 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
 
     val isMac = remember { platform.isMacos() }
     val isWindows = remember { platform.isWindows() }
+    val isLinux = remember { platform.isLinux() }
 
     NonActivatingWindow(
         visible = buttonInfo.show,
@@ -72,11 +73,13 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
 
         val window = this.window
         val popupMenu =
-            if (isWindows) {
-                null
-            } else {
+            if (isMac) {
                 remember(window) { PopupMenu().also { window.add(it) } }
+            } else {
+                null
             }
+        // Linux draws the menu in a window of its own beside the button, see PastePanelMenuWindow
+        var linuxMenuAnchor by remember { mutableStateOf<Rectangle?>(null) }
         DisposableEffect(window) {
             onDispose {
                 popupMenu?.let { window.remove(it) }
@@ -102,12 +105,17 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
         fun showMenu(
             x: Int,
             y: Int,
-            surface: Color,
         ) {
+            // The menu and the panel never show together
+            appWindowManager.hidePastePanelWindow()
             if (isWindows) {
                 WindowsPopupMenu.show(menuEntries()) { action ->
                     mainCoroutineDispatcher.launch { action() }
                 }
+                return
+            }
+            if (isLinux) {
+                linuxMenuAnchor = Rectangle(window.bounds)
                 return
             }
             val menu = popupMenu ?: return
@@ -119,26 +127,29 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
                     NativeMenuEntry.Separator -> menu.addSeparator()
                 }
             }
-            // XAWT paints the menu in the background colour of the component it is shown
-            // over, and a transparent window's own background is fully transparent, which left the
-            // Linux menu see-through. The content pane never paints inside a transparent
-            // window, so its colour is free to carry the theme surface for the menu; XAWT
-            // derives a readable text colour from it in either theme.
-            val contentPane = window.contentPane
-            contentPane.background = java.awt.Color(surface.toArgb())
-            menu.show(contentPane, x, y)
+            menu.show(window.contentPane, x, y)
         }
 
         PastePanelWindowContext {
-            val menuSurface = MaterialTheme.colorScheme.surface
             PastePanelButtonContent(
                 window = window,
                 panelOpen = panelInfo.show,
-                onClick = { appWindowManager.switchPastePanelWindow(WindowTrigger.SYSTEM) },
-                onSecondaryClick = { x, y -> showMenu(x, y, menuSurface) },
+                onClick = {
+                    linuxMenuAnchor = null
+                    appWindowManager.switchPastePanelWindow(WindowTrigger.SYSTEM)
+                },
+                onSecondaryClick = { x, y -> showMenu(x, y) },
                 onMoved = { x, y ->
                     appWindowManager.movePastePanelButton(WindowPosition(x.dp, y.dp))
                 },
+            )
+        }
+
+        linuxMenuAnchor?.let { anchor ->
+            PastePanelMenuWindow(
+                anchor = anchor,
+                entries = menuEntries(),
+                onDismiss = { linuxMenuAnchor = null },
             )
         }
     }
