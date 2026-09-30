@@ -37,8 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.rounded.Vertical_align_bottom
-import com.composables.icons.materialsymbols.rounded.Vertical_align_top
+import com.composables.icons.materialsymbols.rounded.Arrow_downward
+import com.composables.icons.materialsymbols.rounded.Arrow_upward
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteType.Companion.ALL_TYPES
@@ -96,14 +96,16 @@ fun SearchTrailingIcon() {
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // The arrow shows the current order, following the list-header convention:
+        // pointing down = descending (newest first), pointing up = ascending (oldest first).
         GeneralIconButton(
             imageVector =
                 if (searchBaseParams.sort) {
-                    MaterialSymbols.Rounded.Vertical_align_bottom
+                    MaterialSymbols.Rounded.Arrow_downward
                 } else {
-                    MaterialSymbols.Rounded.Vertical_align_top
+                    MaterialSymbols.Rounded.Arrow_upward
                 },
-            desc = "sort_by_creation_time",
+            desc = if (searchBaseParams.sort) "sort_newest_first" else "sort_oldest_first",
             colors =
                 iconButtonColors(
                     containerColor = Color.Transparent,
