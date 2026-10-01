@@ -8,6 +8,7 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
+import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteContentEditor
 import com.crosspaste.paste.PasteData
@@ -34,6 +35,9 @@ import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
 import com.crosspaste.presist.SingleFileInfoTree
+import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.sync.SyncManager
+import com.crosspaste.sync.SyncTestFixtures
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.getJsonUtils
 import io.ktor.client.request.*
@@ -56,6 +60,7 @@ import io.mockk.mockkObject
 import io.mockk.slot
 import io.mockk.unmockkObject
 import io.mockk.verify
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.Json
@@ -113,6 +118,9 @@ class CliRoutingTest {
         val pasteTagDao = mockk<PasteTagDao>()
         val searchContentService = mockk<SearchContentService>()
         val syncRuntimeInfoDao = mockk<SyncRuntimeInfoDao>()
+        val syncManager = mockk<SyncManager>(relaxed = true)
+        val nearbyDeviceManager = mockk<NearbyDeviceManager>(relaxed = true)
+        val nearbySyncInfos = MutableStateFlow<List<SyncInfo>>(emptyList())
         val pasteDataHelper = PasteDataHelper(DefaultPasteItemReader())
 
         val taskSubmitter = mockk<TaskSubmitter>(relaxed = true)
@@ -135,6 +143,8 @@ class CliRoutingTest {
                 currentConfig = currentConfig.copy(key = firstArg<String>(), value = secondArg<Any>())
             }
             coEvery { syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns listOf()
+            coEvery { syncRuntimeInfoDao.getSyncRuntimeInfo(any()) } returns null
+            every { nearbyDeviceManager.nearbySyncInfos } returns nearbySyncInfos
             // The PasteData overload of tryWritePasteboard defaults `scope`
             // from configManager, which resolves through this property
             every { pasteboardService.configManager } returns
@@ -175,6 +185,7 @@ class CliRoutingTest {
                 appInfo = appInfo,
                 cliPairingService = fixture.cliPairingService,
                 configManager = fixture.configManager,
+                nearbyDeviceManager = fixture.nearbyDeviceManager,
                 pasteContentEditor = fixture.pasteContentEditor,
                 taskSubmitter = fixture.taskSubmitter,
                 supportsPasteCopy = supportsPasteCopy,
@@ -185,6 +196,7 @@ class CliRoutingTest {
                 pasteReleaseService = fixture.pasteReleaseService,
                 pasteTagDao = fixture.pasteTagDao,
                 searchContentService = fixture.searchContentService,
+                syncManager = fixture.syncManager,
                 syncRuntimeInfoDao = fixture.syncRuntimeInfoDao,
                 userDataPathProvider = fixture.userDataPathProvider,
             )
@@ -617,6 +629,73 @@ class CliRoutingTest {
             assertEquals(1, devices.size)
             assertEquals("other", devices[0].appInstanceId)
             assertEquals("Macos", devices[0].platform)
+        }
+    }
+
+    private fun pairedDevice(appInstanceId: String) =
+        SyncRuntimeInfo(
+            appInstanceId = appInstanceId,
+            appVersion = "2.1.7",
+            userName = "tester",
+            deviceId = "device-id",
+            deviceName = "MacBook",
+            platform = Platform(name = "Macos", arch = "arm64", bitMode = 64, version = "15"),
+            port = 13129,
+        )
+
+    @Test
+    fun `devices remove unpairs a paired device`() {
+        val fixture = Fixture()
+        coEvery { fixture.syncRuntimeInfoDao.getSyncRuntimeInfo("other") } returns pairedDevice("other")
+        withCliRouting(fixture) {
+            val response = client.delete("/cli/devices/other")
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertContains(response.bodyAsText(), "MacBook")
+            verify(exactly = 1) { fixture.syncManager.removeSyncHandler("other") }
+        }
+    }
+
+    @Test
+    fun `devices remove rejects an unknown device`() {
+        val fixture = Fixture()
+        withCliRouting(fixture) {
+            val response = client.delete("/cli/devices/ghost")
+            assertEquals(HttpStatusCode.NotFound, response.status)
+            verify(exactly = 0) { fixture.syncManager.removeSyncHandler(any()) }
+        }
+    }
+
+    @Test
+    fun `devices block blacklists a nearby device`() {
+        val fixture = Fixture()
+        val nearby = SyncTestFixtures.createSyncInfo(appInstanceId = "nearby-1", deviceName = "Pixel")
+        fixture.nearbySyncInfos.value = listOf(nearby)
+        withCliRouting(fixture) {
+            val response = client.post("/cli/devices/nearby-1/block")
+            assertEquals(HttpStatusCode.OK, response.status)
+            assertContains(response.bodyAsText(), "Pixel")
+            verify(exactly = 1) { fixture.nearbyDeviceManager.blockDevice(nearby) }
+        }
+    }
+
+    @Test
+    fun `devices block refuses a paired device and an unknown one`() {
+        val fixture = Fixture()
+        coEvery { fixture.syncRuntimeInfoDao.getSyncRuntimeInfo("other") } returns pairedDevice("other")
+        withCliRouting(fixture) {
+            assertEquals(HttpStatusCode.Conflict, client.post("/cli/devices/other/block").status)
+            assertEquals(HttpStatusCode.NotFound, client.post("/cli/devices/ghost/block").status)
+            verify(exactly = 0) { fixture.nearbyDeviceManager.blockDevice(any()) }
+        }
+    }
+
+    @Test
+    fun `devices unblock removes the device from the blacklist`() {
+        val fixture = Fixture()
+        withCliRouting(fixture) {
+            val response = client.delete("/cli/devices/nearby-1/block")
+            assertEquals(HttpStatusCode.OK, response.status)
+            verify(exactly = 1) { fixture.nearbyDeviceManager.unblockDevice("nearby-1") }
         }
     }
 

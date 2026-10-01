@@ -24,6 +24,8 @@ import com.crosspaste.paste.item.clearRenderingFiles
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
@@ -62,6 +64,7 @@ fun Routing.cliRouting(
     appInfo: AppInfo,
     cliPairingService: CliPairingService,
     configManager: DesktopConfigManager,
+    nearbyDeviceManager: NearbyDeviceManager,
     pasteContentEditor: PasteContentEditor,
     taskSubmitter: TaskSubmitter,
     /**
@@ -79,6 +82,7 @@ fun Routing.cliRouting(
     pasteReleaseService: PasteReleaseService,
     pasteTagDao: PasteTagDao,
     searchContentService: SearchContentService,
+    syncManager: SyncManager,
     syncRuntimeInfoDao: SyncRuntimeInfoDao,
     userDataPathProvider: UserDataPathProvider,
 ) {
@@ -149,6 +153,20 @@ fun Routing.cliRouting(
 
         get("/devices") {
             handleDevices(call, syncRuntimeInfoDao)
+        }
+
+        delete("/devices/{id}") {
+            handleDeviceRemove(call, syncManager, syncRuntimeInfoDao)
+        }
+
+        // Block / unblock act on the nearby (unpaired) list, mirroring the Devices page:
+        // a paired device is removed, not blocked.
+        post("/devices/{id}/block") {
+            handleDeviceBlock(call, nearbyDeviceManager, syncRuntimeInfoDao)
+        }
+
+        delete("/devices/{id}/block") {
+            handleDeviceUnblock(call, nearbyDeviceManager)
         }
 
         get("/tags") {
@@ -460,6 +478,53 @@ private suspend fun handlePasteImage(
     call.response.header(CLI_IMAGE_WIDTH_HEADER, raw.width)
     call.response.header(CLI_IMAGE_HEIGHT_HEADER, raw.height)
     call.respondBytes(raw.rgba, ContentType.Application.OctetStream)
+}
+
+private suspend fun handleDeviceRemove(
+    call: ApplicationCall,
+    syncManager: SyncManager,
+    syncRuntimeInfoDao: SyncRuntimeInfoDao,
+) {
+    val appInstanceId = call.parameters["id"].orEmpty()
+    val info = syncRuntimeInfoDao.getSyncRuntimeInfo(appInstanceId)
+    if (info == null) {
+        call.respond(HttpStatusCode.NotFound, CliMessageDto("Device $appInstanceId is not paired."))
+        return
+    }
+    syncManager.removeSyncHandler(appInstanceId)
+    call.respond(CliMessageDto("Removed ${info.getDeviceDisplayName()}."))
+}
+
+private suspend fun handleDeviceBlock(
+    call: ApplicationCall,
+    nearbyDeviceManager: NearbyDeviceManager,
+    syncRuntimeInfoDao: SyncRuntimeInfoDao,
+) {
+    val appInstanceId = call.parameters["id"].orEmpty()
+    if (syncRuntimeInfoDao.getSyncRuntimeInfo(appInstanceId) != null) {
+        call.respond(
+            HttpStatusCode.Conflict,
+            CliMessageDto("Device $appInstanceId is paired; remove it before blocking."),
+        )
+        return
+    }
+    val syncInfo =
+        nearbyDeviceManager.nearbySyncInfos.value.firstOrNull { it.appInfo.appInstanceId == appInstanceId }
+    if (syncInfo == null) {
+        call.respond(HttpStatusCode.NotFound, CliMessageDto("Device $appInstanceId is not in the nearby list."))
+        return
+    }
+    nearbyDeviceManager.blockDevice(syncInfo)
+    call.respond(CliMessageDto("Blocked ${syncInfo.endpointInfo.deviceName}."))
+}
+
+private suspend fun handleDeviceUnblock(
+    call: ApplicationCall,
+    nearbyDeviceManager: NearbyDeviceManager,
+) {
+    val appInstanceId = call.parameters["id"].orEmpty()
+    nearbyDeviceManager.unblockDevice(appInstanceId)
+    call.respond(CliMessageDto("Unblocked $appInstanceId."))
 }
 
 private suspend fun handleDevices(
