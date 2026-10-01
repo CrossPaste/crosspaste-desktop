@@ -32,6 +32,7 @@ import com.crosspaste.net.Server
 import com.crosspaste.net.ServerFactory
 import com.crosspaste.net.ServerModule
 import com.crosspaste.net.SyncApi
+import com.crosspaste.net.SyncInfoAdvertiser
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.WindowsNetworkStateMonitor
 import com.crosspaste.net.clientapi.PairingV3ClientApi
@@ -153,12 +154,13 @@ fun desktopNetworkModule(
             }
         }
         single<PasteBonjourService> { DesktopPasteBonjourService(get(), get(), get(), get()) }
+        single<SyncInfoAdvertiser> { SyncInfoAdvertiser(get(), get()) }
         single<TelnetHelper> { TelnetHelper(get(), get(), get(), get()) }
         // endregion
 
         // region HTTP client & API
         single<FaviconLoader> { DesktopFaviconLoader(get(), get(), get()) }
-        single<PairingV3ClientApi> { PairingV3ClientApi(get(), get()) }
+        single<PairingV3ClientApi> { PairingV3ClientApi(get(), get(), get()) }
         single<PairingV3Transport> { get<PairingV3ClientApi>() }
         single<PasteClient> { PasteClient(get(), get(), get()) }
         single<PasteClientApi> { PasteClientApi(get(), get()) }
