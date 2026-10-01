@@ -515,7 +515,7 @@ private suspend fun handleDeviceBlock(
         return
     }
     nearbyDeviceManager.blockDevice(syncInfo)
-    call.respond(CliMessageDto("Blocked ${syncInfo.endpointInfo.deviceName}."))
+    call.respond(CliMessageDto("Blocked ${syncInfo.endpointInfo.deviceName} (${syncInfo.appInfo.appInstanceId})."))
 }
 
 private suspend fun handleDeviceUnblock(
@@ -523,7 +523,10 @@ private suspend fun handleDeviceUnblock(
     nearbyDeviceManager: NearbyDeviceManager,
 ) {
     val appInstanceId = call.parameters["id"].orEmpty()
-    nearbyDeviceManager.unblockDevice(appInstanceId)
+    if (!nearbyDeviceManager.unblockDevice(appInstanceId)) {
+        call.respond(HttpStatusCode.NotFound, CliMessageDto("Device $appInstanceId is not blocked."))
+        return
+    }
     call.respond(CliMessageDto("Unblocked $appInstanceId."))
 }
 

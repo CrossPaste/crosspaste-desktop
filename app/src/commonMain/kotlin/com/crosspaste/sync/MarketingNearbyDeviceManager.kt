@@ -55,8 +55,7 @@ class MarketingNearbyDeviceManager : NearbyDeviceManager {
     override fun blockDevice(syncInfo: SyncInfo) {
     }
 
-    override fun unblockDevice(appInstanceId: String) {
-    }
+    override fun unblockDevice(appInstanceId: String): Boolean = false
 
     override fun startSearching() {
         searching.value = true

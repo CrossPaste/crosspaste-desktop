@@ -48,9 +48,35 @@ class DevicesCommandTest {
     }
 
     @Test
+    fun emptyOrBlankInputIsNotFound() {
+        assertEquals(DeviceIdResolution.NotFound, resolveDeviceId("", ids))
+        assertEquals(DeviceIdResolution.NotFound, resolveDeviceId("   ", ids))
+        assertEquals(DeviceIdResolution.NotFound, resolveDeviceId("", listOf("single-device")))
+    }
+
+    @Test
+    fun exactIdWinsCaseInsensitively() {
+        assertEquals(
+            DeviceIdResolution.Resolved(ids[1]),
+            resolveDeviceId("f5f6a504-f621-11ed-c88c-08bfb81bb86e", ids),
+        )
+        assertEquals(
+            DeviceIdResolution.Resolved("f5f6"),
+            resolveDeviceId("F5F6", listOf("f5f6", "f5f6-extra")),
+        )
+    }
+
+    @Test
     fun removeRequiresAnId() {
         val result = CrossPasteCommand().test("devices remove")
         assertEquals(1, result.statusCode)
         assertContains(result.stderr, "missing argument")
+    }
+
+    @Test
+    fun unblockRequiresNonBlankId() {
+        val result = CrossPasteCommand().test("devices unblock \"\"")
+        assertEquals(1, result.statusCode)
+        assertContains(result.stderr, "must not be blank")
     }
 }

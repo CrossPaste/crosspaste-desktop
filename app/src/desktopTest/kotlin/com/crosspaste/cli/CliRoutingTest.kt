@@ -674,6 +674,7 @@ class CliRoutingTest {
             val response = client.post("/cli/devices/nearby-1/block")
             assertEquals(HttpStatusCode.OK, response.status)
             assertContains(response.bodyAsText(), "Pixel")
+            assertContains(response.bodyAsText(), "nearby-1")
             verify(exactly = 1) { fixture.nearbyDeviceManager.blockDevice(nearby) }
         }
     }
@@ -692,10 +693,24 @@ class CliRoutingTest {
     @Test
     fun `devices unblock removes the device from the blacklist`() {
         val fixture = Fixture()
+        every { fixture.nearbyDeviceManager.unblockDevice("nearby-1") } returns true
         withCliRouting(fixture) {
             val response = client.delete("/cli/devices/nearby-1/block")
             assertEquals(HttpStatusCode.OK, response.status)
+            assertContains(response.bodyAsText(), "Unblocked nearby-1.")
             verify(exactly = 1) { fixture.nearbyDeviceManager.unblockDevice("nearby-1") }
+        }
+    }
+
+    @Test
+    fun `devices unblock rejects a device not in the blacklist`() {
+        val fixture = Fixture()
+        every { fixture.nearbyDeviceManager.unblockDevice("ghost") } returns false
+        withCliRouting(fixture) {
+            val response = client.delete("/cli/devices/ghost/block")
+            assertEquals(HttpStatusCode.NotFound, response.status)
+            assertContains(response.bodyAsText(), "Device ghost is not blocked.")
+            verify(exactly = 1) { fixture.nearbyDeviceManager.unblockDevice("ghost") }
         }
     }
 

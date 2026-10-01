@@ -132,11 +132,15 @@ class DevicesUnblockCommand : CliktCommand(name = "unblock") {
     // The blocked list is not exposed, so the full id is required here.
     private val device by argument(help = "App instance id of the blocked device")
 
-    override fun run() =
+    override fun run() {
+        if (device.isBlank()) {
+            throw usageError("device id must not be blank")
+        }
         runCli { client ->
             val response = client.deleteBody("/cli/devices/$device/block", MessageResponse.serializer())
             echoMessage(ctx, response)
         }
+    }
 }
 
 internal sealed class DeviceIdResolution {
@@ -160,7 +164,8 @@ internal fun resolveDeviceId(
     input: String,
     ids: List<String>,
 ): DeviceIdResolution {
-    ids.firstOrNull { it == input }?.let { return DeviceIdResolution.Resolved(it) }
+    if (input.isBlank()) return DeviceIdResolution.NotFound
+    ids.firstOrNull { it.equals(input, ignoreCase = true) }?.let { return DeviceIdResolution.Resolved(it) }
     val matches = ids.filter { it.startsWith(input, ignoreCase = true) }
     return when (matches.size) {
         0 -> DeviceIdResolution.NotFound

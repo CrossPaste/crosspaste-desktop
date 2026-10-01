@@ -19,7 +19,12 @@ interface NearbyDeviceManager {
     /** Hides the device from nearby results until [unblockDevice] is called. */
     fun blockDevice(syncInfo: SyncInfo)
 
-    fun unblockDevice(appInstanceId: String)
+    /**
+     * Unblocks the device identified by [appInstanceId].
+     *
+     * @return `true` if the device was in the blacklist and removed, `false` otherwise.
+     */
+    fun unblockDevice(appInstanceId: String): Boolean
 
     fun startSearching()
 

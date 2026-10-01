@@ -36,7 +36,8 @@ CLI 二进制随所有桌面安装包一起分发，各平台的差异只在于�
 | `delete <id>` | 按 ID 删除一条粘贴。 |
 | `devices` | 列出已配对设备及连接状态。 |
 | `devices remove <id>` | 解除与某设备的配对（app instance id 的唯一前缀即可），重新配对前不再同步。 |
-| `devices block <id>` | 屏蔽附近某台未配对设备，不再出现在发现列表（等同设备页的 Block）；`devices unblock <id>` 取消屏蔽。 |
+| `devices block <id>` | 屏蔽附近某台未配对设备，不再出现在发现列表（等同设备页的 Block，唯一前缀即可）。 |
+| `devices unblock <id>` | 取消屏蔽某设备，重新允许其出现在发现列表（需要提供完整的 app instance id）。 |
 | `pair` | 与附近设备配对：输入对方屏幕上显示的配对码（见[在终端里配对](#在终端里配对)）。 |
 | `token` | 当其他设备正在与本机配对时，显示本机的 6 位配对码——`pair` 的被配对方（acceptor）对应命令，本机运行 headless 守护进程时必需。`--wait` 阻塞等待配对请求到来（`--timeout` 秒，默认 600）。 |
 | `config` | 查看配置；`config set <key> <value>` 修改配置。 |

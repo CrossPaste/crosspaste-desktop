@@ -395,12 +395,30 @@ class GeneralNearbyDeviceManagerTest {
                 createMockConfig(jsonUtils.JSON.encodeToString(blocked))
             val manager = deps.createManager(childScope)
 
-            manager.unblockDevice("peer-1")
+            val unblocked = manager.unblockDevice("peer-1")
+            assertTrue(unblocked)
 
             val written = slot<Any>()
             verify(exactly = 1) { deps.configManager.updateConfig("blacklist", capture(written)) }
             val remaining = jsonUtils.JSON.decodeFromString<List<SyncInfo>>(written.captured as String)
             assertEquals(listOf("peer-2"), remaining.map { it.appInfo.appInstanceId })
+            childScope.cancel()
+        }
+
+    @Test
+    fun unblockDevice_notInBlacklist_returnsFalse() =
+        runTest {
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val deps = TestDeps(childScope)
+            val blocked = listOf(createSyncInfo(appInstanceId = "peer-1"))
+            every { deps.configManager.getCurrentConfig() } returns
+                createMockConfig(jsonUtils.JSON.encodeToString(blocked))
+            val manager = deps.createManager(childScope)
+
+            val unblocked = manager.unblockDevice("unknown-peer")
+            assertFalse(unblocked)
+
+            verify(exactly = 0) { deps.configManager.updateConfig("blacklist", any()) }
             childScope.cancel()
         }
 
