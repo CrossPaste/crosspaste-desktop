@@ -35,6 +35,9 @@ The examples below use `crosspaste`; on Windows substitute `crosspaste-cli`.
 | `edit [id]` | Open the most recent paste (or a specific paste by ID) in `$VISUAL`/`$EDITOR` and update it in place: the paste keeps its ID, type, and tags. HTML/RTF edit their source markup and stay HTML/RTF, links edit the URL, colors edit the `#RRGGBBAA` value. Saving without changes updates nothing. Like editing inside the app, the change is not re-synced to devices that already received the original. |
 | `delete <id>` | Delete a paste by ID. |
 | `devices` | List paired devices and their connection state. |
+| `devices remove <id>` | Unpair a device (a unique prefix of its app instance id is enough); it stops syncing until paired again. |
+| `devices block <id>` | Hide a nearby unpaired device from discovery (same as Block on the Devices page, a unique prefix is enough). |
+| `devices unblock <id>` | Let a blocked device show up in discovery again (requires the full app instance id). |
 | `pair` | Pair with a nearby device by entering the code it displays (see [Pairing from the terminal](#pairing-from-the-terminal)). |
 | `token` | Show this device's 6-digit pairing code while another device is pairing with it — the acceptor-side counterpart of `pair`, needed when this machine runs the headless daemon. `--wait` blocks until a pairing request arrives (`--timeout` seconds, default 600). |
 | `config` | View configuration; `config set <key> <value>` changes it. |

@@ -15,6 +15,8 @@ import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskSubmitter
 import io.mockk.coEvery
 import io.mockk.every
@@ -77,6 +79,7 @@ class CliServerTest {
                 cliPairingService = mockk<CliPairingService>(),
                 configManager = configManager,
                 cliEndpointFile = endpointFile,
+                nearbyDeviceManager = mockk<NearbyDeviceManager>(relaxed = true),
                 supportsPasteCopy = true,
                 pasteboardService = mockk<PasteboardService>(),
                 pasteDao = pasteDao,
@@ -85,6 +88,7 @@ class CliServerTest {
                 pasteReleaseService = mockk<PasteReleaseService>(),
                 pasteTagDao = mockk<PasteTagDao>(),
                 searchContentService = mockk<SearchContentService>(),
+                syncManager = mockk<SyncManager>(relaxed = true),
                 syncRuntimeInfoDao = syncRuntimeInfoDao,
                 pasteContentEditor = mockk<PasteContentEditor>(),
                 taskSubmitter = mockk<TaskSubmitter>(),

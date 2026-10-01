@@ -92,11 +92,12 @@ class GeneralNearbyDeviceManager(
         writeBlacklist(current.values + syncInfo)
     }
 
-    override fun unblockDevice(appInstanceId: String) {
+    override fun unblockDevice(appInstanceId: String): Boolean {
         val current = buildBlackSyncInfoMap(configManager.getCurrentConfig().blacklist)
-        if (!current.containsKey(appInstanceId)) return
+        if (!current.containsKey(appInstanceId)) return false
         logger.info { "Unblocking device: $appInstanceId" }
         writeBlacklist((current - appInstanceId).values)
+        return true
     }
 
     private fun writeBlacklist(blacklist: Collection<SyncInfo>) {

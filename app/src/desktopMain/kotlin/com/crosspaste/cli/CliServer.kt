@@ -13,6 +13,8 @@ import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.sync.NearbyDeviceManager
+import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.ioDispatcher
@@ -55,6 +57,7 @@ class CliServer(
     private val cliPairingService: CliPairingService,
     private val configManager: DesktopConfigManager,
     private val cliEndpointFile: CliEndpointFile,
+    private val nearbyDeviceManager: NearbyDeviceManager,
     private val supportsPasteCopy: Boolean,
     private val pasteboardService: PasteboardService,
     private val pasteDao: PasteDao,
@@ -63,6 +66,7 @@ class CliServer(
     private val pasteReleaseService: PasteReleaseService,
     private val pasteTagDao: PasteTagDao,
     private val searchContentService: SearchContentService,
+    private val syncManager: SyncManager,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
     private val pasteContentEditor: PasteContentEditor,
     private val taskSubmitter: TaskSubmitter,
@@ -195,6 +199,7 @@ class CliServer(
                 appInfo = appInfo,
                 cliPairingService = cliPairingService,
                 configManager = configManager,
+                nearbyDeviceManager = nearbyDeviceManager,
                 supportsPasteCopy = supportsPasteCopy,
                 pasteboardService = pasteboardService,
                 pasteDao = pasteDao,
@@ -203,6 +208,7 @@ class CliServer(
                 pasteReleaseService = pasteReleaseService,
                 pasteTagDao = pasteTagDao,
                 searchContentService = searchContentService,
+                syncManager = syncManager,
                 syncRuntimeInfoDao = syncRuntimeInfoDao,
                 pasteContentEditor = pasteContentEditor,
                 taskSubmitter = taskSubmitter,

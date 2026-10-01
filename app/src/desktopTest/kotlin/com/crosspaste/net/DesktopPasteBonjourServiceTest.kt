@@ -294,7 +294,7 @@ class DesktopPasteBonjourServiceTest {
 
         override fun blockDevice(syncInfo: SyncInfo) = Unit
 
-        override fun unblockDevice(appInstanceId: String) = Unit
+        override fun unblockDevice(appInstanceId: String): Boolean = true
 
         override fun startSearching() {
             searchStarts++
