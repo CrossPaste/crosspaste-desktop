@@ -3,6 +3,9 @@
 ## 📋 Floating paste panel
 A new floating button lists your clipboard history; click a row and it is pasted straight into the app you are working in, without the panel ever taking focus or interrupting your typing. Right-click the button for its menu. Enable it under Settings → Appearance, or open it with a shortcut: Shift+Cmd+C by default on macOS; on Windows and Linux set one on the Shortcuts page. On Linux both X11 and Wayland sessions are supported.
 
+## ⬇️ Updates download in the background (Windows portable)
+The Windows portable build now downloads, verifies and extracts a new version in the background as soon as the update check finds one, throttled to 1 MB/s so it does not get in the way of your browsing; you are only prompted once it is ready, and a single click on "Restart and update" finishes the job. Downloads resume where they left off after the app is closed or the connection drops. If you would rather not download automatically, turn it off under Settings → General and you will be prompted to download manually as before. macOS and the Windows installer builds are already updated in the background by the system and are unaffected.
+
 ## 🔒 Keep passwords out of history: manager hints and source exclusion
 Password managers such as Bitwarden, 1Password and KeePassXC mark a copied password as "do not record". CrossPaste now honors that hint on Windows, macOS and Linux: marked content is neither written to history nor synced to other devices. For apps that do not set the hint, the Clipboard sources page under Settings → Clipboard → Recording lets you pick apps to exclude straight from the running apps, or add match rules so that any source whose name contains the given text (for example bitw) is skipped.
 

@@ -86,6 +86,9 @@ data class DesktopAppConfig(
     // Linux/Wayland: single-use token handed back by the RemoteDesktop portal so the
     // paste-injection session can be restored without prompting the user again.
     val linuxRemoteDesktopRestoreToken: String = "",
+    // Windows portable zip only: download a newer release in the background (throttled)
+    // as soon as the periodic check finds one, so the prompt can offer a one-click restart.
+    val autoDownloadUpdate: Boolean = true,
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -222,5 +225,6 @@ data class DesktopAppConfig(
                 } else {
                     linuxRemoteDesktopRestoreToken
                 },
+            autoDownloadUpdate = if (key == "autoDownloadUpdate") toBoolean(value) else autoDownloadUpdate,
         )
 }

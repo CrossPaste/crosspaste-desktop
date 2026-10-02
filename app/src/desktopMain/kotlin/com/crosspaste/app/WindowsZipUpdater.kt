@@ -1,6 +1,5 @@
 package com.crosspaste.app
 
-import com.crosspaste.net.DownloadProgressListener
 import com.crosspaste.net.ResourceRequestLimits
 import com.crosspaste.net.ResourcesClient
 import com.crosspaste.path.AppPathProvider
@@ -12,8 +11,8 @@ import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
 import dev.hydraulic.conveyor.control.SoftwareUpdateController
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.http.HttpStatusCode
-import kotlinx.coroutines.CompletableDeferred
+import io.github.z4kn4fein.semver.Version
+import io.github.z4kn4fein.semver.toVersionOrNull
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -24,8 +23,10 @@ import kotlinx.coroutines.selects.select
 import okio.FileSystem
 import okio.Path
 import okio.buffer
+import java.io.StringReader
 import java.nio.file.Files
 import java.security.MessageDigest
+import java.util.Properties
 import javax.swing.SwingUtilities
 
 /**
@@ -69,8 +70,13 @@ sealed interface UpdateState {
 
     data object Applying : UpdateState
 
+    /**
+     * [manual] is true when the failed attempt was started by the user (or is a failed
+     * apply they must see); background attempts fail quietly and retry on the next check.
+     */
     data class Failed(
         val reasonKey: String,
+        val manual: Boolean = true,
     ) : UpdateState
 }
 
@@ -94,13 +100,21 @@ private data class RemoteRelease(
  * process to exit, mirrors the new files over the install directory, and
  * relaunches.
  *
+ * The download runs through [ResumableUpdateDownloader], so it survives restarts and
+ * dropped connections, and a background download (started by the periodic update
+ * check, see [startBackgroundDownload]) is throttled to [BACKGROUND_LIMIT_BYTES_PER_SECOND]
+ * until the user asks for it explicitly. A verified, extracted update is remembered in
+ * [READY_MARKER] so the restart prompt comes straight back after a relaunch.
+ *
  * Store and Conveyor-installer channels are detected but not driven here.
  */
 class WindowsZipUpdater(
+    appInfo: AppInfo,
     private val appUrls: AppUrls,
     private val appPathProvider: AppPathProvider,
     private val appLaunchState: DesktopAppLaunchState,
     private val resourcesClient: ResourcesClient,
+    private val downloader: ResumableUpdateDownloader,
     platform: Platform,
     private val metadataFetcher: UpdateMetadataFetcher,
     // Test/QA seams. [baseUrlOverride] points metadata + checksum + zip at a single
@@ -121,6 +135,13 @@ class WindowsZipUpdater(
     private val coroutineScope = namedScope(ioDispatcher, "WindowsZipUpdater")
 
     val channel: WindowsUpdateChannel = forcedChannel ?: detectChannel(platform)
+
+    private val currentVersion: Version? = appInfo.appVersion.toVersionOrNull()
+
+    // True while the in-flight download was requested by the user: it then runs
+    // unthrottled, and a failure is surfaced in the dialog instead of retried quietly.
+    @Volatile
+    private var manualAttempt: Boolean = false
 
     /**
      * Override-aware "latest release" metadata URL, or null when no test override is
@@ -157,6 +178,7 @@ class WindowsZipUpdater(
     }
 
     init {
+        restoreStagedUpdate()
         consumePreviousApplyFailure()
     }
 
@@ -196,8 +218,20 @@ class WindowsZipUpdater(
                 Files.isWritable(appPathProvider.pasteAppPath.toNioPath())
         }.getOrDefault(false)
 
-    /** Kick off download + verify + extract. No-op if already in progress. */
-    fun startDownload() {
+    /**
+     * Kick off download + verify + extract at the user's request: unthrottled, and a
+     * failure is shown. If a background download is already running it is promoted to
+     * full speed instead of being restarted.
+     */
+    fun startDownload() = start(manual = true)
+
+    /**
+     * Same pipeline started by the periodic update check: throttled, and a failure
+     * stays quiet (the next check retries). No-op when an update is already staged.
+     */
+    fun startBackgroundDownload() = start(manual = false)
+
+    private fun start(manual: Boolean) {
         if (channel != WindowsUpdateChannel.PORTABLE_ZIP) return
         // Claim the in-progress state atomically. Three UI entry points (dialog, tray,
         // search) can call this concurrently while Idle; without the lock both could
@@ -208,28 +242,50 @@ class WindowsZipUpdater(
                 is UpdateState.Downloading,
                 is UpdateState.Verifying,
                 is UpdateState.Extracting,
+                -> {
+                    // A user click on top of a background download lifts the throttle.
+                    if (manual) manualAttempt = true
+                    return
+                }
                 is UpdateState.Applying,
+                is UpdateState.ReadyToApply,
                 -> return
                 else -> {}
             }
+            manualAttempt = manual
             _updateState.value = UpdateState.Checking
         }
         coroutineScope.launch {
             runCatching { downloadAndStage() }
                 .onFailure { e ->
                     logger.error(e) { "Portable zip update failed" }
-                    _updateState.value = UpdateState.Failed("update_failed")
+                    fail("update_failed")
                 }
         }
+    }
+
+    private fun fail(reasonKey: String) {
+        _updateState.value = UpdateState.Failed(reasonKey, manual = manualAttempt)
     }
 
     private suspend fun downloadAndStage() {
         // State was already claimed as Checking synchronously in startDownload().
         val release = readLatestRelease()
         if (release == null) {
-            _updateState.value = UpdateState.Failed("update_check_failed")
+            fail("update_check_failed")
             return
         }
+
+        val updateDir = updateDir()
+        fileUtils.createDir(updateDir, mustCreate = false)
+        if (readReadyMarker()?.version == release.version && fileUtils.existFile(stagingDir())) {
+            // Already downloaded, verified and extracted (possibly in an earlier
+            // session); nothing to fetch again.
+            _updateState.value = UpdateState.ReadyToApply(release.version)
+            return
+        }
+        clearStaging()
+        dropFilesNotFor(release)
 
         // Race the two mirrors for checksum.txt; the winner is both our integrity
         // source and the mirror we download the (large) zip from.
@@ -244,24 +300,22 @@ class WindowsZipUpdater(
         // the app, before extracting. See doc/en/WindowsZipSelfUpdateTest.md.
         val winner = fetchChecksumFromFastestSource(release)
         if (winner == null) {
-            _updateState.value = UpdateState.Failed("update_download_failed")
+            fail("update_download_failed")
             return
         }
         val (base, checksumText) = winner
         val expectedHash = parseChecksum(checksumText, release.fileName)
         if (expectedHash == null) {
-            _updateState.value = UpdateState.Failed("update_checksum_missing")
+            fail("update_checksum_missing")
             return
         }
 
-        val updateDir = updateDir()
-        recreateDir(updateDir)
         val zipPath = updateDir.resolve(release.fileName)
 
         _updateState.value = UpdateState.Downloading(0)
         val downloaded = downloadFile(base + release.fileName, zipPath)
         if (!downloaded) {
-            _updateState.value = UpdateState.Failed("update_download_failed")
+            fail("update_download_failed")
             return
         }
 
@@ -270,23 +324,99 @@ class WindowsZipUpdater(
         if (!actualHash.equals(expectedHash, ignoreCase = true)) {
             logger.warn { "Checksum mismatch: expected $expectedHash, got $actualHash" }
             runCatching { fileUtils.deleteFile(zipPath) }
-            _updateState.value = UpdateState.Failed("update_checksum_mismatch")
+            fail("update_checksum_mismatch")
             return
         }
 
         _updateState.value = UpdateState.Extracting
-        val stagingDir = updateDir.resolve("staging")
+        val stagingDir = stagingDir()
         recreateDir(stagingDir)
         val unzipped =
             compressUtils
                 .unzip(FileSystem.SYSTEM.source(zipPath).buffer(), stagingDir)
                 .isSuccess
         if (!unzipped) {
-            _updateState.value = UpdateState.Failed("update_extract_failed")
+            fail("update_extract_failed")
             return
         }
+        // The extracted tree is what gets applied; the zip only costs disk now.
+        runCatching { fileUtils.deleteFile(zipPath) }
+        writeReadyMarker(release)
+        // A fresh, verified staging supersedes whatever an earlier apply left behind.
+        runCatching { fileUtils.deleteFile(applyFailureMarker()) }
 
         _updateState.value = UpdateState.ReadyToApply(release.version)
+    }
+
+    private fun stagingDir(): Path = updateDir().resolve("staging")
+
+    private fun readyMarker(): Path = updateDir().resolve(READY_MARKER)
+
+    private fun clearStaging() {
+        runCatching { fileUtils.deleteFile(readyMarker()) }
+        val staging = stagingDir()
+        if (fileUtils.existFile(staging)) {
+            runCatching { fileUtils.deleteFile(staging) }
+        }
+    }
+
+    /**
+     * Drops zips and partial downloads of any other release so a superseded download is
+     * not resumed, while keeping this release's `.part` + `.etag` for the resume.
+     */
+    private fun dropFilesNotFor(release: RemoteRelease) {
+        val keep = setOf(release.fileName, "${release.fileName}.part", "${release.fileName}.etag")
+        updateDir()
+            .toFile()
+            .listFiles()
+            .orEmpty()
+            .filter {
+                it.isFile &&
+                    it.name !in keep &&
+                    (it.name.endsWith(".zip") || it.name.endsWith(".part") || it.name.endsWith(".etag"))
+            }.forEach { stale ->
+                runCatching { stale.delete() }
+            }
+    }
+
+    private fun writeReadyMarker(release: RemoteRelease) {
+        runCatching {
+            readyMarker().toFile().writeText("version=${release.version}\nrevision=${release.revision}\n")
+        }.onFailure { e -> logger.warn(e) { "Could not record the staged update" } }
+    }
+
+    private fun readReadyMarker(): RemoteRelease? =
+        runCatching {
+            val marker = readyMarker().toFile()
+            if (!marker.isFile) return null
+            val properties = Properties().apply { load(StringReader(marker.readText())) }
+            val version = properties.getProperty("version") ?: return null
+            val revision = properties.getProperty("revision") ?: return null
+            RemoteRelease(version, revision)
+        }.getOrNull()
+
+    /**
+     * Resurface a staged update from an earlier session as [UpdateState.ReadyToApply], or
+     * drop it when it is no longer newer than what is running (the apply succeeded, or the
+     * user updated some other way). Runs once at construction.
+     */
+    private fun restoreStagedUpdate() {
+        if (channel != WindowsUpdateChannel.PORTABLE_ZIP) return
+        val staged = readReadyMarker()
+        if (staged == null) {
+            // No record of what the staging dir holds (e.g. an apply that rolled back):
+            // it is never applied without the marker, so stop it occupying disk.
+            if (fileUtils.existFile(stagingDir())) clearStaging()
+            return
+        }
+        val stagedVersion = staged.version.toVersionOrNull()
+        val current = currentVersion
+        if (stagedVersion != null && current != null && stagedVersion > current && fileUtils.existFile(stagingDir())) {
+            logger.info { "Staged update ${staged.version} is ready to apply" }
+            _updateState.value = UpdateState.ReadyToApply(staged.version)
+        } else {
+            clearStaging()
+        }
     }
 
     /**
@@ -298,7 +428,7 @@ class WindowsZipUpdater(
         if (_updateState.value !is UpdateState.ReadyToApply) return
         runCatching {
             val updateDir = updateDir()
-            val stagingDir = updateDir.resolve("staging")
+            val stagingDir = stagingDir()
             val batPath = updateDir.resolve(APPLY_BAT_NAME)
             val logPath = updateDir.resolve("apply-update.log")
 
@@ -329,6 +459,10 @@ class WindowsZipUpdater(
                 put("CROSSPASTE_UPDATE_MARKER", applyFailureMarker().toString())
             }
 
+            // Once the script runs the staging dir is consumed (or rolled back and the
+            // failure marker set), so the "ready" record must not outlive this attempt.
+            runCatching { fileUtils.deleteFile(readyMarker()) }
+
             logger.info { "Applying portable zip update via $batPath" }
             builder.start()
 
@@ -354,9 +488,12 @@ class WindowsZipUpdater(
         runCatching {
             val marker = applyFailureMarker()
             if (fileUtils.existFile(marker)) {
+                fileUtils.deleteFile(marker)
+                // A newer update staged since then (restoreStagedUpdate ran first) is
+                // what the user should act on, not a failure that is already history.
+                if (_updateState.value is UpdateState.ReadyToApply) return
                 logger.warn { "Previous portable zip update failed and was rolled back" }
                 _updateState.value = UpdateState.Failed("update_apply_failed")
-                fileUtils.deleteFile(marker)
             }
         }
     }
@@ -432,39 +569,32 @@ class WindowsZipUpdater(
         url: String,
         path: Path,
     ): Boolean {
-        val result = CompletableDeferred<Boolean>()
-        resourcesClient.download(
-            url = url,
-            path = path,
-            listener =
-                object : DownloadProgressListener {
-                    override fun onFailure(
-                        httpStatusCode: HttpStatusCode,
-                        throwable: Throwable?,
-                    ) {
-                        logger.warn(throwable) { "Update download failed: $url ($httpStatusCode)" }
-                        if (!result.isCompleted) result.complete(false)
-                    }
-
-                    override fun onSuccess() {
-                        if (!result.isCompleted) result.complete(true)
-                    }
-
-                    override fun onProgress(
-                        bytesRead: Long,
-                        contentLength: Long?,
-                    ) {
-                        val percent =
-                            if (contentLength != null && contentLength > 0) {
-                                ((bytesRead * 100) / contentLength).toInt().coerceIn(0, 100)
-                            } else {
-                                -1
-                            }
+        var lastPercent = Int.MIN_VALUE
+        val result =
+            downloader.download(
+                url = url,
+                target = path,
+                limitBytesPerSecond = { if (manualAttempt) 0L else BACKGROUND_LIMIT_BYTES_PER_SECOND },
+                onProgress = { bytesRead, contentLength ->
+                    val percent =
+                        if (contentLength != null && contentLength > 0) {
+                            ((bytesRead * 100) / contentLength).toInt().coerceIn(0, 100)
+                        } else {
+                            -1
+                        }
+                    if (percent != lastPercent) {
+                        lastPercent = percent
                         _updateState.value = UpdateState.Downloading(percent)
                     }
                 },
-        )
-        return result.await()
+            )
+        return when (result) {
+            is UpdateDownloadResult.Success -> true
+            is UpdateDownloadResult.Failed -> {
+                logger.warn(result.cause) { "Update download failed: $url (${result.status})" }
+                false
+            }
+        }
     }
 
     private fun sha256(path: Path): String {
@@ -481,6 +611,12 @@ class WindowsZipUpdater(
     }
 
     companion object {
+        /** Rate cap for downloads the periodic check starts on its own. */
+        const val BACKGROUND_LIMIT_BYTES_PER_SECOND: Long = 1024L * 1024
+
+        /** Records the release whose verified, extracted files sit in `update/staging`. */
+        const val READY_MARKER: String = "ready.properties"
+
         /**
          * Lets QA point the updater at a test release source (serving
          * metadata.properties, checksum.txt and the zip), so the full flow can be tested

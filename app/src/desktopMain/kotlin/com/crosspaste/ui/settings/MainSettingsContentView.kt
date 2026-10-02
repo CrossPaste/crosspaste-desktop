@@ -6,12 +6,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Info
 import com.composables.icons.materialsymbols.rounded.Palette
 import com.composables.icons.materialsymbols.rounded.Rocket_launch
+import com.composables.icons.materialsymbols.rounded.System_update
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.WindowsUpdateChannel
+import com.crosspaste.app.WindowsZipUpdater
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.ui.About
 import com.crosspaste.ui.AppearanceSettings
@@ -26,7 +30,12 @@ fun MainSettingsContentView() {
     val appInfo = koinInject<AppInfo>()
     val configManager = koinInject<DesktopConfigManager>()
     val navigationManager = koinInject<NavigationManager>()
+    val windowsZipUpdater = koinInject<WindowsZipUpdater>()
     val themeExt = LocalThemeExtState.current
+
+    // Only the portable zip updates itself in-app; Store / Conveyor installs are
+    // updated by the OS, so the switch would do nothing there.
+    val inAppUpdates = remember { windowsZipUpdater.channel == WindowsUpdateChannel.PORTABLE_ZIP }
 
     val config by configManager.config.collectAsState()
 
@@ -47,6 +56,16 @@ fun MainSettingsContentView() {
             checked = config.enableAutoStartUp,
         ) {
             configManager.updateConfig("enableAutoStartUp", it)
+        }
+        if (inAppUpdates) {
+            HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+            SettingListSwitchItem(
+                title = "auto_download_update",
+                icon = IconData(MaterialSymbols.Rounded.System_update, themeExt.greenIconColor),
+                checked = config.autoDownloadUpdate,
+            ) {
+                configManager.updateConfig("autoDownloadUpdate", it)
+            }
         }
         HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
         SettingListItem(
