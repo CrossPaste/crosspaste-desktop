@@ -300,7 +300,7 @@ class WindowsZipUpdater(
         // the app, before extracting. See doc/en/WindowsZipSelfUpdateTest.md.
         val candidateBases = mirrorBases(release)
         val savedSource = readSavedSource(release)
-        val hasPartialDownload = ResumableUpdateDownloader.partFile(updateDir.resolve(release.fileName)).isFile
+        val hasPartialDownload = hasPartialDownload(release)
 
         // If we already have a partial download from a specific mirror, reuse that mirror
         // so the server's ETag matches and HTTP 206 Range resume succeeds.
@@ -332,11 +332,14 @@ class WindowsZipUpdater(
         saveSource(release, primaryBase)
         var downloaded = downloadFile(primaryBase + release.fileName, zipPath)
 
+        // Both mirrors serve the same bytes, so a failed transfer continues on the other
+        // one from where it stopped. Only the ETag is dropped: it belongs to the mirror
+        // that failed, and the final SHA-256 covers the stitched file.
         if (!downloaded) {
             val fallbackBases = candidateBases.filter { it != primaryBase }
             for (fallbackBase in fallbackBases) {
-                logger.info { "Download failed from $primaryBase, trying fallback mirror $fallbackBase" }
-                clearPartialDownload(release)
+                logger.info { "Download failed from $primaryBase, continuing on fallback mirror $fallbackBase" }
+                forgetMirrorEtag(release)
                 saveSource(release, fallbackBase)
                 downloaded = downloadFile(fallbackBase + release.fileName, zipPath)
                 if (downloaded) break
@@ -393,6 +396,12 @@ class WindowsZipUpdater(
 
     private fun sourceFile(release: RemoteRelease): Path = updateDir().resolve("${release.fileName}.source")
 
+    /** True when a resumable partial download (at least one byte) of [release] is on disk. */
+    private fun hasPartialDownload(release: RemoteRelease): Boolean {
+        val part = ResumableUpdateDownloader.partFile(updateDir().resolve(release.fileName))
+        return part.isFile && part.length() > 0L
+    }
+
     private fun readSavedSource(release: RemoteRelease): String? =
         runCatching {
             val file = sourceFile(release).toFile()
@@ -408,11 +417,9 @@ class WindowsZipUpdater(
         }
     }
 
-    private fun clearPartialDownload(release: RemoteRelease) {
-        val dir = updateDir()
-        runCatching { fileUtils.deleteFile(dir.resolve("${release.fileName}.part")) }
-        runCatching { fileUtils.deleteFile(dir.resolve("${release.fileName}.etag")) }
-        runCatching { fileUtils.deleteFile(sourceFile(release)) }
+    /** Drops the ETag of the mirror we are leaving so the partial resumes with a bare Range. */
+    private fun forgetMirrorEtag(release: RemoteRelease) {
+        runCatching { fileUtils.deleteFile(updateDir().resolve("${release.fileName}.etag")) }
     }
 
     /**

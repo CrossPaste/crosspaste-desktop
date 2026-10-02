@@ -37,8 +37,11 @@ sealed interface UpdateDownloadResult {
  * - **Resume.** Bytes go to `<target>.part`; the server's ETag is kept next to it. A later
  *   call for the same target sends `Range: bytes=<have>-` plus `If-Range: <etag>`, so an
  *   unchanged file continues where it stopped (HTTP 206) and a changed one is restarted
- *   from zero (HTTP 200). A `.part` without an ETag, or a 206 whose range does not line up
- *   with what we have, is discarded and the download restarts.
+ *   from zero (HTTP 200). A `.part` without an ETag is resumed with a bare `Range`: the
+ *   caller uses that to continue on a different mirror of the same bytes, where the ETag
+ *   would not match, and its checksum catches the (unlikely) case of the mirrors
+ *   disagreeing. A 206 whose range does not line up with what we have is discarded and
+ *   the download restarts.
  * - **Throttle.** [limitBytesPerSecond] is read before every chunk; a positive value caps
  *   the average rate over the current rate window with a sleep after each chunk, zero or
  *   less means unlimited. The window restarts whenever the limit changes so switching from
@@ -72,14 +75,12 @@ class ResumableUpdateDownloader(
                 ?.readText()
                 ?.trim()
                 ?.takeIf { it.isNotEmpty() }
-        val resume = have > 0 && etag != null
-        if (have > 0 && !resume) {
-            logger.info { "Discarding ${part.name}: partial file without an ETag cannot be validated" }
-            reset(part, etagFile)
+        if (have > 0 && etag == null) {
+            logger.info { "Resuming ${part.name} at $have bytes without an ETag; the checksum validates the result" }
         }
 
         val attempt =
-            runCatching { fetch(url, part, etagFile, if (resume) have else 0L, etag, limitBytesPerSecond, onProgress) }
+            runCatching { fetch(url, part, etagFile, have, etag, limitBytesPerSecond, onProgress) }
         attempt.exceptionOrNull()?.let { e ->
             if (e is CancellationException) throw e
             logger.warn(e) { "Update download failed: $url" }
@@ -155,10 +156,10 @@ class ResumableUpdateDownloader(
     ): Fetch =
         httpClient()
             .prepareGet(url) {
-                if (offset > 0 && etag != null) {
+                if (offset > 0) {
                     headers {
                         append(HttpHeaders.Range, "bytes=$offset-")
-                        append(HttpHeaders.IfRange, etag)
+                        if (etag != null) append(HttpHeaders.IfRange, etag)
                     }
                 }
             }.execute { response ->

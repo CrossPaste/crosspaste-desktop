@@ -38,7 +38,8 @@ class ResumableUpdateDownloaderTest {
                         HttpHeaders.IfRange to request.headers[HttpHeaders.IfRange],
                     )
                 val range = request.headers[HttpHeaders.Range]
-                if (honorRange && range != null && request.headers[HttpHeaders.IfRange] == etag) {
+                val ifRange = request.headers[HttpHeaders.IfRange]
+                if (honorRange && range != null && (ifRange == null || ifRange == etag)) {
                     val from = range.removePrefix("bytes=").removeSuffix("-").toInt()
                     respond(
                         content = body.copyOfRange(from, body.size),
@@ -108,7 +109,7 @@ class ResumableUpdateDownloaderTest {
     }
 
     @Test
-    fun `a partial file without an ETag is not resumed`() {
+    fun `a partial file without an ETag is resumed with a bare Range request`() {
         val target = target()
         seedPartial(target, 120_000, withEtag = false)
         val requests = mutableListOf<Map<String, String?>>()
@@ -117,7 +118,8 @@ class ResumableUpdateDownloaderTest {
         val result = runBlocking { downloader.download(url, target) }
 
         assertEquals(UpdateDownloadResult.Success, result)
-        assertNull(requests[0][HttpHeaders.Range])
+        assertEquals("bytes=120000-", requests[0][HttpHeaders.Range])
+        assertNull(requests[0][HttpHeaders.IfRange])
         assertContentEquals(body, target.toFile().readBytes())
     }
 
@@ -197,14 +199,25 @@ class ResumableUpdateDownloaderTest {
                 now = { clock },
             )
 
-        // Simulate a 10-second stall before downloading begins
-        clock += 10_000_000_000L
-
-        val result = runBlocking { downloader.download(url, target, limitBytesPerSecond = { 100_000L }) }
+        // The link stalls for 10 s after the first chunk lands. Without the window reset
+        // the limiter would treat that as 10 s of credit and let the remaining ~235 KB
+        // through at full speed; with it, every later chunk is still paced.
+        var stalled = false
+        val result =
+            runBlocking {
+                downloader.download(url, target, limitBytesPerSecond = { 100_000L }) { _, _ ->
+                    if (!stalled) {
+                        stalled = true
+                        clock += 10_000_000_000L
+                    }
+                }
+            }
 
         assertEquals(UpdateDownloadResult.Success, result)
-        assertTrue(sleeps.isNotEmpty(), "expected throttling to still occur after a stall")
         val totalMillis = sleeps.sumOf { it.inWholeMilliseconds }
-        assertTrue(totalMillis > 1_500, "throttling should apply to chunks after the stall, slept $totalMillis ms")
+        assertTrue(
+            totalMillis in 2_000..3_100,
+            "chunks after the stall should still be throttled, slept $totalMillis ms",
+        )
     }
 }
