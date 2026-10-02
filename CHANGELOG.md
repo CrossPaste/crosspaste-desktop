@@ -17,7 +17,7 @@ All notable changes to this project will be documented in this file.
   background as soon as the periodic check finds it, throttled to
   1 MB/s, with HTTP range resume across restarts and dropped
   connections; the prompt then offers a one-click restart. A General
-  settings switch turns automatic downloads off (#5090).
+  settings switch turns automatic downloads off (#5090 #5091).
 
 - 🔒 **Password-manager hints and source exclusion**
   Copies that password managers mark as "do not record" (Bitwarden,
@@ -113,7 +113,7 @@ All notable changes to this project will be documented in this file.
 
 # New Features ✨
 
-- :sparkles: Download portable-zip updates in the background with bandwidth throttling and resumable downloads (#5090)
+- :sparkles: Download portable-zip updates in the background with bandwidth throttling and resumable downloads (#5091)
 - :sparkles: Add devices remove, block and unblock CLI commands (#5087)
 - :sparkles: Show sort direction with arrow icons and state-specific tooltips in the search bar (#5081)
 - :sparkles: Paste into native Wayland windows through the RemoteDesktop portal (#5068)
