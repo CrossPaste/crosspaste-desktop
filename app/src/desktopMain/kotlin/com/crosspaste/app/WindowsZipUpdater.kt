@@ -329,6 +329,12 @@ class WindowsZipUpdater(
         val zipPath = updateDir.resolve(release.fileName)
 
         _updateState.value = UpdateState.Downloading(0)
+        // If the checksum race selected a different mirror than the previous partial
+        // download came from, drop that mirror's ETag so the download resumes with a bare
+        // Range on the new mirror instead of failing an If-Range match and restarting from 0.
+        if (primaryBase != savedSource) {
+            forgetMirrorEtag(release)
+        }
         saveSource(release, primaryBase)
         var downloaded = downloadFile(primaryBase + release.fileName, zipPath)
 
