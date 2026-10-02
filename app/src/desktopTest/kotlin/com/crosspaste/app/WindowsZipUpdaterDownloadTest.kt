@@ -205,6 +205,37 @@ class WindowsZipUpdaterDownloadTest {
         assertTrue(restored is UpdateState.ReadyToApply, "expected ReadyToApply but was $restored")
         assertEquals(version, restored.version)
     }
+
+    @Test
+    fun `saved source is reused to keep mirror affinity when partial download exists`() {
+        val zip = buildZip()
+        val tmp = Files.createTempDirectory("cp-update-affinity").toOkioPath()
+        val updateDir = tmp.resolve("user").resolve("update")
+        getFileUtils().createDir(updateDir, mustCreate = false)
+
+        val partFile = updateDir.resolve("$fileName.part").toFile()
+        partFile.writeBytes(zip.copyOfRange(0, 100))
+        val etagFile = updateDir.resolve("$fileName.etag").toFile()
+        etagFile.writeText("\"test-etag\"")
+        val sourceFile = updateDir.resolve("$fileName.source").toFile()
+        sourceFile.writeText("http://localhost:8080/")
+
+        val updater = newUpdater(zip, "${sha256(zip)}  $fileName", tmp)
+
+        runBlocking {
+            updater.startBackgroundDownload()
+            withTimeout(20.seconds) { updater.updateState.first { it is UpdateState.ReadyToApply } }
+        }
+
+        assertTrue(
+            !getFileUtils().existFile(updateDir.resolve("$fileName.source")),
+            "source file is cleaned up after completion",
+        )
+        assertTrue(
+            !getFileUtils().existFile(updateDir.resolve("$fileName.part")),
+            "part file is cleaned up after completion",
+        )
+    }
 }
 
 /** Minimal [ResourcesClient] over a MockEngine-backed [HttpClient]. */

@@ -6,6 +6,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 
@@ -101,5 +102,17 @@ class DesktopAppUpdateServiceTest {
         runBlocking { service.checkForUpdate() }
 
         verify(exactly = 0) { updater.startBackgroundDownload() }
+    }
+
+    @Test
+    fun `a manual check triggers update when already ready to apply even if lastVersion is null`() {
+        val updater = mockk<WindowsZipUpdater>(relaxed = true)
+        every { updater.updateState } returns MutableStateFlow(UpdateState.ReadyToApply("1.1.0"))
+        val service = service("1.0.0", null, autoDownload = true, WindowsUpdateChannel.PORTABLE_ZIP, updater)
+
+        service.tryTriggerUpdate()
+
+        verify(exactly = 1) { updater.resetUpdatePrompt() }
+        verify(exactly = 0) { updater.startDownload() }
     }
 }

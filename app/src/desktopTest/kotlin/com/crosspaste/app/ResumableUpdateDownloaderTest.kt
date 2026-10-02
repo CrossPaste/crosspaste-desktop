@@ -181,4 +181,30 @@ class ResumableUpdateDownloaderTest {
         assertNull(ResumableUpdateDownloader.parseContentRange("bytes */300"))
         assertNull(ResumableUpdateDownloader.parseContentRange(null))
     }
+
+    @Test
+    fun `a stall or pause does not cause an unthrottled catch-up burst afterwards`() {
+        val target = target()
+        var clock = 0L
+        val sleeps = mutableListOf<Duration>()
+        val downloader =
+            ResumableUpdateDownloader(
+                httpClient = { server(honorRange = false, mutableListOf()) },
+                sleep = {
+                    sleeps += it
+                    clock += it.inWholeNanoseconds
+                },
+                now = { clock },
+            )
+
+        // Simulate a 10-second stall before downloading begins
+        clock += 10_000_000_000L
+
+        val result = runBlocking { downloader.download(url, target, limitBytesPerSecond = { 100_000L }) }
+
+        assertEquals(UpdateDownloadResult.Success, result)
+        assertTrue(sleeps.isNotEmpty(), "expected throttling to still occur after a stall")
+        val totalMillis = sleeps.sumOf { it.inWholeMilliseconds }
+        assertTrue(totalMillis > 1_500, "throttling should apply to chunks after the stall, slept $totalMillis ms")
+    }
 }

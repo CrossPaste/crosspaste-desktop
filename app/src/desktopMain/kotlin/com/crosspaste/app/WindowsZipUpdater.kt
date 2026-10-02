@@ -298,12 +298,28 @@ class WindowsZipUpdater(
         // Aliyun OSS repository ACLs. Proper hardening is to verify a detached signature
         // (e.g. minisign / GPG) over the zip or checksum against a public key baked into
         // the app, before extracting. See doc/en/WindowsZipSelfUpdateTest.md.
-        val winner = fetchChecksumFromFastestSource(release)
-        if (winner == null) {
+        val candidateBases = mirrorBases(release)
+        val savedSource = readSavedSource(release)
+        val hasPartialDownload = ResumableUpdateDownloader.partFile(updateDir.resolve(release.fileName)).isFile
+
+        // If we already have a partial download from a specific mirror, reuse that mirror
+        // so the server's ETag matches and HTTP 206 Range resume succeeds.
+        val preferredBase = savedSource?.takeIf { hasPartialDownload && it in candidateBases }
+
+        val checksumResult: Pair<String, String>? =
+            if (preferredBase != null) {
+                fetchChecksumFromSource(preferredBase)?.let { preferredBase to it }
+                    ?: fetchChecksumFromFastestSource(release)
+            } else {
+                fetchChecksumFromFastestSource(release)
+            }
+
+        if (checksumResult == null) {
             fail("update_download_failed")
             return
         }
-        val (base, checksumText) = winner
+
+        val (primaryBase, checksumText) = checksumResult
         val expectedHash = parseChecksum(checksumText, release.fileName)
         if (expectedHash == null) {
             fail("update_checksum_missing")
@@ -313,11 +329,26 @@ class WindowsZipUpdater(
         val zipPath = updateDir.resolve(release.fileName)
 
         _updateState.value = UpdateState.Downloading(0)
-        val downloaded = downloadFile(base + release.fileName, zipPath)
+        saveSource(release, primaryBase)
+        var downloaded = downloadFile(primaryBase + release.fileName, zipPath)
+
+        if (!downloaded) {
+            val fallbackBases = candidateBases.filter { it != primaryBase }
+            for (fallbackBase in fallbackBases) {
+                logger.info { "Download failed from $primaryBase, trying fallback mirror $fallbackBase" }
+                clearPartialDownload(release)
+                saveSource(release, fallbackBase)
+                downloaded = downloadFile(fallbackBase + release.fileName, zipPath)
+                if (downloaded) break
+            }
+        }
+
         if (!downloaded) {
             fail("update_download_failed")
             return
         }
+
+        runCatching { fileUtils.deleteFile(sourceFile(release)) }
 
         _updateState.value = UpdateState.Verifying
         val actualHash = sha256(zipPath)
@@ -360,12 +391,42 @@ class WindowsZipUpdater(
         }
     }
 
+    private fun sourceFile(release: RemoteRelease): Path = updateDir().resolve("${release.fileName}.source")
+
+    private fun readSavedSource(release: RemoteRelease): String? =
+        runCatching {
+            val file = sourceFile(release).toFile()
+            if (file.isFile) file.readText().trim().takeIf { it.isNotEmpty() } else null
+        }.getOrNull()
+
+    private fun saveSource(
+        release: RemoteRelease,
+        sourceBase: String,
+    ) {
+        runCatching {
+            sourceFile(release).toFile().writeText(sourceBase)
+        }
+    }
+
+    private fun clearPartialDownload(release: RemoteRelease) {
+        val dir = updateDir()
+        runCatching { fileUtils.deleteFile(dir.resolve("${release.fileName}.part")) }
+        runCatching { fileUtils.deleteFile(dir.resolve("${release.fileName}.etag")) }
+        runCatching { fileUtils.deleteFile(sourceFile(release)) }
+    }
+
     /**
      * Drops zips and partial downloads of any other release so a superseded download is
-     * not resumed, while keeping this release's `.part` + `.etag` for the resume.
+     * not resumed, while keeping this release's `.part` + `.etag` + `.source` for the resume.
      */
     private fun dropFilesNotFor(release: RemoteRelease) {
-        val keep = setOf(release.fileName, "${release.fileName}.part", "${release.fileName}.etag")
+        val keep =
+            setOf(
+                release.fileName,
+                "${release.fileName}.part",
+                "${release.fileName}.etag",
+                "${release.fileName}.source",
+            )
         updateDir()
             .toFile()
             .listFiles()
@@ -373,7 +434,12 @@ class WindowsZipUpdater(
             .filter {
                 it.isFile &&
                     it.name !in keep &&
-                    (it.name.endsWith(".zip") || it.name.endsWith(".part") || it.name.endsWith(".etag"))
+                    (
+                        it.name.endsWith(".zip") ||
+                            it.name.endsWith(".part") ||
+                            it.name.endsWith(".etag") ||
+                            it.name.endsWith(".source")
+                    )
             }.forEach { stale ->
                 runCatching { stale.delete() }
             }
@@ -527,20 +593,21 @@ class WindowsZipUpdater(
                 // re-deriving and risking a mismatch.
             )?.let { RemoteRelease(it.version, it.revision, it.tag) }
 
+    private suspend fun fetchChecksumFromSource(base: String): String? =
+        runCatching {
+            resourcesClient
+                .request(base + "checksum.txt", ResourceRequestLimits.METADATA)
+                .getOrThrow()
+                .getBodyAsText()
+        }.getOrNull()
+
     /** Returns the winning mirror base (with trailing slash) and its checksum.txt body. */
     private suspend fun fetchChecksumFromFastestSource(release: RemoteRelease): Pair<String, String>? =
         coroutineScope {
             val deferreds =
                 mirrorBases(release).map { base ->
                     async {
-                        runCatching {
-                            val text =
-                                resourcesClient
-                                    .request(base + "checksum.txt", ResourceRequestLimits.METADATA)
-                                    .getOrThrow()
-                                    .getBodyAsText()
-                            base to text
-                        }.getOrNull()
+                        fetchChecksumFromSource(base)?.let { base to it }
                     }
                 }
             raceFirstSuccess(deferreds)
@@ -768,7 +835,7 @@ class WindowsZipUpdater(
             rmdir /S /Q "%BAK%"
             rmdir /S /Q "%SRC%"
             echo [cp-up] success, starting "%EXE%"
-            start "" "%EXE%"
+            start "" /D "%DST%" "%EXE%"
             echo [cp-up] === done: success ===
             exit /b 0
 
@@ -793,7 +860,7 @@ class WindowsZipUpdater(
 
             :START_OLD
             echo [cp-up] starting previous version "%EXE%"
-            start "" "%EXE%"
+            start "" /D "%DST%" "%EXE%"
             echo [cp-up] === done: failed ===
             exit /b 1
             """.trimIndent().replace("\n", "\r\n")

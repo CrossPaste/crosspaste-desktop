@@ -14,6 +14,8 @@ import kotlinx.coroutines.delay
 import okio.Path
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.nanoseconds
@@ -112,17 +114,22 @@ class ResumableUpdateDownloader(
         part: File,
         etagFile: File,
         target: Path,
-    ): UpdateDownloadResult {
-        val finished = target.toFile()
-        if (finished.exists() && !finished.delete()) {
-            return UpdateDownloadResult.Failed(null, IllegalStateException("Cannot replace $finished"))
+    ): UpdateDownloadResult =
+        runCatching {
+            val targetNio = target.toNioPath()
+            targetNio.parent?.let { Files.createDirectories(it) }
+            Files.move(
+                part.toPath(),
+                targetNio,
+                StandardCopyOption.REPLACE_EXISTING,
+            )
+            etagFile.delete()
+            UpdateDownloadResult.Success
+        }.getOrElse { e ->
+            if (e is CancellationException) throw e
+            logger.warn(e) { "Cannot move ${part.name} into place at $target" }
+            UpdateDownloadResult.Failed(null, e)
         }
-        if (!part.renameTo(finished)) {
-            return UpdateDownloadResult.Failed(null, IllegalStateException("Cannot move ${part.name} into place"))
-        }
-        etagFile.delete()
-        return UpdateDownloadResult.Success
-    }
 
     private sealed interface Fetch {
         data object Done : Fetch
@@ -255,7 +262,14 @@ class ResumableUpdateDownloader(
             val expectedNanos = windowBytes * NANOS_PER_SECOND / limit
             val elapsedNanos = now() - windowStart
             val behind = expectedNanos - elapsedNanos
-            if (behind > 0) sleep(behind.nanoseconds)
+            if (behind > 0) {
+                sleep(behind.nanoseconds)
+            } else {
+                // If the link was slower than the cap or paused, do not let "credit"
+                // accumulate into an unthrottled burst when throughput recovers.
+                windowStart = now()
+                windowBytes = 0L
+            }
         }
     }
 
