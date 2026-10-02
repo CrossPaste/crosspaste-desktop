@@ -1,3 +1,29 @@
+# [2.2.1] - 2026-10-02
+
+## 📋 Floating paste panel
+A new floating button lists your clipboard history; click a row and it is pasted straight into the app you are working in, without the panel ever taking focus or interrupting your typing. Right-click the button for its menu. Enable it under Settings → Appearance, or open it with a shortcut: Shift+Cmd+C by default on macOS; on Windows and Linux set one on the Shortcuts page. On Linux both X11 and Wayland sessions are supported.
+
+## 🔒 Keep passwords out of history: manager hints and source exclusion
+Password managers such as Bitwarden, 1Password and KeePassXC mark a copied password as "do not record". CrossPaste now honors that hint on Windows, macOS and Linux: marked content is neither written to history nor synced to other devices. For apps that do not set the hint, the Clipboard sources page under Settings → Clipboard → Recording lets you pick apps to exclude straight from the running apps, or add match rules so that any source whose name contains the given text (for example bitw) is skipped.
+
+## 📁 Choose where large files go
+Files above the backup size limit used to land in the system Downloads folder only. You can now pick any folder under Settings → Clipboard → Storage; leaving it empty keeps the Downloads folder. The old "sync to Downloads" switch has been replaced by this path setting, so files above the limit now always go to the destination folder. Two receive-side issues with same-name files were fixed along the way: the renamed record pointed at the wrong file, and a retry could truncate a file you already had.
+
+## 🔄 More reliable sync
+The receiving side now acknowledges a paste only after it is durably stored, so a drop mid-transfer no longer loses items; the initiating device advertises its own address during pairing, so devices on networks with one-way mDNS (virtual machines, some routers) sync in both directions after pairing; multi-homed hosts (for example Windows with Internet Connection Sharing or a hotspot) can now be reached by their peers; and stale entries of the same device no longer cause duplicate pushes.
+
+## 🧠 Lower memory footprint
+Fixed the image cache limit being inflated to 435 MB (it is 256 MB now); the desktop server engine moved from Netty to CIO, which keeps fewer idle threads; and periodic garbage collection now runs concurrently instead of pausing the app for 60–200 ms.
+
+## 🎨 Settings, Devices and UI polish
+Settings are regrouped: Advanced became Clipboard, organized as Recording → Sync → Storage, with the size limits gathered on the Storage page and every row reworded to read without its subtitle. The Devices page acts on what it shows: this device heads the list with a marker, refreshing keeps the list, removal asks for confirmation, and nearby devices can be blocked in place. The UI moved to a grey ground with white section cards, the theme switch is now a day/auto/night slider, the Import page accepts dropped files, the Export page type picker is more compact, the About page scrolls, and UI copy was revised across all ten languages.
+
+## 🛠️ Other fixes
+On macOS 26, "Open System Settings" now lands directly on the Accessibility pane; a copied link pastes as plain text into non-Java apps; HTML content is extracted from the body only with whitespace trimmed; packaged builds start correctly on the JBR 25 runtime; an MCP server that fails to start now shows the reason in settings; SOCKS proxies apply to resource downloads.
+
+## ⌨️ CLI
+New crosspaste devices remove / block / unblock subcommands let you remove a paired device and block or unblock a nearby device from the terminal.
+
 # [2.2.0] - 2026-08-31
 
 ## ⌨️ Brand-new command-line tool

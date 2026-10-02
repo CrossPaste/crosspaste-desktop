@@ -2,6 +2,184 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.2.1] - 2026-10-02
+# Highlights 🌟
+
+- 📋 **Floating paste panel**
+  A non-activating floating button lists the clipboard history and
+  pastes a row into the focused app on click, with a native
+  right-click menu. It works on macOS, Windows and Linux (X11 and
+  Wayland, the latter through the RemoteDesktop portal) (#4995 #5039
+  #5062 #5063 #5064 #5066 #5068 #5076 #5078 #5079).
+
+- 🔒 **Password-manager hints and source exclusion**
+  Copies that password managers mark as "do not record" (Bitwarden,
+  1Password, KeePassXC and others) are now honored on Windows, macOS
+  and Linux: they are neither stored nor synced. The Clipboard sources
+  page was redesigned so excluded apps can be picked from the running
+  apps or browsed for, and match rules skip any source whose name
+  contains a given text (#5013 #5015 #5017 #5020).
+
+- 📁 **Large-file destination**
+  The large-file Downloads switch is replaced by a destination path:
+  files above the backup size limit go to the folder you choose, or
+  to the system Downloads folder when it is empty. Receive-side
+  same-name conflicts now persist the renamed record correctly and a
+  retry can no longer truncate an existing file (#5007 #5038 #5045
+  #5047 #5051).
+
+- ⚙️ **Settings information architecture**
+  The Advanced group became Clipboard with Recording, Sync and
+  Storage pages, size limits moved into one Storage section, Clipboard
+  sources moved to Recording, and every row and page title was
+  reworded to read without its subtitle. The settings content area
+  now uses a grey ground with white section cards, and the theme
+  switch is the mobile sun/auto/moon slider (#5046 #5048 #5049 #5052
+  #5021 #5022 #5023 #5024 #5028 #5034 #4991).
+
+- 🖥️ **Devices page and multi-homed hosts**
+  The Devices page acts on what it shows: the local device heads the
+  list, refresh keeps the list, removal asks for confirmation, nearby
+  devices can be blocked in place. Peers now learn the address they
+  dialed on multi-homed hosts (Windows ICS, hotspots), the interface
+  list follows network changes, and a manual add with no usable
+  address fails with a message (#4935 #4951 #4953 #4955 #4957 #4959
+  #4993 #5026 #4996 #4998 #5000 #5009).
+
+- 🔄 **Sync reliability**
+  Received pastes are acknowledged only after they are durable, the
+  pairing initiator advertises its own address on the v3 commit so
+  one-way-mDNS networks sync both ways after pairing, stale sync rows
+  no longer cause duplicate pushes, WebSocket pushes are acknowledged
+  so receiver failures fail the task, and push session finalize and
+  expiry are serialized (#4894 #4895 #4915 #4936 #4937 #4945 #5086).
+
+- 🧠 **Memory and runtime**
+  Coil's memory cache limit is no longer inflated to 435 MiB, the
+  desktop server engine moved from Netty to CIO, Skiko's periodic
+  System.gc() runs as a concurrent cycle, and the bundled runtime is
+  JBR 25 (#4908 #4911 #4912 #4913 #4831 #5042 #5044).
+
+- 🌐 **UI copy revision**
+  English and Chinese copy was revised across the app and the eight
+  other languages were revised against the new source, with i18n
+  consistency checks and a style guide added (#4961 #4963 #4965 #4967
+  #4970 #4972 #4974 #4976 #4979 #4980 #4985 #4986 #4987 #4988).
+
+# Bug Fixes 🐛
+
+- :bug: Self-register the initiator's address on the pairing v3 commit so an acceptor that never sees its mDNS can reach it (#5086)
+- :bug: Fix multi-monitor placement, clipping and focus handling for Linux paste panel menu (#5079)
+- :bug: Close the floating button's menu on Linux when the user clicks elsewhere (#5078)
+- :bug: Let the floating button fade back on Linux when no pointer exit arrives (#5076)
+- :bug: Offer a URL paste item as plain text so non-Java apps can paste it (#5072)
+- :bug: Keep GuidePasteDataService.initData from throwing into host startup code (#5070)
+- :bug: Tell the user to paste manually when no X11 window can be targeted (#5066)
+- :bug: Create the paste panel windows as override-redirect on Linux so a click keeps the target app focused (#5064)
+- :bug: Give the paste panel button menu an opaque theme background on Linux (#5063)
+- :bug: Fix the paste panel corners and button menu glyphs on Windows (#5062)
+- :bug: Run the ws-session sync handlers on the test dispatcher to fix a CI flake (#5058)
+- :bug: Route the macOS application menu About item to the About page and localize its title (#5054)
+- :bug: Let the About page scroll so the app name and version are not squeezed out (#5053)
+- :bug: Only offer the large-file destination picker where a storage path manager exists (#5051)
+- :bug: Pass --add-opens as a single token so packaged builds start on JBR 25 (#5044)
+- :bug: Open the Accessibility privacy pane via open(1) since Desktop.browse drops the deep link on macOS 26 (#5036)
+- :bug: Cap the device name marker with a layout modifier so the row can be measured intrinsically (#5026)
+- :bug: Stop caching the update site's fixed-name files for 30 days (#5006)
+- :bug: Cap the device name marker at half the title line so it cannot starve the name (#4993)
+- :bug: Key side preview remember blocks on the data they actually read (#5012)
+- :bug: Extract HTML text from the body only, trim it and unescape entities (#5010)
+- :bug: Refresh the network settings interface list on network changes (#5009)
+- :bug: Fail the manual add when the peer names no address (#5000)
+- :bug: Answer /sync/syncInfo with the address the peer dialed (#4998)
+- :bug: Update the browser extension to the renamed i18n keys and check its references (#4974)
+- :bug: Settle push session finalize and expiry discard under one terminal lock (#4945)
+- :bug: Acknowledge received pastes only after they are durable (#4937)
+- :bug: Harden MCP server lifecycle and surface start failures in settings (#4931)
+- :bug: Isolate JmDNS lifecycle per interface and bind nearby presence to the discovery source (#4929)
+- :bug: Keep the Windows network warning dismissal across restarts (#4926)
+- :bug: Honor the discovery toggle when resolving interfaces and stop dropping hosts by last octet (#4924)
+- :bug: Bound encrypted HTTP payloads and stop caching processors for unknown peers (#4922)
+- :bug: Restart pairing v3 session after a lost proof response instead of refreshing the offer (#4919)
+- :bug: Acknowledge WebSocket paste_push so receiver failures fail the sync task (#4915)
+- :bug: Fix Coil memory cache limit being overridden to 435 MiB (#4912)
+
+# New Features ✨
+
+- :sparkles: Add devices remove, block and unblock CLI commands (#5087)
+- :sparkles: Show sort direction with arrow icons and state-specific tooltips in the search bar (#5081)
+- :sparkles: Paste into native Wayland windows through the RemoteDesktop portal (#5068)
+- :sparkles: Replace the theme segmented buttons with the mobile sun/auto/moon slider (#5052)
+- :sparkles: Replace the large-file Downloads switch with a destination choice and persist conflict renames on receive (#5047)
+- :sparkles: Add a floating non-activating paste panel that pastes a history row into the focused app on click (#5039)
+- :sparkles: Add a setting to keep received files above the backup size limit in managed storage instead of Downloads (#5038)
+- :sparkles: Redesign the Import page: file-aware selection, drop-to-import, gated button and inline result (#5030)
+- :sparkles: Layer the content area with grey ground, white section cards and neutral headers (#5022)
+- :sparkles: Exclude clipboard sources by match rule (#5020)
+- :sparkles: List only excluded apps on the clipboard sources page and add any app by picking it (#5017)
+- :sparkles: Honor password-manager clipboard hints on Windows, macOS and Linux (#5015)
+- :sparkles: Polish settings screen interactions (#4991)
+- :sparkles: Mark the local device row with plain text after its name instead of a status tag (#4959)
+- :sparkles: Show the local device as the first row of my devices on desktop (#4957)
+- :sparkles: Add a nameTrailing slot to DeviceRowContent for inline markers after the device name (#4955)
+- :sparkles: Add a leading item slot to myDevicesSection so the local device can head the list (#4953)
+- :sparkles: Make the Devices page act on what it shows (#4935)
+- :sparkles: Document MCP tools for agents and reject unknown search filters (#4940)
+- :sparkles: Route SOCKS proxies through OkHttp and cap ResourcesClient response sizes (#4933)
+- :zap: Make Skiko's periodic System.gc() a concurrent cycle (#4913)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Name what a clipboard write includes with PasteWriteScope (#5074)
+- :hammer: Mark the device row ripple read-only and skip hover tracking on disabled rows (#5057)
+- :hammer: Clear the Compose 1.12 deprecation warnings in the device row and NonActivatingWindow (#5056)
+- :hammer: Restructure the settings tree so common settings are not buried under Advanced (#5048)
+- :hammer: Parameterize SettingSectionCard container color, border and modifier (#5021)
+- :hammer: Prepare shared device UI for mobile: platform display name, two-line names, neutral section headers, extracted nearby actions (#4951)
+- :hammer: Rename shared i18n keys that no longer match their copy (#4970)
+- :hammer: Rename, merge, and delete desktop-only i18n keys (#4967)
+- :hammer: Replace Netty server engine with CIO on desktop (#4911)
+- :hammer: Extract the Glama MCP entrypoint script from the Dockerfile (#4939)
+- :art: Compact the Export page type picker into filter chips and add the tagged-only icon (#5032)
+- :art: Put the Share page on the content ground with section cards (#5034)
+- :art: Group the OCR language packs into section cards on the grey ground (#5028)
+- :art: Tint the pressed state of cards on the grey ground with primary (#5024)
+- :art: Keep the hairline border only on cards that group several rows (#5023)
+- :art: Spell HTML and RTF consistently in i18n strings (#4949)
+- :art: Capitalize the HTML paste type name in every language (#4947)
+- :memo: Rewrite settings copy so each row and page reads without its subtitle (#5049)
+- :memo: Revise English and Chinese copy for settings, storage, update, CLI, and MCP screens (#4963)
+- :memo: Revise English and Chinese copy for devices, pairing, search, notifications, and About (#4965)
+- :memo: Revise Traditional Chinese, Korean, German, Persian, Spanish, Portuguese, French and Japanese copy against the new English source (#4972 #4976 #4979 #4980 #4985 #4986 #4987 #4988)
+- :memo: Declare Glama MCP directory maintainers (#4938)
+- :memo: Mark command-line mode as shipped in roadmap (#4907)
+- :memo: Tighten Chrome Extension and CLI feature blurbs to one line (#4906)
+- :memo: Add Trendshift and mcpservers.org badges to README (#4904 #4920)
+
+# Build & CI 👷
+
+- :white_check_mark: Add a logback config to the e2e harness so JmDNS debug output stops drowning the results (#5085)
+- :white_check_mark: Add i18n consistency checks and the i18n style guide (#4961)
+- :whale: Add Glama stdio Dockerfile for the MCP server (#4916)
+- :heavy_minus_sign: Remove unused kotter entry from the version catalog (#4917)
+
+# Dependencies ⬆️
+
+- :arrow_up: Migrate the bundled runtime to JBR 25.0.4.1 b610.67 (#4831 #5042)
+- :arrow_up: Upgrade Compose Multiplatform to 1.12.1 and Navigation to 2.10.0-beta01 (#5055)
+- :arrow_up: Bump kotlin from 2.4.10 to 2.4.20 (#5001)
+- :arrow_up: Bump sqldelight from 2.3.2 to 2.4.0 (#5061)
+- :arrow_up: Bump coil from 3.6.0 to 3.6.3 (#4941 #5060)
+- :arrow_up: Bump imageio from 3.14.0 to 3.15.2 (#4989 #5083)
+- :arrow_up: Bump ch.qos.logback:logback-classic from 1.6.3 to 1.6.4 (#5084)
+- :arrow_up: Bump com.github.ben-manes.caffeine:caffeine (#5082)
+- :arrow_up: Bump io.github.vinceglb:filekit-dialogs from 0.15.0 to 0.16.0 (#5004)
+- :arrow_up: Bump dev.nucleusframework:composenativetray-jvm (#4942)
+- :arrow_up: Bump com.squareup.okio:okio from 3.18.1 to 3.18.2 (#4943)
+- :arrow_up: Bump com.mohamedrejeb.richeditor:richeditor-compose (#4909)
+- :arrow_up: Bump org.yaml:snakeyaml from 2.6 to 2.7 (#4910)
+- :arrow_up: Bump vitest to 4.1.11 and browserslist/baseline-browser-mapping to fix Dependabot alerts (#4994)
+
 # [2.2.0] - 2026-08-31
 # Highlights 🌟
 
