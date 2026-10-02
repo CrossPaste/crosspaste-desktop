@@ -135,10 +135,14 @@ On the Windows machine:
    ```
 4. **Confirm it's wired up**: the server window should log `GET /metadata.properties`
    within seconds — that proves the override took effect.
-5. Open the **Changelog** screen (tray → open window) — an update banner appears.
-   Click **Download update** → progress → verify → extract.
-6. Click **Restart & update** → the app quits, the batch script replaces the install
-   directory and relaunches.
+5. With **Download updates automatically** on (the default, Settings → General), the
+   first update check starts a background download by itself, throttled to 1 MB/s;
+   the **Changelog** banner (tray → open window) shows its progress. Clicking
+   **Download update** on the banner lifts the throttle for the running download.
+   With the switch off, the banner waits for the click as before.
+6. Once verified and extracted, the "Update downloaded. Restart to apply." dialog
+   appears. Click **Restart and update** → the app quits, the batch script replaces the
+   install directory and relaunches.
 7. Confirm via **About** that the version is now the "new" one (if you bumped it).
 
 ## What to verify
@@ -149,6 +153,13 @@ On the Windows machine:
   instances — the single-instance lock is released cleanly before relaunch).
 - A **corrupt download** is rejected: temporarily serve a wrong `checksum.txt`; the
   banner should show a verification failure and not replace anything.
+- **Resume**: kill the app mid-download (`taskkill /IM CrossPaste.exe /F`); the
+  server log on relaunch shows a `Range: bytes=<n>-` request. Note that
+  `python -m http.server` ignores `Range` and answers 200, so against the local server
+  the download correctly starts over; to see a real 206 continuation point the override
+  at a range-capable source (the OSS test bucket, see above). Killing the app after the
+  extract instead brings it back straight into the restart prompt, with
+  `update\ready.properties` on disk and no second download.
 - A **read-only install** (e.g. extracted under `C:\Program Files\...`) should fall
   back rather than attempt replacement.
 

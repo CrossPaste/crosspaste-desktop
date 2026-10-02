@@ -15,6 +15,7 @@ import io.ktor.http.contentLength
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.toByteArray
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -85,8 +86,10 @@ class WindowsZipUpdaterDownloadTest {
                         respond("not found", HttpStatusCode.NotFound)
                 }
             }
-        val resourcesClient = MockResourcesClient(HttpClient(engine))
+        val httpClient = HttpClient(engine)
+        val resourcesClient = MockResourcesClient(httpClient)
         return WindowsZipUpdater(
+            appInfo = mockk(relaxed = true) { every { appVersion } returns "1.0.0" },
             appUrls = mockk(relaxed = true),
             appPathProvider = FakeAppPathProvider(tmp),
             appLaunchState =
@@ -98,6 +101,7 @@ class WindowsZipUpdaterDownloadTest {
                     installFrom = null,
                 ),
             resourcesClient = resourcesClient,
+            downloader = ResumableUpdateDownloader(httpClient = { httpClient }, sleep = {}),
             platform = mockk(relaxed = true),
             metadataFetcher = UpdateMetadataFetcher(resourcesClient),
             baseUrlOverride = baseUrl,
@@ -153,6 +157,53 @@ class WindowsZipUpdaterDownloadTest {
             assertTrue(terminal is UpdateState.Failed, "expected Failed but was $terminal")
             assertEquals("update_checksum_mismatch", terminal.reasonKey)
         }
+    }
+
+    @Test
+    fun `a background failure is quiet and a manual one is not`() {
+        val zip = buildZip()
+        val tmp = Files.createTempDirectory("cp-update-quiet").toOkioPath()
+        val wrongHash = "0".repeat(64)
+        val updater = newUpdater(zip, "$wrongHash  $fileName", tmp)
+
+        runBlocking {
+            updater.startBackgroundDownload()
+            val background =
+                withTimeout(20.seconds) {
+                    updater.updateState.first { it is UpdateState.Failed }
+                }
+            assertEquals(false, (background as UpdateState.Failed).manual)
+
+            updater.startDownload()
+            val manual =
+                withTimeout(20.seconds) {
+                    updater.updateState.first { it is UpdateState.Failed && it.manual }
+                }
+            assertEquals(true, (manual as UpdateState.Failed).manual)
+        }
+    }
+
+    @Test
+    fun `a staged update is restored by the next instance without downloading again`() {
+        val zip = buildZip()
+        val tmp = Files.createTempDirectory("cp-update-restore").toOkioPath()
+        val first = newUpdater(zip, "${sha256(zip)}  $fileName", tmp)
+
+        runBlocking {
+            first.startBackgroundDownload()
+            withTimeout(20.seconds) { first.updateState.first { it is UpdateState.ReadyToApply } }
+        }
+
+        val marker = tmp.resolve("user").resolve("update").resolve(WindowsZipUpdater.READY_MARKER)
+        assertTrue(getFileUtils().existFile(marker), "the staged release should be recorded")
+        val zipLeftBehind = tmp.resolve("user").resolve("update").resolve(fileName)
+        assertTrue(!getFileUtils().existFile(zipLeftBehind), "the zip is dropped once extracted")
+
+        // A new instance (the app relaunched without applying) comes up ready to apply.
+        val second = newUpdater(ByteArray(0), "", tmp)
+        val restored = second.updateState.value
+        assertTrue(restored is UpdateState.ReadyToApply, "expected ReadyToApply but was $restored")
+        assertEquals(version, restored.version)
     }
 }
 

@@ -1,5 +1,6 @@
 package com.crosspaste.app
 
+import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.UISupport
@@ -23,6 +24,7 @@ private const val MICROSOFT_STORE_URI = "ms-windows-store://pdp?productId=9P6X7D
 class DesktopAppUpdateService(
     appInfo: AppInfo,
     private val appUrls: AppUrls,
+    private val configManager: DesktopConfigManager,
     private val uiSupport: UISupport,
     private val notificationManager: NotificationManager,
     private val metadataFetcher: UpdateMetadataFetcher,
@@ -58,7 +60,22 @@ class DesktopAppUpdateService(
         }
 
     override suspend fun checkForUpdate() {
-        _lastVersion.value = readLastVersion()
+        val last = readLastVersion()
+        _lastVersion.value = last
+        if (last != null && last > currentVersion.value) {
+            maybeDownloadInBackground()
+        }
+    }
+
+    /**
+     * Portable zip only: fetch a newer release as soon as the check sees it, so the
+     * prompt the user eventually gets is "restart to update" rather than "download".
+     * The updater itself ignores the call while an update is in flight or already staged.
+     */
+    private fun maybeDownloadInBackground() {
+        if (windowsZipUpdater.channel != WindowsUpdateChannel.PORTABLE_ZIP) return
+        if (!configManager.getCurrentConfig().autoDownloadUpdate) return
+        windowsZipUpdater.startBackgroundDownload()
     }
 
     override fun existNewVersion(): Flow<Boolean> =

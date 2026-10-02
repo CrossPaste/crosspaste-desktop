@@ -28,6 +28,7 @@ import com.crosspaste.app.DesktopAppUrls
 import com.crosspaste.app.DesktopPidFileService
 import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.NativeMessagingHostService
+import com.crosspaste.app.ResumableUpdateDownloader
 import com.crosspaste.app.UpdateMetadataFetcher
 import com.crosspaste.app.WindowsZipUpdater
 import com.crosspaste.cli.CliSymlinkService
@@ -59,6 +60,8 @@ import com.crosspaste.image.coil.UserImageFactory
 import com.crosspaste.log.CrossPasteLogger
 import com.crosspaste.module.ModuleDownloadManager
 import com.crosspaste.module.ModuleManager
+import com.crosspaste.net.AbstractResourcesClient
+import com.crosspaste.net.ResourcesClient
 import com.crosspaste.net.Server
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
@@ -108,7 +111,7 @@ fun desktopAppModule(
         single<AppLock> { get<DesktopAppLaunch>() }
         single<AppRestartService> { DesktopAppRestartService(get(), get()) }
         single<AppStartUpService> { DesktopAppStartUpService(get(), get(), get(), get()) }
-        single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get(), get(), get()) }
+        single<AppUpdateService> { DesktopAppUpdateService(get(), get(), get(), get(), get(), get(), get(), get()) }
         single<AppUrls> { DesktopAppUrls }
         single<ChangelogService> { ChangelogService(get()) }
         single<CliSymlinkService> {
@@ -125,8 +128,13 @@ fun desktopAppModule(
         single<DesktopPidFileService> { DesktopPidFileService(get(), get()) }
         single<EndpointInfoFactory> { EndpointInfoFactory(get(), lazy { get<Server>() }, get()) }
         single<NativeMessagingHostService> { NativeMessagingHostService(get(), get(), get()) }
+        single<ResumableUpdateDownloader> {
+            ResumableUpdateDownloader(
+                httpClient = { (get<ResourcesClient>() as AbstractResourcesClient).getHttpClient() },
+            )
+        }
         single<UpdateMetadataFetcher> { UpdateMetadataFetcher(get()) }
-        single<WindowsZipUpdater> { WindowsZipUpdater(get(), get(), get(), get(), get(), get()) }
+        single<WindowsZipUpdater> { WindowsZipUpdater(get(), get(), get(), get(), get(), get(), get(), get()) }
         // endregion
 
         // region Config
