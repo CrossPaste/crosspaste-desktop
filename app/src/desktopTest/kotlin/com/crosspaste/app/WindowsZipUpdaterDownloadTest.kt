@@ -10,9 +10,12 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Url
 import io.ktor.http.contentLength
 import io.ktor.http.contentType
+import io.ktor.http.headersOf
 import io.ktor.http.isSuccess
 import io.ktor.utils.io.toByteArray
 import io.mockk.every
@@ -67,30 +70,39 @@ class WindowsZipUpdaterDownloadTest {
             .digest(bytes)
             .joinToString("") { "%02x".format(it) }
 
+    private fun singleSourceEngine(
+        zipBytes: ByteArray,
+        checksumBody: String,
+    ): MockEngine =
+        MockEngine { request ->
+            val path = request.url.encodedPath
+            when {
+                path.endsWith("metadata.properties") ->
+                    respond("app.version=$version\napp.revision=$revision\n", HttpStatusCode.OK)
+                path.endsWith("checksum.txt") ->
+                    respond(checksumBody, HttpStatusCode.OK)
+                path.endsWith(".zip") ->
+                    respond(zipBytes, HttpStatusCode.OK)
+                else ->
+                    respond("not found", HttpStatusCode.NotFound)
+            }
+        }
+
     private fun newUpdater(
         zipBytes: ByteArray,
         checksumBody: String,
         tmp: Path,
+        engine: MockEngine = singleSourceEngine(zipBytes, checksumBody),
+        baseUrlOverride: String? = baseUrl,
     ): WindowsZipUpdater {
-        val engine =
-            MockEngine { request ->
-                val path = request.url.encodedPath
-                when {
-                    path.endsWith("metadata.properties") ->
-                        respond("app.version=$version\napp.revision=$revision\n", HttpStatusCode.OK)
-                    path.endsWith("checksum.txt") ->
-                        respond(checksumBody, HttpStatusCode.OK)
-                    path.endsWith(".zip") ->
-                        respond(zipBytes, HttpStatusCode.OK)
-                    else ->
-                        respond("not found", HttpStatusCode.NotFound)
-                }
-            }
         val httpClient = HttpClient(engine)
         val resourcesClient = MockResourcesClient(httpClient)
         return WindowsZipUpdater(
             appInfo = mockk(relaxed = true) { every { appVersion } returns "1.0.0" },
-            appUrls = mockk(relaxed = true),
+            appUrls =
+                mockk(
+                    relaxed = true,
+                ) { every { checkMetadataUrl } returns "https://meta.test/metadata.properties" },
             appPathProvider = FakeAppPathProvider(tmp),
             appLaunchState =
                 DesktopAppLaunchState(
@@ -104,10 +116,120 @@ class WindowsZipUpdaterDownloadTest {
             downloader = ResumableUpdateDownloader(httpClient = { httpClient }, sleep = {}),
             platform = mockk(relaxed = true),
             metadataFetcher = UpdateMetadataFetcher(resourcesClient),
-            baseUrlOverride = baseUrl,
+            baseUrlOverride = baseUrlOverride,
             forcedChannel = WindowsUpdateChannel.PORTABLE_ZIP,
         )
     }
+
+    private val githubHost = "github.com"
+    private val ossHost = "oss.crosspaste.com"
+
+    private fun etagFor(host: String): String = "\"etag-$host\""
+
+    private enum class Mirror { FULL, HONOR_RANGE, DOWN, TRUNCATED }
+
+    /**
+     * Serves the real GitHub + OSS mirror layout (no override): metadata from the
+     * mocked check URL, checksum.txt from both mirrors, and the zip according to each
+     * host's [Mirror] mode. HONOR_RANGE answers a matching If-Range with 206; TRUNCATED
+     * promises the full length but sends half, like a dropped connection. Every zip
+     * request is recorded as host to Range header.
+     */
+    private fun mirrorsEngine(
+        zipBytes: ByteArray,
+        checksumBody: String,
+        modes: Map<String, Mirror>,
+        zipRequests: MutableList<Pair<String, String?>>,
+        checksumModes: Map<String, HttpStatusCode> = emptyMap(),
+        zipIfRanges: MutableList<String?> = mutableListOf(),
+        zipResponses: MutableList<HttpStatusCode> = mutableListOf(),
+    ): MockEngine =
+        MockEngine { request ->
+            val path = request.url.encodedPath
+            val host = request.url.host
+            val hostEtag = etagFor(host)
+            when {
+                path.endsWith("metadata.properties") ->
+                    respond("app.version=$version\napp.revision=$revision\n", HttpStatusCode.OK)
+                path.endsWith("checksum.txt") -> {
+                    val status = checksumModes[host] ?: HttpStatusCode.OK
+                    if (status.isSuccess()) {
+                        respond(checksumBody, status)
+                    } else {
+                        respond("unavailable", status)
+                    }
+                }
+                path.endsWith(".zip") -> {
+                    val range = request.headers[HttpHeaders.Range]
+                    val ifRange = request.headers[HttpHeaders.IfRange]
+                    zipRequests += host to range
+                    zipIfRanges += ifRange
+                    when (modes.getValue(host)) {
+                        Mirror.DOWN -> {
+                            zipResponses += HttpStatusCode.ServiceUnavailable
+                            respond("unavailable", HttpStatusCode.ServiceUnavailable)
+                        }
+                        Mirror.TRUNCATED -> {
+                            zipResponses += HttpStatusCode.OK
+                            respond(
+                                zipBytes.copyOfRange(0, zipBytes.size / 2),
+                                HttpStatusCode.OK,
+                                headersOf(
+                                    HttpHeaders.ETag to listOf(hostEtag),
+                                    HttpHeaders.ContentLength to listOf(zipBytes.size.toString()),
+                                ),
+                            )
+                        }
+                        Mirror.HONOR_RANGE if range != null &&
+                            ifRange.let { it == null || it == hostEtag } -> {
+                            val from = range.removePrefix("bytes=").removeSuffix("-").toInt()
+                            zipResponses += HttpStatusCode.PartialContent
+                            respond(
+                                zipBytes.copyOfRange(from, zipBytes.size),
+                                HttpStatusCode.PartialContent,
+                                headersOf(
+                                    HttpHeaders.ETag to listOf(hostEtag),
+                                    HttpHeaders.ContentRange to
+                                        listOf("bytes $from-${zipBytes.size - 1}/${zipBytes.size}"),
+                                    HttpHeaders.ContentLength to listOf((zipBytes.size - from).toString()),
+                                ),
+                            )
+                        }
+                        else -> {
+                            zipResponses += HttpStatusCode.OK
+                            respond(
+                                zipBytes,
+                                HttpStatusCode.OK,
+                                headersOf(
+                                    HttpHeaders.ETag to listOf(hostEtag),
+                                    HttpHeaders.ContentLength to listOf(zipBytes.size.toString()),
+                                ),
+                            )
+                        }
+                    }
+                }
+                else -> respond("not found", HttpStatusCode.NotFound)
+            }
+        }
+
+    private fun updateDir(tmp: Path): Path = tmp.resolve("user").resolve("update")
+
+    /** A partial download of the zip's first [bytes] bytes attributed to [source]. */
+    private fun seedPartial(
+        tmp: Path,
+        zip: ByteArray,
+        bytes: Int,
+        source: String,
+        etag: String = etagFor(Url(source).host),
+    ) {
+        val dir = updateDir(tmp)
+        getFileUtils().createDir(dir, mustCreate = false)
+        dir.resolve("$fileName.part").toFile().writeBytes(zip.copyOfRange(0, bytes))
+        dir.resolve("$fileName.etag").toFile().writeText(etag)
+        dir.resolve("$fileName.source").toFile().writeText(source)
+    }
+
+    private val ossBase = "https://$ossHost/$version.$revision/"
 
     @Test
     fun `downloads, verifies and extracts to staging on a matching checksum`() {
@@ -204,6 +326,130 @@ class WindowsZipUpdaterDownloadTest {
         val restored = second.updateState.value
         assertTrue(restored is UpdateState.ReadyToApply, "expected ReadyToApply but was $restored")
         assertEquals(version, restored.version)
+    }
+
+    @Test
+    fun `a partial download is resumed from the mirror it came from`() {
+        val zip = buildZip()
+        val tmp = Files.createTempDirectory("cp-update-affinity").toOkioPath()
+        seedPartial(tmp, zip, bytes = 100, source = ossBase)
+        val zipRequests = mutableListOf<Pair<String, String?>>()
+        val engine =
+            mirrorsEngine(
+                zip,
+                "${sha256(zip)}  $fileName",
+                mapOf(githubHost to Mirror.HONOR_RANGE, ossHost to Mirror.HONOR_RANGE),
+                zipRequests,
+            )
+        val updater = newUpdater(zip, "", tmp, engine = engine, baseUrlOverride = null)
+
+        runBlocking {
+            updater.startBackgroundDownload()
+            withTimeout(20.seconds) { updater.updateState.first { it is UpdateState.ReadyToApply } }
+        }
+
+        // Whichever mirror wins the checksum race, the zip itself continues on OSS.
+        assertEquals(listOf<Pair<String, String?>>(ossHost to "bytes=100-"), zipRequests)
+        val dir = updateDir(tmp)
+        assertTrue(
+            !getFileUtils().existFile(dir.resolve("$fileName.source")),
+            "source file is cleaned up after completion",
+        )
+        assertTrue(!getFileUtils().existFile(dir.resolve("$fileName.part")), "part file is cleaned up after completion")
+    }
+
+    @Test
+    fun `a mirror that fails is replaced by the other one, continuing the same partial`() {
+        val zip = buildZip()
+        val tmp = Files.createTempDirectory("cp-update-fallback").toOkioPath()
+        // Pin the first attempt to OSS so the race cannot pick GitHub up front.
+        seedPartial(tmp, zip, bytes = 100, source = ossBase)
+        val zipRequests = mutableListOf<Pair<String, String?>>()
+        val engine =
+            mirrorsEngine(
+                zip,
+                "${sha256(zip)}  $fileName",
+                mapOf(githubHost to Mirror.HONOR_RANGE, ossHost to Mirror.DOWN),
+                zipRequests,
+            )
+        val updater = newUpdater(zip, "", tmp, engine = engine, baseUrlOverride = null)
+
+        runBlocking {
+            updater.startBackgroundDownload()
+            withTimeout(20.seconds) { updater.updateState.first { it is UpdateState.ReadyToApply } }
+        }
+
+        // OSS answered 503; the 100 bytes stay and GitHub is asked for the rest with a
+        // bare Range, since OSS's ETag no longer applies.
+        assertEquals(listOf<Pair<String, String?>>(ossHost to "bytes=100-", githubHost to "bytes=100-"), zipRequests)
+    }
+
+    @Test
+    fun `a transfer that drops mid-way continues on the other mirror from the same byte`() {
+        val zip = buildZip()
+        val tmp = Files.createTempDirectory("cp-update-keep-partial").toOkioPath()
+        seedPartial(tmp, zip, bytes = 100, source = ossBase)
+        val zipRequests = mutableListOf<Pair<String, String?>>()
+        val engine =
+            mirrorsEngine(
+                zip,
+                "${sha256(zip)}  $fileName",
+                mapOf(githubHost to Mirror.HONOR_RANGE, ossHost to Mirror.TRUNCATED),
+                zipRequests,
+            )
+        val updater = newUpdater(zip, "", tmp, engine = engine, baseUrlOverride = null)
+
+        runBlocking {
+            updater.startBackgroundDownload()
+            val terminal =
+                withTimeout(20.seconds) {
+                    updater.updateState.first { it is UpdateState.ReadyToApply || it is UpdateState.Failed }
+                }
+            assertTrue(terminal is UpdateState.ReadyToApply, "expected ReadyToApply but was $terminal")
+        }
+
+        // OSS ignored the range and dropped at half; GitHub picks up exactly there.
+        assertEquals(
+            listOf<Pair<String, String?>>(ossHost to "bytes=100-", githubHost to "bytes=${zip.size / 2}-"),
+            zipRequests,
+        )
+    }
+
+    @Test
+    fun `when preferred mirror fails checksum, switching mirror drops stale etag and resumes without wiping`() {
+        val zip = buildZip()
+        val tmp = Files.createTempDirectory("cp-update-checksum-switch").toOkioPath()
+        seedPartial(tmp, zip, bytes = 100, source = ossBase)
+        val zipRequests = mutableListOf<Pair<String, String?>>()
+        val zipIfRanges = mutableListOf<String?>()
+        val zipResponses = mutableListOf<HttpStatusCode>()
+        val engine =
+            mirrorsEngine(
+                zip,
+                "${sha256(zip)}  $fileName",
+                mapOf(githubHost to Mirror.HONOR_RANGE, ossHost to Mirror.HONOR_RANGE),
+                zipRequests,
+                checksumModes = mapOf(ossHost to HttpStatusCode.ServiceUnavailable),
+                zipIfRanges = zipIfRanges,
+                zipResponses = zipResponses,
+            )
+        val updater = newUpdater(zip, "", tmp, engine = engine, baseUrlOverride = null)
+
+        runBlocking {
+            updater.startBackgroundDownload()
+            val terminal =
+                withTimeout(20.seconds) {
+                    updater.updateState.first { it is UpdateState.ReadyToApply || it is UpdateState.Failed }
+                }
+            assertTrue(terminal is UpdateState.ReadyToApply, "expected ReadyToApply but was $terminal")
+        }
+
+        // OSS failed checksum, so GitHub won the checksum race.
+        // Because the mirror changed at check time, OSS's ETag was dropped and GitHub was
+        // asked for the remainder with a bare Range, resuming seamlessly without restart.
+        assertEquals(listOf<Pair<String, String?>>(githubHost to "bytes=100-"), zipRequests)
+        assertEquals(listOf<String?>(null), zipIfRanges)
+        assertEquals(listOf(HttpStatusCode.PartialContent), zipResponses)
     }
 }
 

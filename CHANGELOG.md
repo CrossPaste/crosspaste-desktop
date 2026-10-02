@@ -17,7 +17,7 @@ All notable changes to this project will be documented in this file.
   background as soon as the periodic check finds it, throttled to
   1 MB/s, with HTTP range resume across restarts and dropped
   connections; the prompt then offers a one-click restart. A General
-  settings switch turns automatic downloads off (#5090 #5091).
+  settings switch turns automatic downloads off (#5090 #5091 #5092).
 
 - 🔒 **Password-manager hints and source exclusion**
   Copies that password managers mark as "do not record" (Bitwarden,
@@ -75,6 +75,7 @@ All notable changes to this project will be documented in this file.
 
 # Bug Fixes 🐛
 
+- :bug: Fix portable update offline trigger, mirror affinity, cross-mirror resume and rate limiter burst (#5092)
 - :bug: Self-register the initiator's address on the pairing v3 commit so an acceptor that never sees its mDNS can reach it (#5086)
 - :bug: Fix multi-monitor placement, clipping and focus handling for Linux paste panel menu (#5079)
 - :bug: Close the floating button's menu on Linux when the user clicks elsewhere (#5078)

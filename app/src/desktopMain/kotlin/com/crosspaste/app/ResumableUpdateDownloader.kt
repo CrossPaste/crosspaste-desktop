@@ -14,6 +14,8 @@ import kotlinx.coroutines.delay
 import okio.Path
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.nanoseconds
@@ -35,8 +37,11 @@ sealed interface UpdateDownloadResult {
  * - **Resume.** Bytes go to `<target>.part`; the server's ETag is kept next to it. A later
  *   call for the same target sends `Range: bytes=<have>-` plus `If-Range: <etag>`, so an
  *   unchanged file continues where it stopped (HTTP 206) and a changed one is restarted
- *   from zero (HTTP 200). A `.part` without an ETag, or a 206 whose range does not line up
- *   with what we have, is discarded and the download restarts.
+ *   from zero (HTTP 200). A `.part` without an ETag is resumed with a bare `Range`: the
+ *   caller uses that to continue on a different mirror of the same bytes, where the ETag
+ *   would not match, and its checksum catches the (unlikely) case of the mirrors
+ *   disagreeing. A 206 whose range does not line up with what we have is discarded and
+ *   the download restarts.
  * - **Throttle.** [limitBytesPerSecond] is read before every chunk; a positive value caps
  *   the average rate over the current rate window with a sleep after each chunk, zero or
  *   less means unlimited. The window restarts whenever the limit changes so switching from
@@ -70,14 +75,12 @@ class ResumableUpdateDownloader(
                 ?.readText()
                 ?.trim()
                 ?.takeIf { it.isNotEmpty() }
-        val resume = have > 0 && etag != null
-        if (have > 0 && !resume) {
-            logger.info { "Discarding ${part.name}: partial file without an ETag cannot be validated" }
-            reset(part, etagFile)
+        if (have > 0 && etag == null) {
+            logger.info { "Resuming ${part.name} at $have bytes without an ETag; the checksum validates the result" }
         }
 
         val attempt =
-            runCatching { fetch(url, part, etagFile, if (resume) have else 0L, etag, limitBytesPerSecond, onProgress) }
+            runCatching { fetch(url, part, etagFile, have, etag, limitBytesPerSecond, onProgress) }
         attempt.exceptionOrNull()?.let { e ->
             if (e is CancellationException) throw e
             logger.warn(e) { "Update download failed: $url" }
@@ -112,17 +115,22 @@ class ResumableUpdateDownloader(
         part: File,
         etagFile: File,
         target: Path,
-    ): UpdateDownloadResult {
-        val finished = target.toFile()
-        if (finished.exists() && !finished.delete()) {
-            return UpdateDownloadResult.Failed(null, IllegalStateException("Cannot replace $finished"))
+    ): UpdateDownloadResult =
+        runCatching {
+            val targetNio = target.toNioPath()
+            targetNio.parent?.let { Files.createDirectories(it) }
+            Files.move(
+                part.toPath(),
+                targetNio,
+                StandardCopyOption.REPLACE_EXISTING,
+            )
+            etagFile.delete()
+            UpdateDownloadResult.Success
+        }.getOrElse { e ->
+            if (e is CancellationException) throw e
+            logger.warn(e) { "Cannot move ${part.name} into place at $target" }
+            UpdateDownloadResult.Failed(null, e)
         }
-        if (!part.renameTo(finished)) {
-            return UpdateDownloadResult.Failed(null, IllegalStateException("Cannot move ${part.name} into place"))
-        }
-        etagFile.delete()
-        return UpdateDownloadResult.Success
-    }
 
     private sealed interface Fetch {
         data object Done : Fetch
@@ -148,10 +156,10 @@ class ResumableUpdateDownloader(
     ): Fetch =
         httpClient()
             .prepareGet(url) {
-                if (offset > 0 && etag != null) {
+                if (offset > 0) {
                     headers {
                         append(HttpHeaders.Range, "bytes=$offset-")
-                        append(HttpHeaders.IfRange, etag)
+                        if (etag != null) append(HttpHeaders.IfRange, etag)
                     }
                 }
             }.execute { response ->
@@ -255,7 +263,14 @@ class ResumableUpdateDownloader(
             val expectedNanos = windowBytes * NANOS_PER_SECOND / limit
             val elapsedNanos = now() - windowStart
             val behind = expectedNanos - elapsedNanos
-            if (behind > 0) sleep(behind.nanoseconds)
+            if (behind > 0) {
+                sleep(behind.nanoseconds)
+            } else {
+                // If the link was slower than the cap or paused, do not let "credit"
+                // accumulate into an unthrottled burst when throughput recovers.
+                windowStart = now()
+                windowBytes = 0L
+            }
         }
     }
 

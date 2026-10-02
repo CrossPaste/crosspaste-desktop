@@ -298,12 +298,28 @@ class WindowsZipUpdater(
         // Aliyun OSS repository ACLs. Proper hardening is to verify a detached signature
         // (e.g. minisign / GPG) over the zip or checksum against a public key baked into
         // the app, before extracting. See doc/en/WindowsZipSelfUpdateTest.md.
-        val winner = fetchChecksumFromFastestSource(release)
-        if (winner == null) {
+        val candidateBases = mirrorBases(release)
+        val savedSource = readSavedSource(release)
+        val hasPartialDownload = hasPartialDownload(release)
+
+        // If we already have a partial download from a specific mirror, reuse that mirror
+        // so the server's ETag matches and HTTP 206 Range resume succeeds.
+        val preferredBase = savedSource?.takeIf { hasPartialDownload && it in candidateBases }
+
+        val checksumResult: Pair<String, String>? =
+            if (preferredBase != null) {
+                fetchChecksumFromSource(preferredBase)?.let { preferredBase to it }
+                    ?: fetchChecksumFromFastestSource(release)
+            } else {
+                fetchChecksumFromFastestSource(release)
+            }
+
+        if (checksumResult == null) {
             fail("update_download_failed")
             return
         }
-        val (base, checksumText) = winner
+
+        val (primaryBase, checksumText) = checksumResult
         val expectedHash = parseChecksum(checksumText, release.fileName)
         if (expectedHash == null) {
             fail("update_checksum_missing")
@@ -313,11 +329,35 @@ class WindowsZipUpdater(
         val zipPath = updateDir.resolve(release.fileName)
 
         _updateState.value = UpdateState.Downloading(0)
-        val downloaded = downloadFile(base + release.fileName, zipPath)
+        // If the checksum race selected a different mirror than the previous partial
+        // download came from, drop that mirror's ETag so the download resumes with a bare
+        // Range on the new mirror instead of failing an If-Range match and restarting from 0.
+        if (primaryBase != savedSource) {
+            forgetMirrorEtag(release)
+        }
+        saveSource(release, primaryBase)
+        var downloaded = downloadFile(primaryBase + release.fileName, zipPath)
+
+        // Both mirrors serve the same bytes, so a failed transfer continues on the other
+        // one from where it stopped. Only the ETag is dropped: it belongs to the mirror
+        // that failed, and the final SHA-256 covers the stitched file.
+        if (!downloaded) {
+            val fallbackBases = candidateBases.filter { it != primaryBase }
+            for (fallbackBase in fallbackBases) {
+                logger.info { "Download failed from $primaryBase, continuing on fallback mirror $fallbackBase" }
+                forgetMirrorEtag(release)
+                saveSource(release, fallbackBase)
+                downloaded = downloadFile(fallbackBase + release.fileName, zipPath)
+                if (downloaded) break
+            }
+        }
+
         if (!downloaded) {
             fail("update_download_failed")
             return
         }
+
+        runCatching { fileUtils.deleteFile(sourceFile(release)) }
 
         _updateState.value = UpdateState.Verifying
         val actualHash = sha256(zipPath)
@@ -360,12 +400,46 @@ class WindowsZipUpdater(
         }
     }
 
+    private fun sourceFile(release: RemoteRelease): Path = updateDir().resolve("${release.fileName}.source")
+
+    /** True when a resumable partial download (at least one byte) of [release] is on disk. */
+    private fun hasPartialDownload(release: RemoteRelease): Boolean {
+        val part = ResumableUpdateDownloader.partFile(updateDir().resolve(release.fileName))
+        return part.isFile && part.length() > 0L
+    }
+
+    private fun readSavedSource(release: RemoteRelease): String? =
+        runCatching {
+            val file = sourceFile(release).toFile()
+            if (file.isFile) file.readText().trim().takeIf { it.isNotEmpty() } else null
+        }.getOrNull()
+
+    private fun saveSource(
+        release: RemoteRelease,
+        sourceBase: String,
+    ) {
+        runCatching {
+            sourceFile(release).toFile().writeText(sourceBase)
+        }
+    }
+
+    /** Drops the ETag of the mirror we are leaving so the partial resumes with a bare Range. */
+    private fun forgetMirrorEtag(release: RemoteRelease) {
+        runCatching { fileUtils.deleteFile(updateDir().resolve("${release.fileName}.etag")) }
+    }
+
     /**
      * Drops zips and partial downloads of any other release so a superseded download is
-     * not resumed, while keeping this release's `.part` + `.etag` for the resume.
+     * not resumed, while keeping this release's `.part` + `.etag` + `.source` for the resume.
      */
     private fun dropFilesNotFor(release: RemoteRelease) {
-        val keep = setOf(release.fileName, "${release.fileName}.part", "${release.fileName}.etag")
+        val keep =
+            setOf(
+                release.fileName,
+                "${release.fileName}.part",
+                "${release.fileName}.etag",
+                "${release.fileName}.source",
+            )
         updateDir()
             .toFile()
             .listFiles()
@@ -373,7 +447,12 @@ class WindowsZipUpdater(
             .filter {
                 it.isFile &&
                     it.name !in keep &&
-                    (it.name.endsWith(".zip") || it.name.endsWith(".part") || it.name.endsWith(".etag"))
+                    (
+                        it.name.endsWith(".zip") ||
+                            it.name.endsWith(".part") ||
+                            it.name.endsWith(".etag") ||
+                            it.name.endsWith(".source")
+                    )
             }.forEach { stale ->
                 runCatching { stale.delete() }
             }
@@ -527,20 +606,21 @@ class WindowsZipUpdater(
                 // re-deriving and risking a mismatch.
             )?.let { RemoteRelease(it.version, it.revision, it.tag) }
 
+    private suspend fun fetchChecksumFromSource(base: String): String? =
+        runCatching {
+            resourcesClient
+                .request(base + "checksum.txt", ResourceRequestLimits.METADATA)
+                .getOrThrow()
+                .getBodyAsText()
+        }.getOrNull()
+
     /** Returns the winning mirror base (with trailing slash) and its checksum.txt body. */
     private suspend fun fetchChecksumFromFastestSource(release: RemoteRelease): Pair<String, String>? =
         coroutineScope {
             val deferreds =
                 mirrorBases(release).map { base ->
                     async {
-                        runCatching {
-                            val text =
-                                resourcesClient
-                                    .request(base + "checksum.txt", ResourceRequestLimits.METADATA)
-                                    .getOrThrow()
-                                    .getBodyAsText()
-                            base to text
-                        }.getOrNull()
+                        fetchChecksumFromSource(base)?.let { base to it }
                     }
                 }
             raceFirstSuccess(deferreds)
@@ -768,7 +848,7 @@ class WindowsZipUpdater(
             rmdir /S /Q "%BAK%"
             rmdir /S /Q "%SRC%"
             echo [cp-up] success, starting "%EXE%"
-            start "" "%EXE%"
+            start "" /D "%DST%" "%EXE%"
             echo [cp-up] === done: success ===
             exit /b 0
 
@@ -793,7 +873,7 @@ class WindowsZipUpdater(
 
             :START_OLD
             echo [cp-up] starting previous version "%EXE%"
-            start "" "%EXE%"
+            start "" /D "%DST%" "%EXE%"
             echo [cp-up] === done: failed ===
             exit /b 1
             """.trimIndent().replace("\n", "\r\n")

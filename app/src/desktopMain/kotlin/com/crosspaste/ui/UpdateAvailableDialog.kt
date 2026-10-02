@@ -59,11 +59,15 @@ fun UpdateDialogHost() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val onChangeLog = backStackEntry?.let { getRootRouteName(it.destination) } == ChangeLog.NAME
 
-    val version = lastVersion?.toString() ?: return
+    val state = updateState
+    val version =
+        when (state) {
+            is UpdateState.ReadyToApply -> state.version
+            else -> lastVersion?.toString()
+        } ?: return
 
     // While a download is in flight the changelog banner shows progress, so don't pop
     // the dialog. Idle only counts when nothing will happen on its own.
-    val state = updateState
     val relevant =
         when (state) {
             is UpdateState.ReadyToApply -> true
@@ -71,7 +75,8 @@ fun UpdateDialogHost() {
             is UpdateState.Idle -> !config.autoDownloadUpdate
             else -> false
         }
-    if (!hasNewVersion || !relevant || version == dismissedForVersion || onChangeLog) return
+    val newVersionPending = state is UpdateState.ReadyToApply || hasNewVersion
+    if (!newVersionPending || !relevant || version == dismissedForVersion || onChangeLog) return
 
     val menuHelper = koinInject<MenuHelper>()
     val exitApplication = LocalExitApplication.current

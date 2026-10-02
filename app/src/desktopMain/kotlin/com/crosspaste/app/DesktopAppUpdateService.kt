@@ -92,7 +92,8 @@ class DesktopAppUpdateService(
     }
 
     override fun tryTriggerUpdate() {
-        val hasNewVersion = lastVersion.value?.let { it > currentVersion.value } ?: false
+        val isReadyToApply = windowsZipUpdater.updateState.value is UpdateState.ReadyToApply
+        val hasNewVersion = isReadyToApply || (lastVersion.value?.let { it > currentVersion.value } ?: false)
 
         if (!hasNewVersion) {
             notificationManager.sendNotification(
@@ -118,14 +119,12 @@ class DesktopAppUpdateService(
             // a silent background retry two hours later.
             WindowsUpdateChannel.PORTABLE_ZIP -> {
                 windowsZipUpdater.resetUpdatePrompt()
-                if (configManager.getCurrentConfig().autoDownloadUpdate) {
+                if (configManager.getCurrentConfig().autoDownloadUpdate && !isReadyToApply) {
                     windowsZipUpdater.startDownload()
-                    if (windowsZipUpdater.updateState.value !is UpdateState.ReadyToApply) {
-                        notificationManager.sendNotification(
-                            title = { it.getText("update_downloading") },
-                            messageType = MessageType.Info,
-                        )
-                    }
+                    notificationManager.sendNotification(
+                        title = { it.getText("update_downloading") },
+                        messageType = MessageType.Info,
+                    )
                 }
                 appWindowManager.showMainWindow(WindowTrigger.MENU)
             }
