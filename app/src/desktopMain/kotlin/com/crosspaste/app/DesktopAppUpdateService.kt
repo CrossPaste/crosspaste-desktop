@@ -112,10 +112,21 @@ class DesktopAppUpdateService(
                 openMicrosoftStore()
             }
             // Portable zip: re-arm and surface the blocking update dialog in the main
-            // window; the user confirms the download there. A manual check never starts
-            // the download on its own.
+            // window. With automatic downloads off the user confirms the download there.
+            // With them on, the check itself starts (or un-throttles) the download as a
+            // manual attempt, so the user gets progress and a visible failure instead of
+            // a silent background retry two hours later.
             WindowsUpdateChannel.PORTABLE_ZIP -> {
                 windowsZipUpdater.resetUpdatePrompt()
+                if (configManager.getCurrentConfig().autoDownloadUpdate) {
+                    windowsZipUpdater.startDownload()
+                    if (windowsZipUpdater.updateState.value !is UpdateState.ReadyToApply) {
+                        notificationManager.sendNotification(
+                            title = { it.getText("update_downloading") },
+                            messageType = MessageType.Info,
+                        )
+                    }
+                }
                 appWindowManager.showMainWindow(WindowTrigger.MENU)
             }
             // Conveyor installer (Windows) handles its own UI; non-Windows falls

@@ -342,6 +342,8 @@ class WindowsZipUpdater(
         // The extracted tree is what gets applied; the zip only costs disk now.
         runCatching { fileUtils.deleteFile(zipPath) }
         writeReadyMarker(release)
+        // A fresh, verified staging supersedes whatever an earlier apply left behind.
+        runCatching { fileUtils.deleteFile(applyFailureMarker()) }
 
         _updateState.value = UpdateState.ReadyToApply(release.version)
     }
@@ -400,7 +402,13 @@ class WindowsZipUpdater(
      */
     private fun restoreStagedUpdate() {
         if (channel != WindowsUpdateChannel.PORTABLE_ZIP) return
-        val staged = readReadyMarker() ?: return
+        val staged = readReadyMarker()
+        if (staged == null) {
+            // No record of what the staging dir holds (e.g. an apply that rolled back):
+            // it is never applied without the marker, so stop it occupying disk.
+            if (fileUtils.existFile(stagingDir())) clearStaging()
+            return
+        }
         val stagedVersion = staged.version.toVersionOrNull()
         val current = currentVersion
         if (stagedVersion != null && current != null && stagedVersion > current && fileUtils.existFile(stagingDir())) {
@@ -480,9 +488,12 @@ class WindowsZipUpdater(
         runCatching {
             val marker = applyFailureMarker()
             if (fileUtils.existFile(marker)) {
+                fileUtils.deleteFile(marker)
+                // A newer update staged since then (restoreStagedUpdate ran first) is
+                // what the user should act on, not a failure that is already history.
+                if (_updateState.value is UpdateState.ReadyToApply) return
                 logger.warn { "Previous portable zip update failed and was rolled back" }
                 _updateState.value = UpdateState.Failed("update_apply_failed")
-                fileUtils.deleteFile(marker)
             }
         }
     }

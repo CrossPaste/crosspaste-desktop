@@ -71,6 +71,29 @@ class DesktopAppUpdateServiceTest {
     }
 
     @Test
+    fun `a manual check starts a visible download when automatic downloads are on`() {
+        val updater = mockk<WindowsZipUpdater>(relaxed = true)
+        val service = service("1.0.0", "1.1.0", autoDownload = true, WindowsUpdateChannel.PORTABLE_ZIP, updater)
+        runBlocking { service.checkForUpdate() }
+
+        service.tryTriggerUpdate()
+
+        verify(exactly = 1) { updater.startDownload() }
+    }
+
+    @Test
+    fun `a manual check only re-arms the prompt when automatic downloads are off`() {
+        val updater = mockk<WindowsZipUpdater>(relaxed = true)
+        val service = service("1.0.0", "1.1.0", autoDownload = false, WindowsUpdateChannel.PORTABLE_ZIP, updater)
+        runBlocking { service.checkForUpdate() }
+
+        service.tryTriggerUpdate()
+
+        verify(exactly = 0) { updater.startDownload() }
+        verify(exactly = 1) { updater.resetUpdatePrompt() }
+    }
+
+    @Test
     fun `no download on channels the OS updates`() {
         val updater = mockk<WindowsZipUpdater>(relaxed = true)
         val service = service("1.0.0", "1.1.0", autoDownload = true, WindowsUpdateChannel.CONVEYOR_INSTALLER, updater)

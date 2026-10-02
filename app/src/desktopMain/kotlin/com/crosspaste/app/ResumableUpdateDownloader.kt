@@ -161,7 +161,9 @@ class ResumableUpdateDownloader(
                         if (range == null || range.first != offset) {
                             return@execute Fetch.Restart(response.status)
                         }
-                        rememberEtag(etagFile, response)
+                        // A 206 without an ETag must not drop the one we validated against,
+                        // or the next interruption would throw the whole part file away.
+                        rememberEtag(etagFile, response, keepExisting = true)
                         writeBody(response, part, append = true, offset, range.second, limitBytesPerSecond, onProgress)
                     }
                     HttpStatusCode.OK -> {
@@ -186,9 +188,13 @@ class ResumableUpdateDownloader(
     private fun rememberEtag(
         etagFile: File,
         response: HttpResponse,
+        keepExisting: Boolean = false,
     ) {
         val etag = response.headers[HttpHeaders.ETag]?.trim()
-        if (etag.isNullOrEmpty()) etagFile.delete() else etagFile.writeText(etag)
+        when {
+            !etag.isNullOrEmpty() -> etagFile.writeText(etag)
+            !keepExisting -> etagFile.delete()
+        }
     }
 
     private suspend fun writeBody(
@@ -220,6 +226,11 @@ class ResumableUpdateDownloader(
                 null,
                 IllegalStateException("Download ended at $written of $total bytes"),
             )
+        }
+        if (total == null) {
+            // Cannot tell a complete body from a truncated one; the caller's checksum
+            // decides, and a bad file is simply downloaded again next time.
+            logger.warn { "Download finished without a known length ($written bytes); relying on the checksum" }
         }
         return Fetch.Done
     }
