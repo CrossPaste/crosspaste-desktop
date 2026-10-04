@@ -309,6 +309,33 @@ class PasteDaoTest {
         }
 
     @Test
+    fun `searchPasteData treats punctuation in search terms as literals`() =
+        runTest {
+            pasteDao.createPasteData(createTestPasteData(text = "mail foo@bar.com today"))
+            pasteDao.createPasteData(createTestPasteData(text = "unrelated note"))
+
+            for (term in listOf("bar.com", "don't", "c++", "foo@bar", "3.14", "a-b", "say\"hi")) {
+                pasteDao.searchPasteData(searchTerms = listOf(term), limit = 100)
+            }
+
+            val results = pasteDao.searchPasteData(searchTerms = listOf("bar.com"), limit = 100)
+            assertEquals(1, results.size)
+            assertTrue(results.single().pasteSearchContent!!.contains("foo@bar.com"))
+        }
+
+    @Test
+    fun `searchPasteDataFlow filters by terms containing punctuation`() =
+        runTest {
+            pasteDao.createPasteData(createTestPasteData(text = "mail foo@bar.com today"))
+            pasteDao.createPasteData(createTestPasteData(text = "unrelated note"))
+
+            pasteDao.searchPasteDataFlow(searchTerms = listOf("bar.com"), limit = 100).test {
+                assertEquals(1, awaitItem().size)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
     fun `searchPasteData with tag filter`() =
         runTest {
             val id1 = pasteDao.createPasteData(createTestPasteData(text = "tagged item"))
