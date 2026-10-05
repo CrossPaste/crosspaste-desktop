@@ -6,6 +6,7 @@ import okio.Path.Companion.toOkioPath
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -160,5 +161,48 @@ class DesktopConfigManagerTest {
         assertEquals(false, manager.getCurrentConfig().enableSyncText)
         manager.updateConfig("enableSyncImage", false)
         assertEquals(false, manager.getCurrentConfig().enableSyncImage)
+    }
+
+    @Test
+    fun `corrupt config is quarantined before defaults are written`() {
+        val (_, configPath) = createConfigManager()
+        val configFile = configPath.toFile()
+        configFile.writeText("{ not json")
+
+        val manager = DesktopConfigManager(OneFilePersist(configPath), DesktopLocaleUtils)
+        assertEquals(13129, manager.getCurrentConfig().port)
+
+        manager.updateConfig("lastPasteboardChangeCount", 7)
+
+        val backup = configPath.parent!!.resolve("appConfig.json.corrupt").toFile()
+        assertEquals("{ not json", backup.readText())
+        assertTrue(configFile.readText().contains("lastPasteboardChangeCount"))
+    }
+
+    @Test
+    fun `unreadable config is never overwritten with defaults`() {
+        val (_, configPath) = createConfigManager()
+        val configFile = configPath.toFile()
+        val original = """{"port":5555}"""
+        configFile.writeText(original)
+        assertTrue(configFile.setReadable(false))
+        try {
+            val manager = DesktopConfigManager(OneFilePersist(configPath), DesktopLocaleUtils)
+            assertEquals(13129, manager.getCurrentConfig().port)
+
+            manager.updateConfig("lastPasteboardChangeCount", 7)
+
+            // The session keeps working in memory, but the user's file stays as it was.
+            assertEquals(7, manager.getCurrentConfig().lastPasteboardChangeCount)
+        } finally {
+            configFile.setReadable(true)
+        }
+        assertEquals(original, configFile.readText())
+        assertFalse(
+            configPath.parent!!
+                .resolve("appConfig.json.corrupt")
+                .toFile()
+                .exists(),
+        )
     }
 }
