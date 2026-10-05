@@ -30,7 +30,9 @@ class TextEditHistoryTest {
     @Test
     fun `history keeps only the most recent 50 entries`() {
         val history = TextEditHistory("0")
-        (1..60).forEach { history.push(it.toString()) }
+        for (i in 1..60) {
+            history.push(i.toString())
+        }
 
         repeat(100) { history.undo() }
 
