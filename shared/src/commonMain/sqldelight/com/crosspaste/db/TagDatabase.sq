@@ -54,6 +54,14 @@ UPDATE TagEntity SET sortOrder = ? WHERE id = ?;
 deleteTag:
 DELETE FROM TagEntity WHERE id = ?;
 
+-- foreign_keys is off on every driver, so ON DELETE CASCADE never fires:
+-- links must be removed explicitly before deleting a tag or a paste.
+deletePasteTagsByTagId:
+DELETE FROM PasteTagEntity WHERE tagId = ?;
+
+deletePasteTagsByPasteIds:
+DELETE FROM PasteTagEntity WHERE pasteId IN ?;
+
 maxSortOrder:
 SELECT IFNULL(MAX(sortOrder), 0) FROM TagEntity;
 

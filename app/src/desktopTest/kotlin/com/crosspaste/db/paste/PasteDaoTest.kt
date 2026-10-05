@@ -1,6 +1,7 @@
 package com.crosspaste.db.paste
 
 import app.cash.turbine.test
+import com.crosspaste.Database
 import com.crosspaste.app.AppInfo
 import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
@@ -104,6 +105,15 @@ class PasteDaoTest {
             pasteState = PasteState.LOADED,
             createTime = DateUtils.nowEpochMilliseconds(),
         )
+    }
+
+    private fun stubDeleteTaskSubmission() {
+        coEvery { taskSubmitter.submit(any()) } coAnswers {
+            val block = firstArg<suspend com.crosspaste.task.TaskBuilder.() -> Unit>()
+            val builder = mockk<com.crosspaste.task.TaskBuilder>(relaxed = true)
+            every { builder.addDeletePasteTasks(any()) } returns builder
+            block.invoke(builder)
+        }
     }
 
     // --- Create and retrieve ---
@@ -239,12 +249,7 @@ class PasteDaoTest {
     @Test
     fun `markDeletePasteData marks paste as deleted`() =
         runTest {
-            coEvery { taskSubmitter.submit(any()) } coAnswers {
-                val block = firstArg<suspend com.crosspaste.task.TaskBuilder.() -> Unit>()
-                val builder = mockk<com.crosspaste.task.TaskBuilder>(relaxed = true)
-                every { builder.addDeletePasteTasks(any()) } returns builder
-                block.invoke(builder)
-            }
+            stubDeleteTaskSubmission()
 
             val pasteData = createTestPasteData()
             val id = pasteDao.createPasteData(pasteData)
@@ -259,12 +264,7 @@ class PasteDaoTest {
     @Test
     fun `getDeletePasteData retrieves marked-deleted paste`() =
         runTest {
-            coEvery { taskSubmitter.submit(any()) } coAnswers {
-                val block = firstArg<suspend com.crosspaste.task.TaskBuilder.() -> Unit>()
-                val builder = mockk<com.crosspaste.task.TaskBuilder>(relaxed = true)
-                every { builder.addDeletePasteTasks(any()) } returns builder
-                block.invoke(builder)
-            }
+            stubDeleteTaskSubmission()
 
             val pasteData = createTestPasteData()
             val id = pasteDao.createPasteData(pasteData)
@@ -517,6 +517,68 @@ class PasteDaoTest {
                 cancelAndIgnoreRemainingEvents()
             }
         }
+
+    @Test
+    fun `deletePasteTagBlock unlinks tagged pastes so cleanup can reclaim them`() =
+        runTest {
+            stubDeleteTaskSubmission()
+            val pasteData = createTestPasteData()
+            val pasteId = pasteDao.createPasteData(pasteData)
+            val tagId = pasteTagDao.createPasteTag("to_delete", 0xFF0000L)
+            pasteTagDao.switchPinPasteTagBlock(pasteId, tagId)
+
+            pasteTagDao.deletePasteTagBlock(tagId)
+
+            assertTrue(pasteTagDao.getPasteTagsBlock(pasteId).isEmpty())
+            assertEquals(0L, pasteDao.getSize(allOrTagged = false))
+
+            pasteDao.markDeleteByCleanTime(pasteData.createTime + 1, null)
+            assertNull(pasteDao.getNoDeletePasteData(pasteId))
+        }
+
+    @Test
+    fun `deletePasteData removes the paste's tag links`() =
+        runTest {
+            stubDeleteTaskSubmission()
+            val pasteId = pasteDao.createPasteData(createTestPasteData())
+            val tagId = pasteTagDao.createPasteTag("kept", 0xFF0000L)
+            pasteTagDao.switchPinPasteTagBlock(pasteId, tagId)
+            pasteDao.markDeletePasteData(pasteId)
+
+            pasteDao.deletePasteData(pasteId)
+
+            assertTrue(pasteTagDao.getPasteTagsBlock(pasteId).isEmpty())
+        }
+
+    @Test
+    fun `migration 4 removes tag links whose tag or paste no longer exists`() {
+        val driverFactory = TestDriverFactory()
+        val queries = createDatabase(driverFactory).tagDatabaseQueries
+        val driver = driverFactory.sqlDriver!!
+        try {
+            val liveTagId =
+                queries.transactionWithResult {
+                    queries.createTag("live", 0L, 0L)
+                    queries.getLastId().executeAsOne()
+                }
+            driver.execute(
+                null,
+                "INSERT INTO PasteDataEntity(id, appInstanceId, favorite, pasteCollection, size, hash, " +
+                    "createTime, remote) VALUES (1, 'a', 0, '', 0, 'h', 0, 0)",
+                0,
+            )
+            queries.pinPasteTag(1L, liveTagId)
+            queries.pinPasteTag(1L, liveTagId + 100) // tag deleted
+            queries.pinPasteTag(2L, liveTagId) // paste deleted
+
+            Database.Schema.migrate(driver, 4, 5)
+
+            assertEquals(listOf(liveTagId), queries.getPasteTags(1L).executeAsList())
+            assertTrue(queries.getPasteTags(2L).executeAsList().isEmpty())
+        } finally {
+            driverFactory.closeDriver()
+        }
+    }
 
     @Test
     fun `getMaxSortOrder returns max sort order`() =
