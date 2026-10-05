@@ -1,6 +1,8 @@
 package com.crosspaste.paste
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.config.AppConfig
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
 import com.crosspaste.db.paste.SqlPasteDao
@@ -9,17 +11,23 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.path.PlatformUserDataPathProvider
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.SingleFileInfoTree
 import com.crosspaste.task.TaskBuilder
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getJsonUtils
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
+import okio.Path.Companion.toOkioPath
+import java.io.File
+import java.nio.file.Files
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
@@ -131,6 +139,7 @@ class PasteReleaseServiceImageDedupTest {
         fun init(
             appInfo: AppInfo,
             searchContentService: SearchContentService,
+            userDataPathProvider: UserDataPathProvider,
         ) {
             pasteDao =
                 SqlPasteDao(
@@ -154,12 +163,31 @@ class PasteReleaseServiceImageDedupTest {
                     searchContentService = searchContentService,
                     syncRuntimeInfoDao = mockk(relaxed = true),
                     taskSubmitter = taskSubmitter,
-                    userDataPathProvider = mockk(relaxed = true),
+                    userDataPathProvider = userDataPathProvider,
                 )
         }
     }
 
-    private fun newFixture(): Fixture = Fixture().apply { init(appInfo, searchContentService) }
+    private fun newFixture(userDataPathProvider: UserDataPathProvider = mockk(relaxed = true)): Fixture =
+        Fixture().apply { init(appInfo, searchContentService, userDataPathProvider) }
+
+    private fun userDataPathProvider(storageDir: File): UserDataPathProvider {
+        val appConfig = mockk<AppConfig>()
+        every { appConfig.useDefaultStoragePath } returns true
+        val configManager = mockk<CommonConfigManager>()
+        every { configManager.getCurrentConfig() } returns appConfig
+        val platformProvider = mockk<PlatformUserDataPathProvider>()
+        every { platformProvider.getUserDefaultStoragePath() } returns storageDir.toOkioPath()
+        return UserDataPathProvider(configManager, platformProvider)
+    }
+
+    private fun refImageItem(basePath: File): ImagesPasteItem =
+        createImagesPasteItem(
+            identifiers = listOf("image/png"),
+            basePath = basePath.absolutePath,
+            relativePathList = listOf("a.png"),
+            fileInfoTreeMap = mapOf("a.png" to SingleFileInfoTree(size = 10L, hash = "file-hash")),
+        )
 
     private fun imageItem(fileHash: String = "file-hash"): ImagesPasteItem =
         createImagesPasteItem(
@@ -431,5 +459,48 @@ class PasteReleaseServiceImageDedupTest {
             val discardedId = (listOf(firstId, secondId) - loadedIds.toSet()).single()
             assertNotNull(fixture.pasteDao.getDeletePasteData(discardedId))
             assertContentEquals(listOf(discardedId), fixture.taskSubmitter.builder.deleteIds)
+        }
+
+    @Test
+    fun `ref item pointing into managed storage does not mark the original deleted`() =
+        runTest {
+            val tempDir = Files.createTempDirectory("ref-into-storage").toFile()
+            tempDir.deleteOnExit()
+            val storageDir = File(tempDir, "storage")
+            val fixture = newFixture(userDataPathProvider(storageDir))
+            // The original record owns storage/images/img/a.png; copying that file
+            // from the file manager yields a ref item whose basePath is its folder.
+            val ownedFile = File(storageDir, "images/img/a.png").also { it.parentFile.mkdirs() }
+            ownedFile.writeText("png")
+            val originalId =
+                fixture.createLoadedRecord(imageItem(), PasteType.IMAGE_TYPE, DateUtils.nowEpochMilliseconds())
+            val loadingId = fixture.createLoadingRecord()
+
+            fixture.service.releaseLocalPasteData(loadingId, listOf(refImageItem(ownedFile.parentFile)), null)
+
+            assertTrue(
+                fixture.taskSubmitter.builder.deleteIds
+                    .isEmpty(),
+            )
+            assertNotNull(fixture.pasteDao.getNoDeletePasteDataBlock(originalId))
+            assertNotNull(fixture.pasteDao.getNoDeletePasteDataBlock(loadingId))
+            assertTrue(ownedFile.exists())
+        }
+
+    @Test
+    fun `ref item outside managed storage still removes same-hash records`() =
+        runTest {
+            val tempDir = Files.createTempDirectory("ref-outside-storage").toFile()
+            tempDir.deleteOnExit()
+            val fixture = newFixture(userDataPathProvider(File(tempDir, "storage")))
+            val downloads = File(tempDir, "Downloads").also { it.mkdirs() }
+            File(downloads, "a.png").writeText("png")
+            val originalId =
+                fixture.createLoadedRecord(imageItem(), PasteType.IMAGE_TYPE, DateUtils.nowEpochMilliseconds())
+            val loadingId = fixture.createLoadingRecord()
+
+            fixture.service.releaseLocalPasteData(loadingId, listOf(refImageItem(downloads)), null)
+
+            assertContentEquals(listOf(originalId), fixture.taskSubmitter.builder.deleteIds)
         }
 }
