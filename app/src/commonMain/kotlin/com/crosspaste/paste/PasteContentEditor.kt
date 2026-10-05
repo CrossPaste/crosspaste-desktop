@@ -95,7 +95,37 @@ class PasteContentEditor(
 
                 else -> return EditOutcome.NotEditable
             }
+        return applyEdit(
+            pasteData = pasteData,
+            mainItem = mainItem,
+            newMainItem = newMainItem,
+            expectedHash = expectedHash,
+            urlChanged = mainItem is UrlPasteItem && mainItem.url != newContent,
+        )
+    }
 
+    /** Recolors a color paste, e.g. from the desktop color picker. */
+    suspend fun updateColor(
+        pasteData: PasteData,
+        color: Int,
+    ): EditOutcome {
+        val mainItem = pasteData.pasteAppearItem as? ColorPasteItem ?: return EditOutcome.NotEditable
+        return applyEdit(
+            pasteData = pasteData,
+            mainItem = mainItem,
+            newMainItem = mainItem.copy(color),
+            expectedHash = pasteData.hash,
+            urlChanged = false,
+        )
+    }
+
+    private suspend fun applyEdit(
+        pasteData: PasteData,
+        mainItem: PasteItem,
+        newMainItem: PasteItem,
+        expectedHash: String,
+        urlChanged: Boolean,
+    ): EditOutcome {
         val oldCompanions = pasteData.pasteCollection.pasteItems
         val derivedText = pasteItemReader.getText(newMainItem)
         val newCompanions =
@@ -130,10 +160,7 @@ class PasteContentEditor(
                 expectedHash = expectedHash,
             )
         if (!applied) return EditOutcome.Conflict
-        return EditOutcome.Updated(
-            newItem = newMainItem,
-            urlChanged = mainItem is UrlPasteItem && mainItem.url != newContent,
-        )
+        return EditOutcome.Updated(newItem = newMainItem, urlChanged = urlChanged)
     }
 
     /**

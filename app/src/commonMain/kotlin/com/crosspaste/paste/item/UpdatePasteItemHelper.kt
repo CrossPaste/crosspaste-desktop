@@ -4,81 +4,17 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.CreatePasteItemHelper.copy
-import com.crosspaste.paste.item.CreatePasteItemHelper.createColorPasteItem
 import kotlinx.serialization.json.put
 
+/**
+ * Adjusts a single item's metadata (name, URL title). Content edits go through
+ * [com.crosspaste.paste.PasteContentEditor], which keeps companion flavors in sync.
+ */
 class UpdatePasteItemHelper(
     val pasteDao: PasteDao,
     val pasteItemReader: PasteItemReader,
     val searchContentService: SearchContentService,
 ) {
-    suspend fun updateColor(
-        pasteData: PasteData,
-        newColor: Long,
-        colorPasteItem: ColorPasteItem,
-    ): Result<ColorPasteItem> {
-        val newPasteItem =
-            createColorPasteItem(
-                identifiers = colorPasteItem.identifiers,
-                color = newColor.toInt(),
-                extraInfo = colorPasteItem.extraInfo,
-            )
-        return updateIfUnchanged(
-            pasteData = pasteData,
-            pasteItem = newPasteItem,
-            pasteSearchContent =
-                searchContentService.createSearchContent(
-                    pasteData.source,
-                    pasteItemReader.getSearchContent(newPasteItem),
-                ),
-        )
-    }
-
-    suspend fun updateHtml(
-        pasteData: PasteData,
-        newHtml: String,
-        backgroundColor: Int? = null,
-        htmlPasteItem: HtmlPasteItem,
-    ): Result<HtmlPasteItem> {
-        var newPasteItem = htmlPasteItem.copy(newHtml)
-
-        if (backgroundColor != null) {
-            newPasteItem =
-                newPasteItem.copy {
-                    put(PasteItemProperties.BACKGROUND, backgroundColor)
-                } as HtmlPasteItem
-        }
-
-        return updateIfUnchanged(
-            pasteData = pasteData,
-            pasteItem = newPasteItem,
-            pasteSearchContent =
-                searchContentService.createSearchContent(
-                    pasteData.source,
-                    pasteItemReader.getSearchContent(newPasteItem),
-                ),
-            addedSize = newPasteItem.size - htmlPasteItem.size,
-        )
-    }
-
-    suspend fun updateText(
-        pasteData: PasteData,
-        newText: String,
-        textPasteItem: TextPasteItem,
-    ): Result<TextPasteItem> {
-        val newPasteItem = textPasteItem.copy(newText)
-        return updateIfUnchanged(
-            pasteData = pasteData,
-            pasteItem = newPasteItem,
-            pasteSearchContent =
-                searchContentService.createSearchContent(
-                    pasteData.source,
-                    pasteItemReader.getSearchContent(newPasteItem),
-                ),
-            addedSize = newPasteItem.size - textPasteItem.size,
-        )
-    }
-
     suspend fun updateTitle(
         pasteData: PasteData,
         title: String,

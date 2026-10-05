@@ -55,8 +55,8 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.PasteContentEditor
 import com.crosspaste.paste.item.HtmlPasteItem
-import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.InnerScaffold
@@ -84,7 +84,7 @@ fun PasteDataScope.PasteHtmlEditContentView() {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val notificationManager = koinInject<NotificationManager>()
-    val updatePasteItemHelper = koinInject<UpdatePasteItemHelper>()
+    val pasteContentEditor = koinInject<PasteContentEditor>()
     val platform = koinInject<Platform>()
 
     val scope = rememberCoroutineScope()
@@ -212,28 +212,23 @@ fun PasteDataScope.PasteHtmlEditContentView() {
         if (hasChanges) {
             scope.launch {
                 val newHtml = richTextState.toHtml()
-                updatePasteItemHelper
-                    .updateHtml(
-                        pasteData,
-                        newHtml,
-                        htmlPasteItem.getBackgroundColor(),
-                        htmlPasteItem,
-                    ).onSuccess {
-                        savedAnnotatedString = richTextState.annotatedString
-                        currentHtml = newHtml
-                        undoStack.clear()
-                        redoStack.clear()
-                        notificationManager.sendNotification(
-                            title = { copywriter.getText("save_successful") },
-                            messageType = MessageType.Success,
-                        )
-                        appWindowManager.hideBubbleWindow()
-                    }.onFailure {
-                        notificationManager.sendNotification(
-                            title = { copywriter.getText("save_failed") },
-                            messageType = MessageType.Error,
-                        )
-                    }
+                val outcome = pasteContentEditor.updateContent(pasteData, newHtml, pasteData.hash)
+                if (outcome is PasteContentEditor.EditOutcome.Updated) {
+                    savedAnnotatedString = richTextState.annotatedString
+                    currentHtml = newHtml
+                    undoStack.clear()
+                    redoStack.clear()
+                    notificationManager.sendNotification(
+                        title = { copywriter.getText("save_successful") },
+                        messageType = MessageType.Success,
+                    )
+                    appWindowManager.hideBubbleWindow()
+                } else {
+                    notificationManager.sendNotification(
+                        title = { copywriter.getText("save_failed") },
+                        messageType = MessageType.Error,
+                    )
+                }
             }
         }
     }

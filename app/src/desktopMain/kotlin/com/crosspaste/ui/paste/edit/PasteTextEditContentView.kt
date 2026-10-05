@@ -38,8 +38,8 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.PasteContentEditor
 import com.crosspaste.paste.item.TextPasteItem
-import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.InnerScaffold
@@ -60,7 +60,7 @@ fun PasteDataScope.PasteTextEditContentView() {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val notificationManager = koinInject<NotificationManager>()
-    val updatePasteItemHelper = koinInject<UpdatePasteItemHelper>()
+    val pasteContentEditor = koinInject<PasteContentEditor>()
     val platform = koinInject<Platform>()
 
     val scope = rememberCoroutineScope()
@@ -105,20 +105,19 @@ fun PasteDataScope.PasteTextEditContentView() {
     fun save() {
         if (hasChanges) {
             scope.launch {
-                updatePasteItemHelper
-                    .updateText(pasteData, textValue, textPasteItem)
-                    .onSuccess {
-                        notificationManager.sendNotification(
-                            title = { copywriter.getText("save_successful") },
-                            messageType = MessageType.Success,
-                        )
-                        appWindowManager.hideBubbleWindow()
-                    }.onFailure {
-                        notificationManager.sendNotification(
-                            title = { copywriter.getText("save_failed") },
-                            messageType = MessageType.Error,
-                        )
-                    }
+                val outcome = pasteContentEditor.updateContent(pasteData, textValue, pasteData.hash)
+                if (outcome is PasteContentEditor.EditOutcome.Updated) {
+                    notificationManager.sendNotification(
+                        title = { copywriter.getText("save_successful") },
+                        messageType = MessageType.Success,
+                    )
+                    appWindowManager.hideBubbleWindow()
+                } else {
+                    notificationManager.sendNotification(
+                        title = { copywriter.getText("save_failed") },
+                        messageType = MessageType.Error,
+                    )
+                }
             }
         }
     }
