@@ -13,6 +13,7 @@ import com.crosspaste.paste.item.PasteItemProperties
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.applyRenameMap
 import com.crosspaste.paste.item.bindItem
+import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.paste.plugin.process.DiscardOversizedNonFilePlugin
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
 import com.crosspaste.path.UserDataPathProvider
@@ -81,23 +82,52 @@ class PasteReleaseService(
         newPasteDataId: Long,
         newPasteDataType: Int,
         newPasteDataHash: String,
+        refFiles: PasteFiles? = null,
     ) {
         if (newPasteDataHash.isEmpty()) {
             return
         }
 
-        val idList =
+        val sameHashIds =
             pasteDao.getSameHashPasteDataIds(
                 newPasteDataHash,
                 newPasteDataType,
                 newPasteDataId,
             )
 
+        val idList =
+            refFiles?.let {
+                val referencedPaths = it.canonicalFilePaths()
+                sameHashIds.filterNot { id -> ownsAnyFile(id, referencedPaths) }
+            } ?: sameHashIds
+
         database.transaction {
             database.pasteDatabaseQueries.markDeletePasteData(idList)
             addDeletePasteTasks(idList)
         }
     }
+
+    /**
+     * Copying a file out of managed storage (e.g. after "reveal in file manager")
+     * yields a ref item pointing at files another record owns. Deleting that owner
+     * would delete the very files the new record refers to, so it is kept.
+     */
+    private fun ownsAnyFile(
+        pasteDataId: Long,
+        paths: Set<String>,
+    ): Boolean {
+        val pasteData = pasteDao.getNoDeletePasteDataBlock(pasteDataId) ?: return false
+        return pasteData
+            .getPasteAppearItems()
+            .filterIsInstance<PasteFiles>()
+            .filterNot { it.isRefFiles() }
+            .any { pasteFiles -> pasteFiles.canonicalFilePaths().any { it in paths } }
+    }
+
+    private fun PasteFiles.canonicalFilePaths(): Set<String> =
+        getFilePaths(userDataPathProvider)
+            .map { path -> runCatching { fileUtils.fileSystem.canonicalize(path) }.getOrDefault(path).toString() }
+            .toSet()
 
     suspend fun releaseLocalPasteData(
         id: Long,
@@ -172,7 +202,7 @@ class PasteReleaseService(
 
                     if (pasteType.isFile() || pasteType.isImage()) {
                         if ((firstItem as PasteFiles).isRefFiles()) {
-                            markDeleteSameHash(id, pasteType.type, hash)
+                            markDeleteSameHash(id, pasteType.type, hash, refFiles = firstItem)
                         }
                     } else {
                         markDeleteSameHash(id, pasteType.type, hash)
