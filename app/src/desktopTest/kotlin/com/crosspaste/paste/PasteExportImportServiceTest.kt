@@ -1,9 +1,12 @@
 package com.crosspaste.paste
 
 import com.crosspaste.app.AppFileType
+import com.crosspaste.config.AppConfig
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.CreatePasteItemHelper.createColorPasteItem
+import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createHtmlPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createRtfPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
@@ -11,15 +14,21 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.PasteText
+import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.presist.SingleFileInfoTree
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getCompressUtils
 import com.crosspaste.utils.getJsonUtils
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import okio.Path.Companion.toOkioPath
 import okio.buffer
 import okio.sink
@@ -28,8 +37,10 @@ import java.io.File
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 class PasteExportImportServiceTest {
 
@@ -408,4 +419,142 @@ class PasteExportImportServiceTest {
 
             assertEquals(PasteImportResult.Failed, result)
         }
+
+    // --- Import must keep archive-controlled paths inside managed storage ---
+
+    @Test
+    fun `import rejects records whose appInstanceId escapes storage`() {
+        val tempDir = Files.createTempDirectory("import-escape-test").toFile()
+        tempDir.deleteOnExit()
+        val escapingIds =
+            listOf(
+                "../../escaped-relative",
+                File(tempDir, "escaped-absolute").absolutePath,
+                "C:escaped-drive",
+            )
+
+        for (appInstanceId in escapingIds) {
+            val pasteDao = mockk<PasteDao>(relaxed = true)
+            val result =
+                importArchive(
+                    tempDir = tempDir,
+                    pasteDao = pasteDao,
+                    pasteData = createFilesPasteData(appInstanceId, "a.sh"),
+                )
+
+            assertEquals(PasteImportResult.Completed(0, 1), result, appInstanceId)
+            coVerify(exactly = 0) { pasteDao.createPasteData(any()) }
+        }
+        assertFalse(File(tempDir, "escaped-relative").exists())
+        assertFalse(File(tempDir, "escaped-absolute").exists())
+    }
+
+    @Test
+    fun `import rejects records whose file name escapes the paste directory`() {
+        val tempDir = Files.createTempDirectory("import-escape-name-test").toFile()
+        tempDir.deleteOnExit()
+        val pasteDao = mockk<PasteDao>(relaxed = true)
+
+        val result =
+            importArchive(
+                tempDir = tempDir,
+                pasteDao = pasteDao,
+                pasteData = createFilesPasteData("remote-app", "sub/.."),
+            )
+
+        assertEquals(PasteImportResult.Completed(0, 1), result)
+        coVerify(exactly = 0) { pasteDao.createPasteData(any()) }
+    }
+
+    @Test
+    fun `import moves file resources into managed storage`() {
+        val tempDir = Files.createTempDirectory("import-files-test").toFile()
+        tempDir.deleteOnExit()
+        val pasteDao = mockk<PasteDao>(relaxed = true)
+        coEvery { pasteDao.createPasteData(any()) } returns 42L
+
+        val result =
+            importArchive(
+                tempDir = tempDir,
+                pasteDao = pasteDao,
+                pasteData = createFilesPasteData("remote-app", "a.txt"),
+                archiveFiles = mapOf("remote-app/1/a.txt" to "hello"),
+            )
+
+        assertEquals(PasteImportResult.Completed(1, 1), result)
+        val imported =
+            File(tempDir, "storage/files/remote-app")
+                .walkTopDown()
+                .single { it.name == "a.txt" }
+        assertEquals("42", imported.parentFile.name)
+        assertEquals("hello", imported.readText())
+    }
+
+    private fun createFilesPasteData(
+        appInstanceId: String,
+        fileName: String,
+    ): PasteData {
+        val item =
+            createFilesPasteItem(
+                relativePathList = listOf(fileName),
+                fileInfoTreeMap = mapOf(fileName to SingleFileInfoTree(size = 5, hash = "h")),
+            )
+        return PasteData(
+            appInstanceId = appInstanceId,
+            pasteAppearItem = item,
+            pasteCollection = PasteCollection(listOf()),
+            pasteType = PasteType.FILE_TYPE.type,
+            size = item.size,
+            hash = item.hash,
+            pasteState = PasteState.LOADED,
+            createTime = DateUtils.nowEpochMilliseconds(),
+        )
+    }
+
+    private fun importArchive(
+        tempDir: File,
+        pasteDao: PasteDao,
+        pasteData: PasteData,
+        archiveFiles: Map<String, String> = mapOf(),
+    ): PasteImportResult {
+        val exportDir = File(tempDir, "export-${System.nanoTime()}").also { it.mkdirs() }
+        File(exportDir, "paste.data").writeText(
+            codecsUtils.base64Encode(pasteData.toStoredJson().encodeToByteArray()) + "\n",
+        )
+        File(exportDir, "1.count").createNewFile()
+        archiveFiles.forEach { (path, content) ->
+            File(exportDir, path).also { it.parentFile.mkdirs() }.writeText(content)
+        }
+        val archive = File(tempDir, "${exportDir.name}.data")
+        val sink = archive.outputStream().sink().buffer()
+        try {
+            assertTrue(compressUtils.zipDir(exportDir.toOkioPath(), sink).isSuccess)
+        } finally {
+            runCatching { sink.close() }
+        }
+
+        val appConfig = mockk<AppConfig>()
+        every { appConfig.useDefaultStoragePath } returns true
+        val configManager = mockk<CommonConfigManager>()
+        every { configManager.getCurrentConfig() } returns appConfig
+        val platformProvider = mockk<PlatformUserDataPathProvider>()
+        every { platformProvider.getUserDefaultStoragePath() } returns File(tempDir, "storage").toOkioPath()
+
+        val importService =
+            PasteImportService(
+                notificationManager = mockk(relaxed = true),
+                pasteDao = pasteDao,
+                pasteItemReader = mockk(relaxed = true),
+                searchContentService = mockk(relaxed = true),
+                userDataPathProvider = UserDataPathProvider(configManager, platformProvider),
+            )
+
+        val result = CompletableDeferred<PasteImportResult>()
+        importService.import(
+            pasteImportParam = DesktopPasteImportParam(archive.toOkioPath()),
+            updateProgress = {},
+            onResult = { result.complete(it) },
+        )
+        return runBlocking { withTimeout(10.seconds) { result.await() } }
+    }
 }

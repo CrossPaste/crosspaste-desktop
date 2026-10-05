@@ -147,6 +147,7 @@ class PasteImportService(
     ): Boolean {
         var recordId: Long? = null
         return runCatching {
+            userDataPathProvider.validateImportPaths(pasteData)
             val id = pasteDao.createPasteData(pasteData)
             recordId = id
 
