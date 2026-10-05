@@ -1,0 +1,5 @@
+-- Remove tag links left behind by tag/paste deletes: foreign_keys was never
+-- enabled, so the ON DELETE CASCADE on PasteTagEntity never fired.
+DELETE FROM PasteTagEntity
+WHERE tagId NOT IN (SELECT id FROM TagEntity)
+   OR pasteId NOT IN (SELECT id FROM PasteDataEntity);

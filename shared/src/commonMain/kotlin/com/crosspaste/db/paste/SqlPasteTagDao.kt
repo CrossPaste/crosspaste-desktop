@@ -120,7 +120,10 @@ class SqlPasteTagDao(
     }
 
     override fun deletePasteTagBlock(id: Long) {
-        tagDatabaseQueries.deleteTag(id)
+        database.transaction {
+            tagDatabaseQueries.deletePasteTagsByTagId(id)
+            tagDatabaseQueries.deleteTag(id)
+        }
     }
 
     override fun getAllTagsBlock(): List<PasteTag> = tagDatabaseQueries.getAllTags(PasteTag::mapper).executeAsList()

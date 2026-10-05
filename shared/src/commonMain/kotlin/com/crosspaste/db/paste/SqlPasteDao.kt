@@ -213,7 +213,10 @@ class SqlPasteDao(
         withContext(ioDispatcher) {
             getDeletePasteData(id)?.let {
                 it.clear(userDataPathProvider)
-                pasteDatabaseQueries.deletePasteData(listOf(id))
+                database.transaction {
+                    database.tagDatabaseQueries.deletePasteTagsByPasteIds(listOf(id))
+                    pasteDatabaseQueries.deletePasteData(listOf(id))
+                }
             }
         }
     }
