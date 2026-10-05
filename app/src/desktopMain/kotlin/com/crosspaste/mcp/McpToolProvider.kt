@@ -498,7 +498,7 @@ class McpToolProvider(
                         .getOrElse { return Result.failure(it) }
                 }
                 "image" -> {
-                    val path = content.toPath()
+                    val path = content.toPath(normalize = true)
                     val ext = path.name.substringAfterLast('.', "").lowercase()
                     if (!fileUtils.canPreviewImage(ext)) {
                         return Result.failure(
@@ -543,16 +543,30 @@ class McpToolProvider(
         pasteType: PasteType,
         notFoundLabel: String,
     ): Result<Pair<PasteItem, PasteType>> {
-        val path = filePath.toPath()
+        val path = filePath.toPath(normalize = true)
         if (!path.isAbsolute) {
             return Result.failure(IllegalArgumentException("'$filePath' is not an absolute path."))
         }
         val parent = path.parent
-        if (parent == null || !FileSystem.SYSTEM.exists(path)) {
+        val metadata = FileSystem.SYSTEM.metadataOrNull(path)
+        if (parent == null || metadata == null) {
             return Result.failure(IllegalArgumentException("$notFoundLabel not found: '$filePath'."))
         }
+        if (pasteType == PasteType.IMAGE_TYPE && metadata.isDirectory) {
+            return Result.failure(IllegalArgumentException("'$filePath' is a directory, not an image file."))
+        }
         val fileName = path.name
-        val fileInfoTreeMap = mapOf(fileName to fileUtils.getFileInfoTree(path))
+        val fileInfoTree =
+            runCatching {
+                fileUtils.getFileInfoTree(path)
+            }.getOrElse { error ->
+                return Result.failure(
+                    IllegalArgumentException(
+                        "Cannot read $notFoundLabel '$filePath': ${error.message}",
+                    ),
+                )
+            }
+        val fileInfoTreeMap = mapOf(fileName to fileInfoTree)
         val item =
             if (pasteType == PasteType.IMAGE_TYPE) {
                 createImagesPasteItem(

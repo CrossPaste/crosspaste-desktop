@@ -497,6 +497,28 @@ class McpToolProviderTest {
         }
 
     @Test
+    fun `add_to_clipboard file item with directory references the original absolute path`() =
+        runTest {
+            val dir = Files.createTempDirectory("mcp-add-dir")
+            val child = Files.createFile(dir.resolve("child.txt"))
+            Files.writeString(child, "content in dir")
+            val path = dir.toOkioPath()
+            val server = createServer()
+
+            val result = callTool(server, "add_to_clipboard", mapOf("content" to path.toString(), "type" to "file"))
+
+            assertTrue(result.contains("type: file"), result)
+            val item = addedPasteFiles(result)
+            assertEquals(path.parent.toString(), item.basePath)
+            assertEquals(listOf(path.name), item.relativePathList)
+            assertTrue(item.hasExistingFiles())
+
+            Files.delete(child)
+            Files.delete(dir)
+            assertFalse(item.hasExistingFiles())
+        }
+
+    @Test
     fun `add_to_clipboard image item references the original absolute path`() =
         runTest {
             val file = Files.createTempFile("mcp-add", ".png")
@@ -511,6 +533,35 @@ class McpToolProviderTest {
             assertEquals(path.parent.toString(), item.basePath)
             assertTrue(item.hasExistingFiles())
             Files.delete(file)
+            assertFalse(item.hasExistingFiles())
+        }
+
+    @Test
+    fun `add_to_clipboard rejects a relative image path`() =
+        runTest {
+            val server = createServer()
+            val result =
+                callTool(server, "add_to_clipboard", mapOf("content" to "photo.png", "type" to "image"))
+            assertTrue(result.contains("Error"))
+            assertTrue(result.contains("not an absolute path"))
+        }
+
+    @Test
+    fun `add_to_clipboard rejects a directory for image type`() =
+        runTest {
+            val parent = Files.createTempDirectory("mcp-image-test")
+            val dir = Files.createDirectory(parent.resolve("dir.png"))
+            val path = dir.toOkioPath()
+            val server = createServer()
+            try {
+                val result =
+                    callTool(server, "add_to_clipboard", mapOf("content" to path.toString(), "type" to "image"))
+                assertTrue(result.contains("Error"))
+                assertTrue(result.contains("is a directory, not an image file"))
+            } finally {
+                Files.delete(dir)
+                Files.delete(parent)
+            }
         }
 
     private suspend fun addedPasteFiles(result: String): PasteFiles {
