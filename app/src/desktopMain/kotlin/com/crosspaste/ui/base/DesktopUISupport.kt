@@ -6,12 +6,12 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.PasteContentEditor
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.ColorPasteItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteRtf
-import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.UserDataPathProvider
@@ -39,7 +39,7 @@ class DesktopUISupport(
     private val copywriter: GlobalCopywriter,
     private val notificationManager: NotificationManager,
     private val platform: Platform,
-    private val updatePasteItemHelper: UpdatePasteItemHelper,
+    private val pasteContentEditor: PasteContentEditor,
     private val userDataPathProvider: UserDataPathProvider,
     private val appWindowManager: DesktopAppWindowManager,
     private val actionScope: CoroutineScope = namedScope(ioDispatcher, "DesktopUISupport"),
@@ -167,17 +167,13 @@ class DesktopUISupport(
 
                     logger.info { "Selected color: $rgbColor" }
                     actionScope.launch {
-                        updatePasteItemHelper
-                            .updateColor(
-                                pasteData,
-                                newColor,
-                                pasteItem,
-                            ).onFailure {
-                                notificationManager.sendNotification(
-                                    title = { copywriter.getText("save_failed") },
-                                    messageType = MessageType.Error,
-                                )
-                            }
+                        val outcome = pasteContentEditor.updateColor(pasteData, newColor.toInt())
+                        if (outcome !is PasteContentEditor.EditOutcome.Updated) {
+                            notificationManager.sendNotification(
+                                title = { copywriter.getText("save_failed") },
+                                messageType = MessageType.Error,
+                            )
+                        }
                     }
                 }
             }

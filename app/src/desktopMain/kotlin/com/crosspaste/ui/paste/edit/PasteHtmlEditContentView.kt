@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
@@ -27,13 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.isMetaPressed
-import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextRange
@@ -49,14 +42,11 @@ import com.composables.icons.materialsymbols.rounded.Format_italic
 import com.composables.icons.materialsymbols.rounded.Format_strikethrough
 import com.composables.icons.materialsymbols.rounded.Format_underlined
 import com.composables.icons.materialsymbols.rounded.Redo
-import com.composables.icons.materialsymbols.rounded.Save
 import com.composables.icons.materialsymbols.rounded.Undo
 import com.crosspaste.app.DesktopAppWindowManager
-import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
+import com.crosspaste.paste.PasteContentEditor
 import com.crosspaste.paste.item.HtmlPasteItem
-import com.crosspaste.paste.item.UpdatePasteItemHelper
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.InnerScaffold
@@ -82,9 +72,8 @@ private const val MAX_UNDO_STACK_SIZE = 50
 @Composable
 fun PasteDataScope.PasteHtmlEditContentView() {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
-    val copywriter = koinInject<GlobalCopywriter>()
     val notificationManager = koinInject<NotificationManager>()
-    val updatePasteItemHelper = koinInject<UpdatePasteItemHelper>()
+    val pasteContentEditor = koinInject<PasteContentEditor>()
     val platform = koinInject<Platform>()
 
     val scope = rememberCoroutineScope()
@@ -212,28 +201,14 @@ fun PasteDataScope.PasteHtmlEditContentView() {
         if (hasChanges) {
             scope.launch {
                 val newHtml = richTextState.toHtml()
-                updatePasteItemHelper
-                    .updateHtml(
-                        pasteData,
-                        newHtml,
-                        htmlPasteItem.getBackgroundColor(),
-                        htmlPasteItem,
-                    ).onSuccess {
-                        savedAnnotatedString = richTextState.annotatedString
-                        currentHtml = newHtml
-                        undoStack.clear()
-                        redoStack.clear()
-                        notificationManager.sendNotification(
-                            title = { copywriter.getText("save_successful") },
-                            messageType = MessageType.Success,
-                        )
-                        appWindowManager.hideBubbleWindow()
-                    }.onFailure {
-                        notificationManager.sendNotification(
-                            title = { copywriter.getText("save_failed") },
-                            messageType = MessageType.Error,
-                        )
-                    }
+                val outcome = pasteContentEditor.updateContent(pasteData, newHtml, pasteData.hash)
+                if (notificationManager.notifyEditOutcome(outcome)) {
+                    savedAnnotatedString = richTextState.annotatedString
+                    currentHtml = newHtml
+                    undoStack.clear()
+                    redoStack.clear()
+                    appWindowManager.hideBubbleWindow()
+                }
             }
         }
     }
@@ -244,15 +219,7 @@ fun PasteDataScope.PasteHtmlEditContentView() {
                 .fillMaxSize()
                 .clip(tinyRoundedCornerShape)
                 .onPreviewKeyEvent { keyEvent ->
-                    if (keyEvent.type == KeyEventType.KeyDown &&
-                        keyEvent.key == Key.S &&
-                        (if (isMac) keyEvent.isMetaPressed else keyEvent.isCtrlPressed)
-                    ) {
-                        save()
-                        true
-                    } else {
-                        false
-                    }
+                    keyEvent.isSaveShortcut(isMac).also { if (it) save() }
                 },
         containerColor = MaterialTheme.colorScheme.surface,
         floatingActionButton = {
@@ -309,33 +276,15 @@ private fun HtmlEditFloatingToolbar(
     onRedo: () -> Unit,
     onClose: () -> Unit,
 ) {
-    val copywriter = koinInject<GlobalCopywriter>()
-
     HorizontalFloatingToolbar(
         modifier = Modifier.offset(y = 20.dp),
         expanded = true,
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onSave,
+            EditSaveButton(
+                hasChanges = hasChanges,
+                onSave = onSave,
                 modifier = Modifier.focusProperties { canFocus = false },
-                containerColor =
-                    if (hasChanges) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant
-                    },
-                contentColor =
-                    if (hasChanges) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                    },
-            ) {
-                Icon(
-                    imageVector = MaterialSymbols.Rounded.Save,
-                    contentDescription = copywriter.getText("save"),
-                )
-            }
+            )
         },
         colors =
             FloatingToolbarDefaults.standardFloatingToolbarColors(
