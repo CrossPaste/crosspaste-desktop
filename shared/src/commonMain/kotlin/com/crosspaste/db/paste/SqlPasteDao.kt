@@ -380,6 +380,10 @@ class SqlPasteDao(
             null
         }
 
+    // Quote each term as an FTS5 string literal so punctuation (".", "'", "@", "+", "-")
+    // is matched as text instead of being parsed as query syntax.
+    private fun toFtsPrefixLiteral(term: String): String = "\"${term.replace("\"", "\"\"")}\"*"
+
     private fun createSearchPasteQuery(
         searchTerms: List<String>,
         local: Boolean? = null,
@@ -396,7 +400,7 @@ class SqlPasteDao(
         val pasteTypeLongList = pasteTypeList.ifEmpty { listOf(INVALID_TYPE.type) }.map { it.toLong() }
 
         return if (searchTerms.isNotEmpty()) {
-            val searchQuery = "pasteSearchContent:(${searchTerms.joinToString(" AND ") { "$it*" }})"
+            val searchQuery = "pasteSearchContent:(${searchTerms.joinToString(" AND ") { toFtsPrefixLiteral(it) }})"
             logger.info { "Creating paste query: $searchQuery" }
 
             pasteDatabaseQueries.complexSearch(
