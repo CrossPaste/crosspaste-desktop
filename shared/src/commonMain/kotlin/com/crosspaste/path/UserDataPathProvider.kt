@@ -4,6 +4,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.getAppFileType
 import com.crosspaste.paste.item.getFilePaths
@@ -135,6 +136,22 @@ class UserDataPathProvider(
                     validateStorageComponent(name)
                     pending.addLast(child)
                 }
+            }
+        }
+    }
+
+    /**
+     * Import archives are untrusted input: [PasteData.appInstanceId] and file names
+     * become path components under managed storage, so they get the same component
+     * rules as received pastes. File names are taken from relativePathList because
+     * that is what import lays files out by, and it need not match fileInfoTreeMap keys.
+     */
+    fun validateImportPaths(pasteData: PasteData) {
+        validateStorageComponent(pasteData.appInstanceId)
+        pasteData.getPasteAppearItems().filterIsInstance<PasteFiles>().forEach { pasteFiles ->
+            validateReceivePaths(pasteData.appInstanceId, pasteFiles)
+            pasteFiles.relativePathList.forEach { relativePath ->
+                validateStorageComponent(relativePath.toPath().name)
             }
         }
     }
