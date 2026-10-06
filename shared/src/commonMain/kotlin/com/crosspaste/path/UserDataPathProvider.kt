@@ -2,6 +2,7 @@ package com.crosspaste.path
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.config.isInside
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.PasteData
@@ -30,13 +31,29 @@ class UserDataPathProvider(
         fileName: String?,
         appFileType: AppFileType,
     ): Path =
-        resolve(fileName, appFileType) {
+        resolve(fileName, appFileType, autoCreate = true) {
+            getUserDataPath()
+        }
+
+    fun resolve(
+        fileName: String? = null,
+        appFileType: AppFileType,
+        autoCreate: Boolean,
+    ): Path =
+        resolve(fileName, appFileType, autoCreate) {
             getUserDataPath()
         }
 
     fun resolve(
         fileName: String?,
         appFileType: AppFileType,
+        getBasePath: () -> Path,
+    ): Path = resolve(fileName, appFileType, autoCreate = true, getBasePath)
+
+    fun resolve(
+        fileName: String?,
+        appFileType: AppFileType,
+        autoCreate: Boolean,
         getBasePath: () -> Path,
     ): Path {
         val basePath = getBasePath()
@@ -57,7 +74,9 @@ class UserDataPathProvider(
                 else -> basePath
             }
 
-        autoCreateDir(path)
+        if (autoCreate) {
+            autoCreateDir(path)
+        }
 
         return fileName?.let {
             path.resolve(fileName)
@@ -149,12 +168,18 @@ class UserDataPathProvider(
                 .map { it.take(3).joinToString("/").toPath() }
         val pasteDirs = (listOfNotNull(coordinateDir) + storedDirs).distinct()
         for (appFileType in PASTE_DIRECTORY_FILE_TYPES) {
-            val root = resolve(appFileType = appFileType)
+            val root = resolve(appFileType = appFileType, autoCreate = false)
+            if (!fileUtils.existFile(root)) continue
             for (pasteDir in pasteDirs) {
-                runCatching {
-                    fileUtils.fileSystem.deleteRecursively(root.resolve(pasteDir), mustExist = false)
-                }.onFailure { e ->
-                    logger.warn(e) { "Failed to delete paste directory $pasteDir under $appFileType" }
+                if (pasteDir.segments.any { it == ".." || it == "." }) continue
+                val targetDir = root.resolve(pasteDir)
+                if (!fileUtils.existFile(targetDir)) continue
+                if (isInside(targetDir, root)) {
+                    runCatching {
+                        fileUtils.fileSystem.deleteRecursively(targetDir, mustExist = false)
+                    }.onFailure { e ->
+                        logger.warn(e) { "Failed to delete paste directory $pasteDir under $appFileType" }
+                    }
                 }
             }
         }

@@ -511,8 +511,6 @@ class PasteExportImportServiceTest {
         coVerify(exactly = 0) { pasteDao.updatePasteState(42L, PasteState.LOADED) }
     }
 
-    // --- Export leaves out what cannot be imported ---
-
     private fun runExport(
         tempDir: File,
         pastes: List<PasteData>,

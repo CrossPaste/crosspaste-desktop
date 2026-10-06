@@ -137,4 +137,67 @@ class PasteDirectoryCleanupTest {
 
         assertTrue(sibling.exists())
     }
+
+    @Test
+    fun `deleting a paste does not auto-create non-existent root directories`(
+        @TempDir storage: File,
+    ) {
+        val provider = provider(storage)
+        val day = 1_700_000_000_000L
+        storage.resolve("files").write(relativePath(7L, day, "a.txt"))
+
+        pasteData(7L, day, emptyList()).clear(provider)
+
+        assertFalse(storage.resolve("opengraph").exists(), "non-existent opengraph root must not be auto-created")
+    }
+
+    @Test
+    fun `path traversal in stored relative paths does not delete outside managed storage`(
+        @TempDir base: File,
+    ) {
+        val storage = base.resolve("storage").also { it.mkdirs() }
+        val provider = provider(storage)
+        // files/../../7 resolves to base/7, outside managed storage
+        val outsideFile =
+            base
+                .resolve("7")
+                .also { it.mkdirs() }
+                .resolve("keep.txt")
+                .also { it.writeText("safe") }
+        val item =
+            createFilesPasteItem(
+                relativePathList = listOf("../../7/a.txt"),
+                fileInfoTreeMap = mapOf("a.txt" to SingleFileInfoTree(1L, "h")),
+            )
+        val paste =
+            PasteData(
+                id = 7L,
+                appInstanceId = "app",
+                pasteAppearItem = item,
+                pasteCollection = PasteCollection(emptyList()),
+                pasteType = PasteType.FILE_TYPE.type,
+                size = item.size,
+                hash = item.hash,
+                createTime = 1_700_000_000_000L,
+                pasteState = PasteState.LOADED,
+            )
+
+        paste.clear(provider)
+
+        assertTrue(outsideFile.exists(), "files outside managed storage must not be deleted")
+    }
+
+    @Test
+    fun `stored paths with windows backslashes are cleaned up on posix`(
+        @TempDir storage: File,
+    ) {
+        val provider = provider(storage)
+        val firstDay = 1_700_000_000_000L
+        val windowsStored = "app\\20231114\\7\\a.txt"
+        val file = storage.resolve("files").write("app/20231114/7/a.txt")
+
+        pasteData(7L, firstDay + 3 * 86_400_000L, listOf(windowsStored)).clear(provider)
+
+        assertFalse(file.parentFile.exists())
+    }
 }
