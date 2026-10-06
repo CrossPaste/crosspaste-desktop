@@ -306,6 +306,7 @@ fun desktopNetworkModule(
             PushSessionManager(
                 pasteDao = get(),
                 pasteboardService = get(),
+                userDataPathProvider = get(),
             )
         }
         single<SharePushOrchestrator> { SharePushOrchestrator(get(), get(), get()) }

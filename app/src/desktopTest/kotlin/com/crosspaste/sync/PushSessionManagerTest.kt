@@ -6,9 +6,11 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
@@ -46,11 +48,13 @@ class PushSessionManagerTest {
         scope: CoroutineScope = CoroutineScope(Job()),
         pasteDao: PasteDao = mockk(relaxed = true),
         pasteboardService: PasteboardService = mockk(relaxed = true),
+        userDataPathProvider: UserDataPathProvider = mockk(relaxed = true),
     ): Triple<PushSessionManager, PasteDao, PasteboardService> {
         val mgr =
             PushSessionManager(
                 pasteDao = pasteDao,
                 pasteboardService = pasteboardService,
+                userDataPathProvider = userDataPathProvider,
                 maxActive = maxActive,
                 sessionTtl = sessionTtl,
                 sweepInterval = sweepInterval,
@@ -340,6 +344,32 @@ class PushSessionManagerTest {
             assertEquals(PushCompletionResult.Complete, mgr.complete(21L, "expired-token", "mobile"))
             assertEquals(PushCompletionResult.NotFound, mgr.complete(22L, "expired-token", "mobile"))
             assertEquals(PushCompletionResult.NotFound, mgr.complete(23L, "expired-token", "mobile"))
+            mgr.close()
+        }
+
+    @Test
+    fun sweepExpired_deletesUnfinishedReceiveFilesBeforeMarkingDeleted() =
+        runBlocking {
+            val loadingRow = mockk<PasteData>()
+            val pasteDao = mockk<PasteDao>(relaxed = true)
+            coEvery { pasteDao.getLoadingPasteData(42L) } returns loadingRow
+            coEvery { pasteDao.markDeletePasteData(any()) } returns Result.success(Unit)
+            val userDataPathProvider = mockk<UserDataPathProvider>(relaxed = true)
+            val (mgr) =
+                newManager(
+                    sessionTtl = 10.milliseconds,
+                    pasteDao = pasteDao,
+                    userDataPathProvider = userDataPathProvider,
+                )
+            mgr.create(42L, "mobile", fakeFilesIndex(2))!!
+
+            delay(50.milliseconds)
+            mgr.sweepExpired()
+
+            coVerifyOrder {
+                userDataPathProvider.deleteReceivedFilesOutsideStorage(loadingRow)
+                pasteDao.markDeletePasteData(42L)
+            }
             mgr.close()
         }
 

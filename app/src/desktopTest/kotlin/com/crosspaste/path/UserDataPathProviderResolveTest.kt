@@ -2,6 +2,10 @@ package com.crosspaste.path
 
 import com.crosspaste.config.AppConfig
 import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.paste.PasteCollection
+import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteState
+import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.paste.item.FilesPasteItem
 import com.crosspaste.presist.DirFileInfoTree
@@ -211,5 +215,31 @@ class UserDataPathProviderResolveTest {
         }
 
         assertFalse(escapedFile.exists())
+    }
+
+    @Test
+    fun `deleteReceivedFilesOutsideStorage deletes files and directories outside storage and ignores missing`() {
+        val customDir = File(downloadDir, "test-delete-outside").also { it.mkdirs() }
+        val file1 = File(customDir, "file1.txt").also { it.writeText("content1") }
+        val subDir = File(customDir, "subdir").also { it.mkdirs() }
+        File(subDir, "file2.txt").writeText("content2")
+
+        val item = createFilesItem("file1.txt", "subdir", "missing.txt", basePath = customDir.absolutePath)
+        val pasteData =
+            PasteData(
+                appInstanceId = "app1",
+                pasteAppearItem = item,
+                pasteCollection = PasteCollection(listOf(item)),
+                pasteType = PasteType.FILE_TYPE.type,
+                size = 128,
+                hash = "hash",
+                pasteState = PasteState.LOADING,
+                createTime = 1000L,
+            )
+
+        userDataPathProvider.deleteReceivedFilesOutsideStorage(pasteData)
+
+        assertFalse(file1.exists(), "file1 should be deleted")
+        assertFalse(subDir.exists(), "subdir should be deleted recursively")
     }
 }

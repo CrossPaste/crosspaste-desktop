@@ -46,6 +46,25 @@ data class PushPrepareResult(
     val chunkCount: Int get() = filesIndex.getChunkCount()
 }
 
+private val unfinishedReceiveLogger = KotlinLogging.logger {}
+
+/**
+ * Deletes the large-file-destination slots of a receive that never completed. Only a
+ * LOADING row qualifies, so a finished file is never touched. A failure is logged, not
+ * thrown: cleanup trouble must not keep the caller from discarding the row.
+ */
+internal suspend fun deleteUnfinishedReceiveFiles(
+    pasteDao: PasteDao,
+    userDataPathProvider: UserDataPathProvider,
+    pasteId: Long,
+) {
+    runCatching {
+        pasteDao.getLoadingPasteData(pasteId)?.let(userDataPathProvider::deleteReceivedFilesOutsideStorage)
+    }.onFailure { e ->
+        unfinishedReceiveLogger.warn(e) { "Failed to delete unfinished receive files of pasteId=$pasteId" }
+    }
+}
+
 class PasteReleaseService(
     private val commonConfigManager: CommonConfigManager,
     private val currentPaste: CurrentPaste,
@@ -350,42 +369,47 @@ class PasteReleaseService(
 
         val id = pasteDao.createPasteData(pasteData, PasteState.LOADING)
 
-        val fileSize = pasteFiles.size
-        val config = commonConfigManager.getCurrentConfig()
-        val maxBackupFileSize = fileUtils.bytesSize(config.maxBackupFileSize)
+        return try {
+            val fileSize = pasteFiles.size
+            val config = commonConfigManager.getCurrentConfig()
+            val maxBackupFileSize = fileUtils.bytesSize(config.maxBackupFileSize)
 
-        // A file leaves managed storage either because it is larger than the backup
-        // limit or because the sender marked it (drag and drop). Both land in the
-        // configured large-file destination, never in managed storage.
-        val writeOutsideStorage =
-            fileSize > maxBackupFileSize ||
-                pasteData.pasteAppearItem
-                    ?.extraInfo
-                    ?.get(PasteItemProperties.SYNC_TO_DOWNLOAD)
-                    ?.jsonPrimitive
-                    ?.booleanOrNull == true
+            // A file leaves managed storage either because it is larger than the backup
+            // limit or because the sender marked it (drag and drop). Both land in the
+            // configured large-file destination, never in managed storage.
+            val writeOutsideStorage =
+                fileSize > maxBackupFileSize ||
+                    pasteData.pasteAppearItem
+                        ?.extraInfo
+                        ?.get(PasteItemProperties.SYNC_TO_DOWNLOAD)
+                        ?.jsonPrimitive
+                        ?.booleanOrNull == true
 
-        val destinationPath =
-            if (writeOutsideStorage) {
-                config.resolveLargeFileDestinationForReceive(userDataPathProvider.getUserDataPath()).toString()
-            } else {
-                null
-            }
+            val destinationPath =
+                if (writeOutsideStorage) {
+                    config.resolveLargeFileDestinationForReceive(userDataPathProvider.getUserDataPath()).toString()
+                } else {
+                    null
+                }
 
-        val pasteCoordinate = pasteData.getPasteCoordinate(id)
-        val newPasteAppearItem =
-            pasteData.pasteAppearItem?.bindItem(pasteCoordinate, destinationPath)
-        val newPasteCollection =
-            pasteData.pasteCollection.bindItems(pasteCoordinate, destinationPath)
-        val newPasteData =
-            pasteData.copy(
-                id = id,
-                pasteAppearItem = newPasteAppearItem,
-                pasteCollection = newPasteCollection,
-            )
+            val pasteCoordinate = pasteData.getPasteCoordinate(id)
+            val newPasteAppearItem =
+                pasteData.pasteAppearItem?.bindItem(pasteCoordinate, destinationPath)
+            val newPasteCollection =
+                pasteData.pasteCollection.bindItems(pasteCoordinate, destinationPath)
+            val newPasteData =
+                pasteData.copy(
+                    id = id,
+                    pasteAppearItem = newPasteAppearItem,
+                    pasteCollection = newPasteCollection,
+                )
 
-        pasteDao.updateFilePath(newPasteData)
-        return newPasteData
+            pasteDao.updateFilePath(newPasteData)
+            newPasteData
+        } catch (e: Exception) {
+            pasteDao.markDeletePasteData(id)
+            throw e
+        }
     }
 
     /**
@@ -566,6 +590,8 @@ class PasteReleaseService(
                 logger.warn { "releaseRemotePasteDataForPush: paste is not a file type (${pasteData.getType()})" }
                 return@withContext null
             }
+            var createdPasteData: PasteData? = null
+            var renameMapToApply: Map<String, String>? = null
             runCatching {
                 validateFileTransferMetadata(pasteData)
                 val existIconFile: Boolean? =
@@ -578,12 +604,16 @@ class PasteReleaseService(
                         logger.warn { "releaseRemotePasteDataForPush: paste has no PasteFiles item" }
                         return@runCatching null
                     }
+                createdPasteData = newPasteData
                 val id = newPasteData.id
 
                 val (filesIndex, renameMap) =
                     buildFilesIndexForReceive(newPasteData, userDataPathProvider, FilePullService.CHUNK_SIZE)
+                renameMapToApply = renameMap
                 if (filesIndex.getChunkCount() <= 0) {
                     logger.warn { "releaseRemotePasteDataForPush: empty filesIndex for pasteId=$id" }
+                    // The slots exist under their renamed names, which the row does not hold yet
+                    userDataPathProvider.deleteReceivedFilesOutsideStorage(newPasteData.applyRenameMap(renameMap))
                     pasteDao.markDeletePasteData(id)
                     return@runCatching null
                 }
@@ -603,6 +633,19 @@ class PasteReleaseService(
                 )
             }.onFailure { e ->
                 logger.error(e) { "releaseRemotePasteDataForPush failed" }
+                createdPasteData?.let { data ->
+                    runCatching {
+                        // Without the rename map the paths are the unrenamed names, which may
+                        // be the user's own files of the same name: leave any slots rather
+                        // than risk deleting those.
+                        renameMapToApply?.let { renameMap ->
+                            userDataPathProvider.deleteReceivedFilesOutsideStorage(data.applyRenameMap(renameMap))
+                        }
+                        pasteDao.markDeletePasteData(data.id)
+                    }.onFailure { cleanupError ->
+                        logger.warn(cleanupError) { "Failed to clean up aborted push prepare pasteId=${data.id}" }
+                    }
+                }
             }.getOrNull()
         }
 
@@ -610,11 +653,12 @@ class PasteReleaseService(
      * Rolls back a successful [releaseRemotePasteDataForPush] whose prepared
      * paste could not be attached to a push session. Mirrors the session-expiry path in
      * [com.crosspaste.sync.PushSessionManager.sweepExpired]: marking the
-     * LOADING row deleted lets the regular delete pipeline reclaim the
-     * preallocated file slots.
+     * LOADING row deleted lets the regular delete pipeline reclaim slots in
+     * managed storage; slots in the large-file destination are deleted here.
      */
     suspend fun discardPushPrepared(pasteId: Long): Result<Unit> =
         withContext(NonCancellable) {
+            deleteUnfinishedReceiveFiles(pasteDao, userDataPathProvider, pasteId)
             var lastFailure: Throwable? = null
             repeat(DISCARD_PUSH_PREPARED_ATTEMPTS) { attempt ->
                 val result = pasteDao.markDeletePasteData(pasteId)

@@ -161,6 +161,7 @@ class PushRoutingTest {
         PushSessionManager(
             pasteDao = pasteDao,
             pasteboardService = pasteboardService,
+            userDataPathProvider = mockk(relaxed = true),
             scope = CoroutineScope(Job()),
         )
 

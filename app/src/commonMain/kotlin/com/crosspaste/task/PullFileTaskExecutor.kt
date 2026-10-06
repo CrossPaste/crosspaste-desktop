@@ -13,7 +13,6 @@ import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.applyRenameMap
 import com.crosspaste.paste.item.getAppFileType
-import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.FilePullResult
@@ -185,28 +184,26 @@ class PullFileTaskExecutor(
 
     private fun cleanupPullFiles(pasteData: PasteData) {
         runCatching {
-            val fileItems = pasteData.getPasteAppearItems().filterIsInstance<PasteFiles>()
-            for (pasteFiles in fileItems) {
-                if (pasteFiles.basePath == null) {
-                    // Managed storage: delete the paste directory
-                    val dateString =
-                        dateUtils.getYMD(
-                            dateUtils.epochMillisecondsToLocalDateTime(pasteData.createTime),
-                        )
-                    val basePath =
-                        userDataPathProvider
-                            .resolve(appFileType = pasteFiles.getAppFileType())
-                            .resolve(pasteData.appInstanceId)
-                            .resolve(dateString)
-                            .resolve(pasteData.id.toString())
-                    fileUtils.fileSystem.deleteRecursively(basePath)
-                } else {
-                    // Download directory: delete individual pre-allocated files
-                    for (filePath in pasteFiles.getFilePaths(userDataPathProvider)) {
-                        fileUtils.deleteFile(filePath)
-                    }
-                }
+            val managedItems =
+                pasteData
+                    .getPasteAppearItems()
+                    .filterIsInstance<PasteFiles>()
+                    .filter { it.basePath == null }
+            for (pasteFiles in managedItems) {
+                // Managed storage: delete the paste directory
+                val dateString =
+                    dateUtils.getYMD(
+                        dateUtils.epochMillisecondsToLocalDateTime(pasteData.createTime),
+                    )
+                val basePath =
+                    userDataPathProvider
+                        .resolve(appFileType = pasteFiles.getAppFileType())
+                        .resolve(pasteData.appInstanceId)
+                        .resolve(dateString)
+                        .resolve(pasteData.id.toString())
+                fileUtils.fileSystem.deleteRecursively(basePath)
             }
+            userDataPathProvider.deleteReceivedFilesOutsideStorage(pasteData)
         }.onFailure { e ->
             logger.warn(e) { "Failed to clean up pull files" }
         }
