@@ -29,11 +29,9 @@ import com.crosspaste.paste.plugin.type.DesktopImageTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopRtfTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopUrlTypePlugin
-import com.crosspaste.presist.SingleFileInfoTree
 import com.crosspaste.utils.ColorParser
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.HtmlUtils
-import com.crosspaste.utils.getCodecsUtils
 import com.crosspaste.utils.getFileUtils
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
@@ -445,8 +443,6 @@ class McpToolProvider(
         }
     }
 
-    private val codecsUtils = getCodecsUtils()
-
     private fun createPasteData(
         content: String,
         type: String,
@@ -498,13 +494,11 @@ class McpToolProvider(
                     ) to PasteType.COLOR_TYPE
                 }
                 "file" -> {
-                    createFilePasteItem(content, PasteType.FILE_TYPE)
-                        ?: return Result.failure(
-                            IllegalArgumentException("File not found: '$content'."),
-                        )
+                    createFilePasteItem(content, PasteType.FILE_TYPE, notFoundLabel = "File")
+                        .getOrElse { return Result.failure(it) }
                 }
                 "image" -> {
-                    val path = content.toPath()
+                    val path = content.toPath(normalize = true)
                     val ext = path.name.substringAfterLast('.', "").lowercase()
                     if (!fileUtils.canPreviewImage(ext)) {
                         return Result.failure(
@@ -514,10 +508,8 @@ class McpToolProvider(
                             ),
                         )
                     }
-                    createFilePasteItem(content, PasteType.IMAGE_TYPE)
-                        ?: return Result.failure(
-                            IllegalArgumentException("Image file not found: '$content'."),
-                        )
+                    createFilePasteItem(content, PasteType.IMAGE_TYPE, notFoundLabel = "Image file")
+                        .getOrElse { return Result.failure(it) }
                 }
                 else -> {
                     createTextPasteItem(
@@ -541,41 +533,57 @@ class McpToolProvider(
         )
     }
 
+    /**
+     * References the file in place, like a clipboard file that is too large to
+     * copy: [basePath] is the file's own folder, so every reader resolves the
+     * original absolute path instead of a non-existent managed-storage path.
+     */
     private fun createFilePasteItem(
         filePath: String,
         pasteType: PasteType,
-    ): Pair<PasteItem, PasteType>? {
-        val path = filePath.toPath()
-        if (!FileSystem.SYSTEM.exists(path)) {
-            return null
+        notFoundLabel: String,
+    ): Result<Pair<PasteItem, PasteType>> {
+        val path = filePath.toPath(normalize = true)
+        if (!path.isAbsolute) {
+            return Result.failure(IllegalArgumentException("'$filePath' is not an absolute path."))
         }
-        val metadata = FileSystem.SYSTEM.metadata(path)
-        val fileSize = metadata.size ?: 0L
-        val fileBytes = FileSystem.SYSTEM.read(path) { readByteArray() }
-        val fileHash = codecsUtils.hash(fileBytes)
+        val parent = path.parent
+        val metadata = FileSystem.SYSTEM.metadataOrNull(path)
+        if (parent == null || metadata == null) {
+            return Result.failure(IllegalArgumentException("$notFoundLabel not found: '$filePath'."))
+        }
+        if (pasteType == PasteType.IMAGE_TYPE && metadata.isDirectory) {
+            return Result.failure(IllegalArgumentException("'$filePath' is a directory, not an image file."))
+        }
         val fileName = path.name
-        val fileInfoTree = SingleFileInfoTree(size = fileSize, hash = fileHash)
-        val identifiers =
-            if (pasteType == PasteType.IMAGE_TYPE) {
-                listOf(DesktopImageTypePlugin.IMAGE)
-            } else {
-                listOf(DesktopFilesTypePlugin.FILE_LIST_ID)
+        val fileInfoTree =
+            runCatching {
+                fileUtils.getFileInfoTree(path)
+            }.getOrElse { error ->
+                return Result.failure(
+                    IllegalArgumentException(
+                        "Cannot read $notFoundLabel '$filePath': ${error.message}",
+                    ),
+                )
             }
+        val fileInfoTreeMap = mapOf(fileName to fileInfoTree)
         val item =
             if (pasteType == PasteType.IMAGE_TYPE) {
                 createImagesPasteItem(
-                    identifiers = identifiers,
+                    identifiers = listOf(DesktopImageTypePlugin.IMAGE),
+                    basePath = parent.toString(),
                     relativePathList = listOf(fileName),
-                    fileInfoTreeMap = mapOf(fileName to fileInfoTree),
+                    fileInfoTreeMap = fileInfoTreeMap,
                 )
             } else {
                 createFilesPasteItem(
-                    identifiers = identifiers,
+                    identifiers = listOf(DesktopFilesTypePlugin.FILE_LIST_ID),
+                    basePath = parent.toString(),
                     relativePathList = listOf(fileName),
-                    fileInfoTreeMap = mapOf(fileName to fileInfoTree),
+                    fileInfoTreeMap = fileInfoTreeMap,
                 )
             }
-        return item to pasteType
+        return Result.success(item to pasteType)
     }
 
     private fun extractContent(

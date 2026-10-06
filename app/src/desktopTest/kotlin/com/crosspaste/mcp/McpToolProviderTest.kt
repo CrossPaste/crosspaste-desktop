@@ -13,6 +13,8 @@ import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.DefaultPasteItemReader
+import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.item.hasExistingFiles
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskSubmitter
@@ -30,7 +32,12 @@ import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import okio.Path.Companion.toOkioPath
+import java.nio.file.Files
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class McpToolProviderTest {
@@ -460,19 +467,108 @@ class McpToolProviderTest {
         }
 
     @Test
-    fun `add_to_clipboard creates file item for existing file`() =
+    fun `add_to_clipboard rejects a relative file path`() =
         runTest {
             val server = createServer()
-            // Use build.gradle.kts as an existing file
             val result =
-                callTool(
-                    server,
-                    "add_to_clipboard",
-                    mapOf("content" to "build.gradle.kts", "type" to "file"),
-                )
-            assertTrue(result.contains("Successfully added"))
-            assertTrue(result.contains("type: file"))
+                callTool(server, "add_to_clipboard", mapOf("content" to "build.gradle.kts", "type" to "file"))
+            assertTrue(result.contains("Error"))
+            assertTrue(result.contains("not an absolute path"))
         }
+
+    @Test
+    fun `add_to_clipboard file item references the original absolute path`() =
+        runTest {
+            val file = Files.createTempFile("mcp-add", ".txt")
+            Files.writeString(file, "referenced, not copied")
+            val path = file.toOkioPath()
+            val server = createServer()
+
+            val result = callTool(server, "add_to_clipboard", mapOf("content" to path.toString(), "type" to "file"))
+
+            assertTrue(result.contains("type: file"), result)
+            val item = addedPasteFiles(result)
+            assertEquals(path.parent.toString(), item.basePath)
+            assertEquals(listOf(path.name), item.relativePathList)
+            assertTrue(item.hasExistingFiles())
+
+            Files.delete(file)
+            assertFalse(item.hasExistingFiles())
+        }
+
+    @Test
+    fun `add_to_clipboard file item with directory references the original absolute path`() =
+        runTest {
+            val dir = Files.createTempDirectory("mcp-add-dir")
+            val child = Files.createFile(dir.resolve("child.txt"))
+            Files.writeString(child, "content in dir")
+            val path = dir.toOkioPath()
+            val server = createServer()
+
+            val result = callTool(server, "add_to_clipboard", mapOf("content" to path.toString(), "type" to "file"))
+
+            assertTrue(result.contains("type: file"), result)
+            val item = addedPasteFiles(result)
+            assertEquals(path.parent.toString(), item.basePath)
+            assertEquals(listOf(path.name), item.relativePathList)
+            assertTrue(item.hasExistingFiles())
+
+            Files.delete(child)
+            Files.delete(dir)
+            assertFalse(item.hasExistingFiles())
+        }
+
+    @Test
+    fun `add_to_clipboard image item references the original absolute path`() =
+        runTest {
+            val file = Files.createTempFile("mcp-add", ".png")
+            Files.write(file, byteArrayOf(1, 2, 3))
+            val path = file.toOkioPath()
+            val server = createServer()
+
+            val result = callTool(server, "add_to_clipboard", mapOf("content" to path.toString(), "type" to "image"))
+
+            assertTrue(result.contains("type: image"), result)
+            val item = addedPasteFiles(result)
+            assertEquals(path.parent.toString(), item.basePath)
+            assertTrue(item.hasExistingFiles())
+            Files.delete(file)
+            assertFalse(item.hasExistingFiles())
+        }
+
+    @Test
+    fun `add_to_clipboard rejects a relative image path`() =
+        runTest {
+            val server = createServer()
+            val result =
+                callTool(server, "add_to_clipboard", mapOf("content" to "photo.png", "type" to "image"))
+            assertTrue(result.contains("Error"))
+            assertTrue(result.contains("not an absolute path"))
+        }
+
+    @Test
+    fun `add_to_clipboard rejects a directory for image type`() =
+        runTest {
+            val parent = Files.createTempDirectory("mcp-image-test")
+            val dir = Files.createDirectory(parent.resolve("dir.png"))
+            val path = dir.toOkioPath()
+            val server = createServer()
+            try {
+                val result =
+                    callTool(server, "add_to_clipboard", mapOf("content" to path.toString(), "type" to "image"))
+                assertTrue(result.contains("Error"))
+                assertTrue(result.contains("is a directory, not an image file"))
+            } finally {
+                Files.delete(dir)
+                Files.delete(parent)
+            }
+        }
+
+    private suspend fun addedPasteFiles(result: String): PasteFiles {
+        val id = Regex("ID: (\\d+)").find(result)!!.groupValues[1].toLong()
+        val pasteData = assertNotNull(pasteDao.getNoDeletePasteData(id))
+        return assertNotNull(pasteData.pasteAppearItem as? PasteFiles)
+    }
 
     // ========== add_to_clipboard - image ==========
 
