@@ -302,4 +302,19 @@ class PullFileTaskExecutorTest {
         coVerify(exactly = 0) { fixture.soundService.errorSound() }
         coVerify(exactly = 0) { fixture.pasteDao.markDeletePasteData(any()) }
     }
+
+    @Test
+    fun `retry of row deleted between attempts reclaims files from previous attempt`(
+        @TempDir tempDir: File,
+    ) = runTest {
+        val fixture = Fixture(tempDir, { FilePullResult.Success(emptyMap()) }, rowAfterPull = null)
+        coEvery { fixture.pasteDao.getNoDeletePasteData(7L) } returns null
+        coEvery { fixture.pasteDao.getDeletePasteData(7L) } returns fixture.pasteData
+
+        assertIs<SuccessPasteTaskResult>(fixture.executor.doExecuteTask(pullTask(previousFailures = 1)))
+
+        assertFalse(fixture.slotFile.exists())
+        coVerify(exactly = 0) { fixture.pasteboardService.tryWriteRemotePasteboardWithFile(any(), any()) }
+        coVerify(exactly = 0) { fixture.soundService.errorSound() }
+    }
 }

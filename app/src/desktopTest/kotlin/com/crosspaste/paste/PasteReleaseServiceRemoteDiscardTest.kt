@@ -244,4 +244,18 @@ class PasteReleaseServiceRemoteDiscardTest {
             coVerify(exactly = 1) { pasteDao.getLoadingPasteData(3L) }
             coVerify(exactly = 1) { pasteDao.getLoadingPasteData(5L) }
         }
+
+    @Test
+    fun `deleteUnfinishedReceiveFiles falls back to deleted row if already marked deleted`() =
+        runBlocking {
+            val pasteDao = mockk<PasteDao>(relaxed = true)
+            val provider = mockk<UserDataPathProvider>(relaxed = true)
+            val remotePaste = remotePasteData(oversizedTextItem())
+            coEvery { pasteDao.getLoadingPasteData(42L) } returns null
+            coEvery { pasteDao.getDeletePasteData(42L) } returns remotePaste
+
+            deleteUnfinishedReceiveFiles(pasteDao, provider, 42L)
+
+            verify(exactly = 1) { provider.deleteReceivedFilesOutsideStorage(remotePaste) }
+        }
 }

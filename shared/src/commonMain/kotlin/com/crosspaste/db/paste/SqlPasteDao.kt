@@ -616,8 +616,7 @@ class SqlPasteDao(
             pasteDatabaseQueries
                 .getMaxCreateTimeByRemoteAppInstanceId()
                 .executeAsList()
-                .mapNotNull { row -> row.maxCreateTime?.let { row.appInstanceId to it } }
-                .toMap()
+                .associate { row -> row.appInstanceId to row.maxCreateTime }
         }
 
     override suspend fun getPastePullCursorMaxCreateTimes(): Map<String, Long> =

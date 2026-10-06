@@ -107,7 +107,10 @@ class PullFileTaskExecutor(
                 }
 
             handleResult(result, pasteData, pullExtraInfo, pasteTask.modifyTime)
-        } ?: SuccessPasteTaskResult()
+        } ?: run {
+            pasteDao.getDeletePasteData(pasteDataId)?.let { cleanupPullFiles(it) }
+            SuccessPasteTaskResult()
+        }
     }
 
     private suspend fun handleResult(
