@@ -39,6 +39,7 @@ import com.crosspaste.net.ResourcesClient
 import com.crosspaste.net.Server
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.GuidePasteDataService
+import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.path.UserDataPathProvider
@@ -210,6 +211,9 @@ class CrossPaste {
                         pasteboardService.start()
                     }
                     koin.get<QRCodeGenerator>()
+                    // Before the sync server can start a receive of this run, and before
+                    // the pull cursors are rebuilt from the rows that remain
+                    koin.get<PasteReleaseService>().discardInterruptedReceives()
                     getManagedService<SyncManager>(ManagedService.SYNC_MANAGER).start()
                     koin.get<PastePullService>().init()
                     val pasteServer = getManagedService<Server>(ManagedService.PASTE_SERVER)

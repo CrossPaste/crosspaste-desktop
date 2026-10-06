@@ -24,6 +24,7 @@ import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.getDateUtils
 import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlin.coroutines.cancellation.CancellationException
 
 class PullFileTaskExecutor(
     private val filePullService: FilePullService,
@@ -83,17 +84,33 @@ class PullFileTaskExecutor(
             val pasteFiles = fileItems.first() as PasteFiles
 
             val result =
-                filePullService.pullFiles(
-                    appInstanceId = pasteData.appInstanceId,
-                    pasteId = pasteData.id,
-                    createTime = pasteData.createTime,
-                    remotePasteId = pullExtraInfo.id,
-                    pasteFiles = pasteFiles,
-                    pullChunks = pullExtraInfo.pullChunks,
-                )
+                try {
+                    filePullService.pullFiles(
+                        appInstanceId = pasteData.appInstanceId,
+                        pasteId = pasteData.id,
+                        createTime = pasteData.createTime,
+                        remotePasteId = pullExtraInfo.id,
+                        pasteFiles = pasteFiles,
+                        pullChunks = pullExtraInfo.pullChunks,
+                    )
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // Counted as a failed attempt, so the retry budget still ends in cleanup
+                    logger.warn(e) { "Pull files failed for pasteId=${pasteData.id}" }
+                    return@let doFailure(
+                        pasteData,
+                        pullExtraInfo,
+                        listOf(createFailureResult(StandardErrorCode.PULL_FILE_TASK_FAIL, "Pull files failed: $e")),
+                        pasteTask.modifyTime,
+                    )
+                }
 
             handleResult(result, pasteData, pullExtraInfo, pasteTask.modifyTime)
-        } ?: SuccessPasteTaskResult()
+        } ?: run {
+            pasteDao.getDeletePasteData(pasteDataId)?.let { cleanupPullFiles(it) }
+            SuccessPasteTaskResult()
+        }
     }
 
     private suspend fun handleResult(
@@ -106,24 +123,28 @@ class PullFileTaskExecutor(
             is FilePullResult.Empty -> SuccessPasteTaskResult()
 
             is FilePullResult.Success -> {
+                val pulledPasteData = pasteData.withRenames(result.renameMap)
+                if (discardIfDeleted(pulledPasteData)) return SuccessPasteTaskResult()
                 if (result.renameMap.isNotEmpty()) {
-                    val updatedPasteData = pasteData.applyRenameMap(result.renameMap)
-                    pasteDao.updateFilePath(updatedPasteData)
+                    pasteDao.updateFilePath(pulledPasteData)
                 }
-                pasteboardService.tryWriteRemotePasteboardWithFile(pasteData.id, pullExtraInfo.seenAppInstanceIds)
-                soundService.successSound()
-                SuccessPasteTaskResult()
+                pasteboardService
+                    .tryWriteRemotePasteboardWithFile(pasteData.id, pullExtraInfo.seenAppInstanceIds)
+                    .fold(
+                        onSuccess = {
+                            soundService.successSound()
+                            SuccessPasteTaskResult()
+                        },
+                        onFailure = { e -> abandonUnfinalized(pulledPasteData, pullExtraInfo, startTime, e) },
+                    )
             }
 
             is FilePullResult.Failure -> {
-                val effectivePasteData =
-                    if (result.renameMap.isNotEmpty()) {
-                        pasteData.applyRenameMap(result.renameMap).also {
-                            pasteDao.updateFilePath(it)
-                        }
-                    } else {
-                        pasteData
-                    }
+                val effectivePasteData = pasteData.withRenames(result.renameMap)
+                if (discardIfDeleted(effectivePasteData)) return SuccessPasteTaskResult()
+                if (result.renameMap.isNotEmpty()) {
+                    pasteDao.updateFilePath(effectivePasteData)
+                }
                 pullExtraInfo.pullChunks = result.pullChunks
                 doFailure(effectivePasteData, pullExtraInfo, result.failedChunks.values, startTime)
             }
@@ -156,6 +177,45 @@ class PullFileTaskExecutor(
                 )
             }
         }
+
+    private fun PasteData.withRenames(renameMap: Map<String, String>): PasteData =
+        if (renameMap.isEmpty()) this else applyRenameMap(renameMap)
+
+    /**
+     * The row was deleted (by the user) while its files were being pulled: the delete
+     * task ran before the files existed, so reclaim them here, quietly.
+     */
+    private suspend fun discardIfDeleted(pasteData: PasteData): Boolean {
+        if (pasteDao.getNoDeletePasteData(pasteData.id) != null) return false
+        pasteSyncProcessManager.cleanProcess(pasteData.id)
+        cleanupPullFiles(pasteData)
+        return true
+    }
+
+    /**
+     * Every chunk landed but the row could not be finalized. Retrying would pull the
+     * whole paste again, so end it instead of leaving it LOADING forever.
+     */
+    private suspend fun abandonUnfinalized(
+        pasteData: PasteData,
+        pullExtraInfo: PullExtraInfo,
+        startTime: Long,
+        cause: Throwable,
+    ): PasteTaskResult {
+        if (discardIfDeleted(pasteData)) return SuccessPasteTaskResult()
+        logger.error(cause) { "Finalize pulled paste failed, pasteId=${pasteData.id}" }
+        pasteSyncProcessManager.cleanProcess(pasteData.id)
+        cleanupPullFiles(pasteData)
+        pasteDao.markDeletePasteData(pasteData.id)
+        soundService.errorSound()
+        return TaskUtils.createFailurePasteTaskResult(
+            logger = logger,
+            retryHandler = { false },
+            startTime = startTime,
+            fails = listOf(createFailureResult(StandardErrorCode.PULL_FILE_TASK_FAIL, "Finalize failed: $cause")),
+            extraInfo = pullExtraInfo,
+        )
+    }
 
     private suspend fun doFailure(
         pasteData: PasteData,

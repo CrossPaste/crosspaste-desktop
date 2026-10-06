@@ -537,6 +537,48 @@ class PasteDaoTest {
         }
 
     @Test
+    fun `cleanup by time leaves rows that are still loading`() =
+        runTest {
+            stubDeleteTaskSubmission()
+            val loaded = createTestPasteData(text = "loaded")
+            val loadedId = pasteDao.createPasteData(loaded)
+            val loadingId = pasteDao.createPasteData(createTestPasteData(text = "loading"), PasteState.LOADING)
+
+            pasteDao.markDeleteByCleanTime(DateUtils.nowEpochMilliseconds() + 1_000, null)
+
+            assertNull(pasteDao.getNoDeletePasteData(loadedId))
+            assertNotNull(pasteDao.getLoadingPasteData(loadingId))
+        }
+
+    @Test
+    fun `same hash lookup ignores rows that are still loading`() =
+        runTest {
+            val pasteData = createTestPasteData(text = "same")
+            val loadedId = pasteDao.createPasteData(pasteData)
+            val loadingId = pasteDao.createPasteData(pasteData, PasteState.LOADING)
+            val newId = pasteDao.createPasteData(pasteData)
+
+            val ids = pasteDao.getSameHashPasteDataIds(pasteData.hash, pasteData.pasteType, newId)
+
+            assertEquals(listOf(loadedId), ids)
+            assertFalse(loadingId in ids)
+        }
+
+    @Test
+    fun `remote loading ids exclude local and finished rows`() =
+        runTest {
+            val remoteLoading =
+                pasteDao.createPasteData(
+                    createTestPasteData(text = "a", appInstanceId = "remote").copy(remote = true),
+                    PasteState.LOADING,
+                )
+            pasteDao.createPasteData(createTestPasteData(text = "b", appInstanceId = "remote").copy(remote = true))
+            pasteDao.createPasteData(createTestPasteData(text = "c"), PasteState.LOADING)
+
+            assertEquals(listOf(remoteLoading), pasteDao.getRemoteLoadingPasteIds())
+        }
+
+    @Test
     fun `deletePasteData removes the paste's tag links`() =
         runTest {
             stubDeleteTaskSubmission()

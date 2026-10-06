@@ -22,7 +22,7 @@ class PasteClientApi(
     suspend fun sendPaste(
         pasteData: PasteData,
         targetAppInstanceId: String,
-        seenAppInstanceIds: Set<String>,
+        seenAppInstanceIds: Set<String> = emptySet(),
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         val response =

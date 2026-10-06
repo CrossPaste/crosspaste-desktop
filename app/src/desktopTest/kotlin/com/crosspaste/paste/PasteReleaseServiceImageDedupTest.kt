@@ -11,6 +11,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteItem
+import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.SingleFileInfoTree
@@ -502,5 +503,25 @@ class PasteReleaseServiceImageDedupTest {
             fixture.service.releaseLocalPasteData(loadingId, listOf(refImageItem(downloads)), null)
 
             assertContentEquals(listOf(originalId), fixture.taskSubmitter.builder.deleteIds)
+        }
+
+    @Test
+    fun `files collected for a row deleted mid-collect are reclaimed`() =
+        runTest {
+            val storageDir = Files.createTempDirectory("crosspaste-collect-test").toFile()
+            val provider = userDataPathProvider(storageDir)
+            val fixture = newFixture(provider)
+            val id = fixture.createLoadingRecord()
+            fixture.pasteDao.markDeletePasteData(id)
+            val item = imageItem()
+            val copied =
+                item.getFilePaths(provider).single().toFile().also {
+                    it.parentFile.mkdirs()
+                    it.writeText("copied")
+                }
+
+            fixture.service.releaseLocalPasteData(id, listOf(item), null)
+
+            assertTrue(!copied.exists(), "the copy made after the delete must not be orphaned")
         }
 }

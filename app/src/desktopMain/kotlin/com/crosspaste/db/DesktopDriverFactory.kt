@@ -40,6 +40,11 @@ class DesktopDriverFactory(
                 addDataSourceProperty("journal_mode", "WAL")
                 addDataSourceProperty("synchronous", "NORMAL")
                 addDataSourceProperty("busy_timeout", "10000")
+                // Every transaction here writes. BEGIN IMMEDIATE takes the write lock
+                // up front, so a read-then-write transaction waits on busy_timeout
+                // instead of failing with SQLITE_BUSY_SNAPSHOT when another
+                // connection commits between its read and its write.
+                addDataSourceProperty("transaction_mode", "IMMEDIATE")
             }
 
         val hikariDataSource = HikariDataSource(config)

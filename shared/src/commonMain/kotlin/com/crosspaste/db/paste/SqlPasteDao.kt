@@ -74,6 +74,11 @@ class SqlPasteDao(
         }
     }
 
+    override suspend fun getRemoteLoadingPasteIds(): List<Long> =
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries.getRemoteLoadingPasteIds().executeAsList()
+        }
+
     override suspend fun getLoadingPasteData(id: Long): PasteData? =
         withContext(ioDispatcher) {
             pasteDatabaseQueries
@@ -611,8 +616,7 @@ class SqlPasteDao(
             pasteDatabaseQueries
                 .getMaxCreateTimeByRemoteAppInstanceId()
                 .executeAsList()
-                .mapNotNull { row -> row.maxCreateTime?.let { row.appInstanceId to it } }
-                .toMap()
+                .associate { row -> row.appInstanceId to row.maxCreateTime }
         }
 
     override suspend fun getPastePullCursorMaxCreateTimes(): Map<String, Long> =

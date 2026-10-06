@@ -13,6 +13,7 @@ import com.crosspaste.paste.item.PasteItemProperties
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.applyRenameMap
 import com.crosspaste.paste.item.bindItem
+import com.crosspaste.paste.item.clear
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.paste.plugin.process.DiscardOversizedNonFilePlugin
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
@@ -49,9 +50,12 @@ data class PushPrepareResult(
 private val unfinishedReceiveLogger = KotlinLogging.logger {}
 
 /**
- * Deletes the large-file-destination slots of a receive that never completed. Only a
- * LOADING row qualifies, so a finished file is never touched. A failure is logged, not
- * thrown: cleanup trouble must not keep the caller from discarding the row.
+ * Deletes the large-file-destination slots of a receive that never completed. The row
+ * may be LOADING, or already marked deleted by the user mid-receive. A deleted row
+ * cannot show whether it was ever finished, so callers must only pass ids of receives
+ * that never completed: a finished large file belongs to the user even after its
+ * paste is deleted. A failure is logged, not thrown: cleanup trouble must not keep the
+ * caller from discarding the row.
  */
 internal suspend fun deleteUnfinishedReceiveFiles(
     pasteDao: PasteDao,
@@ -59,7 +63,8 @@ internal suspend fun deleteUnfinishedReceiveFiles(
     pasteId: Long,
 ) {
     runCatching {
-        pasteDao.getLoadingPasteData(pasteId)?.let(userDataPathProvider::deleteReceivedFilesOutsideStorage)
+        (pasteDao.getLoadingPasteData(pasteId) ?: pasteDao.getDeletePasteData(pasteId))
+            ?.let(userDataPathProvider::deleteReceivedFilesOutsideStorage)
     }.onFailure { e ->
         unfinishedReceiveLogger.warn(e) { "Failed to delete unfinished receive files of pasteId=$pasteId" }
     }
@@ -228,6 +233,39 @@ class PasteReleaseService(
                     }
                 }
             }
+        } ?: discardCollectedItemsOfDeletedRow(id, pasteItems)
+    }
+
+    /**
+     * The row was deleted while it was still being collected, so the delete task
+     * found only the placeholder items and none of the files copied since.
+     */
+    private suspend fun discardCollectedItemsOfDeletedRow(
+        id: Long,
+        pasteItems: List<PasteItem>,
+    ) {
+        if (pasteDao.getNoDeletePasteData(id) != null) return
+        pasteItems.forEach { it.clear(userDataPathProvider = userDataPathProvider) }
+    }
+
+    /**
+     * Discards remote file receives an earlier run left unfinished. Pull tasks and push
+     * sessions do not survive a restart, and are deliberately not replayed (#4797), so
+     * their LOADING rows would otherwise stay forever, along with pre-allocated files.
+     * Must run before the sync server starts, while no receive of this run can exist.
+     */
+    suspend fun discardInterruptedReceives() {
+        runCatching {
+            val ids = pasteDao.getRemoteLoadingPasteIds()
+            if (ids.isNotEmpty()) {
+                logger.info { "Discarding ${ids.size} receive(s) interrupted by the last shutdown" }
+            }
+            ids.forEach { id ->
+                deleteUnfinishedReceiveFiles(pasteDao, userDataPathProvider, id)
+                pasteDao.markDeletePasteData(id)
+            }
+        }.onFailure { e ->
+            logger.error(e) { "Failed to discard interrupted receives" }
         }
     }
 
