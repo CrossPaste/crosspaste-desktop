@@ -342,13 +342,22 @@ abstract class DesktopAppWindowManager(
         }
     }
 
-    fun switchSearchWindow(
+    /**
+     * Closes the search window without pasting and hands focus back to the app that
+     * was active before it opened. Use this for user-initiated closes; a plain
+     * [hideSearchWindow] leaves CrossPaste active with no key window on macOS.
+     */
+    suspend fun dismissSearchWindow() {
+        hideSearchWindowAndPaste(0)
+    }
+
+    suspend fun switchSearchWindow(
         windowTrigger: WindowTrigger,
         saveCurrentActiveAppInfo: () -> Unit,
     ) {
         val currentShow = _searchWindowInfo.value.show
         if (currentShow) {
-            hideSearchWindow()
+            dismissSearchWindow()
         } else {
             saveCurrentActiveAppInfo()
             _searchWindowInfo.value =

@@ -91,6 +91,25 @@ class AppWindowManagerTest {
     }
 
     @Test
+    fun `toggling the search window closed returns focus to the previous app without pasting`() {
+        val windowManager = createWindowManager()
+
+        runBlocking {
+            windowManager.saveActiveAppInfo("Chrome")
+            windowManager.switchSearchWindow(WindowTrigger.SHORTCUT) {
+                windowManager.saveActiveAppInfo("CrossPaste")
+            }
+            assertTrue(windowManager.getCurrentSearchWindowInfo().show)
+
+            windowManager.switchSearchWindow(WindowTrigger.SHORTCUT) {}
+        }
+
+        assertFalse(windowManager.getCurrentSearchWindowInfo().show)
+        assertEquals("Chrome", windowManager.getCurrentActiveAppName())
+        assertEquals(0, windowManager.pasterId)
+    }
+
+    @Test
     fun `preview does not take ownership of an interactive search window`() {
         val windowManager = createWindowManager()
 

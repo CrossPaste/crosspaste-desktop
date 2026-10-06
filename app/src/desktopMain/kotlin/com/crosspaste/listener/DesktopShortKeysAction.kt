@@ -126,7 +126,7 @@ class DesktopShortKeysAction(
             }
 
             if (appWindowManager.getCurrentSearchWindowInfo().show) {
-                appWindowManager.hideSearchWindow()
+                appWindowManager.dismissSearchWindow()
             }
         }
     }
