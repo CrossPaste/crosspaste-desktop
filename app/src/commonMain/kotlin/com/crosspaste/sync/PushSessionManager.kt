@@ -61,6 +61,8 @@ class PushSession(
     val token: String,
     val filesIndex: FilesIndex,
     createdAt: Long,
+    // The sender's RelaySeen set, handed to the relay scheduled at finalize
+    val seenAppInstanceIds: Set<String> = emptySet(),
 ) {
     val chunkCount: Int = filesIndex.getChunkCount()
     private val received: BooleanArray = BooleanArray(chunkCount)
@@ -232,13 +234,14 @@ class PushSessionManager(
         pasteId: Long,
         fromAppInstanceId: String,
         filesIndex: FilesIndex,
+        seenAppInstanceIds: Set<String> = emptySet(),
     ): PushSession? {
         val reservation = tryReserve()
         if (reservation == null) {
             logger.warn { "PushSession create rejected: maxActive=$maxActive reached" }
             return null
         }
-        return create(reservation, pasteId, fromAppInstanceId, filesIndex)
+        return create(reservation, pasteId, fromAppInstanceId, filesIndex, seenAppInstanceIds)
     }
 
     @OptIn(ExperimentalUuidApi::class)
@@ -247,6 +250,7 @@ class PushSessionManager(
         pasteId: Long,
         fromAppInstanceId: String,
         filesIndex: FilesIndex,
+        seenAppInstanceIds: Set<String> = emptySet(),
     ): PushSession? =
         try {
             if (filesIndex.getChunkCount() <= 0) {
@@ -260,6 +264,7 @@ class PushSessionManager(
                     token = Uuid.random().toString(),
                     filesIndex = filesIndex,
                     createdAt = nowEpochMilliseconds(),
+                    seenAppInstanceIds = seenAppInstanceIds,
                 )
             var inserted = false
             sessions.computeIfAbsent(pasteId) {
@@ -300,7 +305,7 @@ class PushSessionManager(
 
         val result =
             session.finalize {
-                pasteboardService.tryWriteRemotePasteboardWithFile(session.pasteId)
+                pasteboardService.tryWriteRemotePasteboardWithFile(session.pasteId, session.seenAppInstanceIds)
             }
         when (result) {
             is PushCompletionResult.Failed -> {

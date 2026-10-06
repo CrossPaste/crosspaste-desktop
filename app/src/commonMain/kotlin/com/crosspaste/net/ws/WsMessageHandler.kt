@@ -133,7 +133,8 @@ class WsMessageHandler(
                             }
                         }.bindAuthenticatedRemoteIdentity(appInstanceId)
 
-                val accepted = pasteboardService.tryWriteRemotePasteboard(pasteData).getOrThrow()
+                val accepted =
+                    pasteboardService.tryWriteRemotePasteboard(pasteData, envelope.relaySeen).getOrThrow()
                 if (accepted == null) {
                     sendPastePushError(appInstanceId, envelope.requestId, "Paste ingestion rejected")
                     return

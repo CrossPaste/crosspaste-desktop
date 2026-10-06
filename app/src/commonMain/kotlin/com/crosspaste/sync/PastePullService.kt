@@ -3,6 +3,7 @@ package com.crosspaste.sync
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SuccessResult
+import com.crosspaste.net.routing.bindAuthenticatedRemoteIdentity
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.utils.HostAndPort
@@ -93,7 +94,9 @@ class PastePullService(
             }
 
         return if (result is SuccessResult) {
-            val pasteDataList = result.getResult<List<PasteData>>()
+            // The peer serves only its own pastes; bind them to it like every other receive path
+            val pasteDataList =
+                result.getResult<List<PasteData>>().map { it.bindAuthenticatedRemoteIdentity(appInstanceId) }
             if (pasteDataList.isNotEmpty()) {
                 val maxCreateTime = pasteDataList.maxOf { it.createTime }
                 updateMaxCreateTime(appInstanceId, maxCreateTime)

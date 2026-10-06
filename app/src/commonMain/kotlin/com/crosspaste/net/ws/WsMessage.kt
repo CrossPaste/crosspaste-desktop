@@ -61,6 +61,9 @@ data class WsEnvelopeHeader(
     @Serializable(with = Base64ByteArraySerializer::class)
     val authenticationCode: ByteArray? = null,
     val payloadChunkCount: Int = 1,
+    // See RelaySeen. Like payloadChunkCount it is outside the authentication code:
+    // tampering with it can only widen or narrow relay fan-out, never alter data.
+    val relaySeen: List<String>? = null,
 )
 
 /**
@@ -72,6 +75,7 @@ data class WsEnvelope(
     val payload: ByteArray = byteArrayOf(),
     val encrypted: Boolean = false,
     val requestId: String? = null,
+    val relaySeen: Set<String> = emptySet(),
 ) {
     fun toHeader(): WsEnvelopeHeader =
         WsEnvelopeHeader(
@@ -79,6 +83,7 @@ data class WsEnvelope(
             encrypted = encrypted,
             hasPayload = payload.isNotEmpty(),
             requestId = requestId,
+            relaySeen = relaySeen.takeIf { it.isNotEmpty() }?.toList(),
         )
 
     override fun equals(other: Any?): Boolean {
@@ -87,7 +92,8 @@ data class WsEnvelope(
         return type == other.type &&
             payload.contentEquals(other.payload) &&
             encrypted == other.encrypted &&
-            requestId == other.requestId
+            requestId == other.requestId &&
+            relaySeen == other.relaySeen
     }
 
     override fun hashCode(): Int {
@@ -95,6 +101,7 @@ data class WsEnvelope(
         result = 31 * result + payload.contentHashCode()
         result = 31 * result + encrypted.hashCode()
         result = 31 * result + (requestId?.hashCode() ?: 0)
+        result = 31 * result + relaySeen.hashCode()
         return result
     }
 }

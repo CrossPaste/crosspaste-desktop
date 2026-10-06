@@ -481,6 +481,7 @@ class PasteReleaseService(
 
     suspend fun releaseRemotePasteData(
         pasteData: PasteData,
+        seenAppInstanceIds: Set<String> = emptySet(),
         tryWritePasteboard: (PasteData) -> Unit,
     ): Result<Unit?> {
         return runCatching {
@@ -508,7 +509,7 @@ class PasteReleaseService(
                         val newId = pasteDao.createPasteData(pasteData, PasteState.LOADED)
                         markDeleteSameHash(newId, pasteData.pasteType, pasteData.hash)
                         addRenderingTask(newId, pasteData.getType())
-                        addRelaySyncTask(newId, pasteData.appInstanceId)
+                        addRelaySyncTask(newId, pasteData.appInstanceId, seenAppInstanceIds)
                         tryWritePasteboard(pasteData)
                         newId
                     } else {
@@ -519,8 +520,8 @@ class PasteReleaseService(
                                 }
                                 return@submit
                             }
-                        addPullFileTask(newPasteData.id, remotePasteDataId)
-                        addRelaySyncTask(newPasteData.id, newPasteData.appInstanceId)
+                        // Relayed once the files have landed, see releaseRemotePasteDataWithFile
+                        addPullFileTask(newPasteData.id, remotePasteDataId, seenAppInstanceIds)
                         newPasteData.id
                     }
 
@@ -550,6 +551,7 @@ class PasteReleaseService(
 
     suspend fun releaseRemotePasteDataWithFile(
         id: Long,
+        seenAppInstanceIds: Set<String> = emptySet(),
         tryWritePasteboard: (PasteData) -> Unit,
     ): Result<Unit> =
         withContext(ioDispatcher) {
@@ -565,7 +567,7 @@ class PasteReleaseService(
                                 storedPasteData.copy(pasteState = PasteState.LOADED)
                             }
                     markDeleteSameHash(id, pasteData.pasteType, pasteData.hash)
-                    addRelaySyncTask(id, pasteData.appInstanceId)
+                    addRelaySyncTask(id, pasteData.appInstanceId, seenAppInstanceIds)
                     tryWritePasteboard(pasteData)
                 }
             }.onFailure { e ->
@@ -579,10 +581,9 @@ class PasteReleaseService(
      * Synchronously creates a LOADING PasteData, binds destination paths and builds
      * the FilesIndex describing the slots that incoming chunk uploads will fill. The
      * caller is expected to attach the FilesIndex to a push session so chunk lookups
-     * go through the session. Side effects mirror the file-type branch of
-     * [releaseRemotePasteData]: a relay-sync task is scheduled so other peers will
-     * eventually receive the paste, and a pull-icon task is queued when the source
-     * app icon isn't already cached locally. Returns null when the paste is not a
+     * go through the session. Like the file-type branch of [releaseRemotePasteData],
+     * the relay waits for [releaseRemotePasteDataWithFile] at finalize; only a
+     * pull-icon task is queued here, when the source app icon isn't cached locally. Returns null when the paste is not a
      * file type or storage binding fails — callers should treat that as a rejection.
      */
     suspend fun releaseRemotePasteDataForPush(pasteData: PasteData): PushPrepareResult? =
@@ -622,9 +623,8 @@ class PasteReleaseService(
                     pasteDao.updateFilePath(newPasteData.applyRenameMap(renameMap))
                 }
 
-                taskSubmitter.submit {
-                    addRelaySyncTask(id, newPasteData.appInstanceId)
-                    existIconFile?.let { addPullIconTask(id, it) }
+                existIconFile?.let { existIcon ->
+                    taskSubmitter.submit { addPullIconTask(id, existIcon) }
                 }
 
                 PushPrepareResult(

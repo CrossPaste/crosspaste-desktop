@@ -222,6 +222,22 @@ class PushSessionManagerTest {
         }
 
     @Test
+    fun finalizeIfComplete_handsTheSendersSeenSetToTheRelay() =
+        runBlocking {
+            val pasteboardService = mockk<PasteboardService>(relaxed = true)
+            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(any(), any()) } returns Result.success(Unit)
+            val (mgr) = newManager(pasteboardService = pasteboardService)
+            val seen = setOf("remote-2", "remote-3")
+            val session = mgr.create(1L, "mobile", fakeFilesIndex(1), seen)!!
+            session.markReceived(0)
+
+            assertEquals(PushCompletionResult.Complete, mgr.finalizeIfComplete(session))
+
+            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(1L, seen) }
+            mgr.close()
+        }
+
+    @Test
     fun finalizeIfComplete_waitsForPasteboardWriteBeforeRemovingSession() =
         runBlocking {
             val pasteboardService = mockk<PasteboardService>(relaxed = true)

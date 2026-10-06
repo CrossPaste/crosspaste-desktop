@@ -12,6 +12,7 @@ import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.sync.PastePullService
 import com.crosspaste.sync.PushSessionManager
+import com.crosspaste.sync.RelaySeen
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.requireSyncHandler
@@ -189,6 +190,7 @@ private suspend fun handlePushPrepare(
                 pasteId = prepared.pasteId,
                 fromAppInstanceId = appInstanceId,
                 filesIndex = prepared.filesIndex,
+                seenAppInstanceIds = RelaySeen.decode(call.request.headers[RelaySeen.HEADER]),
             )
         if (session == null) {
             logger.warn { "push sync: rejected pasteId=${prepared.pasteId} (session creation)" }
@@ -228,7 +230,8 @@ private suspend fun handlePullSync(
     pasteboardService: PasteboardService,
     pastePullService: PastePullService,
 ) {
-    val ingestResult = pasteboardService.tryWriteRemotePasteboard(pasteData)
+    val seenAppInstanceIds = RelaySeen.decode(call.request.headers[RelaySeen.HEADER])
+    val ingestResult = pasteboardService.tryWriteRemotePasteboard(pasteData, seenAppInstanceIds)
     if (ingestResult.isFailure) {
         val cause = ingestResult.exceptionOrNull()
         if (cause is CancellationException) throw cause

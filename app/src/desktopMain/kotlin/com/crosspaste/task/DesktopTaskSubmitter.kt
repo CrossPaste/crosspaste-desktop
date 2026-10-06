@@ -61,12 +61,13 @@ class DesktopTaskBuilder(
     override fun addPullFileTask(
         id: Long,
         remotePasteDataId: Long,
+        seenAppInstanceIds: Set<String>,
     ): TaskBuilder {
         taskIds.add(
             taskDao.createTaskBlock(
                 id,
                 TaskType.PULL_FILE_TASK,
-                PullExtraInfo(remotePasteDataId),
+                PullExtraInfo(remotePasteDataId, seenAppInstanceIds),
             ),
         )
         return this
@@ -93,13 +94,14 @@ class DesktopTaskBuilder(
     override fun addRelaySyncTask(
         id: Long,
         appInstanceId: String,
+        seenAppInstanceIds: Set<String>,
     ): TaskBuilder {
         if (configManager.getCurrentConfig().enableClipboardRelay) {
             taskIds.add(
                 taskDao.createTaskBlock(
                     id,
                     TaskType.SYNC_PASTE_TASK,
-                    SyncExtraInfo(appInstanceId),
+                    SyncExtraInfo(appInstanceId, seenAppInstanceIds = seenAppInstanceIds),
                 ),
             )
         }

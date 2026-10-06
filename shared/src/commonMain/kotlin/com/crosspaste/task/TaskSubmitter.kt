@@ -19,6 +19,7 @@ interface TaskBuilder {
     fun addPullFileTask(
         id: Long,
         remotePasteDataId: Long,
+        seenAppInstanceIds: Set<String> = emptySet(),
     ): TaskBuilder
 
     fun addSyncTask(
@@ -31,6 +32,7 @@ interface TaskBuilder {
     fun addRelaySyncTask(
         id: Long,
         appInstanceId: String,
+        seenAppInstanceIds: Set<String> = emptySet(),
     ): TaskBuilder
 
     fun addPullIconTask(
