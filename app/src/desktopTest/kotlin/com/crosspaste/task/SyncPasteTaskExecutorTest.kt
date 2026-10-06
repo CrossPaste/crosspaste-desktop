@@ -782,4 +782,43 @@ class SyncPasteTaskExecutorTest {
                 )
             }
         }
+
+    @Test
+    fun doExecuteTask_relay_extensionSource_relaysToConnectedPeersWithoutHostInfo() =
+        runTest {
+            val deps = TestDeps()
+            val executor = deps.createExecutor()
+            val task =
+                createPasteTask(
+                    extraInfo = SyncExtraInfo(appInstanceId = "extension-source"),
+                )
+            val extensionHandler = createMockSyncHandler("extension-source", connectHostAddress = null)
+            val extensionInfo =
+                extensionHandler.currentSyncRuntimeInfo.copy(
+                    platform = SyncTestFixtures.TEST_PLATFORM.copy(name = Platform.CHROME_EXTENSION),
+                )
+            every { extensionHandler.currentSyncRuntimeInfo } returns extensionInfo
+            coEvery { extensionHandler.getConnectHostInfo() } returns null
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns createMockPasteData()
+            coEvery { deps.syncManager.getSyncHandler("extension-source") } returns extensionHandler
+            coEvery { deps.syncManager.getSyncHandlers() } returns
+                mapOf(
+                    "extension-source" to extensionHandler,
+                    "remote-target" to createMockSyncHandler("remote-target", connectHostAddress = "192.168.1.100"),
+                )
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns SuccessResult()
+
+            executor.doExecuteTask(task)
+
+            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), eq("extension-source"), any(), any()) }
+            coVerify(exactly = 1) {
+                deps.pasteClientApi.sendPaste(
+                    any(),
+                    eq("remote-target"),
+                    eq(setOf("extension-source", "local-app-1", "remote-target")),
+                    any(),
+                )
+            }
+        }
 }

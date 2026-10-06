@@ -61,6 +61,11 @@ class DesktopTaskBuilder(
     override fun addPullFileTask(
         id: Long,
         remotePasteDataId: Long,
+    ): TaskBuilder = addPullFileTask(id, remotePasteDataId, emptySet())
+
+    override fun addPullFileTask(
+        id: Long,
+        remotePasteDataId: Long,
         seenAppInstanceIds: Set<String>,
     ): TaskBuilder {
         taskIds.add(
@@ -90,6 +95,11 @@ class DesktopTaskBuilder(
         }
         return this
     }
+
+    override fun addRelaySyncTask(
+        id: Long,
+        appInstanceId: String,
+    ): TaskBuilder = addRelaySyncTask(id, appInstanceId, emptySet())
 
     override fun addRelaySyncTask(
         id: Long,

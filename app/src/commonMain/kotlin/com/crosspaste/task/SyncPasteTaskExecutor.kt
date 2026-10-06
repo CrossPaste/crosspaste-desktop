@@ -151,26 +151,33 @@ class SyncPasteTaskExecutor(
             }
         } else {
             syncManager.getSyncHandler(syncExtraInfo.appInstanceId)?.let { handler ->
-                handler.getConnectHostInfo()?.let { connectHostInfo ->
-                    syncManager.getSyncHandlers().filter { (key, handler) ->
+                val sourceIsExtension = handler.currentSyncRuntimeInfo.platform.isExtension()
+                val connectHostInfo = handler.getConnectHostInfo()
+                if (sourceIsExtension || connectHostInfo != null) {
+                    syncManager.getSyncHandlers().filter { (key, targetHandler) ->
                         if (key != syncExtraInfo.appInstanceId && key !in syncExtraInfo.seenAppInstanceIds) {
                             val isEligible =
-                                handler.currentSyncRuntimeInfo.allowSend &&
-                                    handler.currentSyncRuntimeInfo.connectState == SyncState.CONNECTED &&
-                                    handler.currentVersionRelation == VersionRelation.EQUAL_TO
+                                targetHandler.currentSyncRuntimeInfo.allowSend &&
+                                    targetHandler.currentSyncRuntimeInfo.connectState == SyncState.CONNECTED &&
+                                    targetHandler.currentVersionRelation == VersionRelation.EQUAL_TO
                             if (!isEligible) {
                                 false
-                            } else if (handler.currentSyncRuntimeInfo.platform.isExtension()) {
+                            } else if (
+                                sourceIsExtension ||
+                                targetHandler.currentSyncRuntimeInfo.platform.isExtension()
+                            ) {
                                 // Extension devices use WebSocket — no host address to filter
                                 true
                             } else {
-                                val address = handler.getConnectHostAddress()
-                                address != null && !connectHostInfo.filter(address)
+                                val address = targetHandler.getConnectHostAddress()
+                                address != null && connectHostInfo != null && !connectHostInfo.filter(address)
                             }
                         } else {
                             false
                         }
                     }
+                } else {
+                    mapOf()
                 }
             } ?: mapOf()
         }
