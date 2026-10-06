@@ -70,13 +70,8 @@ class DesktopConfigManager(
         keys: List<String>,
         values: List<Any>,
     ) {
-        require(keys.size == values.size)
         val oldConfig = _config.value
-        var newConfig = oldConfig
-        for (i in keys.indices) {
-            newConfig = newConfig.copy(key = keys[i], value = values[i])
-        }
-        _config.value = newConfig
+        _config.value = applyChanges(oldConfig, keys, values)
         if (saveBlocked) {
             logger.warn { "Not saving config change to $keys: app config could not be read at startup" }
             return
@@ -93,6 +88,35 @@ class DesktopConfigManager(
             }
             _config.value = oldConfig
         }
+    }
+
+    /**
+     * Like [updateConfig], but for a change that must reach disk before the caller
+     * goes on (e.g. a storage migration deleting the old data): on any failure the
+     * config is left unchanged and the error is thrown instead of only notified.
+     */
+    @Synchronized
+    fun updateConfigDurably(
+        keys: List<String>,
+        values: List<Any>,
+    ) {
+        check(!saveBlocked) { "App config could not be read at startup, refusing to save over it" }
+        val newConfig = applyChanges(_config.value, keys, values)
+        saveConfig(newConfig)
+        _config.value = newConfig
+    }
+
+    private fun applyChanges(
+        config: DesktopAppConfig,
+        keys: List<String>,
+        values: List<Any>,
+    ): DesktopAppConfig {
+        require(keys.size == values.size)
+        var newConfig = config
+        for (i in keys.indices) {
+            newConfig = newConfig.copy(key = keys[i], value = values[i])
+        }
+        return newConfig
     }
 
     fun saveConfig(config: DesktopAppConfig) {
