@@ -43,6 +43,8 @@ import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.ioDispatcher
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import java.awt.image.BufferedImage
 
@@ -94,11 +96,11 @@ fun PasteDataScope.ImageSidePreviewView() {
         }
 
     val intSize by produceState<IntSize?>(initialValue = null, key1 = imagePath) {
-        value = imageHandler.readSize(imagePath)
+        value = withContext(ioDispatcher) { imageHandler.readSize(imagePath) }
     }
 
     val fileSize by produceState(initialValue = 0L, key1 = imagePath) {
-        value = fileUtils.getFileSize(imagePath)
+        value = withContext(ioDispatcher) { fileUtils.getFileSize(imagePath) }
     }
 
     val fileFormat = remember(imagePath) { imagePath.extension }
