@@ -40,7 +40,10 @@ import androidx.compose.ui.window.FrameWindowScope
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteDataHelper
+import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.getIconData
+import com.crosspaste.paste.item.HtmlPasteItem
+import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.NotificationHost
 import com.crosspaste.ui.base.AppSourceIcon
@@ -58,8 +61,10 @@ import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.zeroRoundedCornerShape
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
+import com.crosspaste.utils.cpuDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -194,20 +199,11 @@ private fun PastePanelRow(
     onClick: () -> Unit,
 ) {
     val copywriter = koinInject<GlobalCopywriter>()
-    val pasteDataHelper = koinInject<PasteDataHelper>()
 
     val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val typeName = copywriter.getText(pasteData.getTypeName())
-    val title =
-        remember(pasteData.id, pasteData.hash, pasteData.pasteState, typeName) {
-            pasteData.pasteAppearItem?.getUserEditName()
-                ?: pasteDataHelper
-                    .getSummary(pasteData, typeName, typeName)
-                    .replace(WHITESPACE_RUN, " ")
-                    .trim()
-                    .ifEmpty { typeName }
-        }
+    val title = rememberRowTitle(pasteData, typeName)
 
     val rowBackground =
         if (highlighted) {
@@ -268,6 +264,45 @@ private fun PastePanelRowIcon(pasteData: PasteData) {
     } else {
         Box(modifier = Modifier.size(xLarge), contentAlignment = Alignment.Center) {
             typeIcon()
+        }
+    }
+}
+
+/**
+ * The summary of an HTML or RTF item needs a full parse of the document,
+ * a few hundred milliseconds for a 1 MB web page, so it is built off the
+ * UI thread. Every other summary is cheap and stays inline.
+ */
+@Composable
+private fun rememberRowTitle(
+    pasteData: PasteData,
+    typeName: String,
+): String {
+    val pasteDataHelper = koinInject<PasteDataHelper>()
+    val appearItem = pasteData.pasteAppearItem
+
+    appearItem?.getUserEditName()?.let { return it }
+
+    fun buildSummary(): String =
+        pasteDataHelper
+            .getSummary(pasteData, typeName, typeName)
+            .replace(WHITESPACE_RUN, " ")
+            .trim()
+            .ifEmpty { typeName }
+
+    val parsesMarkup =
+        pasteData.pasteState != PasteState.LOADING &&
+            (appearItem is HtmlPasteItem || appearItem is RtfPasteItem)
+
+    return if (parsesMarkup) {
+        var summary by remember(pasteData.id) { mutableStateOf("") }
+        LaunchedEffect(pasteData.id, pasteData.hash, typeName) {
+            summary = withContext(cpuDispatcher) { buildSummary() }
+        }
+        summary
+    } else {
+        remember(pasteData.id, pasteData.hash, pasteData.pasteState, typeName) {
+            buildSummary()
         }
     }
 }

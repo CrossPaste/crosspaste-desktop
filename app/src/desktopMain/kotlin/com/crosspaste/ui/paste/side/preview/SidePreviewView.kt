@@ -6,6 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.HtmlPasteItem
+import com.crosspaste.paste.item.RtfPasteItem
 import com.crosspaste.ui.paste.PasteDataScope
 
 @Composable
@@ -21,8 +23,14 @@ fun PasteDataScope.SidePreviewView(
                 PasteType.TEXT_TYPE -> TextSidePreviewView()
                 PasteType.COLOR_TYPE -> ColorSidePreviewView()
                 PasteType.URL_TYPE -> UrlSidePreviewView()
-                PasteType.HTML_TYPE -> HtmlSidePreviewView()
-                PasteType.RTF_TYPE -> RtfSidePreviewView()
+                PasteType.HTML_TYPE ->
+                    getPasteItem(HtmlPasteItem::class).let {
+                        RichTextSidePreviewView(it, it.getBackgroundColor())
+                    }
+                PasteType.RTF_TYPE ->
+                    getPasteItem(RtfPasteItem::class).let {
+                        RichTextSidePreviewView(it, it.getBackgroundColor())
+                    }
                 PasteType.IMAGE_TYPE -> ImageSidePreviewView()
                 PasteType.FILE_TYPE -> FilesSidePreviewView()
             }
