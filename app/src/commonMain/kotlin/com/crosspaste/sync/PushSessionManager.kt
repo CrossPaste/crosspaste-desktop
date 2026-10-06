@@ -3,6 +3,8 @@ package com.crosspaste.sync
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteboardService
+import com.crosspaste.paste.deleteUnfinishedReceiveFiles
+import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.crosspaste.utils.ioDispatcher
@@ -167,6 +169,7 @@ internal sealed interface PushCompletionResult {
 class PushSessionManager(
     private val pasteDao: PasteDao,
     private val pasteboardService: PasteboardService,
+    private val userDataPathProvider: UserDataPathProvider,
     private val maxActive: Int = DEFAULT_MAX_ACTIVE,
     private val sessionTtl: Duration = DEFAULT_SESSION_TTL,
     private val sweepInterval: Duration = DEFAULT_SWEEP_INTERVAL,
@@ -403,6 +406,7 @@ class PushSessionManager(
                 // resolved this session waits on the terminal lock and then
                 // observes the discard instead of a stale success.
                 try {
+                    deleteUnfinishedReceiveFiles(pasteDao, userDataPathProvider, session.pasteId)
                     pasteDao.markDeletePasteData(session.pasteId).getOrThrow()
                 } catch (e: CancellationException) {
                     throw e

@@ -118,6 +118,22 @@ class UserDataPathProvider(
         return renameMap
     }
 
+    /**
+     * Deletes the files a receive pre-allocated outside managed storage (the large-file
+     * destination). The delete pipeline leaves files under a [PasteFiles.basePath]
+     * alone, because a local paste uses one to reference files the user owns; a
+     * received row only gets a basePath for slots CrossPaste created itself, so
+     * whoever discards that row before it completes has to reclaim them.
+     */
+    fun deleteReceivedFilesOutsideStorage(pasteData: PasteData) {
+        pasteData
+            .getPasteAppearItems()
+            .filterIsInstance<PasteFiles>()
+            .filter { it.basePath != null }
+            .flatMap { it.getFilePaths(this) }
+            .forEach { fileUtils.deleteFile(it) }
+    }
+
     fun validateReceivePaths(
         appInstanceId: String,
         pasteFiles: PasteFiles,

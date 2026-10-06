@@ -46,6 +46,25 @@ data class PushPrepareResult(
     val chunkCount: Int get() = filesIndex.getChunkCount()
 }
 
+private val unfinishedReceiveLogger = KotlinLogging.logger {}
+
+/**
+ * Deletes the large-file-destination slots of a receive that never completed. Only a
+ * LOADING row qualifies, so a finished file is never touched. A failure is logged, not
+ * thrown: cleanup trouble must not keep the caller from discarding the row.
+ */
+internal suspend fun deleteUnfinishedReceiveFiles(
+    pasteDao: PasteDao,
+    userDataPathProvider: UserDataPathProvider,
+    pasteId: Long,
+) {
+    runCatching {
+        pasteDao.getLoadingPasteData(pasteId)?.let(userDataPathProvider::deleteReceivedFilesOutsideStorage)
+    }.onFailure { e ->
+        unfinishedReceiveLogger.warn(e) { "Failed to delete unfinished receive files of pasteId=$pasteId" }
+    }
+}
+
 class PasteReleaseService(
     private val commonConfigManager: CommonConfigManager,
     private val currentPaste: CurrentPaste,
@@ -584,6 +603,8 @@ class PasteReleaseService(
                     buildFilesIndexForReceive(newPasteData, userDataPathProvider, FilePullService.CHUNK_SIZE)
                 if (filesIndex.getChunkCount() <= 0) {
                     logger.warn { "releaseRemotePasteDataForPush: empty filesIndex for pasteId=$id" }
+                    // The slots exist under their renamed names, which the row does not hold yet
+                    userDataPathProvider.deleteReceivedFilesOutsideStorage(newPasteData.applyRenameMap(renameMap))
                     pasteDao.markDeletePasteData(id)
                     return@runCatching null
                 }
@@ -610,11 +631,12 @@ class PasteReleaseService(
      * Rolls back a successful [releaseRemotePasteDataForPush] whose prepared
      * paste could not be attached to a push session. Mirrors the session-expiry path in
      * [com.crosspaste.sync.PushSessionManager.sweepExpired]: marking the
-     * LOADING row deleted lets the regular delete pipeline reclaim the
-     * preallocated file slots.
+     * LOADING row deleted lets the regular delete pipeline reclaim slots in
+     * managed storage; slots in the large-file destination are deleted here.
      */
     suspend fun discardPushPrepared(pasteId: Long): Result<Unit> =
         withContext(NonCancellable) {
+            deleteUnfinishedReceiveFiles(pasteDao, userDataPathProvider, pasteId)
             var lastFailure: Throwable? = null
             repeat(DISCARD_PUSH_PREPARED_ATTEMPTS) { attempt ->
                 val result = pasteDao.markDeletePasteData(pasteId)

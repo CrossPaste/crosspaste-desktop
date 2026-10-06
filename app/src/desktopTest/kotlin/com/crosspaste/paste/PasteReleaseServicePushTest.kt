@@ -28,6 +28,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -422,6 +423,61 @@ class PasteReleaseServicePushTest {
         assertTrue(expectedFile.parentFile.isDirectory, "parent directory must exist")
         assertTrue(expectedFile.isFile, "file slot must be pre-allocated")
         assertEquals(fileSize, expectedFile.length(), "pre-allocated slot must have the expected length")
+    }
+
+    /**
+     * Prepares a push into [destination], where a user file `big.apk` already exists, so
+     * the slot is pre-allocated as `big(1).apk`. Returns the service and the row as stored.
+     */
+    private suspend fun preparePushNextToUserFile(
+        tempDir: File,
+        destination: File,
+        pasteDao: PasteDao,
+    ): Pair<PasteReleaseService, PasteData> {
+        File(destination, "big.apk").writeText("existing-file")
+        val updates = mutableListOf<PasteData>()
+        coEvery { pasteDao.createPasteData(any(), any()) } returns 7L
+        coEvery { pasteDao.updateFilePath(capture(updates)) } returns Unit
+        val service =
+            newService(
+                pasteDao = pasteDao,
+                commonConfigManager = defaultConfigManager(destination.absolutePath),
+                userDataPathProvider = realPathProvider(File(tempDir, "storage").also { it.mkdirs() }),
+            )
+        assertNotNull(service.releaseRemotePasteDataForPush(oversizedFilePasteData("big.apk")))
+        assertTrue(File(destination, "big(1).apk").isFile)
+        return service to updates.last()
+    }
+
+    @Test
+    fun discardPushPrepared_deletesSlotsInLargeFileDestinationButNotUserFiles(
+        @TempDir tempDir: File,
+    ) = runBlocking {
+        val destination = File(tempDir, "big-files").also { it.mkdirs() }
+        val pasteDao = mockk<PasteDao>(relaxed = true)
+        val (service, stored) = preparePushNextToUserFile(tempDir, destination, pasteDao)
+        coEvery { pasteDao.getLoadingPasteData(7L) } returns stored
+
+        assertTrue(service.discardPushPrepared(7L).isSuccess)
+
+        assertFalse(File(destination, "big(1).apk").exists(), "pre-allocated slot must be deleted")
+        assertEquals("existing-file", File(destination, "big.apk").readText())
+        coVerify(exactly = 1) { pasteDao.markDeletePasteData(7L) }
+    }
+
+    @Test
+    fun discardPushPrepared_leavesFilesOfAFinishedReceive(
+        @TempDir tempDir: File,
+    ) = runBlocking {
+        val destination = File(tempDir, "big-files").also { it.mkdirs() }
+        val pasteDao = mockk<PasteDao>(relaxed = true)
+        val (service, _) = preparePushNextToUserFile(tempDir, destination, pasteDao)
+        // The row is no longer LOADING
+        coEvery { pasteDao.getLoadingPasteData(7L) } returns null
+
+        assertTrue(service.discardPushPrepared(7L).isSuccess)
+
+        assertTrue(File(destination, "big(1).apk").isFile)
     }
 
     @Test
