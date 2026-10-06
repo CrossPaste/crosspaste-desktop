@@ -182,7 +182,8 @@ class PasteImportService(
             pasteDao.updatePasteState(id, PasteState.LOADED)
         }.onFailure { e ->
             logger.error(e) { "Error importing paste data, index = $index" }
-            recordId?.let { runCatching { pasteDao.updatePasteState(it, PasteState.DELETED) } }
+            // A delete task, not a bare state change, so the files moved in so far are reclaimed
+            recordId?.let { pasteDao.markDeletePasteData(it) }
         }.isSuccess
     }
 
@@ -200,7 +201,8 @@ class PasteImportService(
         for (filePath in pasteFiles.getFilePaths(userDataPathProvider)) {
             val importFilePath = path.resolve(filePath.name)
             userDataPathProvider.autoCreateDir(filePath.noOptionParent)
-            fileUtils.moveFile(importFilePath, filePath)
+            // A record without its file is not imported, it is failed and reclaimed
+            fileUtils.moveFile(importFilePath, filePath).getOrThrow()
         }
     }
 

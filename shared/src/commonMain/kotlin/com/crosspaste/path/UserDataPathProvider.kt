@@ -2,6 +2,7 @@ package com.crosspaste.path
 
 import com.crosspaste.app.AppFileType
 import com.crosspaste.config.CommonConfigManager
+import com.crosspaste.config.isInside
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.paste.PasteData
@@ -30,13 +31,29 @@ class UserDataPathProvider(
         fileName: String?,
         appFileType: AppFileType,
     ): Path =
-        resolve(fileName, appFileType) {
+        resolve(fileName, appFileType, autoCreate = true) {
+            getUserDataPath()
+        }
+
+    fun resolve(
+        fileName: String? = null,
+        appFileType: AppFileType,
+        autoCreate: Boolean,
+    ): Path =
+        resolve(fileName, appFileType, autoCreate) {
             getUserDataPath()
         }
 
     fun resolve(
         fileName: String?,
         appFileType: AppFileType,
+        getBasePath: () -> Path,
+    ): Path = resolve(fileName, appFileType, autoCreate = true, getBasePath)
+
+    fun resolve(
+        fileName: String?,
+        appFileType: AppFileType,
+        autoCreate: Boolean,
         getBasePath: () -> Path,
     ): Path {
         val basePath = getBasePath()
@@ -57,7 +74,9 @@ class UserDataPathProvider(
                 else -> basePath
             }
 
-        autoCreateDir(path)
+        if (autoCreate) {
+            autoCreateDir(path)
+        }
 
         return fileName?.let {
             path.resolve(fileName)
@@ -116,6 +135,54 @@ class UserDataPathProvider(
         }
 
         return renameMap
+    }
+
+    /**
+     * Deletes the managed-storage directories a paste owns: `<appInstanceId>/<date>/<id>`
+     * under each root that lays files out per paste. Paste ids are AUTOINCREMENT, so such
+     * a directory never holds another paste's files. This reclaims what deleting the
+     * listed files leaves behind: files of a copy that failed partway (its row still
+     * holds placeholder items), the FILE-side directory of files moved to IMAGE, and
+     * derived files older versions wrote next to an image.
+     *
+     * Only for deleting a whole paste: a plugin dropping one item must not take the
+     * directory its sibling items live in.
+     */
+    fun deletePasteDirectories(pasteData: PasteData) {
+        if (pasteData.id <= 0) return
+        val id = pasteData.id.toString()
+        val coordinateDir =
+            fileUtils
+                .createPasteRelativePath(pasteData.getPasteCoordinate(), "_")
+                .toPath()
+                .parent
+        // The date in stored paths can differ from the coordinate's (updateCreateTime)
+        val storedDirs =
+            pasteData
+                .getPasteAppearItems()
+                .filterIsInstance<PasteFiles>()
+                .filter { it.basePath == null }
+                .flatMap { it.relativePathList }
+                .map { it.toPath().segments }
+                .filter { it.size > 3 && it[2] == id }
+                .map { it.take(3).joinToString("/").toPath() }
+        val pasteDirs = (listOfNotNull(coordinateDir) + storedDirs).distinct()
+        for (appFileType in PASTE_DIRECTORY_FILE_TYPES) {
+            val root = resolve(appFileType = appFileType, autoCreate = false)
+            if (!fileUtils.existFile(root)) continue
+            for (pasteDir in pasteDirs) {
+                if (pasteDir.segments.any { it == ".." || it == "." }) continue
+                val targetDir = root.resolve(pasteDir)
+                if (!fileUtils.existFile(targetDir)) continue
+                if (isInside(targetDir, root)) {
+                    runCatching {
+                        fileUtils.fileSystem.deleteRecursively(targetDir, mustExist = false)
+                    }.onFailure { e ->
+                        logger.warn(e) { "Failed to delete paste directory $pasteDir under $appFileType" }
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -270,4 +337,8 @@ class UserDataPathProvider(
         } else {
             configManager.getCurrentConfig().storagePath.toPath(normalize = true)
         }
+
+    private companion object {
+        val PASTE_DIRECTORY_FILE_TYPES = listOf(AppFileType.FILE, AppFileType.IMAGE, AppFileType.OPEN_GRAPH)
+    }
 }

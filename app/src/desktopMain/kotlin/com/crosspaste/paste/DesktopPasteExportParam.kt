@@ -18,4 +18,8 @@ class DesktopPasteExportParam(
         val targetZipFile = exportPath.resolve(fileName)
         return fileUtils.fileSystem.sink(targetZipFile).buffer()
     }
+
+    override fun discardExport(fileName: String) {
+        fileUtils.fileSystem.delete(exportPath.resolve(fileName), mustExist = false)
+    }
 }

@@ -490,6 +490,121 @@ class PasteExportImportServiceTest {
         assertEquals("hello", imported.readText())
     }
 
+    @Test
+    fun `import of a record whose file is missing fails it and reclaims the row`() {
+        val tempDir = Files.createTempDirectory("import-missing-file-test").toFile()
+        tempDir.deleteOnExit()
+        val pasteDao = mockk<PasteDao>(relaxed = true)
+        coEvery { pasteDao.createPasteData(any()) } returns 42L
+
+        val result =
+            importArchive(
+                tempDir = tempDir,
+                pasteDao = pasteDao,
+                pasteData = createFilesPasteData("remote-app", "a.txt"),
+            )
+
+        assertEquals(PasteImportResult.Completed(0, 1), result)
+        // Through a delete task, not a bare state change that nothing ever reclaims
+        coVerify(exactly = 1) { pasteDao.markDeletePasteData(42L) }
+        coVerify(exactly = 0) { pasteDao.updatePasteState(42L, PasteState.DELETED) }
+        coVerify(exactly = 0) { pasteDao.updatePasteState(42L, PasteState.LOADED) }
+    }
+
+    private fun runExport(
+        tempDir: File,
+        pastes: List<PasteData>,
+        exportParam: PasteExportParam,
+    ): Float {
+        val pasteDao = mockk<PasteDao>()
+        coEvery { pasteDao.getExportNum(any()) } returns pastes.size.toLong()
+        coEvery { pasteDao.batchReadPasteData(any(), any(), any()) } coAnswers {
+            val dealPasteData = thirdArg<(PasteData) -> Unit>()
+            pastes.forEach(dealPasteData)
+            pastes.size.toLong()
+        }
+        val userDataPathProvider = mockk<UserDataPathProvider>(relaxed = true)
+        every { userDataPathProvider.resolve(appFileType = AppFileType.TEMP) } returns
+            File(tempDir, "temp").toOkioPath()
+        every { userDataPathProvider.autoCreateDir(any()) } answers { firstArg<okio.Path>().toFile().mkdirs() }
+
+        val done = CompletableDeferred<Float>()
+        PasteExportService(mockk(relaxed = true), pasteDao, userDataPathProvider).export(exportParam) { progress ->
+            if (progress == 1f || progress < 0f) done.complete(progress)
+        }
+        return runBlocking { withTimeout(10.seconds) { done.await() } }
+    }
+
+    @Test
+    fun `export leaves out a paste whose files are over the size limit`() {
+        val tempDir = Files.createTempDirectory("export-oversized-test").toFile()
+        tempDir.deleteOnExit()
+        val exportDir = File(tempDir, "output").also { it.mkdirs() }
+        val text = createPasteDataForType(PasteType.TEXT_TYPE, createTextPasteItem(text = "kept"))
+        val bigFile =
+            createFilesPasteData("remote-app", "big.bin").let { pasteData ->
+                pasteData.copy(
+                    pasteAppearItem =
+                        createFilesPasteItem(
+                            relativePathList = listOf("big.bin"),
+                            fileInfoTreeMap = mapOf("big.bin" to SingleFileInfoTree(size = 100, hash = "h")),
+                        ),
+                )
+            }
+
+        val progress =
+            runExport(
+                tempDir,
+                listOf(text, bigFile),
+                DesktopPasteExportParam(
+                    types = PasteType.TYPES.map { it.type.toLong() }.toSet(),
+                    onlyTagged = false,
+                    maxFileSize = 10,
+                    exportPath = exportDir.toOkioPath(),
+                ),
+            )
+
+        assertEquals(1f, progress)
+        val verifyDir = File(tempDir, "verify").also { it.mkdirs() }
+        exportDir.listFiles()!!.single().inputStream().source().buffer().use { source ->
+            assertTrue(compressUtils.unzip(source, verifyDir.toOkioPath()).isSuccess)
+        }
+        assertEquals(1, File(verifyDir, "paste.data").readLines().count { it.isNotBlank() })
+        assertTrue(File(verifyDir, "1.count").exists())
+    }
+
+    @Test
+    fun `failed compression removes the half written package`() {
+        val tempDir = Files.createTempDirectory("export-truncated-test").toFile()
+        tempDir.deleteOnExit()
+        val discarded = mutableListOf<String>()
+        val exportParam =
+            object : PasteExportParam(PasteType.TYPES.map { it.type.toLong() }.toSet(), false, null) {
+                override fun exportBufferedSink(fileName: String): okio.BufferedSink =
+                    object : okio.Sink by okio.blackholeSink() {
+                        override fun write(
+                            source: okio.Buffer,
+                            byteCount: Long,
+                        ): Unit = throw java.io.IOException("disk full")
+                    }.buffer()
+
+                override fun discardExport(fileName: String) {
+                    discarded += fileName
+                }
+            }
+
+        val progress =
+            runExport(
+                tempDir,
+                listOf(createPasteDataForType(PasteType.TEXT_TYPE, createTextPasteItem(text = "x"))),
+                exportParam,
+            )
+
+        assertEquals(-1f, progress)
+        assertEquals(1, discarded.size)
+        assertTrue(discarded.single().startsWith("crosspaste-export-"))
+    }
+
     private fun createFilesPasteData(
         appInstanceId: String,
         fileName: String,

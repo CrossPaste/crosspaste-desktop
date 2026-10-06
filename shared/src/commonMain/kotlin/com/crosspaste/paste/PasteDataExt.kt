@@ -16,4 +16,5 @@ fun PasteData.clear(userDataPathProvider: UserDataPathProvider) {
     pasteCollection.clear(
         userDataPathProvider = userDataPathProvider,
     )
+    userDataPathProvider.deletePasteDirectories(this)
 }
