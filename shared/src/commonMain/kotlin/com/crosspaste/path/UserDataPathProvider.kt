@@ -119,6 +119,48 @@ class UserDataPathProvider(
     }
 
     /**
+     * Deletes the managed-storage directories a paste owns: `<appInstanceId>/<date>/<id>`
+     * under each root that lays files out per paste. Paste ids are AUTOINCREMENT, so such
+     * a directory never holds another paste's files. This reclaims what deleting the
+     * listed files leaves behind: files of a copy that failed partway (its row still
+     * holds placeholder items), the FILE-side directory of files moved to IMAGE, and
+     * derived files older versions wrote next to an image.
+     *
+     * Only for deleting a whole paste: a plugin dropping one item must not take the
+     * directory its sibling items live in.
+     */
+    fun deletePasteDirectories(pasteData: PasteData) {
+        if (pasteData.id <= 0) return
+        val id = pasteData.id.toString()
+        val coordinateDir =
+            fileUtils
+                .createPasteRelativePath(pasteData.getPasteCoordinate(), "_")
+                .toPath()
+                .parent
+        // The date in stored paths can differ from the coordinate's (updateCreateTime)
+        val storedDirs =
+            pasteData
+                .getPasteAppearItems()
+                .filterIsInstance<PasteFiles>()
+                .filter { it.basePath == null }
+                .flatMap { it.relativePathList }
+                .map { it.toPath().segments }
+                .filter { it.size > 3 && it[2] == id }
+                .map { it.take(3).joinToString("/").toPath() }
+        val pasteDirs = (listOfNotNull(coordinateDir) + storedDirs).distinct()
+        for (appFileType in PASTE_DIRECTORY_FILE_TYPES) {
+            val root = resolve(appFileType = appFileType)
+            for (pasteDir in pasteDirs) {
+                runCatching {
+                    fileUtils.fileSystem.deleteRecursively(root.resolve(pasteDir), mustExist = false)
+                }.onFailure { e ->
+                    logger.warn(e) { "Failed to delete paste directory $pasteDir under $appFileType" }
+                }
+            }
+        }
+    }
+
+    /**
      * Deletes the files a receive pre-allocated outside managed storage (the large-file
      * destination). The delete pipeline leaves files under a [PasteFiles.basePath]
      * alone, because a local paste uses one to reference files the user owns; a
@@ -270,4 +312,8 @@ class UserDataPathProvider(
         } else {
             configManager.getCurrentConfig().storagePath.toPath(normalize = true)
         }
+
+    private companion object {
+        val PASTE_DIRECTORY_FILE_TYPES = listOf(AppFileType.FILE, AppFileType.IMAGE, AppFileType.OPEN_GRAPH)
+    }
 }

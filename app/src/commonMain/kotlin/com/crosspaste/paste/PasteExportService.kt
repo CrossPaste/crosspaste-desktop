@@ -144,18 +144,22 @@ class PasteExportService(
         sink: BufferedSink,
     ): Long =
         runCatching {
-            val pasteFilesList =
-                pasteData
-                    .getPasteAppearItems()
-                    .filterIsInstance<PasteFiles>()
-                    .filter { pasteFiles ->
-                        pasteExportParam.maxFileSize?.let { maxSize ->
-                            pasteFiles.size <= maxSize
-                        } != false
-                    }
+            val pasteFilesList = pasteData.getPasteAppearItems().filterIsInstance<PasteFiles>()
+            // A record whose files are not in the package cannot be imported, so a paste
+            // over the size limit is left out whole rather than exported without its files
+            val maxFileSize = pasteExportParam.maxFileSize
+            if (maxFileSize != null && pasteFilesList.any { it.size > maxFileSize }) {
+                return 0L
+            }
 
-            for (pasteFiles in pasteFilesList) {
-                copyResource(basePath, index, pasteData, pasteFiles)
+            try {
+                for (pasteFiles in pasteFilesList) {
+                    copyResource(basePath, index, pasteData, pasteFiles)
+                }
+            } catch (e: Exception) {
+                // The next paste reuses this index, so do not leave these files for it
+                fileUtils.fileSystem.deleteRecursively(resourceDir(basePath, index, pasteData), mustExist = false)
+                throw e
             }
 
             val json = pasteData.toStoredJson()
@@ -168,21 +172,27 @@ class PasteExportService(
             0L
         }
 
+    private fun resourceDir(
+        basePath: Path,
+        index: Long,
+        pasteData: PasteData,
+    ): Path =
+        basePath
+            .resolve(pasteData.appInstanceId)
+            .resolve(index.toString())
+
     private fun copyResource(
         basePath: Path,
         index: Long,
         pasteData: PasteData,
         pasteFiles: PasteFiles,
     ) {
-        val path =
-            basePath
-                .resolve(pasteData.appInstanceId)
-                .resolve(index.toString())
+        val path = resourceDir(basePath, index, pasteData)
 
         userDataPathProvider.autoCreateDir(path)
 
         for (filePath in pasteFiles.getFilePaths(userDataPathProvider)) {
-            fileUtils.copyPath(filePath, path.resolve(filePath.name))
+            fileUtils.copyPath(filePath, path.resolve(filePath.name)).getOrThrow()
         }
     }
 
@@ -192,18 +202,20 @@ class PasteExportService(
         exportFileName: String,
     ) {
         pasteExportParam.exportBufferedSink(exportFileName)?.let { bufferedSink ->
-            try {
-                compressUtils
-                    .zipDir(basePath, bufferedSink)
-                    .onFailure {
-                        logger.error { "compress export file fail" }
-                        throw PasteException(
-                            StandardErrorCode.EXPORT_FAIL.toErrorCode(),
-                            "compress export file fail",
-                        )
-                    }
-            } finally {
-                runCatching { bufferedSink.close() }
+            val zipResult =
+                try {
+                    compressUtils.zipDir(basePath, bufferedSink)
+                } finally {
+                    runCatching { bufferedSink.close() }
+                }
+            zipResult.onFailure {
+                logger.error { "compress export file fail" }
+                // A truncated package looks like a valid backup but cannot be imported
+                pasteExportParam.discardExport(exportFileName)
+                throw PasteException(
+                    StandardErrorCode.EXPORT_FAIL.toErrorCode(),
+                    "compress export file fail",
+                )
             }
         } ?: run {
             logger.error { "can't write to export output" }

@@ -12,17 +12,12 @@ import com.crosspaste.paste.PasteSyncProcessManager
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.applyRenameMap
-import com.crosspaste.paste.item.getAppFileType
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.FilePullResult
 import com.crosspaste.sync.FilePullService
-import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
-import com.crosspaste.utils.FileUtils
 import com.crosspaste.utils.TaskUtils
-import com.crosspaste.utils.getDateUtils
-import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -38,10 +33,6 @@ class PullFileTaskExecutor(
     companion object PullFileTaskExecutor {
 
         private val logger = KotlinLogging.logger {}
-
-        private val dateUtils: DateUtils = getDateUtils()
-
-        private val fileUtils: FileUtils = getFileUtils()
     }
 
     override val taskType: Int = TaskType.PULL_FILE_TASK
@@ -244,25 +235,7 @@ class PullFileTaskExecutor(
 
     private fun cleanupPullFiles(pasteData: PasteData) {
         runCatching {
-            val managedItems =
-                pasteData
-                    .getPasteAppearItems()
-                    .filterIsInstance<PasteFiles>()
-                    .filter { it.basePath == null }
-            for (pasteFiles in managedItems) {
-                // Managed storage: delete the paste directory
-                val dateString =
-                    dateUtils.getYMD(
-                        dateUtils.epochMillisecondsToLocalDateTime(pasteData.createTime),
-                    )
-                val basePath =
-                    userDataPathProvider
-                        .resolve(appFileType = pasteFiles.getAppFileType())
-                        .resolve(pasteData.appInstanceId)
-                        .resolve(dateString)
-                        .resolve(pasteData.id.toString())
-                fileUtils.fileSystem.deleteRecursively(basePath)
-            }
+            userDataPathProvider.deletePasteDirectories(pasteData)
             userDataPathProvider.deleteReceivedFilesOutsideStorage(pasteData)
         }.onFailure { e ->
             logger.warn(e) { "Failed to clean up pull files" }

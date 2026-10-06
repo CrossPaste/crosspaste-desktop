@@ -10,6 +10,7 @@ import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.extension
 import com.crosspaste.utils.getFileUtils
+import okio.Path
 
 class FilesToImagesPlugin(
     private val userDataPathProvider: UserDataPathProvider,
@@ -34,7 +35,8 @@ class FilesToImagesPlugin(
                 ) {
                     val basePath = pasteAppearItem.basePath
                     if (basePath == null) {
-                        pasteAppearItem.relativePathList.map {
+                        val moved = mutableListOf<Pair<Path, Path>>()
+                        pasteAppearItem.relativePathList.forEach {
                             val srcPath =
                                 userDataPathProvider.resolve(
                                     fileBasePath,
@@ -50,8 +52,11 @@ class FilesToImagesPlugin(
                                     isFile = true,
                                 )
                             if (fileUtils.moveFile(srcPath, destPath).isFailure) {
+                                // The caller keeps the item as it was, so put the moved files back
+                                moved.asReversed().forEach { (from, to) -> fileUtils.moveFile(to, from) }
                                 throw IllegalStateException("Failed to move file from $srcPath to $destPath")
                             }
+                            moved += srcPath to destPath
                         }
                     }
                     val identifiers = pasteAppearItem.identifiers

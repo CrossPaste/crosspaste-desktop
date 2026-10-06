@@ -9,4 +9,7 @@ abstract class PasteExportParam(
 ) {
 
     abstract fun exportBufferedSink(fileName: String): BufferedSink?
+
+    /** Removes the output of a failed export. A no-op by default. */
+    open fun discardExport(fileName: String) {}
 }
