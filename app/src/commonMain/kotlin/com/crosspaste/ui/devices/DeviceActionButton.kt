@@ -1,11 +1,5 @@
 package com.crosspaste.ui.devices
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -16,7 +10,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Link
 import com.composables.icons.materialsymbols.rounded.Refresh
@@ -56,19 +49,6 @@ fun DeviceScope.DeviceActionButton(
             // [connecting] already covers both the manual refresh and the automatic
             // reconnect, so a re-probing device does not look plainly offline.
             val tag = syncStateVisual(connecting).tag
-            val infiniteTransition = rememberInfiniteTransition(label = "RefreshRotation")
-
-            val rotation by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 360f,
-                animationSpec =
-                    infiniteRepeatable(
-                        animation = tween(1000, easing = LinearEasing),
-                        repeatMode = RepeatMode.Restart,
-                    ),
-                label = "RotationAngle",
-            )
-
             GeneralIconButton(
                 imageVector = MaterialSymbols.Rounded.Refresh,
                 desc = "refresh",
@@ -77,10 +57,7 @@ fun DeviceScope.DeviceActionButton(
                         containerColor = tag.containerColor,
                         contentColor = tag.contentColor,
                     ),
-                iconModifier =
-                    Modifier.graphicsLayer {
-                        rotationZ = if (connecting) rotation else 0f
-                    },
+                iconModifier = Modifier.spinWhile(connecting),
             ) {
                 scope.launch {
                     try {
