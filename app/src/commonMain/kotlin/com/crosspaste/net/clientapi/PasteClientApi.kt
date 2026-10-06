@@ -5,6 +5,7 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.exception.standardErrorCodeMap
 import com.crosspaste.net.PasteClient
 import com.crosspaste.paste.PasteData
+import com.crosspaste.sync.RelaySeen
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.body
@@ -21,6 +22,7 @@ class PasteClientApi(
     suspend fun sendPaste(
         pasteData: PasteData,
         targetAppInstanceId: String,
+        seenAppInstanceIds: Set<String>,
         toUrl: URLBuilder.() -> Unit,
     ): ClientApiResult {
         val response =
@@ -30,6 +32,9 @@ class PasteClientApi(
                 timeout = SEND_PASTE_TIMEOUT_MS,
                 headersBuilder = {
                     append("targetAppInstanceId", targetAppInstanceId)
+                    if (seenAppInstanceIds.isNotEmpty()) {
+                        append(RelaySeen.HEADER, RelaySeen.encode(seenAppInstanceIds))
+                    }
                     if (configManager.getCurrentConfig().enableEncryptSync) {
                         append("secure", "1")
                     }

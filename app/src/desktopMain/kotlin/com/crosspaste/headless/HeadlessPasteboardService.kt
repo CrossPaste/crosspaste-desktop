@@ -66,17 +66,29 @@ class HeadlessPasteboardService(
         }
 
     override suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit?> =
-        pasteReleaseService.releaseRemotePasteData(pasteData) {
+        tryWriteRemotePasteboard(pasteData, emptySet())
+
+    override suspend fun tryWriteRemotePasteboard(
+        pasteData: PasteData,
+        seenAppInstanceIds: Set<String>,
+    ): Result<Unit?> =
+        pasteReleaseService.releaseRemotePasteData(pasteData, seenAppInstanceIds) {
             remotePasteboardChannel.trySend {
                 tryWritePasteboard(pasteData = it, localOnly = true)
             }
         }
 
     override suspend fun tryWriteRemotePasteboardList(pasteDataList: List<PasteData>): Result<Unit?> =
-        pasteReleaseService.releaseRemotePasteDataList(pasteDataList, ::tryWriteRemotePasteboard)
+        pasteReleaseService.releaseRemotePasteDataList(pasteDataList) { tryWriteRemotePasteboard(it) }
 
     override suspend fun tryWriteRemotePasteboardWithFile(pasteId: Long): Result<Unit?> =
-        pasteReleaseService.releaseRemotePasteDataWithFile(pasteId) {
+        tryWriteRemotePasteboardWithFile(pasteId, emptySet())
+
+    override suspend fun tryWriteRemotePasteboardWithFile(
+        pasteId: Long,
+        seenAppInstanceIds: Set<String>,
+    ): Result<Unit?> =
+        pasteReleaseService.releaseRemotePasteDataWithFile(pasteId, seenAppInstanceIds) {
             remotePasteboardChannel.trySend {
                 tryWritePasteboard(pasteData = it, localOnly = true)
             }

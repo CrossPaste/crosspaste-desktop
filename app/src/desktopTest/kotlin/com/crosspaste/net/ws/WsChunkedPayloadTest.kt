@@ -29,6 +29,21 @@ class WsChunkedPayloadTest {
     }
 
     @Test
+    fun relaySeen_roundTripsThroughTheHeader() =
+        runTest {
+            val channel = Channel<Frame>(Channel.UNLIMITED)
+            val wsSession = WsSession(sessionOver(channel), "peer", peerSupportsChunkedPayload = true)
+            val seen = setOf("origin", "sibling")
+
+            wsSession.sendEnvelope(
+                WsEnvelope(type = WsMessageType.PASTE_PUSH, payload = byteArrayOf(1), relaySeen = seen),
+            )
+            channel.close()
+
+            assertEquals(seen, receiveWsEnvelope(channel)?.envelope?.relaySeen)
+        }
+
+    @Test
     fun chunkCapablePeer_largePayload_roundTripsAcrossChunks() =
         runTest {
             val channel = Channel<Frame>(Channel.UNLIMITED)

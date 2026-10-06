@@ -8,6 +8,9 @@ import kotlinx.serialization.Serializable
 class PullExtraInfo(
     @SerialName("id")
     val id: Long,
+    // Carried to the relay scheduled once the files have landed
+    @SerialName("seenAppInstanceIds")
+    val seenAppInstanceIds: Set<String> = emptySet(),
 ) : PasteTaskExtraInfo {
 
     @SerialName("executionHistories")

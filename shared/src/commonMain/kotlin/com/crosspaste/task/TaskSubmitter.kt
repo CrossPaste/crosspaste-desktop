@@ -21,6 +21,13 @@ interface TaskBuilder {
         remotePasteDataId: Long,
     ): TaskBuilder
 
+    // Defaults to dropping the set so implementations predating RelaySeen still compile
+    fun addPullFileTask(
+        id: Long,
+        remotePasteDataId: Long,
+        seenAppInstanceIds: Set<String>,
+    ): TaskBuilder = addPullFileTask(id, remotePasteDataId)
+
     fun addSyncTask(
         id: Long,
         fileSize: Long,
@@ -32,6 +39,13 @@ interface TaskBuilder {
         id: Long,
         appInstanceId: String,
     ): TaskBuilder
+
+    // Defaults to dropping the set so implementations predating RelaySeen still compile
+    fun addRelaySyncTask(
+        id: Long,
+        appInstanceId: String,
+        seenAppInstanceIds: Set<String>,
+    ): TaskBuilder = addRelaySyncTask(id, appInstanceId)
 
     fun addPullIconTask(
         id: Long,

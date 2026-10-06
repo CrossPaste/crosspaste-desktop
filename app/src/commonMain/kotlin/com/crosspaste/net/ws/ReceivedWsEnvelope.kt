@@ -1,5 +1,6 @@
 package com.crosspaste.net.ws
 
+import com.crosspaste.sync.RelaySeen
 import com.crosspaste.utils.getJsonUtils
 import io.ktor.websocket.Frame
 import io.ktor.websocket.readBytes
@@ -31,6 +32,7 @@ suspend fun receiveWsEnvelope(incoming: ReceiveChannel<Frame>): ReceivedWsEnvelo
                             payload = payload,
                             encrypted = header.encrypted,
                             requestId = header.requestId,
+                            relaySeen = RelaySeen.decode(header.relaySeen),
                         ),
                 )
             }

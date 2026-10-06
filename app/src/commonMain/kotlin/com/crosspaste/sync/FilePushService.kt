@@ -88,10 +88,11 @@ class FilePushService(
         pasteData: PasteData,
         targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
+        seenAppInstanceIds: Set<String> = emptySet(),
     ): ClientApiResult {
         try {
             // 1. prepare
-            val prepareResult = pushClientApi.preparePush(pasteData, targetAppInstanceId, toUrl)
+            val prepareResult = pushClientApi.preparePush(pasteData, targetAppInstanceId, toUrl, seenAppInstanceIds)
             if (prepareResult !is SuccessResult) {
                 logger.warn { "push preparePush failed for target=$targetAppInstanceId: $prepareResult" }
                 return prepareResult

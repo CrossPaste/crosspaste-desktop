@@ -5,6 +5,7 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.config.AppConfig
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
+import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.db.task.PasteTask
 import com.crosspaste.db.task.PasteTaskExtraInfo
@@ -235,12 +236,12 @@ class SyncPasteTaskExecutorTest {
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns
                 mapOf("remote-1" to handlerAllowed, "remote-2" to handlerNotAllowed)
-            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any()) } returns SuccessResult()
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns SuccessResult()
 
             val result = executor.doExecuteTask(task)
 
             assertTrue(result is SuccessPasteTaskResult)
-            coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any()) }
+            coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any(), any()) }
         }
 
     @Test
@@ -257,12 +258,12 @@ class SyncPasteTaskExecutorTest {
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns
                 mapOf("remote-1" to handlerEqual, "remote-2" to handlerIncompat)
-            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any()) } returns SuccessResult()
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns SuccessResult()
 
             val result = executor.doExecuteTask(task)
 
             assertTrue(result is SuccessPasteTaskResult)
-            coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any()) }
+            coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any(), any()) }
         }
 
     @Test
@@ -281,13 +282,13 @@ class SyncPasteTaskExecutorTest {
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns
                 mapOf("remote-1" to handlerConnected, "remote-2" to handlerStale)
-            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any()) } returns SuccessResult()
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns SuccessResult()
 
             val result = executor.doExecuteTask(task)
 
             assertTrue(result is SuccessPasteTaskResult)
-            coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any()) }
-            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), eq("remote-2"), any()) }
+            coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any(), any()) }
+            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), eq("remote-2"), any(), any()) }
         }
 
     // ========== C. Sync execution ==========
@@ -304,7 +305,7 @@ class SyncPasteTaskExecutorTest {
 
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
-            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any()) } returns SuccessResult()
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns SuccessResult()
 
             val result = executor.doExecuteTask(task)
 
@@ -324,7 +325,7 @@ class SyncPasteTaskExecutorTest {
 
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
-            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any()) } returns
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns
                 FailureResult(PasteException(StandardErrorCode.UNKNOWN_ERROR.toErrorCode(), "test error"))
 
             val result = executor.doExecuteTask(task)
@@ -384,7 +385,7 @@ class SyncPasteTaskExecutorTest {
 
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
-            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any()) } returns
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns
                 FailureResult(
                     PasteException(
                         StandardErrorCode.SYNC_NOT_ALLOW_RECEIVE_BY_APP.toErrorCode(),
@@ -410,7 +411,7 @@ class SyncPasteTaskExecutorTest {
 
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("remote-1" to handler)
-            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any()) } returns
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns
                 FailureResult(
                     PasteException(
                         StandardErrorCode.UNKNOWN_ERROR.toErrorCode(),
@@ -440,14 +441,14 @@ class SyncPasteTaskExecutorTest {
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns
                 mapOf("stale-target" to staleHandler, "transient-target" to transientHandler)
-            coEvery { deps.pasteClientApi.sendPaste(any(), eq("stale-target"), any()) } returns
+            coEvery { deps.pasteClientApi.sendPaste(any(), eq("stale-target"), any(), any()) } returns
                 FailureResult(
                     PasteException(
                         StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode(),
                         "stale identity",
                     ),
                 )
-            coEvery { deps.pasteClientApi.sendPaste(any(), eq("transient-target"), any()) } returns
+            coEvery { deps.pasteClientApi.sendPaste(any(), eq("transient-target"), any(), any()) } returns
                 FailureResult(
                     PasteException(
                         StandardErrorCode.UNKNOWN_ERROR.toErrorCode(),
@@ -478,7 +479,7 @@ class SyncPasteTaskExecutorTest {
 
             coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns pasteData
             coEvery { deps.syncManager.getSyncHandlers() } returns mapOf("stale-target" to staleHandler)
-            coEvery { deps.pasteClientApi.sendPaste(any(), eq("stale-target"), any()) } returns
+            coEvery { deps.pasteClientApi.sendPaste(any(), eq("stale-target"), any(), any()) } returns
                 FailureResult(
                     PasteException(
                         StandardErrorCode.NOT_MATCH_APP_INSTANCE_ID.toErrorCode(),
@@ -569,7 +570,7 @@ class SyncPasteTaskExecutorTest {
 
             val failResult = result as FailurePasteTaskResult
             assertTrue(!failResult.needRetry)
-            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), any(), any()) }
+            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) }
         }
 
     @Test
@@ -710,6 +711,114 @@ class SyncPasteTaskExecutorTest {
             assertTrue(result is FailurePasteTaskResult)
             coVerify(exactly = 1) {
                 deps.wsSessionManager.sendPastePush("remote-1", any(), 1024, WS_MAX_PAYLOAD_SIZE)
+            }
+        }
+
+    // ========== Relay seen set ==========
+
+    @Test
+    fun doExecuteTask_localPaste_sendsEveryCandidateAsSeenEvenOnRetry() =
+        runTest {
+            val deps = TestDeps()
+            val executor = deps.createExecutor()
+            // remote-1 succeeded earlier; only remote-2 is retried
+            val extraInfo = SyncExtraInfo(appInstanceId = "local-app-1")
+            extraInfo.syncFails.add("remote-2")
+            val task = createPasteTask(extraInfo = extraInfo)
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns createMockPasteData()
+            coEvery { deps.syncManager.getSyncHandlers() } returns
+                mapOf(
+                    "remote-1" to createMockSyncHandler("remote-1"),
+                    "remote-2" to createMockSyncHandler("remote-2", connectHostAddress = "192.168.1.101"),
+                )
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns SuccessResult()
+
+            executor.doExecuteTask(task)
+
+            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any(), any()) }
+            coVerify(exactly = 1) {
+                deps.pasteClientApi.sendPaste(
+                    any(),
+                    eq("remote-2"),
+                    eq(setOf("local-app-1", "remote-1", "remote-2")),
+                    any(),
+                )
+            }
+        }
+
+    @Test
+    fun doExecuteTask_relay_skipsSeenDevicesAndPassesGrownSeenSet() =
+        runTest {
+            val deps = TestDeps()
+            val executor = deps.createExecutor()
+            val task =
+                createPasteTask(
+                    extraInfo = SyncExtraInfo(appInstanceId = "source-a", seenAppInstanceIds = setOf("remote-c")),
+                )
+            val source = createMockSyncHandler("source-a", connectHostAddress = "10.0.0.5")
+            coEvery { source.getConnectHostInfo() } returns
+                HostInfo(networkPrefixLength = 24, hostAddress = "10.0.0.5")
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns createMockPasteData()
+            coEvery { deps.syncManager.getSyncHandler("source-a") } returns source
+            coEvery { deps.syncManager.getSyncHandlers() } returns
+                mapOf(
+                    "source-a" to source,
+                    "remote-b" to createMockSyncHandler("remote-b", connectHostAddress = "192.168.1.100"),
+                    "remote-c" to createMockSyncHandler("remote-c", connectHostAddress = "192.168.1.101"),
+                )
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns SuccessResult()
+
+            executor.doExecuteTask(task)
+
+            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), eq("remote-c"), any(), any()) }
+            coVerify(exactly = 1) {
+                deps.pasteClientApi.sendPaste(
+                    any(),
+                    eq("remote-b"),
+                    eq(setOf("remote-c", "source-a", "local-app-1", "remote-b")),
+                    any(),
+                )
+            }
+        }
+
+    @Test
+    fun doExecuteTask_relay_extensionSource_relaysToConnectedPeersWithoutHostInfo() =
+        runTest {
+            val deps = TestDeps()
+            val executor = deps.createExecutor()
+            val task =
+                createPasteTask(
+                    extraInfo = SyncExtraInfo(appInstanceId = "extension-source"),
+                )
+            val extensionHandler = createMockSyncHandler("extension-source", connectHostAddress = null)
+            val extensionInfo =
+                extensionHandler.currentSyncRuntimeInfo.copy(
+                    platform = SyncTestFixtures.TEST_PLATFORM.copy(name = Platform.CHROME_EXTENSION),
+                )
+            every { extensionHandler.currentSyncRuntimeInfo } returns extensionInfo
+            coEvery { extensionHandler.getConnectHostInfo() } returns null
+
+            coEvery { deps.pasteDao.getNoDeletePasteData(any()) } returns createMockPasteData()
+            coEvery { deps.syncManager.getSyncHandler("extension-source") } returns extensionHandler
+            coEvery { deps.syncManager.getSyncHandlers() } returns
+                mapOf(
+                    "extension-source" to extensionHandler,
+                    "remote-target" to createMockSyncHandler("remote-target", connectHostAddress = "192.168.1.100"),
+                )
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns SuccessResult()
+
+            executor.doExecuteTask(task)
+
+            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), eq("extension-source"), any(), any()) }
+            coVerify(exactly = 1) {
+                deps.pasteClientApi.sendPaste(
+                    any(),
+                    eq("remote-target"),
+                    eq(setOf("extension-source", "local-app-1", "remote-target")),
+                    any(),
+                )
             }
         }
 }

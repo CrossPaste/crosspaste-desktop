@@ -8,6 +8,7 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.PasteClient
 import com.crosspaste.net.exception.ExceptionHandler
 import com.crosspaste.paste.PasteData
+import com.crosspaste.sync.RelaySeen
 import com.crosspaste.utils.buildUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.*
@@ -43,6 +44,7 @@ class PushClientApi(
         pasteData: PasteData,
         targetAppInstanceId: String,
         toUrl: URLBuilder.() -> Unit,
+        seenAppInstanceIds: Set<String> = emptySet(),
     ): ClientApiResult =
         request(logger, exceptionHandler, request = {
             pasteClient.post(
@@ -51,6 +53,9 @@ class PushClientApi(
                 headersBuilder = {
                     append("targetAppInstanceId", targetAppInstanceId)
                     append(PushHeaders.SYNC_MODE, PushHeaders.SYNC_MODE_PUSH)
+                    if (seenAppInstanceIds.isNotEmpty()) {
+                        append(RelaySeen.HEADER, RelaySeen.encode(seenAppInstanceIds))
+                    }
                     if (configManager.getCurrentConfig().enableEncryptSync) {
                         append("secure", "1")
                     }

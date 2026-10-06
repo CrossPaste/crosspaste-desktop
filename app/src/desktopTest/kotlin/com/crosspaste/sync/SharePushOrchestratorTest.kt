@@ -67,8 +67,8 @@ class SharePushOrchestratorTest {
             assertTrue(result.perTarget.isEmpty())
             assertFalse(result.allSucceeded, "empty fan-out is not 'all succeeded'")
             assertFalse(result.anySucceeded)
-            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), any(), any()) }
-            coVerify(exactly = 0) { deps.filePushService.pushFiles(any(), any(), any()) }
+            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) }
+            coVerify(exactly = 0) { deps.filePushService.pushFiles(any(), any(), any(), any()) }
         }
 
     @Test
@@ -93,16 +93,16 @@ class SharePushOrchestratorTest {
 
             coEvery { deps.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns
                 listOf(connected, disconnected, connectedButDisallowed, unverified)
-            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any()) } returns SuccessResult()
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns SuccessResult()
 
             val result = deps.create().pushToConnectedPeers(pasteOf(PasteType.TEXT_TYPE))
 
             assertEquals(setOf("remote-1"), result.perTarget.keys)
             assertTrue(result.allSucceeded)
-            coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any()) }
-            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), eq("remote-2"), any()) }
-            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), eq("remote-3"), any()) }
-            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), eq("remote-4"), any()) }
+            coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any(), any()) }
+            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), eq("remote-2"), any(), any()) }
+            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), eq("remote-3"), any(), any()) }
+            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), eq("remote-4"), any(), any()) }
         }
 
     @Test
@@ -111,13 +111,13 @@ class SharePushOrchestratorTest {
             val deps = TestDeps()
             coEvery { deps.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns
                 listOf(createConnectedSyncRuntimeInfo(appInstanceId = "remote-1"))
-            coEvery { deps.filePushService.pushFiles(any(), any(), any()) } returns SuccessResult()
+            coEvery { deps.filePushService.pushFiles(any(), any(), any(), any()) } returns SuccessResult()
 
             val result = deps.create().pushToConnectedPeers(pasteOf(PasteType.FILE_TYPE))
 
             assertTrue(result.allSucceeded)
-            coVerify(exactly = 1) { deps.filePushService.pushFiles(any(), eq("remote-1"), any()) }
-            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), any(), any()) }
+            coVerify(exactly = 1) { deps.filePushService.pushFiles(any(), eq("remote-1"), any(), any()) }
+            coVerify(exactly = 0) { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) }
         }
 
     @Test
@@ -126,13 +126,13 @@ class SharePushOrchestratorTest {
             val deps = TestDeps()
             coEvery { deps.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns
                 listOf(createConnectedSyncRuntimeInfo(appInstanceId = "remote-1"))
-            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any()) } returns SuccessResult()
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns SuccessResult()
 
             val result = deps.create().pushToConnectedPeers(pasteOf(PasteType.TEXT_TYPE))
 
             assertTrue(result.allSucceeded)
-            coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any()) }
-            coVerify(exactly = 0) { deps.filePushService.pushFiles(any(), any(), any()) }
+            coVerify(exactly = 1) { deps.pasteClientApi.sendPaste(any(), eq("remote-1"), any(), any()) }
+            coVerify(exactly = 0) { deps.filePushService.pushFiles(any(), any(), any(), any()) }
         }
 
     @Test
@@ -145,14 +145,16 @@ class SharePushOrchestratorTest {
                     createConnectedSyncRuntimeInfo(appInstanceId = "remote-2", hostAddress = "192.168.1.101"),
                     createConnectedSyncRuntimeInfo(appInstanceId = "remote-3", hostAddress = "192.168.1.102"),
                 )
-            coEvery { deps.filePushService.pushFiles(any(), any(), any()) } returns SuccessResult()
+            coEvery { deps.filePushService.pushFiles(any(), any(), any(), any()) } returns SuccessResult()
 
             val result = deps.create().pushToConnectedPeers(pasteOf(PasteType.FILE_TYPE))
 
             assertEquals(setOf("remote-1", "remote-2", "remote-3"), result.perTarget.keys)
             assertTrue(result.allSucceeded)
             assertTrue(result.anySucceeded)
-            coVerify(exactly = 3) { deps.filePushService.pushFiles(any(), any(), any()) }
+            // Every target is marked seen so none relays the share to another
+            val seen = setOf("remote-1", "remote-2", "remote-3")
+            coVerify(exactly = 3) { deps.filePushService.pushFiles(any(), any(), any(), seen) }
         }
 
     @Test
@@ -165,10 +167,10 @@ class SharePushOrchestratorTest {
                     createConnectedSyncRuntimeInfo(appInstanceId = "remote-2", hostAddress = "192.168.1.101"),
                 )
             coEvery {
-                deps.filePushService.pushFiles(any(), eq("remote-1"), any())
+                deps.filePushService.pushFiles(any(), eq("remote-1"), any(), any())
             } returns SuccessResult()
             coEvery {
-                deps.filePushService.pushFiles(any(), eq("remote-2"), any())
+                deps.filePushService.pushFiles(any(), eq("remote-2"), any(), any())
             } returns retryableFailure("chunk upload failed")
 
             val result = deps.create().pushToConnectedPeers(pasteOf(PasteType.FILE_TYPE))
@@ -190,7 +192,7 @@ class SharePushOrchestratorTest {
                     createConnectedSyncRuntimeInfo(appInstanceId = "remote-2", hostAddress = "192.168.1.101"),
                 )
             coEvery {
-                deps.filePushService.pushFiles(any(), any(), any())
+                deps.filePushService.pushFiles(any(), any(), any(), any())
             } returns retryableFailure("network down")
 
             val result = deps.create().pushToConnectedPeers(pasteOf(PasteType.FILE_TYPE))
@@ -210,7 +212,7 @@ class SharePushOrchestratorTest {
             val withoutHost = createConnectedSyncRuntimeInfo(appInstanceId = "remote-2").copy(connectHostAddress = null)
 
             coEvery { deps.syncRuntimeInfoDao.getAllSyncRuntimeInfos() } returns listOf(withHost, withoutHost)
-            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any()) } returns SuccessResult()
+            coEvery { deps.pasteClientApi.sendPaste(any(), any(), any(), any()) } returns SuccessResult()
 
             val result = deps.create().pushToConnectedPeers(pasteOf(PasteType.TEXT_TYPE))
 

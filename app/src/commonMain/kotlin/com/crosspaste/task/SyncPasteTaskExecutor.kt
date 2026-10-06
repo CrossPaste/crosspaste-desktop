@@ -115,8 +115,20 @@ class SyncPasteTaskExecutor(
     ): Map<String, ClientApiResult> {
         val deferredResults: MutableList<Deferred<Pair<String, ClientApiResult>>> = mutableListOf()
 
-        for (handler in getEligibleSyncHandlers(syncExtraInfo)) {
-            val deferred = createSyncTask(handler.key, handler.value, pasteData)
+        val candidates = getEligibleSyncHandlers(syncExtraInfo)
+        // Every candidate of this round counts as seen, including ones already
+        // reached in an earlier attempt, so a receiver never relays back to them.
+        val outgoingSeen =
+            syncExtraInfo.seenAppInstanceIds +
+                syncExtraInfo.appInstanceId +
+                appInfo.appInstanceId +
+                candidates.keys
+        val targets =
+            candidates.filterKeys { key ->
+                syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key)
+            }
+        for (handler in targets) {
+            val deferred = createSyncTask(handler.key, handler.value, pasteData, outgoingSeen)
             deferredResults.add(deferred)
         }
 
@@ -135,32 +147,37 @@ class SyncPasteTaskExecutor(
                     handler.currentVersionRelation == VersionRelation.EQUAL_TO &&
                     (
                         syncExtraInfo.targetAppInstanceIds?.contains(key) != false
-                    ) &&
-                    (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
+                    )
             }
         } else {
             syncManager.getSyncHandler(syncExtraInfo.appInstanceId)?.let { handler ->
-                handler.getConnectHostInfo()?.let { connectHostInfo ->
-                    syncManager.getSyncHandlers().filter { (key, handler) ->
-                        if (key != syncExtraInfo.appInstanceId) {
+                val sourceIsExtension = handler.currentSyncRuntimeInfo.platform.isExtension()
+                val connectHostInfo = handler.getConnectHostInfo()
+                if (sourceIsExtension || connectHostInfo != null) {
+                    syncManager.getSyncHandlers().filter { (key, targetHandler) ->
+                        if (key != syncExtraInfo.appInstanceId && key !in syncExtraInfo.seenAppInstanceIds) {
                             val isEligible =
-                                handler.currentSyncRuntimeInfo.allowSend &&
-                                    handler.currentSyncRuntimeInfo.connectState == SyncState.CONNECTED &&
-                                    handler.currentVersionRelation == VersionRelation.EQUAL_TO &&
-                                    (syncExtraInfo.syncFails.isEmpty() || syncExtraInfo.syncFails.contains(key))
+                                targetHandler.currentSyncRuntimeInfo.allowSend &&
+                                    targetHandler.currentSyncRuntimeInfo.connectState == SyncState.CONNECTED &&
+                                    targetHandler.currentVersionRelation == VersionRelation.EQUAL_TO
                             if (!isEligible) {
                                 false
-                            } else if (handler.currentSyncRuntimeInfo.platform.isExtension()) {
+                            } else if (
+                                sourceIsExtension ||
+                                targetHandler.currentSyncRuntimeInfo.platform.isExtension()
+                            ) {
                                 // Extension devices use WebSocket — no host address to filter
                                 true
                             } else {
-                                val address = handler.getConnectHostAddress()
-                                address != null && !connectHostInfo.filter(address)
+                                val address = targetHandler.getConnectHostAddress()
+                                address != null && connectHostInfo != null && !connectHostInfo.filter(address)
                             }
                         } else {
                             false
                         }
                     }
+                } else {
+                    mapOf()
                 }
             } ?: mapOf()
         }
@@ -169,10 +186,11 @@ class SyncPasteTaskExecutor(
         handlerKey: String,
         handler: SyncHandler,
         pasteData: PasteData,
+        seenAppInstanceIds: Set<String>,
     ): Deferred<Pair<String, ClientApiResult>> =
         ioScope.async {
             runCatching {
-                val result = syncPasteToTarget(handlerKey, handler, pasteData)
+                val result = syncPasteToTarget(handlerKey, handler, pasteData, seenAppInstanceIds)
 
                 if (result is SuccessResult) {
                     appControl.completeSendOperation()
@@ -205,6 +223,7 @@ class SyncPasteTaskExecutor(
         handlerKey: String,
         handler: SyncHandler,
         pasteData: PasteData,
+        seenAppInstanceIds: Set<String>,
     ): ClientApiResult {
         val syncRuntimeInfo = handler.currentSyncRuntimeInfo
         val port = syncRuntimeInfo.port
@@ -254,13 +273,14 @@ class SyncPasteTaskExecutor(
             return pasteClientApi.sendPaste(
                 pasteData,
                 targetAppInstanceId,
+                seenAppInstanceIds,
             ) {
                 buildUrl(hostAndPort)
             }
         }
 
         // 3. No host address — fall back to WebSocket
-        return trySendViaWebSocket(targetAppInstanceId, pasteData, isExtensionTarget = false)
+        return trySendViaWebSocket(targetAppInstanceId, pasteData, isExtensionTarget = false, seenAppInstanceIds)
             ?: createFailureResult(
                 StandardErrorCode.CANT_GET_SYNC_ADDRESS,
                 "Failed to get connect host address by $handlerKey and WebSocket unavailable",
@@ -271,6 +291,8 @@ class SyncPasteTaskExecutor(
         targetAppInstanceId: String,
         pasteData: PasteData,
         isExtensionTarget: Boolean,
+        // Extensions never relay, so they are not sent one
+        seenAppInstanceIds: Set<String> = emptySet(),
     ): ClientApiResult? =
         runCatching {
             val jsonBytes = getJsonUtils().JSON.encodeToString(pasteData).encodeToByteArray()
@@ -286,6 +308,7 @@ class SyncPasteTaskExecutor(
                     type = WsMessageType.PASTE_PUSH,
                     payload = payload,
                     encrypted = encrypt,
+                    relaySeen = seenAppInstanceIds,
                 )
             // Native pairing v2 deliberately keeps the 1 MiB WebSocket payload
             // contract; file bytes use HTTPS. Pairing v3 opts into the larger

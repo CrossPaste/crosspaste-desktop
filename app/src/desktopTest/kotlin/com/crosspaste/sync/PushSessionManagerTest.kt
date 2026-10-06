@@ -106,7 +106,7 @@ class PushSessionManagerTest {
             val pasteDao = mockk<PasteDao>(relaxed = true)
             coEvery { pasteDao.markDeletePasteData(any()) } returns Result.success(Unit)
             val pasteboardService = mockk<PasteboardService>(relaxed = true)
-            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(any()) } returns Result.success(Unit)
+            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(any(), any()) } returns Result.success(Unit)
             val (mgr) =
                 newManager(
                     maxActive = 1,
@@ -222,10 +222,26 @@ class PushSessionManagerTest {
         }
 
     @Test
+    fun finalizeIfComplete_handsTheSendersSeenSetToTheRelay() =
+        runBlocking {
+            val pasteboardService = mockk<PasteboardService>(relaxed = true)
+            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(any(), any()) } returns Result.success(Unit)
+            val (mgr) = newManager(pasteboardService = pasteboardService)
+            val seen = setOf("remote-2", "remote-3")
+            val session = mgr.create(1L, "mobile", fakeFilesIndex(1), seen)!!
+            session.markReceived(0)
+
+            assertEquals(PushCompletionResult.Complete, mgr.finalizeIfComplete(session))
+
+            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(1L, seen) }
+            mgr.close()
+        }
+
+    @Test
     fun finalizeIfComplete_waitsForPasteboardWriteBeforeRemovingSession() =
         runBlocking {
             val pasteboardService = mockk<PasteboardService>(relaxed = true)
-            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(any()) } returns Result.success(Unit)
+            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(any(), any()) } returns Result.success(Unit)
             val (mgr) = newManager(pasteboardService = pasteboardService)
             val session = mgr.create(1L, "mobile", fakeFilesIndex(2))!!
             session.markReceived(0)
@@ -236,7 +252,7 @@ class PushSessionManagerTest {
             assertEquals(0, mgr.activeCount())
             assertNull(mgr.peek(1L))
 
-            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(1L) }
+            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(1L, any()) }
             mgr.close()
         }
 
@@ -244,7 +260,7 @@ class PushSessionManagerTest {
     fun finalizeIfComplete_runsOnlyAfterLastChunk() =
         runBlocking {
             val pasteboardService = mockk<PasteboardService>(relaxed = true)
-            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(any()) } returns Result.success(Unit)
+            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(any(), any()) } returns Result.success(Unit)
             val (mgr) = newManager(pasteboardService = pasteboardService)
             val session = mgr.create(5L, "mobile", fakeFilesIndex(2))!!
 
@@ -259,7 +275,7 @@ class PushSessionManagerTest {
             assertEquals(PushCompletionResult.Complete, mgr.finalizeIfComplete(session))
             assertEquals(0, mgr.activeCount())
 
-            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(5L) }
+            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(5L, any()) }
             mgr.close()
         }
 
@@ -280,7 +296,7 @@ class PushSessionManagerTest {
                 mgr.complete(404L, "missing-token", "mobile"),
             )
             assertEquals(1, mgr.activeCount())
-            coVerify(exactly = 0) { pasteboardService.tryWriteRemotePasteboardWithFile(any()) }
+            coVerify(exactly = 0) { pasteboardService.tryWriteRemotePasteboardWithFile(any(), any()) }
             mgr.close()
         }
 
@@ -289,7 +305,7 @@ class PushSessionManagerTest {
         runBlocking {
             val pasteboardService = mockk<PasteboardService>()
             val failure = IllegalStateException("persist failed")
-            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(11L) } returnsMany
+            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(11L, any()) } returnsMany
                 listOf(Result.failure(failure), Result.success(Unit))
             val (mgr) = newManager(pasteboardService = pasteboardService)
             val session = mgr.create(11L, "mobile", fakeFilesIndex(1))!!
@@ -304,7 +320,7 @@ class PushSessionManagerTest {
             assertEquals(PushCompletionResult.Complete, mgr.finalizeIfComplete(session))
             assertNull(mgr.peek(11L))
             assertEquals(0, mgr.activeCount())
-            coVerify(exactly = 2) { pasteboardService.tryWriteRemotePasteboardWithFile(11L) }
+            coVerify(exactly = 2) { pasteboardService.tryWriteRemotePasteboardWithFile(11L, any()) }
             mgr.close()
         }
 
@@ -312,7 +328,7 @@ class PushSessionManagerTest {
     fun concurrentFinalization_runsDurableTransitionOnce() =
         runBlocking {
             val pasteboardService = mockk<PasteboardService>()
-            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(12L) } coAnswers {
+            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(12L, any()) } coAnswers {
                 delay(20.milliseconds)
                 Result.success(Unit)
             }
@@ -327,7 +343,7 @@ class PushSessionManagerTest {
                 ).awaitAll()
 
             assertEquals(listOf(PushCompletionResult.Complete, PushCompletionResult.Complete), results)
-            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(12L) }
+            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(12L, any()) }
             assertEquals(0, mgr.activeCount())
             mgr.close()
         }
@@ -395,7 +411,7 @@ class PushSessionManagerTest {
             val capturedId = slot<Long>()
             coVerify(exactly = 1) { pasteDao.markDeletePasteData(capture(capturedId)) }
             assertEquals(42L, capturedId.captured)
-            coVerify(exactly = 0) { pasteboardService.tryWriteRemotePasteboardWithFile(any()) }
+            coVerify(exactly = 0) { pasteboardService.tryWriteRemotePasteboardWithFile(any(), any()) }
             mgr.close()
         }
 
@@ -404,7 +420,7 @@ class PushSessionManagerTest {
         runBlocking {
             val pasteDao = mockk<PasteDao>(relaxed = true)
             val pasteboardService = mockk<PasteboardService>(relaxed = true)
-            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(any()) } returns Result.success(Unit)
+            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(any(), any()) } returns Result.success(Unit)
             val (mgr) =
                 newManager(
                     sessionTtl = 10.milliseconds,
@@ -424,7 +440,7 @@ class PushSessionManagerTest {
 
             assertEquals(0, mgr.activeCount())
             val finalizedId = slot<Long>()
-            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(capture(finalizedId)) }
+            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(capture(finalizedId), any()) }
             assertEquals(77L, finalizedId.captured)
             coVerify(exactly = 0) { pasteDao.markDeletePasteData(any()) }
             mgr.close()
@@ -437,7 +453,7 @@ class PushSessionManagerTest {
             val pasteDao = mockk<PasteDao>()
             coEvery { pasteDao.markDeletePasteData(78L) } returns Result.success(Unit)
             val pasteboardService = mockk<PasteboardService>()
-            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(78L) } returns Result.failure(failure)
+            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(78L, any()) } returns Result.failure(failure)
             val (mgr) =
                 newManager(
                     sessionTtl = 10.milliseconds,
@@ -452,7 +468,7 @@ class PushSessionManagerTest {
 
             assertNull(mgr.peek(78L))
             assertEquals(0, mgr.activeCount())
-            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(78L) }
+            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(78L, any()) }
             coVerify(exactly = 1) { pasteDao.markDeletePasteData(78L) }
             mgr.close()
         }
@@ -471,7 +487,7 @@ class PushSessionManagerTest {
             val pasteDao = mockk<PasteDao>()
             coEvery { pasteDao.markDeletePasteData(79L) } returns Result.success(Unit)
             val pasteboardService = mockk<PasteboardService>()
-            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(79L) } coAnswers {
+            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(79L, any()) } coAnswers {
                 if (finalizeCalls.incrementAndGet() == 1) {
                     sweepFinalizeGate.await()
                     Result.failure(IllegalStateException("transient finalize failure"))
@@ -500,7 +516,7 @@ class PushSessionManagerTest {
             assertEquals(PushCompletionResult.Complete, retry.await())
             assertNull(mgr.peek(79L))
             assertEquals(0, mgr.activeCount())
-            coVerify(exactly = 2) { pasteboardService.tryWriteRemotePasteboardWithFile(79L) }
+            coVerify(exactly = 2) { pasteboardService.tryWriteRemotePasteboardWithFile(79L, any()) }
             coVerify(exactly = 0) { pasteDao.markDeletePasteData(any()) }
             assertNotNull(mgr.create(80L, "mobile", fakeFilesIndex(1)), "slot must be released exactly once")
             mgr.close()
@@ -520,7 +536,7 @@ class PushSessionManagerTest {
                 Result.success(Unit)
             }
             val pasteboardService = mockk<PasteboardService>()
-            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(81L) } returns
+            coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(81L, any()) } returns
                 Result.failure(IllegalStateException("permanent finalize failure"))
             val (mgr) =
                 newManager(
@@ -544,7 +560,7 @@ class PushSessionManagerTest {
             assertEquals(PushCompletionResult.NotFound, retry.await())
             assertNull(mgr.peek(81L))
             assertEquals(0, mgr.activeCount())
-            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(81L) }
+            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(81L, any()) }
             coVerify(exactly = 1) { pasteDao.markDeletePasteData(81L) }
             assertNotNull(mgr.create(82L, "mobile", fakeFilesIndex(1)), "slot must be released exactly once")
             mgr.close()

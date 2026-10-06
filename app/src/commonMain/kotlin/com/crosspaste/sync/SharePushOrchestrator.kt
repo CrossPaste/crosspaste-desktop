@@ -51,9 +51,11 @@ class SharePushOrchestrator(
                 logger.info { "pushToConnectedPeers: no CONNECTED peers; pasteId=${pasteData.id}" }
                 return@coroutineScope SharePushResult(emptyMap())
             }
+            // Every target gets the paste directly, so none of them should relay it to another
+            val seen = targets.map { it.appInstanceId }.toSet()
             val perTarget =
                 targets
-                    .map { target -> async { target.appInstanceId to pushOne(pasteData, target) } }
+                    .map { target -> async { target.appInstanceId to pushOne(pasteData, target, seen) } }
                     .awaitAll()
                     .toMap()
             SharePushResult(perTarget)
@@ -74,6 +76,7 @@ class SharePushOrchestrator(
     private suspend fun pushOne(
         pasteData: PasteData,
         target: SyncRuntimeInfo,
+        seenAppInstanceIds: Set<String>,
     ): ClientApiResult {
         val host =
             target.connectHostAddress
@@ -88,9 +91,9 @@ class SharePushOrchestrator(
                 }
         val toUrl: URLBuilder.() -> Unit = { buildUrl(HostAndPort(host, target.port)) }
         return if (pasteData.isFileType()) {
-            filePushService.pushFiles(pasteData, target.appInstanceId, toUrl)
+            filePushService.pushFiles(pasteData, target.appInstanceId, toUrl, seenAppInstanceIds)
         } else {
-            pasteClientApi.sendPaste(pasteData, target.appInstanceId, toUrl)
+            pasteClientApi.sendPaste(pasteData, target.appInstanceId, seenAppInstanceIds, toUrl)
         }
     }
 }

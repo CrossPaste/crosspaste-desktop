@@ -51,7 +51,21 @@ interface PasteboardService : PasteboardMonitor {
 
     suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit?>
 
+    /**
+     * [seenAppInstanceIds]: the sender's relay-seen set, see [com.crosspaste.sync.RelaySeen].
+     * Defaults to dropping the set so implementations predating it still compile.
+     */
+    suspend fun tryWriteRemotePasteboard(
+        pasteData: PasteData,
+        seenAppInstanceIds: Set<String>,
+    ): Result<Unit?> = tryWriteRemotePasteboard(pasteData)
+
     suspend fun tryWriteRemotePasteboardList(pasteDataList: List<PasteData>): Result<Unit?>
 
     suspend fun tryWriteRemotePasteboardWithFile(pasteId: Long): Result<Unit?>
+
+    suspend fun tryWriteRemotePasteboardWithFile(
+        pasteId: Long,
+        seenAppInstanceIds: Set<String>,
+    ): Result<Unit?> = tryWriteRemotePasteboardWithFile(pasteId)
 }

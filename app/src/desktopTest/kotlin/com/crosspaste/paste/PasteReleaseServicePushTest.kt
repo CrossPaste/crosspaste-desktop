@@ -13,6 +13,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.DirFileInfoTree
 import com.crosspaste.presist.SingleFileInfoTree
 import com.crosspaste.sync.PastePullCursorManager
+import com.crosspaste.task.TaskBuilder
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.getJsonUtils
 import com.crosspaste.utils.getPlatformUtils
@@ -21,6 +22,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonPrimitive
 import okio.Path.Companion.toOkioPath
@@ -360,6 +362,33 @@ class PasteReleaseServicePushTest {
                 .resolve("small.txt")
                 .toFile()
         assertTrue(slotFile.isFile, "file slot must be pre-allocated under managed storage")
+    }
+
+    @Test
+    fun releaseRemotePasteDataForPush_defersRelayUntilTheFilesLand(
+        @TempDir tempDir: File,
+    ) = runBlocking<Unit> {
+        val taskBuilder = mockk<TaskBuilder>(relaxed = true)
+        val taskSubmitter =
+            object : TaskSubmitter {
+                override suspend fun submit(block: suspend TaskBuilder.() -> Unit) {
+                    taskBuilder.block()
+                }
+            }
+        val pasteDao =
+            mockk<PasteDao>(relaxed = true).also {
+                coEvery { it.createPasteData(any(), any()) } returns 7L
+            }
+        val service =
+            newService(
+                pasteDao = pasteDao,
+                taskSubmitter = taskSubmitter,
+                userDataPathProvider = realPathProvider(File(tempDir, "storage").also { it.mkdirs() }),
+            )
+
+        assertNotNull(service.releaseRemotePasteDataForPush(smallFilePasteData("relay.txt")))
+
+        verify(exactly = 0) { taskBuilder.addRelaySyncTask(any(), any(), any()) }
     }
 
     @Test

@@ -62,7 +62,7 @@ class PushRoutingTest {
     fun `last chunk returns push complete failure when durable finalization fails`() {
         val pasteDao = mockk<PasteDao>(relaxed = true)
         val pasteboardService = mockk<PasteboardService>()
-        coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(41L) } returns
+        coEvery { pasteboardService.tryWriteRemotePasteboardWithFile(41L, any()) } returns
             Result.failure(IllegalStateException("database unavailable"))
         val manager = newManager(pasteDao, pasteboardService)
         val targetFile = File(tempDir, "chunk.bin")
@@ -88,7 +88,7 @@ class PushRoutingTest {
                 json.decodeFromString<FailResponse>(response.bodyAsText()).errorCode,
             )
             assertEquals(1, manager.activeCount(), "failed finalization must stay retryable")
-            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(41L) }
+            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboardWithFile(41L, any()) }
         }
     }
 
