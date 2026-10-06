@@ -187,6 +187,13 @@ Windows machine to validate:
   the marker — a half-applied update must never look like a success. (The updater copies
   the old install into the update dir as a backup and overwrites the install dir in
   place; it never renames the install dir, which would need write access to its parent.)
+- **Incomplete staging.** Once the update is ready, delete
+  `%USERPROFILE%\.crosspaste\update\staging\bin\CrossPaste.exe` and click restart: the
+  app must stay running and show the apply failure, without launching the script. To
+  exercise the script's own guard, rerun it by hand against a stripped staging (set the
+  `CROSSPASTE_UPDATE_*` variables as in `apply-update.log`, with `CROSSPASTE_UPDATE_PID`
+  set to a dead PID): it must log `staged exe missing`, leave the install dir's file
+  count unchanged, write `apply-update.failed`, and relaunch the previous version.
 
 ## Cleanup
 
