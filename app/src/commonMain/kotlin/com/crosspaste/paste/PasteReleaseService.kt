@@ -508,6 +508,7 @@ class PasteReleaseService(
                         val newId = pasteDao.createPasteData(pasteData, PasteState.LOADED)
                         markDeleteSameHash(newId, pasteData.pasteType, pasteData.hash)
                         addRenderingTask(newId, pasteData.getType())
+                        addRelaySyncTask(newId, pasteData.appInstanceId)
                         tryWritePasteboard(pasteData)
                         newId
                     } else {
