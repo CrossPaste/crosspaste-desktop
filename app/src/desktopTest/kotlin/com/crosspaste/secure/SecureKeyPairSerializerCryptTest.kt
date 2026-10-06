@@ -83,7 +83,7 @@ class SecureKeyPairSerializerCryptTest {
 
     @Test
     fun `decodeCryptKeyPair with truncated data throws`() =
-        runBlocking {
+        runBlocking<Unit> {
             assertFailsWith<IllegalArgumentException> {
                 serializer.decodeCryptKeyPair(ByteArray(2))
             }
@@ -91,7 +91,7 @@ class SecureKeyPairSerializerCryptTest {
 
     @Test
     fun `decodeSecureKeyPair with truncated data throws`() =
-        runBlocking {
+        runBlocking<Unit> {
             assertFailsWith<IllegalArgumentException> {
                 serializer.decodeSecureKeyPair(ByteArray(3))
             }
@@ -99,7 +99,7 @@ class SecureKeyPairSerializerCryptTest {
 
     @Test
     fun `decodeSignKeyPair with truncated data throws`() =
-        runBlocking {
+        runBlocking<Unit> {
             assertFailsWith<IllegalArgumentException> {
                 serializer.decodeSignKeyPair(ByteArray(1))
             }
@@ -107,7 +107,7 @@ class SecureKeyPairSerializerCryptTest {
 
     @Test
     fun `decodeSecureKeyPair with invalid size field throws`() =
-        runBlocking {
+        runBlocking<Unit> {
             // Create bytes with a size value larger than actual content
             val bytes = ByteArray(8)
             // Set size = 100 but only have 4 bytes of content
