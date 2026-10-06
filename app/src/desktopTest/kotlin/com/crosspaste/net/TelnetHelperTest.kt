@@ -212,7 +212,7 @@ class TelnetHelperTest {
 
     @Test
     fun switchHost_oneSucceedsAmongFailures_returnsSuccessful() =
-        runBlocking {
+        runBlocking<Unit> {
             val pasteClient = createMockPasteClient()
             val successResponse = createMockResponse(200, SyncApi.VERSION.toString())
 

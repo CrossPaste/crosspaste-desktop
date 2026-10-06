@@ -27,7 +27,7 @@ class GeneralSecureStoreTest {
 
     @Test
     fun `secureKeyPair is accessible`() =
-        runBlocking {
+        runBlocking<Unit> {
             val (store, _) = createStore()
             assertNotNull(store.secureKeyPair)
             assertNotNull(store.secureKeyPair.signKeyPair)
@@ -71,7 +71,7 @@ class GeneralSecureStoreTest {
 
     @Test
     fun `getMessageProcessor returns processor for saved key`() =
-        runBlocking {
+        runBlocking<Unit> {
             val (store, _) = createStore()
             val otherKeyPair = generateSecureKeyPair()
             val publicKeyBytes = serializer.encodeCryptPublicKey(otherKeyPair.cryptKeyPair.publicKey)

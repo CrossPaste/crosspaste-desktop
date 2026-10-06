@@ -22,7 +22,7 @@ class CryptographyUtilsTest {
 
     @Test
     fun `generateSecureKeyPair produces valid key pair`() =
-        runBlocking {
+        runBlocking<Unit> {
             val keyPair = generateSecureKeyPair()
             assertNotNull(keyPair.signKeyPair)
             assertNotNull(keyPair.cryptKeyPair)
