@@ -1,11 +1,5 @@
 package com.crosspaste.ui.devices
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -31,7 +25,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Add
 import com.composables.icons.materialsymbols.rounded.Refresh
@@ -191,17 +184,6 @@ private fun NearbyRefreshButton(
     searching: Boolean,
     onClick: () -> Unit,
 ) {
-    val rotation by rememberInfiniteTransition(label = "NearbyRefreshRotation").animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(1000, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-        label = "NearbyRefreshAngle",
-    )
-
     IconButton(
         onClick = onClick,
         enabled = !searching,
@@ -214,7 +196,7 @@ private fun NearbyRefreshButton(
             modifier =
                 Modifier
                     .size(large2X)
-                    .graphicsLayer { rotationZ = if (searching) rotation else 0f },
+                    .spinWhile(searching),
         )
     }
 }
