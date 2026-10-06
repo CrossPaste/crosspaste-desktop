@@ -329,6 +329,38 @@ class WindowsZipUpdaterDownloadTest {
     }
 
     @Test
+    fun `a staged update that lost its exe is discarded instead of applied`() {
+        // The test zip carries no bin/CrossPaste.exe: like a staging AV stripped after
+        // it was verified, or a restored ReadyToApply whose staging was half-cleaned.
+        val zip = buildZip()
+        val tmp = Files.createTempDirectory("cp-update-stripped").toOkioPath()
+        val updater = newUpdater(zip, "${sha256(zip)}  $fileName", tmp)
+
+        runBlocking {
+            updater.startBackgroundDownload()
+            withTimeout(20.seconds) { updater.updateState.first { it is UpdateState.ReadyToApply } }
+        }
+
+        var exited = false
+        updater.applyUpdate { exited = true }
+
+        val state = updater.updateState.value
+        assertTrue(state is UpdateState.Failed, "expected Failed but was $state")
+        assertEquals("update_apply_failed", state.reasonKey)
+        assertTrue(!exited, "the app must keep running")
+        val updateDir = updateDir(tmp)
+        assertTrue(
+            !getFileUtils().existFile(updateDir.resolve(WindowsZipUpdater.APPLY_BAT_NAME)),
+            "the apply script must never be launched",
+        )
+        assertTrue(!getFileUtils().existFile(updateDir.resolve("staging")), "the stale staging is dropped")
+        assertTrue(
+            !getFileUtils().existFile(updateDir.resolve(WindowsZipUpdater.READY_MARKER)),
+            "a relaunch must not resurface it",
+        )
+    }
+
+    @Test
     fun `a partial download is resumed from the mirror it came from`() {
         val zip = buildZip()
         val tmp = Files.createTempDirectory("cp-update-affinity").toOkioPath()

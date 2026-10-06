@@ -508,12 +508,24 @@ class WindowsZipUpdater(
         runCatching {
             val updateDir = updateDir()
             val stagingDir = stagingDir()
+            val exePath = appPathProvider.pasteAppExePath.resolve("CrossPaste.exe")
+            val stagedExePath = stagingDir.resolve(exePath.relativeTo(appPathProvider.pasteAppPath))
+
+            // A ReadyToApply state can outlive its staging by days (restored across
+            // sessions), during which AV quarantine or a cleanup tool may strip it.
+            // Mirroring an incomplete staging would purge the install, so re-download.
+            if (!fileUtils.existFile(stagedExePath)) {
+                logger.warn { "Staged update is missing $stagedExePath, discarding it" }
+                clearStaging()
+                _updateState.value = UpdateState.Failed("update_apply_failed")
+                return
+            }
+
             val batPath = updateDir.resolve(APPLY_BAT_NAME)
             val logPath = updateDir.resolve("apply-update.log")
 
             batPath.toFile().writeText(APPLY_UPDATE_BAT)
 
-            val exePath = appPathProvider.pasteAppExePath.resolve("CrossPaste.exe")
             val pid = ProcessHandle.current().pid().toString()
 
             // Pass paths through the environment, not as cmd arguments: several
@@ -534,6 +546,7 @@ class WindowsZipUpdater(
                 // the move-aside approach fail with "Access is denied".
                 put("CROSSPASTE_UPDATE_BAK", updateDir.resolve("backup").toString())
                 put("CROSSPASTE_UPDATE_EXE", exePath.toString())
+                put("CROSSPASTE_UPDATE_SRC_EXE", stagedExePath.toString())
                 put("CROSSPASTE_UPDATE_PID", pid)
                 put("CROSSPASTE_UPDATE_MARKER", applyFailureMarker().toString())
             }
@@ -776,8 +789,11 @@ class WindowsZipUpdater(
          * root-level files AND purges stale ones the new build dropped, so two versions of
          * a library can't co-exist on the classpath). If the backup fails the install is
          * left untouched; if the in-place apply fails (RC >= 8) the old install is
-         * restored from the backup. Either way a failure marker is written and the
-         * previous version is relaunched — a half-applied update never looks successful.
+         * restored from the backup. The staged exe is re-checked before anything is
+         * touched, and the installed exe after the mirror (a short staging mirrors with
+         * RC < 8 yet purges files), rolling back while the backup still exists. Either
+         * way a failure marker is written and the previous version is relaunched — a
+         * half-applied update never looks successful.
          *
          * The script is intentionally verbose: `chcp 65001` makes the redirected log
          * UTF-8 (readable when paths contain non-ASCII, e.g. a Chinese user folder),
@@ -794,6 +810,7 @@ class WindowsZipUpdater(
             set "SRC=%CROSSPASTE_UPDATE_SRC%"
             set "DST=%CROSSPASTE_UPDATE_DST%"
             set "EXE=%CROSSPASTE_UPDATE_EXE%"
+            set "SRC_EXE=%CROSSPASTE_UPDATE_SRC_EXE%"
             set "PID=%CROSSPASTE_UPDATE_PID%"
             set "MARKER=%CROSSPASTE_UPDATE_MARKER%"
             set "BAK=%CROSSPASTE_UPDATE_BAK%"
@@ -803,6 +820,7 @@ class WindowsZipUpdater(
             echo [cp-up] DST   =[%DST%]
             echo [cp-up] BAK   =[%BAK%]
             echo [cp-up] EXE   =[%EXE%]
+            echo [cp-up] SRCEXE=[%SRC_EXE%]
             echo [cp-up] PID   =[%PID%]
             echo [cp-up] MARKER=[%MARKER%]
             if not exist "%SRC%\*" echo [cp-up] WARN: SRC missing or empty
@@ -819,6 +837,9 @@ class WindowsZipUpdater(
 
             :APPLY
             echo [cp-up] process gone, applying
+            :: Staging may have been stripped (AV quarantine, cleanup) since it was
+            :: verified; /MIR from it would purge the install, so refuse it outright.
+            if not exist "%SRC_EXE%" goto STAGING_INVALID
             if exist "%BAK%" rmdir /S /Q "%BAK%"
 
             :: Back up the current install into the (writable) update dir, by COPY. We do
@@ -843,6 +864,11 @@ class WindowsZipUpdater(
             set "RC=%ERRORLEVEL%"
             echo [cp-up] apply exit=%RC%
             if %RC% GEQ 8 goto APPLY_FAILED
+            :: RC 1-3 also covers purged files: never trust it without the exe in place.
+            if not exist "%EXE%" (
+                set "RC=%RC% but exe missing"
+                goto APPLY_FAILED
+            )
 
             :: Success: drop the backup and staging, then relaunch the new build.
             rmdir /S /Q "%BAK%"
@@ -851,6 +877,11 @@ class WindowsZipUpdater(
             start "" /D "%DST%" "%EXE%"
             echo [cp-up] === done: success ===
             exit /b 0
+
+            :STAGING_INVALID
+            echo [cp-up] FAILED: staged exe missing, install left untouched
+            > "%MARKER%" echo apply-update failed: staging incomplete ^(install untouched^)
+            goto START_OLD
 
             :BACKUP_FAILED
             echo [cp-up] FAILED: backup error %BK%, install left untouched
