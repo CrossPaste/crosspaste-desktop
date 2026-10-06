@@ -51,6 +51,10 @@ class TestWindowManager(
         this@TestWindowManager.hideMainWindow()
     }
 
+    override suspend fun returnFocusToPreviousApp() {
+        mockOS.currentApp = prevApp.value
+    }
+
     override suspend fun hideSearchWindowAndPaste(
         size: Int,
         preparePaste: suspend (Int) -> Boolean,

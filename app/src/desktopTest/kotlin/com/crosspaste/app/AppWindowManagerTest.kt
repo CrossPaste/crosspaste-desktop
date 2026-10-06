@@ -8,9 +8,13 @@ import com.crosspaste.utils.getPlatformUtils
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -96,18 +100,40 @@ class AppWindowManagerTest {
 
         runBlocking {
             windowManager.saveActiveAppInfo("Chrome")
-            windowManager.switchSearchWindow(WindowTrigger.SHORTCUT) {
+            windowManager.switchSearchWindow(WindowTrigger.SHORTCUT, awaitTriggerReleased = {}) {
                 windowManager.saveActiveAppInfo("CrossPaste")
             }
             assertTrue(windowManager.getCurrentSearchWindowInfo().show)
 
-            windowManager.switchSearchWindow(WindowTrigger.SHORTCUT) {}
+            windowManager.switchSearchWindow(WindowTrigger.SHORTCUT, awaitTriggerReleased = {}) {}
         }
 
         assertFalse(windowManager.getCurrentSearchWindowInfo().show)
         assertEquals("Chrome", windowManager.getCurrentActiveAppName())
         assertEquals(0, windowManager.pasterId)
     }
+
+    @Test
+    fun `dismiss waits for the trigger key to be released before closing`() =
+        runTest {
+            val windowManager = createWindowManager()
+            windowManager.saveActiveAppInfo("Chrome")
+            windowManager.showSearchWindow(WindowTrigger.SHORTCUT)
+            windowManager.saveActiveAppInfo("CrossPaste")
+
+            val keyReleased = CompletableDeferred<Unit>()
+            val dismiss = launch { windowManager.dismissSearchWindow { keyReleased.await() } }
+            runCurrent()
+
+            assertTrue(windowManager.getCurrentSearchWindowInfo().show)
+            assertEquals("CrossPaste", windowManager.getCurrentActiveAppName())
+
+            keyReleased.complete(Unit)
+            dismiss.join()
+
+            assertFalse(windowManager.getCurrentSearchWindowInfo().show)
+            assertEquals("Chrome", windowManager.getCurrentActiveAppName())
+        }
 
     @Test
     fun `preview does not take ownership of an interactive search window`() {

@@ -186,6 +186,10 @@ class MacAppWindowManager(
         MacAppUtils.bringToFront(bubbleWindowTitle, showDockIcon(getCurrentMainWindowInfo().show))
     }
 
+    override suspend fun returnFocusToPreviousApp() {
+        MacAppUtils.searchToBack(prevMacAppInfo.value?.bundleIdentifier ?: "")
+    }
+
     override suspend fun hideSearchWindowAndPaste(
         size: Int,
         preparePaste: suspend (Int) -> Boolean,
