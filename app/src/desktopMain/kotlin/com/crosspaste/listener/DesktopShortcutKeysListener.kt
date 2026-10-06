@@ -5,6 +5,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
@@ -20,6 +21,8 @@ class DesktopShortcutKeysListener(
     private val shortcutKeys: ShortcutKeys,
 ) : ShortcutKeysListener,
     NativeKeyListener {
+
+    private val logger = KotlinLogging.logger {}
 
     private val keyboardKeys = getDesktopKeyboardKeys(platform)
 
@@ -46,8 +49,16 @@ class DesktopShortcutKeysListener(
      * [timeout] bounds the wait in case a release event never arrives.
      */
     suspend fun awaitKeysReleased(timeout: Duration = 500.milliseconds) {
-        withTimeoutOrNull(timeout) { heldKeyCodes.first { it.isEmpty() } }
+        val released = withTimeoutOrNull(timeout) { heldKeyCodes.first { it.isEmpty() } }
+        if (released == null) {
+            logger.warn { "Timed out waiting for held keys to release: ${heldKeyCodes.value}, clearing held keys" }
+            clearHeldKeys()
+        }
         delay(RELEASE_DELIVERY_DELAY)
+    }
+
+    private fun clearHeldKeys() {
+        heldKeyCodes.value = emptySet()
     }
 
     override fun beginPasteSuppression(timeout: Duration) {
