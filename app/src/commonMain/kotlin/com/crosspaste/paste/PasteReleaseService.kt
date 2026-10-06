@@ -13,6 +13,7 @@ import com.crosspaste.paste.item.PasteItemProperties
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.applyRenameMap
 import com.crosspaste.paste.item.bindItem
+import com.crosspaste.paste.item.clear
 import com.crosspaste.paste.item.getFilePaths
 import com.crosspaste.paste.plugin.process.DiscardOversizedNonFilePlugin
 import com.crosspaste.paste.plugin.process.PasteProcessPlugin
@@ -228,6 +229,39 @@ class PasteReleaseService(
                     }
                 }
             }
+        } ?: discardCollectedItemsOfDeletedRow(id, pasteItems)
+    }
+
+    /**
+     * The row was deleted while it was still being collected, so the delete task
+     * found only the placeholder items and none of the files copied since.
+     */
+    private suspend fun discardCollectedItemsOfDeletedRow(
+        id: Long,
+        pasteItems: List<PasteItem>,
+    ) {
+        if (pasteDao.getNoDeletePasteData(id) != null) return
+        pasteItems.forEach { it.clear(userDataPathProvider = userDataPathProvider) }
+    }
+
+    /**
+     * Discards remote file receives an earlier run left unfinished. Pull tasks and push
+     * sessions do not survive a restart, and are deliberately not replayed (#4797), so
+     * their LOADING rows would otherwise stay forever, along with pre-allocated files.
+     * Must run before the sync server starts, while no receive of this run can exist.
+     */
+    suspend fun discardInterruptedReceives() {
+        runCatching {
+            val ids = pasteDao.getRemoteLoadingPasteIds()
+            if (ids.isNotEmpty()) {
+                logger.info { "Discarding ${ids.size} receive(s) interrupted by the last shutdown" }
+            }
+            ids.forEach { id ->
+                deleteUnfinishedReceiveFiles(pasteDao, userDataPathProvider, id)
+                pasteDao.markDeletePasteData(id)
+            }
+        }.onFailure { e ->
+            logger.error(e) { "Failed to discard interrupted receives" }
         }
     }
 

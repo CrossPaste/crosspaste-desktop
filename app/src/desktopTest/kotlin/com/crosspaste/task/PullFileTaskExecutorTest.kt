@@ -14,11 +14,13 @@ import com.crosspaste.net.clientapi.createFailureResult
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.presist.SingleFileInfoTree
+import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.FilePullResult
 import com.crosspaste.sync.FilePullService
 import com.crosspaste.utils.getJsonUtils
@@ -183,5 +185,121 @@ class PullFileTaskExecutorTest {
         assertTrue(userFile.exists(), "the user's original file must survive the cleanup")
         assertEquals("user-data", userFile.readText())
         coVerify(exactly = 1) { pasteDao.markDeletePasteData(pasteId) }
+    }
+
+    // ========== Terminal state of a pulled row ==========
+
+    private class Fixture(
+        tempDir: File,
+        pullResult: suspend () -> FilePullResult,
+        rowAfterPull: PasteData?,
+        finalizeResult: Result<Unit?> = Result.success(Unit),
+    ) {
+        val destination = File(tempDir, "big-files").also { it.mkdirs() }
+        val slotFile = File(destination, "big.apk").also { it.writeText("") }
+        val pasteData =
+            PasteData(
+                id = 7L,
+                appInstanceId = "remote-peer",
+                pasteAppearItem =
+                    createFilesPasteItem(
+                        basePath = destination.absolutePath,
+                        relativePathList = listOf("big.apk"),
+                        fileInfoTreeMap = mapOf("big.apk" to SingleFileInfoTree(size = 1024L, hash = "h")),
+                    ),
+                pasteCollection = PasteCollection(emptyList()),
+                pasteType = PasteType.FILE_TYPE.type,
+                source = null,
+                size = 1024L,
+                hash = "h",
+            )
+        val pasteDao =
+            mockk<PasteDao>(relaxed = true).also {
+                // First read starts the pull; later reads see the row as it is after it
+                coEvery { it.getNoDeletePasteData(7L) } returnsMany listOf(pasteData, rowAfterPull)
+            }
+        val pasteboardService =
+            mockk<PasteboardService>(relaxed = true).also {
+                coEvery { it.tryWriteRemotePasteboardWithFile(7L, any()) } returns finalizeResult
+            }
+        val soundService = mockk<SoundService>(relaxed = true)
+        val executor =
+            PullFileTaskExecutor(
+                filePullService =
+                    mockk<FilePullService>().also {
+                        coEvery { it.pullFiles(any(), any(), any(), any(), any(), any()) } coAnswers { pullResult() }
+                    },
+                pasteDao = pasteDao,
+                pasteSyncProcessManager = mockk(relaxed = true),
+                pasteboardService = pasteboardService,
+                soundService = soundService,
+                userDataPathProvider =
+                    mockk<UserDataPathProvider>(relaxed = true).also {
+                        every { it.deleteReceivedFilesOutsideStorage(any()) } answers {
+                            File(destination, "big.apk").delete()
+                        }
+                    },
+            )
+    }
+
+    @Test
+    fun `pull exception counts as a failed attempt instead of escaping the retry budget`(
+        @TempDir tempDir: File,
+    ) = runTest {
+        val fixture = Fixture(tempDir, { throw IllegalStateException("disk full") }, rowAfterPull = null)
+
+        val failure = assertIs<FailurePasteTaskResult>(fixture.executor.doExecuteTask(pullTask(previousFailures = 0)))
+
+        assertTrue(failure.needRetry)
+        coVerify(exactly = 0) { fixture.pasteDao.markDeletePasteData(any()) }
+    }
+
+    @Test
+    fun `final pull exception ends the row and removes its slot`(
+        @TempDir tempDir: File,
+    ) = runTest {
+        val fixture = Fixture(tempDir, { throw IllegalStateException("disk full") }, rowAfterPull = null)
+
+        val failure = assertIs<FailurePasteTaskResult>(fixture.executor.doExecuteTask(pullTask(previousFailures = 3)))
+
+        assertFalse(failure.needRetry)
+        assertFalse(fixture.slotFile.exists())
+        coVerify(exactly = 1) { fixture.pasteDao.markDeletePasteData(7L) }
+    }
+
+    @Test
+    fun `finalize failure ends the row instead of reporting success`(
+        @TempDir tempDir: File,
+    ) = runTest {
+        val fixture =
+            Fixture(
+                tempDir,
+                { FilePullResult.Success(emptyMap()) },
+                rowAfterPull = null,
+                finalizeResult = Result.failure(IllegalStateException("busy")),
+            )
+        coEvery { fixture.pasteDao.getNoDeletePasteData(7L) } returnsMany
+            listOf(fixture.pasteData, fixture.pasteData, fixture.pasteData)
+
+        val failure = assertIs<FailurePasteTaskResult>(fixture.executor.doExecuteTask(pullTask(previousFailures = 0)))
+
+        assertFalse(failure.needRetry, "every chunk landed; a retry would pull the whole paste again")
+        assertFalse(fixture.slotFile.exists())
+        coVerify(exactly = 1) { fixture.pasteDao.markDeletePasteData(7L) }
+        coVerify(exactly = 1) { fixture.soundService.errorSound() }
+    }
+
+    @Test
+    fun `row deleted during the pull is reclaimed quietly and never finalized`(
+        @TempDir tempDir: File,
+    ) = runTest {
+        val fixture = Fixture(tempDir, { FilePullResult.Success(emptyMap()) }, rowAfterPull = null)
+
+        assertIs<SuccessPasteTaskResult>(fixture.executor.doExecuteTask(pullTask(previousFailures = 0)))
+
+        assertFalse(fixture.slotFile.exists())
+        coVerify(exactly = 0) { fixture.pasteboardService.tryWriteRemotePasteboardWithFile(any(), any()) }
+        coVerify(exactly = 0) { fixture.soundService.errorSound() }
+        coVerify(exactly = 0) { fixture.pasteDao.markDeletePasteData(any()) }
     }
 }

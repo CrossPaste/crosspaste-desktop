@@ -18,6 +18,8 @@ interface PasteDao : SearchPasteData {
 
     suspend fun getLoadingPasteData(id: Long): PasteData?
 
+    suspend fun getRemoteLoadingPasteIds(): List<Long>
+
     fun getLoadedPasteDataBlock(id: Long): PasteData?
 
     suspend fun getLatestLoadedPasteData(): PasteData?

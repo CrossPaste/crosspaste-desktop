@@ -101,11 +101,12 @@ WHERE pasteState != -1
 ORDER BY createTime DESC
 LIMIT ?;
 
+-- Only finished rows: deleting a LOADING row mid-receive orphans the files written after it
 queryByCleanTime:
 SELECT id
 FROM PasteDataEntity
 WHERE createTime < :cleanTime
-  AND pasteState != -1
+  AND pasteState = 1
   AND (:pasteType IS NULL OR pasteType = :pasteType)
   AND NOT EXISTS (
       SELECT 1 FROM PasteTagEntity
@@ -113,6 +114,10 @@ WHERE createTime < :cleanTime
   )
 ORDER BY createTime ASC
 LIMIT :limit;
+
+getRemoteLoadingPasteIds:
+SELECT id FROM PasteDataEntity
+WHERE remote = 1 AND pasteState = 0;
 
 markDeletePasteData:
 UPDATE PasteDataEntity
@@ -154,11 +159,12 @@ WHERE pasteState != -1
 ORDER BY createTime ASC, id ASC
 LIMIT :limit;
 
+-- Only finished rows, for the same reason as queryByCleanTime
 getSameHashPasteDataIds:
 SELECT id FROM PasteDataEntity
 WHERE hash = :hash AND
     pasteType = :pasteType AND
-    pasteState != -1 AND
+    pasteState = 1 AND
     createTime > :createTime AND
     id != :id AND
     NOT EXISTS (

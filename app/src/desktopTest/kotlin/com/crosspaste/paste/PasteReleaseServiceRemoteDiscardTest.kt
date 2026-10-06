@@ -227,4 +227,21 @@ class PasteReleaseServiceRemoteDiscardTest {
             assertTrue(result.isFailure)
             coVerify(exactly = 0) { pastePullCursorManager.persistDiscardedMaxCreateTime(any(), any()) }
         }
+
+    @Test
+    fun `receives interrupted by the last shutdown are discarded`() =
+        runBlocking {
+            val pasteDao = mockk<PasteDao>(relaxed = true)
+            coEvery { pasteDao.getRemoteLoadingPasteIds() } returns listOf(3L, 5L)
+            coEvery { pasteDao.markDeletePasteData(any()) } returns Result.success(Unit)
+            val service = newService(pasteDao = pasteDao)
+
+            service.discardInterruptedReceives()
+
+            coVerify(exactly = 1) { pasteDao.markDeletePasteData(3L) }
+            coVerify(exactly = 1) { pasteDao.markDeletePasteData(5L) }
+            // The pre-allocated files outside managed storage are looked up per row
+            coVerify(exactly = 1) { pasteDao.getLoadingPasteData(3L) }
+            coVerify(exactly = 1) { pasteDao.getLoadingPasteData(5L) }
+        }
 }

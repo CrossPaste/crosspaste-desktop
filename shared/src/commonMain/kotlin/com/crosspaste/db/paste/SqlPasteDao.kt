@@ -74,6 +74,11 @@ class SqlPasteDao(
         }
     }
 
+    override suspend fun getRemoteLoadingPasteIds(): List<Long> =
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries.getRemoteLoadingPasteIds().executeAsList()
+        }
+
     override suspend fun getLoadingPasteData(id: Long): PasteData? =
         withContext(ioDispatcher) {
             pasteDatabaseQueries
