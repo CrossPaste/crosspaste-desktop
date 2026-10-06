@@ -8,7 +8,7 @@ class HeadlessAppTokenService : AppTokenService() {
     private val logger = KotlinLogging.logger {}
 
     override fun preShowToken() {
-        logger.info { "Token: ${token.value.concatToString()}" }
+        logger.info { "Pairing token requested; run 'crosspaste token' to read it" }
     }
 
     override fun preShowPairingCode() {
