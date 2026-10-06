@@ -481,6 +481,29 @@ class PasteReleaseServicePushTest {
     }
 
     @Test
+    fun releaseRemotePasteDataForPush_cleansUpSlotsAndMarksDeletedOnPostIndexFailure(
+        @TempDir tempDir: File,
+    ) = runBlocking {
+        val destination = File(tempDir, "big-files").also { it.mkdirs() }
+        File(destination, "big.apk").writeText("existing-file")
+        val pasteDao = mockk<PasteDao>(relaxed = true)
+        coEvery { pasteDao.createPasteData(any(), any()) } returns 7L
+        coEvery { pasteDao.updateFilePath(any()) } returns Unit andThenThrows RuntimeException("database failure")
+        val service =
+            newService(
+                pasteDao = pasteDao,
+                commonConfigManager = defaultConfigManager(destination.absolutePath),
+                userDataPathProvider = realPathProvider(File(tempDir, "storage").also { it.mkdirs() }),
+            )
+
+        assertNull(service.releaseRemotePasteDataForPush(oversizedFilePasteData("big.apk")))
+
+        assertFalse(File(destination, "big(1).apk").exists(), "pre-allocated slot must be cleaned up on failure")
+        assertEquals("existing-file", File(destination, "big.apk").readText(), "user file must remain intact")
+        coVerify(exactly = 1) { pasteDao.markDeletePasteData(7L) }
+    }
+
+    @Test
     fun discardPushPrepared_marksPreparedPasteDeleted() =
         runBlocking {
             val pasteDao = mockk<PasteDao>(relaxed = true)

@@ -131,7 +131,13 @@ class UserDataPathProvider(
             .filterIsInstance<PasteFiles>()
             .filter { it.basePath != null }
             .flatMap { it.getFilePaths(this) }
-            .forEach { fileUtils.deleteFile(it) }
+            .distinct()
+            .filter { fileUtils.existFile(it) }
+            .forEach { path ->
+                fileUtils.deleteFile(path).onFailure { e ->
+                    logger.warn(e) { "Failed to delete received file outside storage: $path" }
+                }
+            }
     }
 
     fun validateReceivePaths(
