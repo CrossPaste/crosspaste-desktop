@@ -217,6 +217,12 @@ class LinuxAppWindowManager(
         X11Api.bringToFront(bubbleWindow, source = NativeLong(1))
     }
 
+    override suspend fun returnFocusToPreviousApp() {
+        if (!needsPortalPaste()) {
+            prevLinuxAppInfo.value?.let { bringToBack(it) }
+        }
+    }
+
     override suspend fun hideSearchWindowAndPaste(
         size: Int,
         preparePaste: suspend (Int) -> Boolean,

@@ -31,6 +31,7 @@ import kotlinx.coroutines.withContext
 class DesktopShortKeysAction(
     private val appFileChooser: AppFileChooser,
     private val appWindowManager: DesktopAppWindowManager,
+    private val lazyShortcutKeysListener: Lazy<DesktopShortcutKeysListener>,
     private val configManager: DesktopConfigManager,
     private val currentPaste: CurrentPaste,
     private val notificationManager: NotificationManager,
@@ -90,12 +91,19 @@ class DesktopShortKeysAction(
         }
     }
 
+    private suspend fun awaitShortcutReleased() {
+        lazyShortcutKeysListener.value.awaitKeysReleased()
+    }
+
     private fun switchSearchWindow() {
         mainRunAction(
             actionName = "OpenSearchWindow",
             actionLogMessage = "Open search window",
         ) {
-            appWindowManager.switchSearchWindow(WindowTrigger.SHORTCUT) {
+            appWindowManager.switchSearchWindow(
+                windowTrigger = WindowTrigger.SHORTCUT,
+                awaitTriggerReleased = ::awaitShortcutReleased,
+            ) {
                 appWindowManager.saveCurrentActiveAppInfo()
             }
         }
@@ -126,7 +134,7 @@ class DesktopShortKeysAction(
             }
 
             if (appWindowManager.getCurrentSearchWindowInfo().show) {
-                appWindowManager.hideSearchWindow()
+                appWindowManager.dismissSearchWindow(::awaitShortcutReleased)
             }
         }
     }

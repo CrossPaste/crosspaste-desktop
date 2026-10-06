@@ -163,6 +163,10 @@ class WinAppWindowManager(
         )
     }
 
+    override suspend fun returnFocusToPreviousApp() {
+        WindowsFocusUtils.backToBack(searchHWND, windowFocusRecorder.lastWinAppInfo.value?.hwnd)
+    }
+
     override suspend fun hideSearchWindowAndPaste(
         size: Int,
         preparePaste: suspend (Int) -> Boolean,

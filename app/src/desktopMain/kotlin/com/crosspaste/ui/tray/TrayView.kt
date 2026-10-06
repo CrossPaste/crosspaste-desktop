@@ -109,7 +109,7 @@ fun ApplicationScope.TrayView(windowIcon: Painter) {
                 mainCoroutineDispatcher.launch {
                     appWindowManager.hideMainWindow()
                     if (appWindowManager.getCurrentSearchWindowInfo().show) {
-                        appWindowManager.hideSearchWindow()
+                        appWindowManager.dismissSearchWindow()
                     } else {
                         appWindowManager.saveCurrentActiveAppInfo()
                         appWindowManager.showSearchWindow(WindowTrigger.TRAY_ICON)

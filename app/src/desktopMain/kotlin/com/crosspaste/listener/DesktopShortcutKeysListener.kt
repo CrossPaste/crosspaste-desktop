@@ -5,13 +5,24 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.utils.DateUtils.nowEpochMilliseconds
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+
+private val RELEASE_DELIVERY_DELAY = 50.milliseconds
 
 class DesktopShortcutKeysListener(
     platform: Platform,
     private val shortcutKeys: ShortcutKeys,
 ) : ShortcutKeysListener,
     NativeKeyListener {
+
+    private val logger = KotlinLogging.logger {}
 
     private val keyboardKeys = getDesktopKeyboardKeys(platform)
 
@@ -29,6 +40,26 @@ class DesktopShortcutKeysListener(
     private var pasteSuppressDeadlineMillis: Long = 0L
 
     override var currentKeys: MutableList<KeyboardKey> = mutableStateListOf()
+
+    private val heldKeyCodes = MutableStateFlow<Set<Int>>(emptySet())
+
+    /**
+     * Suspends until no key is held down and the last release has had time to reach
+     * the focused window: this hook sees a release before the app it is routed to.
+     * [timeout] bounds the wait in case a release event never arrives.
+     */
+    suspend fun awaitKeysReleased(timeout: Duration = 500.milliseconds) {
+        val released = withTimeoutOrNull(timeout) { heldKeyCodes.first { it.isEmpty() } }
+        if (released == null) {
+            logger.warn { "Timed out waiting for held keys to release: ${heldKeyCodes.value}, clearing held keys" }
+            clearHeldKeys()
+        }
+        delay(RELEASE_DELIVERY_DELAY)
+    }
+
+    private fun clearHeldKeys() {
+        heldKeyCodes.value = emptySet()
+    }
 
     override fun beginPasteSuppression(timeout: Duration) {
         pasteSuppressDeadlineMillis = nowEpochMilliseconds() + timeout.inWholeMilliseconds
@@ -48,6 +79,7 @@ class DesktopShortcutKeysListener(
     }
 
     override fun nativeKeyPressed(nativeEvent: NativeKeyEvent) {
+        heldKeyCodes.update { it + nativeEvent.keyCode }
         if (!editShortcutKeysMode) {
             // Drop events while suppressed: this is CrossPaste's own injected paste
             // keystroke coming back, which would otherwise loop (issue #4500).
@@ -76,6 +108,7 @@ class DesktopShortcutKeysListener(
     }
 
     override fun nativeKeyReleased(nativeEvent: NativeKeyEvent) {
+        heldKeyCodes.update { it - nativeEvent.keyCode }
         // The injected paste keystroke releasing marks the end of our own simulation:
         // lift suppression now rather than waiting for the safety timeout (issue #4500).
         if (pasteSuppressing) {
