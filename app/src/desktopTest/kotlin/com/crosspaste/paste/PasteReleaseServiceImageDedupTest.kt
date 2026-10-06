@@ -88,7 +88,6 @@ class PasteReleaseServiceImageDedupTest {
         override fun addPullFileTask(
             id: Long,
             remotePasteDataId: Long,
-            seenAppInstanceIds: Set<String>,
         ): TaskBuilder = this
 
         override fun addSyncTask(
@@ -104,7 +103,6 @@ class PasteReleaseServiceImageDedupTest {
         override fun addRelaySyncTask(
             id: Long,
             appInstanceId: String,
-            seenAppInstanceIds: Set<String>,
         ): TaskBuilder = this
 
         override fun addPullIconTask(

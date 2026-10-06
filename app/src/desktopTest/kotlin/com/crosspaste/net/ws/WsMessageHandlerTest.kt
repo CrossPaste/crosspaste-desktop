@@ -46,7 +46,7 @@ class WsMessageHandlerTest {
                 createConnectedSyncRuntimeInfo(authenticatedPeer).copy(allowReceive = allowReceive)
             every { syncRoutingApi.getSyncHandler(authenticatedPeer) } returns syncHandler
             coEvery { appControl.isReceiveEnabled() } returns appReceiveEnabled
-            coEvery { pasteboardService.tryWriteRemotePasteboard(capture(receivedPastes)) } returns writeResult
+            coEvery { pasteboardService.tryWriteRemotePasteboard(capture(receivedPastes), any()) } returns writeResult
             coEvery { wsSessionManager.send(authenticatedPeer, capture(responses)) } returns true
 
             handler =
@@ -98,7 +98,7 @@ class WsMessageHandlerTest {
                 fixture.responses.single(),
             )
             coVerifyOrder {
-                fixture.pasteboardService.tryWriteRemotePasteboard(any())
+                fixture.pasteboardService.tryWriteRemotePasteboard(any(), any())
                 fixture.wsSessionManager.send(authenticatedPeer, any())
                 fixture.appControl.completeReceiveOperation()
             }

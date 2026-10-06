@@ -125,7 +125,7 @@ class PasteRoutingTest {
             val response = postSyncPaste(targetAppInstanceId = "stale-old-identity")
 
             assertEquals(HttpStatusCode.BadRequest, response.status)
-            coVerify(exactly = 0) { pasteboardService.tryWriteRemotePasteboard(any()) }
+            coVerify(exactly = 0) { pasteboardService.tryWriteRemotePasteboard(any(), any()) }
         }
     }
 
@@ -136,7 +136,7 @@ class PasteRoutingTest {
             val response = postSyncPaste(targetAppInstanceId = null)
 
             assertEquals(HttpStatusCode.BadRequest, response.status)
-            coVerify(exactly = 0) { pasteboardService.tryWriteRemotePasteboard(any()) }
+            coVerify(exactly = 0) { pasteboardService.tryWriteRemotePasteboard(any(), any()) }
         }
     }
 
@@ -148,12 +148,12 @@ class PasteRoutingTest {
                 coEvery { isReceiveEnabled() } returns true
             }
         val pastePullService = mockk<PastePullService>(relaxed = true)
-        coEvery { pasteboardService.tryWriteRemotePasteboard(any()) } returns Result.success(Unit)
+        coEvery { pasteboardService.tryWriteRemotePasteboard(any(), any()) } returns Result.success(Unit)
         withPasteRouting(pasteboardService, appControl, pastePullService) {
             val response = postSyncPaste(targetAppInstanceId = "local-instance")
 
             assertEquals(HttpStatusCode.OK, response.status)
-            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboard(any()) }
+            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboard(any(), any()) }
             coVerify(exactly = 1) { pastePullService.updateMaxCreateTime("remote-peer", any()) }
             coVerify(exactly = 1) { appControl.completeReceiveOperation() }
         }
@@ -181,14 +181,14 @@ class PasteRoutingTest {
                 coEvery { isReceiveEnabled() } returns true
             }
         val pastePullService = mockk<PastePullService>(relaxed = true)
-        coEvery { pasteboardService.tryWriteRemotePasteboard(any()) } returns
+        coEvery { pasteboardService.tryWriteRemotePasteboard(any(), any()) } returns
             Result.failure(IllegalStateException("database unavailable"))
 
         withPasteRouting(pasteboardService, appControl, pastePullService) {
             val response = postSyncPaste(targetAppInstanceId = "local-instance")
 
             assertEquals(HttpStatusCode.BadRequest, response.status)
-            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboard(any()) }
+            coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboard(any(), any()) }
             coVerify(exactly = 0) { pastePullService.updateMaxCreateTime(any(), any()) }
             coVerify(exactly = 0) { appControl.completeReceiveOperation() }
         }

@@ -65,6 +65,9 @@ class HeadlessPasteboardService(
             logger.info { "Headless mode: paste data stored to DB only (no system clipboard)" }
         }
 
+    override suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit?> =
+        tryWriteRemotePasteboard(pasteData, emptySet())
+
     override suspend fun tryWriteRemotePasteboard(
         pasteData: PasteData,
         seenAppInstanceIds: Set<String>,
@@ -77,6 +80,9 @@ class HeadlessPasteboardService(
 
     override suspend fun tryWriteRemotePasteboardList(pasteDataList: List<PasteData>): Result<Unit?> =
         pasteReleaseService.releaseRemotePasteDataList(pasteDataList) { tryWriteRemotePasteboard(it) }
+
+    override suspend fun tryWriteRemotePasteboardWithFile(pasteId: Long): Result<Unit?> =
+        tryWriteRemotePasteboardWithFile(pasteId, emptySet())
 
     override suspend fun tryWriteRemotePasteboardWithFile(
         pasteId: Long,

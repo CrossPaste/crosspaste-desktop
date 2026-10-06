@@ -19,8 +19,9 @@ interface TaskBuilder {
     fun addPullFileTask(
         id: Long,
         remotePasteDataId: Long,
-    ): TaskBuilder = addPullFileTask(id, remotePasteDataId, emptySet())
+    ): TaskBuilder
 
+    // Defaults to dropping the set so implementations predating RelaySeen still compile
     fun addPullFileTask(
         id: Long,
         remotePasteDataId: Long,
@@ -37,8 +38,9 @@ interface TaskBuilder {
     fun addRelaySyncTask(
         id: Long,
         appInstanceId: String,
-    ): TaskBuilder = addRelaySyncTask(id, appInstanceId, emptySet())
+    ): TaskBuilder
 
+    // Defaults to dropping the set so implementations predating RelaySeen still compile
     fun addRelaySyncTask(
         id: Long,
         appInstanceId: String,

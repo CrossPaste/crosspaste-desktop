@@ -101,6 +101,9 @@ abstract class AbstractPasteboardService :
         systemClipboard.setContents(transferable, this)
     }
 
+    override suspend fun tryWriteRemotePasteboard(pasteData: PasteData): Result<Unit?> =
+        tryWriteRemotePasteboard(pasteData, emptySet())
+
     override suspend fun tryWriteRemotePasteboard(
         pasteData: PasteData,
         seenAppInstanceIds: Set<String>,
@@ -124,6 +127,9 @@ abstract class AbstractPasteboardService :
 
     override suspend fun tryWriteRemotePasteboardList(pasteDataList: List<PasteData>): Result<Unit?> =
         pasteReleaseService.releaseRemotePasteDataList(pasteDataList) { tryWriteRemotePasteboard(it) }
+
+    override suspend fun tryWriteRemotePasteboardWithFile(pasteId: Long): Result<Unit?> =
+        tryWriteRemotePasteboardWithFile(pasteId, emptySet())
 
     override suspend fun tryWriteRemotePasteboardWithFile(
         pasteId: Long,
