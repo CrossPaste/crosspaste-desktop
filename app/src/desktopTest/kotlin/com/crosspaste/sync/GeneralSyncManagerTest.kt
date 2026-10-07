@@ -325,6 +325,44 @@ class GeneralSyncManagerTest {
         }
 
     @Test
+    fun automaticSyncInfoWrites_droppedWhileRemovalInFlight_allowedAfterRowDeleted() =
+        runTest {
+            // R2-06-002: removal notifies the peer before deleting the row, so an mDNS
+            // refresh or inbound trust landing in between must not re-insert the device.
+            val mocks = createMocks()
+            val runtimeInfo = createTestSyncRuntimeInfo()
+            val syncInfo = SyncTestFixtures.createSyncInfo(appInstanceId = runtimeInfo.appInstanceId)
+            val dbFlow = MutableStateFlow(listOf(runtimeInfo))
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns dbFlow
+            // RemoveDevice is still "notifying the peer": the resolver never deletes here.
+            coEvery { mocks.syncResolver.emitEvent(any()) } just runs
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+            syncManager.start()
+            advanceUntilIdle()
+
+            syncManager.removeSyncHandler(runtimeInfo.appInstanceId)
+            advanceUntilIdle()
+
+            syncManager.updateSyncInfo(syncInfo)
+            syncManager.trustSyncInfo(syncInfo, "192.168.1.100")
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { mocks.syncRuntimeInfoDao.insertOrUpdateSyncInfo(any(), any()) }
+
+            // Row deleted: the DB flow drops it and the device can be added again.
+            dbFlow.value = emptyList()
+            advanceUntilIdle()
+
+            syncManager.updateSyncInfo(syncInfo)
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { mocks.syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo, any()) }
+            childScope.cancel()
+        }
+
+    @Test
     fun testTrustByTokenWithNonExistentHandler() =
         runTest {
             val mocks = createMocks()

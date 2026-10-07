@@ -36,6 +36,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.cancellation.CancellationException
 
@@ -90,6 +92,15 @@ class GeneralSyncManager(
     private val internalSyncHandlers: MutableMap<String, SyncHandler> = ConcurrentMap()
 
     private val eventChannel = Channel<SyncEvent>(Channel.UNLIMITED)
+
+    // Devices with a removal in flight, from the remove action until the DB flow drops
+    // the row. Removal notifies the peer over the network before deleting locally, so an
+    // automatic SyncInfo write (mDNS refresh, inbound trust) started in that window would
+    // otherwise commit after the delete and re-insert the device. The mutex makes the
+    // marker check and the DAO write atomic with respect to marking.
+    private val removingDevices: MutableSet<String> = ConcurrentSet()
+
+    private val syncInfoWriteMutex = Mutex()
 
     private val started = atomic(false)
 
@@ -186,6 +197,10 @@ class GeneralSyncManager(
                         }
 
                     _realTimeSyncRuntimeInfos.value = list
+
+                    // Only after publishing the snapshot: discovery reads it to decide
+                    // whether a resolved service is still a paired device.
+                    removingDevices.removeAll(deleteSet)
 
                     _ignoreVerifySet.value =
                         _ignoreVerifySet.value
@@ -329,6 +344,7 @@ class GeneralSyncManager(
     override fun removeSyncHandler(appInstanceId: String) {
         internalSyncHandlers[appInstanceId]?.let { syncHandler ->
             realTimeSyncScope.launch(CoroutineName("RemoveSyncHandler")) {
+                syncInfoWriteMutex.withLock { removingDevices.add(appInstanceId) }
                 syncHandler.removeDevice()
             }
         }
@@ -421,7 +437,9 @@ class GeneralSyncManager(
     override fun updateSyncInfo(syncInfo: SyncInfo) {
         rememberPairingCredentialType(syncInfo)
         realTimeSyncScope.launch {
-            syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo)
+            writeSyncInfoUnlessRemoving(syncInfo) {
+                syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo)
+            }
         }
     }
 
@@ -437,7 +455,23 @@ class GeneralSyncManager(
                         ConnectInfo(it.networkPrefixLength, it.hostAddress)
                     }
                 }
-            syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo, connectInfo)
+            writeSyncInfoUnlessRemoving(syncInfo) {
+                syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo, connectInfo)
+            }
+        }
+    }
+
+    private suspend fun writeSyncInfoUnlessRemoving(
+        syncInfo: SyncInfo,
+        write: suspend () -> Unit,
+    ) {
+        val appInstanceId = syncInfo.appInfo.appInstanceId
+        syncInfoWriteMutex.withLock {
+            if (appInstanceId in removingDevices) {
+                logger.info { "Drop SyncInfo write for $appInstanceId: removal in progress" }
+            } else {
+                write()
+            }
         }
     }
 
