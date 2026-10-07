@@ -92,7 +92,14 @@ class SyncResolver(
 
                 when (event) {
                     is SyncEvent.Resolve -> {
-                        syncRuntimeInfo.resolve(event.callback)
+                        // Settle the polling backoff once per pass, from where the pass
+                        // landed: a peer still unreachable retries on the short exponential
+                        // schedule; CONNECTED is reset by the handler's state-change path,
+                        // and INCOMPATIBLE/UNVERIFIED wait on the user, so they keep the
+                        // default interval. Non-polling callbacks pass a no-op.
+                        if (syncRuntimeInfo.resolve(event.callback) == SyncState.DISCONNECTED) {
+                            event.callback.markPollFailure()
+                        }
                     }
 
                     is SyncEvent.ForceResolve -> {
@@ -190,7 +197,8 @@ class SyncResolver(
     // unnecessary intermediate state persistence and event round-trips.
     // ──────────────────────────────────────────────────────────────
 
-    private suspend fun SyncRuntimeInfo.resolve(callback: ResolveCallback) {
+    /** Returns the connect state this pass left the device in. */
+    private suspend fun SyncRuntimeInfo.resolve(callback: ResolveCallback): Int {
         // Per-poll entry trace: debug only. At INFO we log just the state transitions
         // (connected / disconnected / incompatible / …), so steady-state polling stays quiet.
         logger.debug { "Resolve $appInstanceId (state=$connectState)" }
@@ -198,11 +206,10 @@ class SyncResolver(
         // Extensions (e.g. Chrome) are client-only: they connect TO us via WebSocket
         // and have no server to telnet/heartbeat back to. Use WebSocket liveness instead.
         if (platform.isExtension()) {
-            resolveExtension(callback)
-            return
+            return resolveExtension(callback)
         }
 
-        when (connectState) {
+        return when (connectState) {
             SyncState.DISCONNECTED,
             SyncState.INCOMPATIBLE,
             -> {
@@ -224,6 +231,8 @@ class SyncResolver(
             SyncState.CONNECTED -> {
                 verifyConnection(callback)
             }
+
+            else -> connectState
         }
     }
 
@@ -233,14 +242,16 @@ class SyncResolver(
      * Liveness is verified by sending an in-band Frame.Ping; send failure
      * means the underlying socket is dead.
      */
-    private suspend fun SyncRuntimeInfo.resolveExtension(callback: ResolveCallback) {
+    private suspend fun SyncRuntimeInfo.resolveExtension(callback: ResolveCallback): Int =
         when (connectState) {
             SyncState.CONNECTED -> {
                 if (!wsSessionManager.probe(appInstanceId)) {
                     logger.info { "Extension $appInstanceId probe failed, marking DISCONNECTED" }
                     updateConnectState(SyncState.DISCONNECTED)
+                } else {
+                    // probe success → stay CONNECTED
+                    connectState
                 }
-                // probe success → stay CONNECTED
             }
             SyncState.DISCONNECTED -> {
                 if (wsSessionManager.probe(appInstanceId)) {
@@ -248,17 +259,15 @@ class SyncResolver(
                     callback.updateVersionRelation(VersionRelation.EQUAL_TO)
                     updateConnectState(SyncState.CONNECTED)
                 } else {
-                    // WS still gone (or half-open); only scheduled polling will actually
-                    // escalate backoff (force-resolve / first-value paths pass a no-op
-                    // markPollFailure).
-                    callback.markPollFailure()
+                    // WS still gone (or half-open)
+                    connectState
                 }
             }
             else -> {
                 logger.warn { "Extension $appInstanceId in unexpected state=$connectState" }
+                connectState
             }
         }
-    }
 
     /**
      * Phase 1: Discover a reachable host and attempt full connection
@@ -268,7 +277,7 @@ class SyncResolver(
      * exists, try it first with a short timeout. On failure, fall back
      * to probing the full address list with a longer timeout.
      */
-    private suspend fun SyncRuntimeInfo.discoverAndConnect(callback: ResolveCallback) {
+    private suspend fun SyncRuntimeInfo.discoverAndConnect(callback: ResolveCallback): Int {
         // Gate discovery when the machine has no usable local interface (cold-start
         // before the network is up, sleep/wake, cable pulled). Every telnet would fail
         // with UnresolvedAddressException, and the per-poll "no reachable host" line
@@ -280,7 +289,7 @@ class SyncResolver(
             if (connectState != SyncState.DISCONNECTED) {
                 updateConnectState(SyncState.DISCONNECTED)
             }
-            return
+            return SyncState.DISCONNECTED
         }
 
         val result =
@@ -296,7 +305,7 @@ class SyncResolver(
                     logger.info { "$appInstanceId no reachable host, hostInfoList: $hostInfoList" }
                     updateConnectState(SyncState.DISCONNECTED)
                 }
-                return
+                return SyncState.DISCONNECTED
             }
 
         val (hostInfo, versionRelation) = result
@@ -308,8 +317,7 @@ class SyncResolver(
             if (connectState != SyncState.INCOMPATIBLE) {
                 logger.info { "$appInstanceId version incompatible: $versionRelation" }
             }
-            updateConnectState(SyncState.INCOMPATIBLE, hostInfo.hostAddress, hostInfo.networkPrefixLength)
-            return
+            return updateConnectState(SyncState.INCOMPATIBLE, hostInfo.hostAddress, hostInfo.networkPrefixLength)
         }
 
         // Host found and version compatible — set CONNECTING for UI feedback
@@ -317,7 +325,7 @@ class SyncResolver(
         updateConnectState(SyncState.CONNECTING, hostInfo.hostAddress, hostInfo.networkPrefixLength)
 
         // Immediately attempt authentication (no event round-trip)
-        authenticate(hostInfo.hostAddress, hostInfo.networkPrefixLength, callback)
+        return authenticate(hostInfo.hostAddress, hostInfo.networkPrefixLength, callback)
     }
 
     /**
@@ -328,7 +336,7 @@ class SyncResolver(
         host: String,
         networkPrefixLength: Short?,
         callback: ResolveCallback,
-    ) {
+    ): Int =
         if (secureStore.existCryptPublicKey(appInstanceId)) {
             val state = heartbeat(host, port, appInstanceId, callback)
             when (state) {
@@ -337,6 +345,7 @@ class SyncResolver(
                     updateConnectState(SyncState.CONNECTED, host, networkPrefixLength)
                     ratingPromptManager.trackSignificantAction()
                     attemptWebSocketUpgrade(host, port)
+                    SyncState.CONNECTED
                 }
 
                 SyncState.UNMATCHED -> {
@@ -363,7 +372,6 @@ class SyncResolver(
             logger.info { "$appInstanceId no public key, checking token cache" }
             tryTokenCacheOrUnverified(host, networkPrefixLength)
         }
-    }
 
     /**
      * Phase 3: Try QR-scan token cache first; fall back to UNVERIFIED
@@ -372,11 +380,11 @@ class SyncResolver(
     private suspend fun SyncRuntimeInfo.tryTokenCacheOrUnverified(
         host: String,
         networkPrefixLength: Short?,
-    ) {
+    ): Int =
         if (trustByTokenCache()) {
             logger.info { "trustByTokenCache success $host $port" }
-            updateConnectState(SyncState.CONNECTED, host, networkPrefixLength)
             ratingPromptManager.trackSignificantAction()
+            updateConnectState(SyncState.CONNECTED, host, networkPrefixLength)
         } else {
             // Verify host is still reachable before showing UNVERIFIED to user
             telnetHelper.telnet(host, port)?.versionRelation?.let { versionRelation ->
@@ -388,50 +396,48 @@ class SyncResolver(
                 }
             } ?: updateConnectState(SyncState.DISCONNECTED)
         }
-    }
 
     /**
      * Handle UNVERIFIED state during polling: check if a QR token arrived
      * or if the host is still reachable.
      */
-    private suspend fun SyncRuntimeInfo.resolveUnverified(callback: ResolveCallback) {
+    private suspend fun SyncRuntimeInfo.resolveUnverified(callback: ResolveCallback): Int =
         connectHostAddress?.let { host ->
             // Pairing v3 persists the peer key outside the legacy resolver event path.
             // A forced refresh then arrives while this row is still UNVERIFIED, so
             // authenticate with the newly stored key before falling back to QR tokens.
             if (secureStore.existCryptPublicKey(appInstanceId)) {
-                authenticate(host, connectNetworkPrefixLength, callback)
-                return
+                return authenticate(host, connectNetworkPrefixLength, callback)
             }
             // Check token cache first — user may have scanned QR while waiting
             if (trustByTokenCache()) {
                 logger.info { "trustByTokenCache success (from unverified) $host $port" }
-                updateConnectState(SyncState.CONNECTED, host, connectNetworkPrefixLength)
                 ratingPromptManager.trackSignificantAction()
-                return
+                return updateConnectState(SyncState.CONNECTED, host, connectNetworkPrefixLength)
             }
             // Verify host still reachable; only update DB if state changes
             telnetHelper.telnet(host, port)?.versionRelation?.let { versionRelation ->
                 callback.updateVersionRelation(versionRelation)
                 if (versionRelation != VersionRelation.EQUAL_TO) {
                     updateConnectState(SyncState.INCOMPATIBLE, host, connectNetworkPrefixLength)
+                } else {
+                    // Still EQUAL_TO, stay UNVERIFIED — no DB write needed
+                    connectState
                 }
-                // If still EQUAL_TO, stay UNVERIFIED — no DB write needed
             } ?: updateConnectState(SyncState.DISCONNECTED)
         } ?: updateConnectState(SyncState.DISCONNECTED)
-    }
 
     /**
      * Verify an existing CONNECTED device is still healthy.
      * If a WebSocket session is active, skip the HTTP heartbeat —
      * the WebSocket ping/pong handles liveness.
      */
-    private suspend fun SyncRuntimeInfo.verifyConnection(callback: ResolveCallback) {
+    private suspend fun SyncRuntimeInfo.verifyConnection(callback: ResolveCallback): Int {
         if (wsSessionManager.isConnected(appInstanceId)) {
             logger.debug { "WebSocket active for $appInstanceId, skipping HTTP heartbeat" }
-            return
+            return connectState
         }
-        connectHostAddress?.let { host ->
+        return connectHostAddress?.let { host ->
             // Heartbeat the current address DIRECTLY — it need not be a member of
             // hostInfoList. With Phase B's capacity cap, a still-alive connectHostAddress
             // can be LRU-evicted from hostInfoList once the peer advertises newer ones;
@@ -441,6 +447,7 @@ class SyncResolver(
             when (state) {
                 SyncState.CONNECTED -> {
                     // Still connected — no state change needed
+                    connectState
                 }
 
                 SyncState.UNMATCHED -> {
@@ -781,7 +788,7 @@ class SyncResolver(
         state: Int,
         hostAddress: String? = connectHostAddress,
         networkPrefixLength: Short? = connectNetworkPrefixLength,
-    ) {
+    ): Int {
         syncRuntimeInfoDao.updateConnectInfo(
             this.copy(
                 connectHostAddress = hostAddress,
@@ -790,6 +797,7 @@ class SyncResolver(
                 modifyTime = nowEpochMilliseconds(),
             ),
         )
+        return state
     }
 
     private fun refreshSyncInfo(
