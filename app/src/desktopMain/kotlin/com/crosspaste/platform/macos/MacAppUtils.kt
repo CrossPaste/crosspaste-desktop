@@ -95,12 +95,6 @@ object MacAppUtils {
         INSTANCE.saveIconByExt(ext, path)
     }
 
-    fun createThumbnail(
-        originalImagePath: String,
-        thumbnailImagePath: String,
-        metadataPath: String,
-    ): Boolean = INSTANCE.createThumbnail(originalImagePath, thumbnailImagePath, metadataPath)
-
     fun createVideoThumbnail(
         videoPath: String,
         thumbnailPath: String,
