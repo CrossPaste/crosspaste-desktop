@@ -2,9 +2,18 @@ package com.crosspaste.app
 
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.WindowPosition
+import androidx.compose.ui.window.WindowState
 import com.crosspaste.app.DesktopAppSize.Companion.clampMainWindowSize
+import com.crosspaste.config.DesktopAppConfig
+import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.utils.getPlatformUtils
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 class DesktopAppSizeTest {
 
@@ -44,5 +53,17 @@ class DesktopAppSizeTest {
         val usable = DpSize(width = 1920.dp, height = 50.dp)
 
         assertEquals(designSize, clampMainWindowSize(designSize, usable))
+    }
+
+    private fun createConfigManager(): DesktopConfigManager =
+        mockk {
+            every { config } returns MutableStateFlow(DesktopAppConfig(language = "en"))
+        }
+
+    @Test
+    fun `isOnAnyDisplay returns false when window position is not absolute`() {
+        val appSize = DesktopAppSize(getPlatformUtils().platform, createConfigManager())
+
+        assertFalse(appSize.isOnAnyDisplay(WindowState(position = WindowPosition.PlatformDefault)))
     }
 }

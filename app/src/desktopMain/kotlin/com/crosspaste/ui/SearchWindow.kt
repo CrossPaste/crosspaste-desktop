@@ -158,7 +158,10 @@ fun SearchWindow(windowIcon: Painter?) {
                         }
 
                         logger.info { "Search window lost focus" }
-                        if (!appWindowManager.isBubbleWindowVisible()) {
+                        val isBubbleWindow =
+                            appWindowManager.bubbleComposeWindow != null &&
+                                e.oppositeWindow == appWindowManager.bubbleComposeWindow
+                        if (!isBubbleWindow) {
                             appWindowManager.hideSearchWindow()
                         }
                     }

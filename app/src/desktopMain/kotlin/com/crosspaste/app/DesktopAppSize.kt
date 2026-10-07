@@ -309,7 +309,13 @@ class DesktopAppSize(
 
     /** Paste panel beside the floating button, kept on the display the button is on. */
     fun getPastePanelWindowState(button: WindowState): WindowState {
-        val buttonRect = button.rect()
+        val effectiveButton =
+            if (button.position is WindowPosition.Absolute) {
+                button
+            } else {
+                getPastePanelButtonWindowState()
+            }
+        val buttonRect = effectiveButton.rect()
         val configuration =
             displayContaining(buttonRect)
                 ?: GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration
@@ -323,7 +329,8 @@ class DesktopAppSize(
     }
 
     /** False once the window's display is gone, e.g. an external monitor was unplugged. */
-    fun isOnAnyDisplay(window: WindowState): Boolean = displayContaining(window.rect()) != null
+    fun isOnAnyDisplay(window: WindowState): Boolean =
+        window.position is WindowPosition.Absolute && displayContaining(window.rect()) != null
 
     private fun WindowState.rect(): DpRect =
         DpRect(

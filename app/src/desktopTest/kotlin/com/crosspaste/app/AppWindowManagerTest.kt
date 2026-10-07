@@ -199,6 +199,7 @@ class AppWindowManagerTest {
         val defaultState = WindowState(position = WindowPosition(1000.dp, 400.dp), size = DpSize(48.dp, 48.dp))
         val appSize =
             spyk(DesktopAppSize(getPlatformUtils().platform, createConfigManager())) {
+                every { getSearchWindowState(any()) } returns WindowState()
                 every { getPastePanelButtonWindowState() } returns defaultState
                 every { isOnAnyDisplay(any()) } returns onDisplay
             }
