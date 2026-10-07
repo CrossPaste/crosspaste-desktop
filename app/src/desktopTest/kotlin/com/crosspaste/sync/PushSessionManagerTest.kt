@@ -38,6 +38,9 @@ import kotlin.time.Duration.Companion.seconds
 
 class PushSessionManagerTest {
 
+    // Sessions expire against this clock, so tests advance it instead of sleeping.
+    private var clock = 0L
+
     private fun fakeFilesIndex(chunkCount: Int): FilesIndex =
         mockk<FilesIndex>().also { every { it.getChunkCount() } returns chunkCount }
 
@@ -59,6 +62,7 @@ class PushSessionManagerTest {
                 sessionTtl = sessionTtl,
                 sweepInterval = sweepInterval,
                 scope = scope,
+                now = { clock },
             )
         return Triple(mgr, pasteDao, pasteboardService)
     }
@@ -132,7 +136,7 @@ class PushSessionManagerTest {
             // Sweep-expiry of an incomplete session frees the slot too.
             mgr.create(3L, "mobile", fakeFilesIndex(2))!!
             assertNull(mgr.tryReserve())
-            delay(50.milliseconds)
+            clock += 50
             mgr.sweepExpired()
             assertNotNull(mgr.create(4L, "mobile", fakeFilesIndex(1)))
             mgr.close()
@@ -379,7 +383,7 @@ class PushSessionManagerTest {
                 )
             mgr.create(42L, "mobile", fakeFilesIndex(2))!!
 
-            delay(50.milliseconds)
+            clock += 50
             mgr.sweepExpired()
 
             coVerifyOrder {
@@ -404,7 +408,7 @@ class PushSessionManagerTest {
             mgr.create(42L, "mobile", fakeFilesIndex(2))!!
             assertEquals(1, mgr.activeCount())
 
-            delay(50.milliseconds)
+            clock += 50
             mgr.sweepExpired()
 
             assertEquals(0, mgr.activeCount())
@@ -435,7 +439,7 @@ class PushSessionManagerTest {
             assertEquals(PushSession.MarkResult.Accepted, session.markReceived(1))
             assertTrue(session.isComplete)
 
-            delay(50.milliseconds)
+            clock += 50
             mgr.sweepExpired()
 
             assertEquals(0, mgr.activeCount())
@@ -463,7 +467,7 @@ class PushSessionManagerTest {
             val session = mgr.create(78L, "mobile", fakeFilesIndex(1))!!
             session.markReceived(0)
 
-            delay(50.milliseconds)
+            clock += 50
             mgr.sweepExpired()
 
             assertNull(mgr.peek(78L))
@@ -504,7 +508,7 @@ class PushSessionManagerTest {
                 )
             val session = mgr.create(79L, "mobile", fakeFilesIndex(1))!!
             session.markReceived(0)
-            delay(50.milliseconds)
+            clock += 50
 
             val sweep = launch { mgr.sweepExpired() }
             yield() // sweep now holds the terminal lock inside its finalize attempt
@@ -547,7 +551,7 @@ class PushSessionManagerTest {
                 )
             val session = mgr.create(81L, "mobile", fakeFilesIndex(1))!!
             session.markReceived(0)
-            delay(50.milliseconds)
+            clock += 50
 
             val sweep = launch { mgr.sweepExpired() }
             yield() // finalize failed; discard holds the terminal lock and is marking the row deleted

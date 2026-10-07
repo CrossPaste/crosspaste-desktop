@@ -63,6 +63,7 @@ class PushSession(
     createdAt: Long,
     // The sender's RelaySeen set, handed to the relay scheduled at finalize
     val seenAppInstanceIds: Set<String> = emptySet(),
+    private val now: () -> Long = { nowEpochMilliseconds() },
 ) {
     val chunkCount: Int = filesIndex.getChunkCount()
     private val received: BooleanArray = BooleanArray(chunkCount)
@@ -92,12 +93,12 @@ class PushSession(
         }
         lock.withLock {
             if (received[chunkIndex]) {
-                lastActivityBacking = nowEpochMilliseconds()
+                lastActivityBacking = now()
                 return MarkResult.AlreadyReceived
             }
             received[chunkIndex] = true
             receivedCountBacking += 1
-            lastActivityBacking = nowEpochMilliseconds()
+            lastActivityBacking = now()
             return MarkResult.Accepted
         }
     }
@@ -176,6 +177,8 @@ class PushSessionManager(
     private val sessionTtl: Duration = DEFAULT_SESSION_TTL,
     private val sweepInterval: Duration = DEFAULT_SWEEP_INTERVAL,
     private val scope: CoroutineScope = namedScope(ioDispatcher, "PushSessionManager"),
+    // Injectable so tests can expire sessions without waiting on the wall clock.
+    private val now: () -> Long = { nowEpochMilliseconds() },
 ) {
 
     companion object {
@@ -263,8 +266,9 @@ class PushSessionManager(
                     fromAppInstanceId = fromAppInstanceId,
                     token = Uuid.random().toString(),
                     filesIndex = filesIndex,
-                    createdAt = nowEpochMilliseconds(),
+                    createdAt = now(),
                     seenAppInstanceIds = seenAppInstanceIds,
+                    now = now,
                 )
             var inserted = false
             sessions.computeIfAbsent(pasteId) {
@@ -376,11 +380,11 @@ class PushSessionManager(
      * retry that commits LOADED can never be deleted by this cleanup.
      */
     suspend fun sweepExpired() {
-        val now = nowEpochMilliseconds()
+        val sweepTime = now()
         val ttlMs = sessionTtl.inWholeMilliseconds
         val expiredIds =
             sessions.entries
-                .filter { (_, session) -> now - session.lastActivity > ttlMs }
+                .filter { (_, session) -> sweepTime - session.lastActivity > ttlMs }
                 .map { it.key }
         for (id in expiredIds) {
             val session = sessions[id] ?: continue

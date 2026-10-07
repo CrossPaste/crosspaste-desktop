@@ -13,9 +13,12 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.min
+import kotlin.time.Duration.Companion.milliseconds
 
 class SyncPollingManager(
     private val syncHandlerScope: CoroutineScope,
+    // Injectable so tests can drive the schedule on virtual time.
+    private val now: () -> Long = { nowEpochMilliseconds() },
 ) {
     companion object {
         private const val DEFAULT_POLL_INTERVAL = 60000L
@@ -66,7 +69,7 @@ class SyncPollingManager(
                 DEFAULT_POLL_INTERVAL
             }
 
-        val newTime = nowEpochMilliseconds() + delayTime
+        val newTime = now() + delayTime
         nextExecutionTime.value = newTime
     }
 
@@ -89,23 +92,23 @@ class SyncPollingManager(
 
     private suspend fun waitForNextExecution() {
         val currentNextExecution = nextExecutionTime.value
-        if (currentNextExecution <= nowEpochMilliseconds()) {
+        if (currentNextExecution <= now()) {
             stateMutex.withLock {
-                if (nextExecutionTime.value <= nowEpochMilliseconds()) {
+                if (nextExecutionTime.value <= now()) {
                     updateNextExecutionTimeInternal()
                 }
             }
         }
 
-        while (nextExecutionTime.value > nowEpochMilliseconds()) {
+        while (nextExecutionTime.value > now()) {
             // Use shorter check intervals to respond to state changes
             val waitTime =
                 min(
                     CHECK_INTERVAL,
-                    nextExecutionTime.value - nowEpochMilliseconds(),
+                    nextExecutionTime.value - now(),
                 )
             if (waitTime > 0) {
-                delay(waitTime)
+                delay(waitTime.milliseconds)
             }
         }
     }
