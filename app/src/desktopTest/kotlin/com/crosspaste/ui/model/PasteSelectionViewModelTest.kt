@@ -4,6 +4,7 @@ import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.PasteboardService
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,8 +41,13 @@ class PasteSelectionViewModelTest {
     private fun createVm(): PasteSelectionViewModel =
         PasteSelectionViewModel(appWindowManager, pasteboardService, searchViewModel)
 
-    private fun createMockResults(count: Int): List<PasteData> =
-        (0 until count).map { mockk<PasteData>(relaxed = true) }
+    private fun mockPasteData(id: Long): PasteData =
+        mockk<PasteData>(relaxed = true) {
+            every { this@mockk.id } returns
+                id
+        }
+
+    private fun createMockResults(count: Int): List<PasteData> = (0 until count).map { mockPasteData(it.toLong()) }
 
     /**
      * Helper to get selectedIndexes via flow collection rather than .value,
@@ -270,5 +276,68 @@ class PasteSelectionViewModelTest {
 
             // Should fall back to [0] since 4 >= 3
             assertEquals(listOf(0), vm.awaitSelectedIndexes())
+        }
+
+    @Test
+    fun `selection follows the row by id when a new paste arrives on top`() =
+        runTest {
+            val results = createMockResults(3)
+            resultsFlow.value = results
+            val vm = createVm()
+            advanceUntilIdle()
+
+            vm.clickSelectedIndex(1)
+            resultsFlow.value = listOf(mockPasteData(100)) + results
+            advanceUntilIdle()
+
+            assertEquals(listOf(2), vm.awaitSelectedIndexes())
+            assertEquals(listOf(results[1]), vm.currentPasteDataList.first())
+        }
+
+    @Test
+    fun `multi-selection follows its rows when a new paste arrives on top`() =
+        runTest {
+            val results = createMockResults(3)
+            resultsFlow.value = results
+            val vm = createVm()
+            advanceUntilIdle()
+
+            vm.clickSelectedIndex(0)
+            vm.clickSelectedIndex(2, isShiftPressed = true)
+            resultsFlow.value = listOf(mockPasteData(100)) + results
+            advanceUntilIdle()
+
+            assertEquals(listOf(1, 3), vm.awaitSelectedIndexes())
+        }
+
+    @Test
+    fun `selection falls back to the first row when the selected row is removed`() =
+        runTest {
+            val results = createMockResults(3)
+            resultsFlow.value = results
+            val vm = createVm()
+            advanceUntilIdle()
+
+            vm.clickSelectedIndex(1)
+            resultsFlow.value = listOf(results[0], results[2])
+            advanceUntilIdle()
+
+            assertEquals(listOf(0), vm.awaitSelectedIndexes())
+        }
+
+    @Test
+    fun `selectNext steps from the row the selection followed`() =
+        runTest {
+            val results = createMockResults(3)
+            resultsFlow.value = results
+            val vm = createVm()
+            advanceUntilIdle()
+
+            vm.clickSelectedIndex(1)
+            resultsFlow.value = listOf(mockPasteData(100)) + results
+            vm.selectNext()
+            advanceUntilIdle()
+
+            assertEquals(listOf(results[2]), vm.currentPasteDataList.first())
         }
 }

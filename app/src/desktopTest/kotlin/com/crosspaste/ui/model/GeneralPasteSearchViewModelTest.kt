@@ -10,6 +10,7 @@ import com.crosspaste.paste.SearchContentService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -21,6 +22,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class GeneralPasteSearchViewModelTest {
@@ -120,5 +122,70 @@ class GeneralPasteSearchViewModelTest {
 
             assertEquals(listOf(3L, 1L, 2L), vm.searchResults.value.map { it.id })
             job.cancel()
+        }
+
+    private class MutableQueryPasteTag(
+        val tags: MutableStateFlow<List<PasteTag>>,
+    ) : QueryPasteTag {
+        override fun getAllTagsFlow(): Flow<List<PasteTag>> = tags
+    }
+
+    private fun tag(id: Long) = PasteTag(id = id, name = "tag-$id", color = 0, sortOrder = id)
+
+    @Test
+    fun `deleting the selected tag clears the tag filter`() =
+        runTest {
+            val tags = MutableStateFlow(listOf(tag(7), tag(8)))
+            val vm =
+                GeneralPasteSearchViewModel(
+                    FakeSearchPasteData(listOf()),
+                    MutableQueryPasteTag(tags),
+                    FakeSearchContentService,
+                )
+            advanceUntilIdle()
+
+            vm.updateTag(7)
+            tags.value = listOf(tag(8))
+            advanceUntilIdle()
+
+            assertNull(vm.searchBaseParams.value.tag)
+        }
+
+    @Test
+    fun `deleting the last tag clears the tag filter`() =
+        runTest {
+            val tags = MutableStateFlow(listOf(tag(7)))
+            val vm =
+                GeneralPasteSearchViewModel(
+                    FakeSearchPasteData(listOf()),
+                    MutableQueryPasteTag(tags),
+                    FakeSearchContentService,
+                )
+            advanceUntilIdle()
+
+            vm.updateTag(7)
+            tags.value = listOf()
+            advanceUntilIdle()
+
+            assertNull(vm.searchBaseParams.value.tag)
+        }
+
+    @Test
+    fun `renaming the selected tag keeps the tag filter`() =
+        runTest {
+            val tags = MutableStateFlow(listOf(tag(7)))
+            val vm =
+                GeneralPasteSearchViewModel(
+                    FakeSearchPasteData(listOf()),
+                    MutableQueryPasteTag(tags),
+                    FakeSearchContentService,
+                )
+            advanceUntilIdle()
+
+            vm.updateTag(7)
+            tags.value = listOf(tag(7).copy(name = "renamed"))
+            advanceUntilIdle()
+
+            assertEquals(7L, vm.searchBaseParams.value.tag)
         }
 }
