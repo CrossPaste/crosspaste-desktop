@@ -112,6 +112,10 @@ class PasteReleaseService(
             return
         }
 
+        // Canonicalizing hits the filesystem, and ref files may live on slow or
+        // remote volumes; resolve them before taking the write lock to keep it short
+        val referencedPaths = refFiles?.canonicalFilePaths()
+
         // Probe and mark in one write transaction, so a concurrent release of the
         // same content sees this one's result instead of retiring this row too
         database.transaction {
@@ -123,13 +127,16 @@ class PasteReleaseService(
                 )
 
             val idList =
-                refFiles?.let {
-                    val referencedPaths = it.canonicalFilePaths()
-                    sameHashIds.filterNot { id -> ownsAnyFile(id, referencedPaths) }
+                referencedPaths?.let { paths ->
+                    sameHashIds.filterNot { id -> ownsAnyFile(id, paths) }
                 } ?: sameHashIds
 
-            database.pasteDatabaseQueries.markDeletePasteData(idList)
-            addDeletePasteTasks(idList)
+            // markDeletePasteData notifies its query listeners even when nothing
+            // matched, which would re-query the history list on every release
+            if (idList.isNotEmpty()) {
+                database.pasteDatabaseQueries.markDeletePasteData(idList)
+                addDeletePasteTasks(idList)
+            }
         }
     }
 
