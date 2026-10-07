@@ -333,18 +333,30 @@ class PasteDaoTest {
     fun `searchPasteData orders by createTime in the requested direction`() =
         runTest {
             val older = pasteDao.createPasteData(createTestPasteData(text = "older").copy(createTime = 1_000L))
+            val middle1 = pasteDao.createPasteData(createTestPasteData(text = "middle1").copy(createTime = 2_000L))
+            val middle2 = pasteDao.createPasteData(createTestPasteData(text = "middle2").copy(createTime = 2_000L))
             val newest = pasteDao.createPasteData(createTestPasteData(text = "newest").copy(createTime = 3_000L))
-            val middle = pasteDao.createPasteData(createTestPasteData(text = "middle").copy(createTime = 2_000L))
             val deleted = pasteDao.createPasteData(createTestPasteData(text = "deleted").copy(createTime = 4_000L))
             pasteDao.updatePasteState(deleted, PasteState.DELETED)
 
+            // When sort=true (DESC), newer createTime comes first, with larger id breaking ties
             assertEquals(
-                listOf(newest, middle),
+                listOf(newest, middle2),
                 pasteDao.searchPasteData(searchTerms = listOf(), sort = true, limit = 2).map { it.id },
             )
             assertEquals(
-                listOf(older, middle),
+                listOf(newest, middle2, middle1, older),
+                pasteDao.searchPasteData(searchTerms = listOf(), sort = true, limit = 10).map { it.id },
+            )
+
+            // When sort=false (ASC), older createTime comes first, with smaller id breaking ties
+            assertEquals(
+                listOf(older, middle1),
                 pasteDao.searchPasteData(searchTerms = listOf(), sort = false, limit = 2).map { it.id },
+            )
+            assertEquals(
+                listOf(older, middle1, middle2, newest),
+                pasteDao.searchPasteData(searchTerms = listOf(), sort = false, limit = 10).map { it.id },
             )
         }
 
@@ -688,6 +700,10 @@ class PasteDaoTest {
 
             assertTrue(changesOf { setSearchContent(id, "replaced words") } > 1L)
             assertTrue(pasteDao.searchPasteData(searchTerms = listOf("original"), limit = 10).isEmpty())
+            assertEquals(1, pasteDao.searchPasteData(searchTerms = listOf("replaced"), limit = 10).size)
+
+            // Updating with the identical content does not trigger FTS rebuild
+            assertEquals(1L, changesOf { setSearchContent(id, "replaced words") })
             assertEquals(1, pasteDao.searchPasteData(searchTerms = listOf("replaced"), limit = 10).size)
         }
 
