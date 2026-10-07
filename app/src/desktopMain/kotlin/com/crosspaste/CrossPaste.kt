@@ -24,6 +24,7 @@ import com.crosspaste.app.DesktopPidFileService
 import com.crosspaste.app.ExitMode
 import com.crosspaste.app.NativeMessagingHostService
 import com.crosspaste.bootstrap.DesktopBootstrap
+import com.crosspaste.bootstrap.StartupFailure
 import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.cli.CliServer
 import com.crosspaste.cli.CliSymlinkService
@@ -89,43 +90,20 @@ class CrossPaste {
 
         private val platform = getPlatformUtils().platform
 
-        private val appPathProvider = DesktopAppPathProvider(platform)
-
         private val deviceUtils = DesktopDeviceUtils(platform)
 
         private val localeUtils = DesktopLocaleUtils
 
-        private val configFilePersist =
-            FilePersist.createOneFilePersist(
-                appPathProvider.resolve("appConfig.json", AppFileType.USER),
-            )
+        // Set by bootstrap(), the first thing main() does.
+        private lateinit var appPathProvider: DesktopAppPathProvider
 
-        private val metadataFilePersist =
-            FilePersist.createOneFilePersist(
-                appPathProvider.resolve(".metadata", AppFileType.USER),
-            )
+        private lateinit var appMetadataRepository: AppMetadataRepository
 
-        init {
-            DesktopBootstrap.preClassLoad(
-                appPathProvider = appPathProvider,
-                metadataFilePersist = metadataFilePersist,
-                configFilePersist = configFilePersist,
-            )
-        }
+        private lateinit var configManager: DesktopConfigManager
 
-        private val appMetadataRepository =
-            AppMetadataRepository(metadataFilePersist, deviceUtils)
+        private lateinit var crossPasteLogger: DesktopCrossPasteLogger
 
-        private val configManager =
-            DesktopConfigManager(configFilePersist, localeUtils)
-
-        private val crossPasteLogger =
-            DesktopCrossPasteLogger(
-                appPathProvider.resolve("crosspaste.log", AppFileType.LOG).toString(),
-                configManager,
-            )
-
-        private val logger: KLogger = KotlinLogging.logger {}
+        private lateinit var logger: KLogger
 
         var headless: Boolean = false
             private set
@@ -310,7 +288,7 @@ class CrossPaste {
                     System.err.println("Error: CrossPaste failed to start in headless mode: ${e.message}")
                     exitProcess(1)
                 }
-                exitProcess(0)
+                StartupFailure.exit(e, startupFailureLogDir(), headless = false)
             }
         }
 
@@ -574,12 +552,59 @@ class CrossPaste {
             headlessLatch.await()
         }
 
+        /**
+         * Reads the user files the file logger depends on, then starts that logger.
+         * Runs in main() rather than in this companion's init: a failure there
+         * surfaces as ExceptionInInitializerError before main() can catch it, and
+         * a packaged app then quits without a trace.
+         */
+        private fun bootstrap() {
+            appPathProvider = DesktopAppPathProvider(platform)
+            val configFilePersist =
+                FilePersist.createOneFilePersist(
+                    appPathProvider.resolve("appConfig.json", AppFileType.USER),
+                )
+            val metadataFilePersist =
+                FilePersist.createOneFilePersist(
+                    appPathProvider.resolve(".metadata", AppFileType.USER),
+                )
+            DesktopBootstrap.preClassLoad(
+                appPathProvider = appPathProvider,
+                metadataFilePersist = metadataFilePersist,
+                configFilePersist = configFilePersist,
+            )
+            appMetadataRepository = AppMetadataRepository(metadataFilePersist, deviceUtils)
+            configManager = DesktopConfigManager(configFilePersist, localeUtils)
+            crossPasteLogger =
+                DesktopCrossPasteLogger(
+                    appPathProvider.resolve("crosspaste.log", AppFileType.LOG).toString(),
+                    configManager,
+                )
+            logger = KotlinLogging.logger {}
+        }
+
+        /** The log dir, falling back to the default one when the path provider never came up. */
+        private fun startupFailureLogDir(): java.io.File =
+            runCatching { appPathProvider.resolve(null, AppFileType.LOG).toFile() }
+                .getOrElse {
+                    java.io.File(System.getProperty("user.home"), ".crosspaste${java.io.File.separator}logs")
+                }
+
         @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
         @JvmStatic
         fun main(args: Array<String>) {
-            headless = args.contains("--headless") || java.awt.GraphicsEnvironment.isHeadless()
-            DesktopBootstrap.preStart(logger)
-            initModule()
+            try {
+                // Before anything touches AWT (incl. the headless probe below).
+                bootstrap()
+                headless = args.contains("--headless") || java.awt.GraphicsEnvironment.isHeadless()
+                DesktopBootstrap.preStart(logger)
+                initModule()
+            } catch (e: Throwable) {
+                if (::logger.isInitialized) {
+                    logger.error(e) { "CrossPaste failed to bootstrap" }
+                }
+                StartupFailure.exit(e, startupFailureLogDir(), headless = args.contains("--headless"))
+            }
 
             logger.info { "Starting CrossPaste${if (headless) " (headless)" else ""}" }
             runBlocking { startApplication() }
