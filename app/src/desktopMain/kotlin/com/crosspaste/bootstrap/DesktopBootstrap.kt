@@ -21,10 +21,10 @@ import io.github.oshai.kotlinlogging.KLogger
 object DesktopBootstrap {
 
     /**
-     * Phase 1 — runs during `CrossPaste` companion-object init, before any
-     * further class loading triggered by `main()`. Anything that must
+     * Phase 1 — runs from `CrossPaste.bootstrap()`, the first call in
+     * `main()`, before any further class loading. Anything that must
      * complete before Compose / skiko / AWT classes get touched belongs
-     * here.
+     * here. A failure is reported through [StartupFailure].
      */
     fun preClassLoad(
         appPathProvider: AppPathProvider,

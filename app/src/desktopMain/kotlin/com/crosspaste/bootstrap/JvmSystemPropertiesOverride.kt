@@ -13,7 +13,7 @@ import java.util.Properties
  * [ALLOWED_PREFIXES] are applied, everything else is logged and skipped.
  *
  * Must run before configManager / logger / Compose / skiko / AWT classes initialize. The
- * caller is responsible for ordering this in the companion-object init sequence.
+ * caller is responsible for ordering this first in `CrossPaste.bootstrap()`.
  */
 object JvmSystemPropertiesOverride {
 
