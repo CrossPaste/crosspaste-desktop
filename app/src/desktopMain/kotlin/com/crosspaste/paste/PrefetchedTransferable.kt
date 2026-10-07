@@ -19,7 +19,7 @@ import java.io.InputStream
  */
 class PrefetchedTransferable private constructor(
     private val flavors: Array<DataFlavor>,
-    private val data: Map<DataFlavor, Result<Any>>,
+    private val data: Map<DataFlavor, Result<Any?>>,
 ) : Transferable {
 
     companion object {
@@ -27,7 +27,7 @@ class PrefetchedTransferable private constructor(
             source: Transferable,
             shouldRead: (DataFlavor) -> Boolean,
         ): PrefetchedTransferable {
-            val flavors = source.transferDataFlavors
+            val flavors = source.transferDataFlavors ?: emptyArray()
             val data =
                 flavors
                     .filter(shouldRead)
@@ -36,14 +36,20 @@ class PrefetchedTransferable private constructor(
         }
 
         // A stream may still read from the drag source (e.g. a native IStream on Windows),
-        // which is gone once the drop completes; buffer it now.
-        private fun detach(value: Any): Any =
+        // which is gone once the drop completes; buffer its bytes now so each subsequent read
+        // receives a fresh stream from position zero.
+        private fun detach(value: Any?): Any? =
             if (value is InputStream) {
-                value.use { ByteArrayInputStream(it.readBytes()) }
+                BufferedStream(value.use { it.readBytes() })
             } else {
                 value
             }
     }
+
+    /** Marks bytes that came from a stream, so a byte[] flavor is still returned as byte[]. */
+    private class BufferedStream(
+        val bytes: ByteArray,
+    )
 
     override fun getTransferDataFlavors(): Array<DataFlavor> = flavors.clone()
 
@@ -51,6 +57,7 @@ class PrefetchedTransferable private constructor(
 
     override fun getTransferData(flavor: DataFlavor?): Any {
         if (flavor !in flavors) throw UnsupportedFlavorException(flavor)
-        return data[flavor]?.getOrThrow() ?: NoneTransferData
+        val value = data[flavor]?.getOrThrow() ?: return NoneTransferData
+        return if (value is BufferedStream) ByteArrayInputStream(value.bytes) else value
     }
 }

@@ -62,8 +62,8 @@ import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xLargeRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import com.crosspaste.utils.ioDispatcher
-import com.crosspaste.utils.namedScope
+import com.crosspaste.utils.GlobalCoroutineScope
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import okio.Path
 import okio.Path.Companion.toOkioPath
@@ -74,6 +74,8 @@ import java.awt.datatransfer.Transferable
 import java.io.File
 import java.io.InputStream
 import java.net.URL
+
+private val logger = KotlinLogging.logger {}
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -88,7 +90,6 @@ fun DragTargetContentView() {
     // being added to the clipboard.
     val onImportPage = backStackEntry?.let { getRouteName(it.destination) } == Import.NAME
     val onImportPageState = rememberUpdatedState(onImportPage)
-    val dropScope = remember { namedScope(ioDispatcher, "DragTargetContentView") }
     var isDragging by remember { mutableStateOf(false) }
     val animatedAlpha by animateFloatAsState(
         targetValue = if (isDragging) 0.85f else 0f,
@@ -120,11 +121,18 @@ fun DragTargetContentView() {
                     // read, then collect off the UI thread (file copies, image encoding and the
                     // database write would otherwise freeze the window after the drop).
                     val prefetched =
-                        PrefetchedTransferable.of(transferable) { flavor ->
-                            pasteConsumer.getPlugin(flavor.humanPresentableName) != null &&
-                                DROP_READ_CLASSES.any { it.isAssignableFrom(flavor.representationClass) }
+                        runCatching {
+                            PrefetchedTransferable.of(transferable) { flavor ->
+                                pasteConsumer.getPlugin(flavor.humanPresentableName) != null &&
+                                    flavor.representationClass?.let { rep ->
+                                        DROP_READ_CLASSES.any { it.isAssignableFrom(rep) }
+                                    } == true
+                            }
+                        }.getOrElse { e ->
+                            logger.error(e) { "Failed to prefetch dropped transferable" }
+                            return false
                         }
-                    dropScope.launch {
+                    GlobalCoroutineScope.ioCoroutineDispatcher.launch {
                         pasteConsumer.consume(
                             DesktopReadTransferable(prefetched),
                             PasteSourceContext(
