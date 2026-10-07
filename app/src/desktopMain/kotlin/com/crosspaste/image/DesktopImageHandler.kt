@@ -7,6 +7,7 @@ import com.drew.imaging.ImageMetadataReader
 import com.drew.metadata.Directory
 import com.drew.metadata.Metadata
 import com.drew.metadata.bmp.BmpHeaderDirectory
+import com.drew.metadata.exif.ExifIFD0Directory
 import com.drew.metadata.gif.GifHeaderDirectory
 import com.drew.metadata.heif.HeifDirectory
 import com.drew.metadata.jpeg.JpegDirectory
@@ -131,8 +132,17 @@ object DesktopImageHandler : ImageHandler<BufferedImage> {
     override suspend fun readSize(imagePath: Path): IntSize? =
         runCatching {
             val metadata = ImageMetadataReader.readMetadata(imagePath.toFile())
-            extractors.firstNotNullOfOrNull { extractor -> extractor(metadata) }
+            extractors.firstNotNullOfOrNull { extractor -> extractor(metadata) }?.let { size ->
+                // Skia (and so Coil) decodes JPEGs already rotated by their EXIF
+                // orientation, so report the size the image is displayed at.
+                if (metadata.swapsWidthHeight()) IntSize(size.height, size.width) else size
+            }
         }.getOrNull()
+
+    // EXIF orientations 5–8 rotate by 90°/270°.
+    private fun Metadata.swapsWidthHeight(): Boolean =
+        getFirstDirectoryOfType(ExifIFD0Directory::class.java)
+            ?.getInteger(ExifIFD0Directory.TAG_ORIENTATION) in 5..8
 
     private inline fun <reified T : Directory> Metadata.dir(block: (T) -> IntSize?): IntSize? =
         runCatching {
