@@ -32,18 +32,19 @@ class PasteSelectionViewModel(
 
     val focusedElement: StateFlow<FocusedElement> = _focusedElement
 
-    private val _selectedIndexes = MutableStateFlow(listOf(0))
+    /**
+     * Selected rows, tracked by paste id rather than index so that pastes arriving at the top
+     * while the window is open (remote sync, CLI, extension) do not shift the selection onto
+     * another row. Empty means the first row.
+     */
+    private val _selectedIds = MutableStateFlow<List<Long>>(listOf())
 
     val selectedIndexes: StateFlow<List<Int>> =
         combine(
             searchViewModel.searchResults,
-            _selectedIndexes,
-        ) { results, indexes ->
-            if (indexes.isEmpty()) {
-                listOf(0)
-            } else {
-                indexes.filter { it >= 0 && it < results.size }.ifEmpty { listOf(0) }
-            }
+            _selectedIds,
+        ) { results, ids ->
+            indexesOf(results, ids)
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -74,17 +75,17 @@ class PasteSelectionViewModel(
     }
 
     fun selectPrev() {
-        val indexes = _selectedIndexes.value
-        if (indexes.isEmpty()) return
-        _selectedIndexes.value = listOf((indexes.min() - 1).coerceAtLeast(0))
+        val results = searchViewModel.searchResults.value
+        if (results.isEmpty()) return
+        val indexes = indexesOf(results, _selectedIds.value)
+        selectIndexes(results, listOf((indexes.min() - 1).coerceAtLeast(0)))
     }
 
     fun selectNext() {
-        val resultSize = searchViewModel.searchResults.value.size
-        if (resultSize == 0) return
-        val indexes = _selectedIndexes.value
-        if (indexes.isEmpty()) return
-        _selectedIndexes.value = listOf((indexes.max() + 1).coerceAtMost(resultSize - 1))
+        val results = searchViewModel.searchResults.value
+        if (results.isEmpty()) return
+        val indexes = indexesOf(results, _selectedIds.value)
+        selectIndexes(results, listOf((indexes.max() + 1).coerceAtMost(results.size - 1)))
     }
 
     fun setFocusedElement(focusedElement: FocusedElement) {
@@ -92,7 +93,7 @@ class PasteSelectionViewModel(
     }
 
     fun initSelectIndex() {
-        _selectedIndexes.value = listOf(0)
+        _selectedIds.value = listOf()
     }
 
     /**
@@ -104,7 +105,7 @@ class PasteSelectionViewModel(
      * reset on reopen.
      */
     suspend fun resetToTop() {
-        _selectedIndexes.value = listOf(0)
+        _selectedIds.value = listOf()
         searchListState?.scrollToItem(0)
     }
 
@@ -112,9 +113,10 @@ class PasteSelectionViewModel(
         selectedIndex: Int,
         isShiftPressed: Boolean = false,
     ) {
-        _selectedIndexes.value =
+        val results = searchViewModel.searchResults.value
+        val indexes =
             if (isShiftPressed) {
-                val list = _selectedIndexes.value
+                val list = indexesOf(results, _selectedIds.value)
                 when {
                     selectedIndex in list -> {
                         if (list.size > 1) {
@@ -128,6 +130,7 @@ class PasteSelectionViewModel(
             } else {
                 listOf(selectedIndex)
             }
+        selectIndexes(results, indexes)
         requestPasteListFocus()
     }
 
@@ -144,8 +147,25 @@ class PasteSelectionViewModel(
                 }
             }
         }
-        _selectedIndexes.value = listOf(0)
+        _selectedIds.value = listOf()
     }
+
+    private fun selectIndexes(
+        results: List<PasteData>,
+        indexes: List<Int>,
+    ) {
+        _selectedIds.value = indexes.mapNotNull { results.getOrNull(it)?.id }
+    }
+
+    /** Selected ids that are no longer in [results] are dropped; nothing left means the first row. */
+    private fun indexesOf(
+        results: List<PasteData>,
+        ids: List<Long>,
+    ): List<Int> =
+        ids
+            .map { id -> results.indexOfFirst { it.id == id } }
+            .filter { it >= 0 }
+            .ifEmpty { listOf(0) }
 
     suspend fun toPaste(pasteData: PasteData) {
         appWindowManager.hideSearchWindowAndPaste(1) {

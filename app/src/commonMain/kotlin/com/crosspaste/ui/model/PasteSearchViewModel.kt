@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import kotlin.concurrent.Volatile
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 abstract class PasteSearchViewModel : ViewModel() {
 
@@ -51,10 +53,13 @@ abstract class PasteSearchViewModel : ViewModel() {
 
     private val dateUtils = getDateUtils()
 
+    // Only typing is debounced: clearing the input (including resetSearch on window open) must
+    // apply at once, otherwise the empty box shows the previous query's results and Enter pastes
+    // its first row.
     @OptIn(FlowPreview::class)
     val searchParams =
         combine(
-            _inputSearch.debounce(500),
+            _inputSearch.debounce { if (it.isEmpty()) Duration.ZERO else 500.milliseconds },
             _searchBaseParams,
         ) { inputSearch, searchBaseParams ->
             val searchTerms = convertTerm(inputSearch)
@@ -114,6 +119,14 @@ abstract class PasteSearchViewModel : ViewModel() {
                 )
             }
         _loadAll.value = false
+    }
+
+    /** Drops the tag filter once the selected tag no longer exists, so no invisible filter remains. */
+    protected fun clearMissingTag(tags: List<PasteTag>) {
+        val tag = _searchBaseParams.value.tag ?: return
+        if (tags.none { it.id == tag }) {
+            updateTag(null)
+        }
     }
 
     fun tryAddLimit() {

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class GeneralPasteSearchViewModel(
     private val searchPasteData: SearchPasteData,
@@ -33,6 +34,11 @@ class GeneralPasteSearchViewModel(
                 started = SharingStarted.WhileSubscribed(5000),
                 initialValue = listOf(),
             )
+
+    init {
+        // Tags are deleted straight through the DAO (chip menu, clearing a tag's name)
+        viewModelScope.launch { tagList.collect(::clearMissingTag) }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val searchResults: StateFlow<List<PasteData>> =

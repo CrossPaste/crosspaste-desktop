@@ -6,8 +6,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -16,6 +20,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class PasteSearchViewModelTest {
@@ -191,4 +196,36 @@ class PasteSearchViewModelTest {
     fun `LOAD_MORE_THROTTLE_MS is 500`() {
         assertEquals(500L, PasteSearchViewModel.LOAD_MORE_THROTTLE_MS)
     }
+
+    @Test
+    fun `clearing the input applies without waiting for the debounce`() =
+        runTest {
+            val vm = TestSearchViewModel()
+            val emitted = mutableListOf<List<String>>()
+            backgroundScope.launch { vm.searchParams.collect { emitted += it.searchTerms } }
+
+            vm.updateInputSearch("abc")
+            advanceTimeBy(600.milliseconds)
+            assertEquals(listOf("abc"), emitted.last())
+
+            vm.resetSearch()
+            runCurrent()
+            assertEquals(listOf(), emitted.last())
+        }
+
+    @Test
+    fun `typing is still debounced`() =
+        runTest {
+            val vm = TestSearchViewModel()
+            val emitted = mutableListOf<List<String>>()
+            backgroundScope.launch { vm.searchParams.collect { emitted += it.searchTerms } }
+            runCurrent()
+
+            vm.updateInputSearch("abc")
+            advanceTimeBy(100.milliseconds)
+            assertEquals(listOf(), emitted.last())
+
+            advanceTimeBy(500.milliseconds)
+            assertEquals(listOf("abc"), emitted.last())
+        }
 }
