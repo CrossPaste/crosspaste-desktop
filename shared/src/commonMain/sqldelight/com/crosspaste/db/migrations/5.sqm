@@ -1,0 +1,15 @@
+-- Partial index for the history list: active rows in createTime order, so
+-- LIMIT queries stop early instead of sorting the whole table.
+CREATE INDEX IF NOT EXISTS IdxPasteDataActiveCreateTime ON PasteDataEntity(createTime, id) WHERE pasteState != -1;
+
+-- Re-index FTS only when the searchable text changes, not on every
+-- createTime/pasteState update.
+DROP TRIGGER IF EXISTS PasteData_AU;
+
+CREATE TRIGGER IF NOT EXISTS PasteData_AU AFTER UPDATE OF pasteSearchContent ON PasteDataEntity
+WHEN old.pasteSearchContent IS NOT new.pasteSearchContent BEGIN
+    INSERT INTO PasteDataEntityFts(PasteDataEntityFts, rowid, pasteSearchContent)
+    VALUES('delete', old.id, old.pasteSearchContent);
+    INSERT INTO PasteDataEntityFts(rowid, pasteSearchContent)
+    VALUES (new.id, new.pasteSearchContent);
+END;

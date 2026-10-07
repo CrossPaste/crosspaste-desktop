@@ -37,7 +37,11 @@ CREATE TRIGGER IF NOT EXISTS PasteData_AD AFTER DELETE ON PasteDataEntity BEGIN
     VALUES('delete', old.id, old.pasteSearchContent);
 END;
 
-CREATE TRIGGER IF NOT EXISTS PasteData_AU AFTER UPDATE ON PasteDataEntity BEGIN
+-- Only re-index when the searchable text actually changes: createTime and
+-- pasteState updates (paste, dedup, mark-delete) would otherwise re-tokenize
+-- the whole body every time.
+CREATE TRIGGER IF NOT EXISTS PasteData_AU AFTER UPDATE OF pasteSearchContent ON PasteDataEntity
+WHEN old.pasteSearchContent IS NOT new.pasteSearchContent BEGIN
     INSERT INTO PasteDataEntityFts(PasteDataEntityFts, rowid, pasteSearchContent)
     VALUES('delete', old.id, old.pasteSearchContent);
     INSERT INTO PasteDataEntityFts(rowid, pasteSearchContent)
@@ -49,6 +53,9 @@ CREATE INDEX IF NOT EXISTS IdxPasteDataFavorite ON PasteDataEntity(favorite) WHE
 CREATE INDEX IF NOT EXISTS IdxPasteDataHashType ON PasteDataEntity(hash, pasteType) WHERE pasteState != -1;
 CREATE INDEX IF NOT EXISTS IdxPasteDataInstancePasteId ON PasteDataEntity(appInstanceId) WHERE pasteState != -1;
 CREATE INDEX IF NOT EXISTS IdxPasteDataType ON PasteDataEntity(pasteType) WHERE pasteState != -1;
+-- Lets the list queries walk active rows in createTime order and stop at LIMIT
+-- instead of scanning and sorting the whole table on every refresh.
+CREATE INDEX IF NOT EXISTS IdxPasteDataActiveCreateTime ON PasteDataEntity(createTime, id) WHERE pasteState != -1;
 
 createPasteDataEntity:
 INSERT INTO PasteDataEntity(appInstanceId, favorite, pasteAppearItem, pasteCollection, pasteType, source, size, hash, createTime, pasteSearchContent, pasteState, remote)
@@ -193,6 +200,10 @@ LIMIT 1;
 -- pasteType filter: filterByPasteType=TRUE means no type filter (return all types);
 -- filterByPasteType=FALSE applies the IN clause to match any of the given types.
 -- This supports mobile clients that need to query multiple paste types in one request.
+-- simpleSearch / simpleSearchAsc differ only in direction: a fixed ORDER BY is
+-- what lets IdxPasteDataActiveCreateTime replace the sort (an ORDER BY CASE
+-- expression cannot use any index). complexSearch is driven by the FTS match
+-- and sorts its matches either way, so it keeps the single CASE form.
 simpleSearch:
 SELECT * FROM PasteDataEntity
 WHERE
@@ -213,7 +224,30 @@ WHERE
             )
             ELSE TRUE
         END
-    ORDER BY CASE WHEN :sort THEN createTime ELSE -createTime END DESC
+    ORDER BY createTime DESC, id DESC
+    LIMIT :number;
+
+simpleSearchAsc:
+SELECT * FROM PasteDataEntity
+WHERE
+    pasteState != -1 AND
+    CASE WHEN :appInstanceId IS NOT NULL
+        THEN CASE WHEN :local
+            THEN appInstanceId = :appInstanceId
+            ELSE appInstanceId != :appInstanceId
+        END
+            ELSE TRUE
+        END AND
+        (:filterByPasteType OR (pasteType IN ?)) AND
+        CASE WHEN :tagId IS NOT NULL
+            THEN EXISTS (
+                SELECT 1 FROM PasteTagEntity
+                WHERE PasteTagEntity.pasteId = PasteDataEntity.id
+                AND PasteTagEntity.tagId = :tagId
+            )
+            ELSE TRUE
+        END
+    ORDER BY createTime ASC, id ASC
     LIMIT :number;
 
 complexSearch:

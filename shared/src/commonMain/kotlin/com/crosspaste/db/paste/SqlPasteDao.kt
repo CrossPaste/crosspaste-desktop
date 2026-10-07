@@ -425,16 +425,28 @@ class SqlPasteDao(
         } else {
             logger.info { "Creating paste simpleSearch" }
 
-            pasteDatabaseQueries.simpleSearch(
-                local = local == true,
-                appInstanceId = appInstanceId,
-                filterByPasteType = filterByPasteType,
-                pasteType = pasteTypeLongList,
-                sort = sort,
-                tagId = tagId,
-                number = limit.toLong(),
-                mapper = PasteData::mapper,
-            )
+            // Two fixed-direction queries so the list can use its createTime index
+            if (sort) {
+                pasteDatabaseQueries.simpleSearch(
+                    local = local == true,
+                    appInstanceId = appInstanceId,
+                    filterByPasteType = filterByPasteType,
+                    pasteType = pasteTypeLongList,
+                    tagId = tagId,
+                    number = limit.toLong(),
+                    mapper = PasteData::mapper,
+                )
+            } else {
+                pasteDatabaseQueries.simpleSearchAsc(
+                    local = local == true,
+                    appInstanceId = appInstanceId,
+                    filterByPasteType = filterByPasteType,
+                    pasteType = pasteTypeLongList,
+                    tagId = tagId,
+                    number = limit.toLong(),
+                    mapper = PasteData::mapper,
+                )
+            }
         }
     }
 
