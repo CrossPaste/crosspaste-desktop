@@ -6,6 +6,7 @@ import okio.Path.Companion.toOkioPath
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
@@ -204,5 +205,64 @@ class DesktopConfigManagerTest {
                 .toFile()
                 .exists(),
         )
+    }
+
+    @Test
+    fun `updateConfigDurably persists config immediately and updates memory`() {
+        val (manager, _) = createConfigManager()
+        manager.updateConfigDurably(
+            keys = listOf("port", "enableAutoStartUp"),
+            values = listOf(8888, false),
+        )
+        assertEquals(8888, manager.getCurrentConfig().port)
+        assertFalse(manager.getCurrentConfig().enableAutoStartUp)
+
+        val reloaded = manager.loadConfig()
+        assertNotNull(reloaded)
+        assertEquals(8888, reloaded.port)
+        assertFalse(reloaded.enableAutoStartUp)
+    }
+
+    @Test
+    fun `updateConfigDurably throws and leaves memory unchanged on save failure`() {
+        val (_, configPath) = createConfigManager()
+        val configDir = configPath.parent!!.toFile()
+        val manager = DesktopConfigManager(OneFilePersist(configPath), DesktopLocaleUtils)
+        val initialPort = manager.getCurrentConfig().port
+
+        configDir.setWritable(false)
+        try {
+            assertFailsWith<Exception> {
+                manager.updateConfigDurably(
+                    keys = listOf("port"),
+                    values = listOf(9999),
+                )
+            }
+        } finally {
+            configDir.setWritable(true)
+        }
+
+        assertEquals(initialPort, manager.getCurrentConfig().port)
+    }
+
+    @Test
+    fun `updateConfigDurably refuses to save and throws when saveBlocked is true`() {
+        val (_, configPath) = createConfigManager()
+        val configFile = configPath.toFile()
+        configFile.writeText("""{"port":5555}""")
+        assertTrue(configFile.setReadable(false))
+        try {
+            val manager = DesktopConfigManager(OneFilePersist(configPath), DesktopLocaleUtils)
+            val exception =
+                assertFailsWith<IllegalStateException> {
+                    manager.updateConfigDurably(
+                        keys = listOf("port"),
+                        values = listOf(9999),
+                    )
+                }
+            assertTrue(exception.message?.contains("refusing to save") == true)
+        } finally {
+            configFile.setReadable(true)
+        }
     }
 }

@@ -238,6 +238,15 @@ class DesktopMigrationTest {
     @Test
     fun `migration moves the store and points the config at it`() {
         val fixture = createFixture()
+        fixture.storageDir
+            .resolve("data")
+            .resolve("crosspaste.db-wal")
+            .writeText("wal")
+        fixture.storageDir
+            .resolve("opengraph")
+            .apply { mkdirs() }
+            .resolve("og.png")
+            .writeText("og")
 
         fixture.migration.migration(fixture.migrationDir.toOkioPath())
 
@@ -245,8 +254,11 @@ class DesktopMigrationTest {
         assertFalse(config.useDefaultStoragePath)
         assertEquals(fixture.migrationDir.toOkioPath().toString(), config.storagePath)
         assertEquals("db", fixture.migrationDir.resolve("data/crosspaste.db").readText())
+        assertEquals("wal", fixture.migrationDir.resolve("data/crosspaste.db-wal").readText())
         assertEquals("file", fixture.migrationDir.resolve("files/a.txt").readText())
-        assertFalse(fixture.storageDir.resolve("data/crosspaste.db").exists())
+        assertEquals("og", fixture.migrationDir.resolve("opengraph/og.png").readText())
+        assertFalse(fixture.storageDir.resolve("data").exists())
+        assertFalse(fixture.storageDir.resolve("opengraph").exists())
         assertFalse(fixture.storageDir.resolve("files").exists())
     }
 
@@ -260,6 +272,25 @@ class DesktopMigrationTest {
             }
         } finally {
             fixture.configDir.setWritable(true)
+        }
+
+        assertTrue(fixture.configManager.getCurrentConfig().useDefaultStoragePath)
+        assertEquals("db", fixture.storageDir.resolve("data/crosspaste.db").readText())
+        assertEquals("file", fixture.storageDir.resolve("files/a.txt").readText())
+        assertTrue(fixture.migrationDir.listFiles().isNullOrEmpty(), "the partial copy is removed")
+    }
+
+    @Test
+    fun `migration keeps the origin store when copying files fails`() {
+        val fixture = createFixture()
+        val file = fixture.storageDir.resolve("files/a.txt")
+        file.setReadable(false)
+        try {
+            assertFailsWith<Exception> {
+                fixture.migration.migration(fixture.migrationDir.toOkioPath())
+            }
+        } finally {
+            file.setReadable(true)
         }
 
         assertTrue(fixture.configManager.getCurrentConfig().useDefaultStoragePath)

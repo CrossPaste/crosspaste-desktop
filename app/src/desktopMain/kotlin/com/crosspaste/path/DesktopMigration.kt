@@ -31,6 +31,7 @@ class DesktopMigration(
             AppFileType.ICON,
             AppFileType.FAVICON,
             AppFileType.FILE_EXT_ICON,
+            AppFileType.OPEN_GRAPH,
             AppFileType.VIDEO,
             AppFileType.TEMP,
             AppFileType.MARKETING,
@@ -57,15 +58,10 @@ class DesktopMigration(
             // Only now that the config points at the copy may the origin go: an
             // interrupted or failed delete then just leaves stale files behind,
             // never a config pointing at a deleted store.
-            runCatching {
-                fileUtils.deleteFile(originDataPath)
-                logger.info { "Delete Data" }
-                for (originTypePath in originTypePaths.values) {
-                    fileUtils.fileSystem.deleteRecursively(originTypePath)
-                    logger.info { "Delete $originTypePath" }
-                }
-            }.onFailure { e ->
-                logger.error(e) { "Delete originPath fail" }
+            // The data dir holds only the database and its WAL, so it goes whole.
+            val originPaths = listOfNotNull(originDataPath.parent) + originTypePaths.values
+            for (originPath in originPaths) {
+                deleteQuietly(originPath)
             }
         }
     }
@@ -87,7 +83,15 @@ class DesktopMigration(
                         migrationPath
                     }.resolve(driverFactory.dbName)
 
-            fileUtils.copyPath(originDataPath, migrationDataPath)
+            fileUtils.copyPath(originDataPath, migrationDataPath).getOrThrow()
+            // The driver is closed before migrating, which normally checkpoints the WAL
+            // away; if that close failed or timed out, uncommitted frames live here.
+            // (The -shm index is rebuilt by SQLite on open, so it is not needed.)
+            val walName = "${driverFactory.dbName}-wal"
+            val originWal = originDataPath.parent?.resolve(walName)
+            if (originWal != null && fileUtils.existFile(originWal)) {
+                fileUtils.copyPath(originWal, migrationDataPath.parent!!.resolve(walName)).getOrThrow()
+            }
             logger.info { "Migrated Data to $migrationPath" }
 
             for ((type, originTypePath) in originTypePaths) {
@@ -96,7 +100,7 @@ class DesktopMigration(
                     userDataPathProvider.resolve(fileName = null, appFileType = type) {
                         migrationPath
                     }
-                fileUtils.copyPath(originTypePath, migrationTypePath)
+                fileUtils.copyPath(originTypePath, migrationTypePath).getOrThrow()
                 logger.info { "Migrated $originTypePath to $migrationPath" }
             }
             configManager.updateConfigDurably(
@@ -106,19 +110,19 @@ class DesktopMigration(
         }.onFailure { e ->
             logger.error(e) { "Migrated fail" }
             runCatching {
-                val fileSystem = fileUtils.fileSystem
-                fileSystem.list(migrationPath).forEach { subPath ->
-                    if (fileSystem.metadata(subPath).isDirectory) {
-                        fileSystem.deleteRecursively(subPath)
-                    } else {
-                        fileSystem.delete(subPath)
-                    }
-                }
+                fileUtils.fileSystem.list(migrationPath).forEach(::deleteQuietly)
             }.onFailure { cleanupError ->
                 logger.warn(cleanupError) { "Failed to clean up migration path after failure" }
             }
             throw e
         }
+    }
+
+    /** Best-effort delete: a failure is logged and never stops deleting the rest. */
+    private fun deleteQuietly(path: Path) {
+        runCatching { fileUtils.fileSystem.deleteRecursively(path) }
+            .onSuccess { logger.info { "Deleted $path" } }
+            .onFailure { e -> logger.warn(e) { "Failed to delete $path" } }
     }
 
     fun checkMigrationPath(migrationPath: Path): String? {
