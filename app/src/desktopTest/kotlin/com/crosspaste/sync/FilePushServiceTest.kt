@@ -19,6 +19,7 @@ import com.crosspaste.presist.FilesChunk
 import com.crosspaste.presist.FilesIndex
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.buildUrl
+import com.crosspaste.utils.getJsonUtils
 import io.ktor.http.URLBuilder
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -38,6 +39,11 @@ import kotlin.test.assertTrue
  * on disk — FilesIndex is a value-only abstraction here.
  */
 class FilePushServiceTest {
+
+    // Initialize JsonUtils before any PasteItem subclass so createFilesPasteItem can't
+    // hit the PasteItem.Companion <-> serializer-module circular class init.
+    @Suppress("unused")
+    private val jsonUtils = getJsonUtils()
 
     /** Process manager stub that runs every supplied task sequentially and
      * collects the results. Sequential execution is fine for tests — we're
