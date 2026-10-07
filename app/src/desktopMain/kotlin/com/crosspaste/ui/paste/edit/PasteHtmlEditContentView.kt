@@ -63,8 +63,10 @@ import com.mohamedrejeb.richeditor.ui.material3.RichTextEditorDefaults
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val MAX_UNDO_STACK_SIZE = 50
 
@@ -152,10 +154,13 @@ fun PasteDataScope.PasteHtmlEditContentView() {
         currentHtml = richTextState.toHtml()
     }
 
-    // Track changes via snapshotFlow for undo/redo stack only
+    // Track changes via snapshotFlow for undo/redo stack only. Observe the cheap annotatedString
+    // state and serialize once the typing pauses: toHtml() is a full-document serialization, and
+    // inside snapshotFlow it would run on every keystroke, ahead of the debounce.
     LaunchedEffect(pasteData.id, pasteData.hash) {
-        snapshotFlow { richTextState.toHtml() }
-            .debounce(300)
+        snapshotFlow { richTextState.annotatedString }
+            .debounce(300.milliseconds)
+            .map { richTextState.toHtml() }
             .distinctUntilChanged()
             .collect { newHtml ->
                 if (isUndoRedoAction) {

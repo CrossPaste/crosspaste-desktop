@@ -53,6 +53,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.DesktopReadTransferable
 import com.crosspaste.paste.PasteImportSelection
 import com.crosspaste.paste.PasteSourceContext
+import com.crosspaste.paste.PrefetchedTransferable
 import com.crosspaste.paste.TransferableConsumer
 import com.crosspaste.ui.theme.AppUISize.enormous
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -61,13 +62,20 @@ import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xLargeRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
-import kotlinx.coroutines.runBlocking
+import com.crosspaste.utils.GlobalCoroutineScope
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.launch
 import okio.Path
 import okio.Path.Companion.toOkioPath
 import org.koin.compose.koinInject
+import java.awt.Image
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 import java.io.File
+import java.io.InputStream
+import java.net.URL
+
+private val logger = KotlinLogging.logger {}
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -100,8 +108,6 @@ fun DragTargetContentView() {
                     isDragging = false
                 }
 
-                // DragAndDropTarget.onDrop requires a synchronous Boolean return,
-                // so runBlocking is unavoidable here due to the framework API contract.
                 override fun onDrop(event: DragAndDropEvent): Boolean {
                     val transferable = event.awtTransferable
                     if (onImportPageState.value) {
@@ -111,17 +117,32 @@ fun DragTargetContentView() {
                         }
                     }
                     val source: String? = appWindowManager.getCurrentActiveAppName()
-                    val pasteTransferable = DesktopReadTransferable(transferable)
-                    return runBlocking {
+                    // Drop data is only readable during this callback: copy what the plugins
+                    // read, then collect off the UI thread (file copies, image encoding and the
+                    // database write would otherwise freeze the window after the drop).
+                    val prefetched =
+                        runCatching {
+                            PrefetchedTransferable.of(transferable) { flavor ->
+                                pasteConsumer.getPlugin(flavor.humanPresentableName) != null &&
+                                    flavor.representationClass?.let { rep ->
+                                        DROP_READ_CLASSES.any { it.isAssignableFrom(rep) }
+                                    } == true
+                            }
+                        }.getOrElse { e ->
+                            logger.error(e) { "Failed to prefetch dropped transferable" }
+                            return false
+                        }
+                    GlobalCoroutineScope.ioCoroutineDispatcher.launch {
                         pasteConsumer.consume(
-                            pasteTransferable,
+                            DesktopReadTransferable(prefetched),
                             PasteSourceContext(
                                 source = source,
                                 remote = false,
                                 dragAndDrop = true,
                             ),
                         )
-                    }.isSuccess
+                    }
+                    return true
                 }
             }
         }
@@ -239,6 +260,14 @@ fun DragTargetContentView() {
         }
     }
 }
+
+/**
+ * The representation classes the paste type plugins consume. Each text flavor comes in
+ * many other representations too (Reader, CharBuffer, byte[], ...); the plugins ignore
+ * those, so reading them on drop would only copy the same content over and over.
+ */
+private val DROP_READ_CLASSES =
+    listOf(String::class.java, InputStream::class.java, URL::class.java, List::class.java, Image::class.java)
 
 /** The one regular .data archive file in [transferable], or null when it carries anything else. */
 private fun singleDroppedFile(transferable: Transferable): Path? =
