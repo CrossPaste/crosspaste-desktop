@@ -1,5 +1,7 @@
 package com.crosspaste.db.paste
 
+import app.cash.sqldelight.db.QueryResult
+import app.cash.sqldelight.db.SqlDriver
 import app.cash.turbine.test
 import com.crosspaste.Database
 import com.crosspaste.app.AppInfo
@@ -65,7 +67,9 @@ class PasteDaoTest {
     private val taskSubmitter: TaskSubmitter = mockk(relaxed = true)
     private val userDataPathProvider = mockk<com.crosspaste.path.UserDataPathProvider>(relaxed = true)
 
-    private val database = createDatabase(TestDriverFactory())
+    private val driverFactory = TestDriverFactory()
+
+    private val database = createDatabase(driverFactory)
 
     private val pasteItemReader = DefaultPasteItemReader()
 
@@ -105,6 +109,38 @@ class PasteDaoTest {
             pasteState = PasteState.LOADED,
             createTime = DateUtils.nowEpochMilliseconds(),
         )
+    }
+
+    // total_changes() also counts rows written by triggers, so a single-row
+    // UPDATE that moves it by more than 1 made the FTS trigger rewrite the index
+    private fun totalChanges(driver: SqlDriver): Long =
+        driver
+            .executeQuery(
+                null,
+                "SELECT total_changes()",
+                { cursor -> QueryResult.Value(if (cursor.next().value) cursor.getLong(0)!! else 0L) },
+                0,
+            ).value
+
+    private suspend fun changesOf(block: suspend () -> Unit): Long {
+        val driver = driverFactory.sqlDriver!!
+        val before = totalChanges(driver)
+        block()
+        return totalChanges(driver) - before
+    }
+
+    private fun setSearchContent(
+        id: Long,
+        content: String,
+    ) {
+        driverFactory.sqlDriver!!.execute(
+            null,
+            "UPDATE PasteDataEntity SET pasteSearchContent = ? WHERE id = ?",
+            2,
+        ) {
+            bindString(0, content)
+            bindLong(1, id)
+        }
     }
 
     private fun stubDeleteTaskSubmission() {
@@ -291,6 +327,25 @@ class PasteDaoTest {
                     limit = 100,
                 )
             assertEquals(3, results.size)
+        }
+
+    @Test
+    fun `searchPasteData orders by createTime in the requested direction`() =
+        runTest {
+            val older = pasteDao.createPasteData(createTestPasteData(text = "older").copy(createTime = 1_000L))
+            val newest = pasteDao.createPasteData(createTestPasteData(text = "newest").copy(createTime = 3_000L))
+            val middle = pasteDao.createPasteData(createTestPasteData(text = "middle").copy(createTime = 2_000L))
+            val deleted = pasteDao.createPasteData(createTestPasteData(text = "deleted").copy(createTime = 4_000L))
+            pasteDao.updatePasteState(deleted, PasteState.DELETED)
+
+            assertEquals(
+                listOf(newest, middle),
+                pasteDao.searchPasteData(searchTerms = listOf(), sort = true, limit = 2).map { it.id },
+            )
+            assertEquals(
+                listOf(older, middle),
+                pasteDao.searchPasteData(searchTerms = listOf(), sort = false, limit = 2).map { it.id },
+            )
         }
 
     @Test
@@ -617,6 +672,89 @@ class PasteDaoTest {
 
             assertEquals(listOf(liveTagId), queries.getPasteTags(1L).executeAsList())
             assertTrue(queries.getPasteTags(2L).executeAsList().isEmpty())
+        } finally {
+            driverFactory.closeDriver()
+        }
+    }
+
+    @Test
+    fun `FTS is rebuilt only when the search content changes`() =
+        runTest {
+            val id = pasteDao.createPasteData(createTestPasteData(text = "original words"))
+
+            assertEquals(1L, changesOf { pasteDao.updateCreateTime(id) })
+            assertEquals(1L, changesOf { pasteDao.updatePasteState(id, PasteState.LOADED) })
+            assertEquals(1, pasteDao.searchPasteData(searchTerms = listOf("original"), limit = 10).size)
+
+            assertTrue(changesOf { setSearchContent(id, "replaced words") } > 1L)
+            assertTrue(pasteDao.searchPasteData(searchTerms = listOf("original"), limit = 10).isEmpty())
+            assertEquals(1, pasteDao.searchPasteData(searchTerms = listOf("replaced"), limit = 10).size)
+        }
+
+    @Test
+    fun `migration 5 adds the list index and guards the FTS update trigger`() {
+        val driverFactory = TestDriverFactory()
+        val queries = createDatabase(driverFactory).pasteDatabaseQueries
+        val driver = driverFactory.sqlDriver!!
+        try {
+            // Roll the v5 objects back to their v4 shape
+            driver.execute(null, "DROP INDEX IdxPasteDataActiveCreateTime", 0)
+            driver.execute(null, "DROP TRIGGER PasteData_AU", 0)
+            driver.execute(
+                null,
+                """
+                CREATE TRIGGER PasteData_AU AFTER UPDATE ON PasteDataEntity BEGIN
+                    INSERT INTO PasteDataEntityFts(PasteDataEntityFts, rowid, pasteSearchContent)
+                    VALUES('delete', old.id, old.pasteSearchContent);
+                    INSERT INTO PasteDataEntityFts(rowid, pasteSearchContent)
+                    VALUES (new.id, new.pasteSearchContent);
+                END
+                """.trimIndent(),
+                0,
+            )
+            driver.execute(
+                null,
+                "INSERT INTO PasteDataEntity(id, appInstanceId, favorite, pasteCollection, size, hash, " +
+                    "createTime, pasteSearchContent, pasteState, remote) " +
+                    "VALUES (1, 'a', 0, '', 0, 'h', 0, 'kept words', 1, 0)",
+                0,
+            )
+
+            Database.Schema.migrate(driver, 5, 6)
+
+            val plan =
+                driver
+                    .executeQuery(
+                        null,
+                        "EXPLAIN QUERY PLAN SELECT id FROM PasteDataEntity WHERE pasteState != -1 " +
+                            "ORDER BY createTime DESC, id DESC LIMIT 1",
+                        { cursor ->
+                            val details = mutableListOf<String>()
+                            while (cursor.next().value) details += cursor.getString(3)!!
+                            QueryResult.Value(details)
+                        },
+                        0,
+                    ).value
+            assertTrue(plan.any { "IdxPasteDataActiveCreateTime" in it }, plan.toString())
+            assertFalse(plan.any { "TEMP B-TREE" in it }, plan.toString())
+
+            val before = totalChanges(driver)
+            queries.updateCreateTime(5L, 1L)
+            assertEquals(1L, totalChanges(driver) - before)
+            assertEquals(
+                listOf(1L),
+                driver
+                    .executeQuery(
+                        null,
+                        "SELECT rowid FROM PasteDataEntityFts WHERE PasteDataEntityFts MATCH 'kept'",
+                        { cursor ->
+                            val ids = mutableListOf<Long>()
+                            while (cursor.next().value) ids += cursor.getLong(0)!!
+                            QueryResult.Value(ids)
+                        },
+                        0,
+                    ).value,
+            )
         } finally {
             driverFactory.closeDriver()
         }
