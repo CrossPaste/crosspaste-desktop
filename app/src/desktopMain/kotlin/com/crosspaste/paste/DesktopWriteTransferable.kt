@@ -5,6 +5,17 @@ import com.crosspaste.paste.plugin.type.PasteTypePlugin
 import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.Transferable
 
+/**
+ * A transfer value produced only when a consumer asks for its flavor, for values that
+ * are costly to build and often never read (e.g. a full-size decoded image offered
+ * next to its file). Failures are thrown from [Transferable.getTransferData].
+ */
+class LazyTransferData(
+    load: () -> Any,
+) {
+    val value: Any by lazy(load)
+}
+
 class DesktopWriteTransferableBuilder {
 
     private val map: MutableMap<PasteDataFlavor, Any> = LinkedHashMap()
@@ -48,10 +59,13 @@ class DesktopWriteTransferable(
 
     override fun isDataFlavorSupported(flavor: DataFlavor?): Boolean = map.containsKey(flavor)
 
-    override fun getTransferData(flavor: DataFlavor?): Any = map[flavor] ?: NoneTransferData
+    override fun getTransferData(flavor: DataFlavor?): Any =
+        when (val value = map[flavor]) {
+            null -> NoneTransferData
+            is LazyTransferData -> value.value
+            else -> value
+        }
 
-    override fun getTransferData(pasteDataFlavor: PasteDataFlavor): Any {
-        pasteDataFlavor as DesktopPasteDataFlavor
-        return map[pasteDataFlavor.dataFlavor] ?: NoneTransferData
-    }
+    override fun getTransferData(pasteDataFlavor: PasteDataFlavor): Any =
+        getTransferData((pasteDataFlavor as DesktopPasteDataFlavor).dataFlavor)
 }

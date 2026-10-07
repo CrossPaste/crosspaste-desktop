@@ -4,6 +4,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.paste.DesktopPasteDataFlavor
+import com.crosspaste.paste.LazyTransferData
 import com.crosspaste.paste.PasteCollector
 import com.crosspaste.paste.PasteDataFlavor
 import com.crosspaste.paste.PasteDataFlavors
@@ -25,6 +26,7 @@ import com.crosspaste.utils.FileNameNormalizer
 import com.crosspaste.utils.getFileUtils
 import com.fleeksoft.ksoup.Ksoup
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSource
 import kotlinx.io.buffered
 import okio.Path.Companion.toOkioPath
@@ -33,6 +35,7 @@ import java.awt.datatransfer.DataFlavor
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.net.URI
 
@@ -220,17 +223,20 @@ class DesktopImageTypePlugin(
         val fileList: List<File> = filePaths.map { it.toFile() }
 
         if (fileList.size == 1) {
-            runCatching {
-                val start = System.currentTimeMillis()
-                val image: BufferedImage? = imageHandler.readImage(fileList[0].toOkioPath())
-                image?.let {
-                    map[DataFlavor.imageFlavor.toPasteDataFlavor()] = it
+            val imageFile = fileList[0]
+            // Decoded only if a consumer asks for the image itself; most take the file. Building
+            // the transferable must stay cheap: dragging a row out builds it on the UI thread.
+            map[DataFlavor.imageFlavor.toPasteDataFlavor()] =
+                LazyTransferData {
+                    val start = System.currentTimeMillis()
+                    val image: BufferedImage? =
+                        runCatching { runBlocking { imageHandler.readImage(imageFile.toOkioPath()) } }
+                            .onFailure { e -> logger.error(e) { "read image fail" } }
+                            .getOrNull()
+                    val end = System.currentTimeMillis()
+                    logger.debug { "read image ${imageFile.absolutePath} use time: ${end - start} ms" }
+                    image ?: throw IOException("Failed to read image ${imageFile.absolutePath}")
                 }
-                val end = System.currentTimeMillis()
-                logger.debug { "read image ${fileList[0].absolutePath} use time: ${end - start} ms" }
-            }.onFailure { e ->
-                logger.error(e) { "read image fail" }
-            }
         }
 
         map[DataFlavor.javaFileListFlavor.toPasteDataFlavor()] = fileList
