@@ -4,6 +4,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.draganddrop.dragAndDropSource
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +15,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -61,6 +65,8 @@ fun PasteDataScope.SidePasteItemView(
     val currentOnDoubleTap by rememberUpdatedState(onDoubleTap)
 
     val graphicsLayer = rememberGraphicsLayer()
+    val hoverInteraction = remember { MutableInteractionSource() }
+    val isHovered by hoverInteraction.collectIsHoveredAsState()
     val placeholderColor = AppUIColors.pasteBackground
 
     Row(
@@ -68,8 +74,8 @@ fun PasteDataScope.SidePasteItemView(
             Modifier
                 .dragAndDropSource(
                     drawDragDecoration = {
-                        // The graphics layer is empty until the first non-scrolling
-                        // frame records it. If a drag starts before that, fall back
+                        // The graphics layer is empty until the pointer first rests
+                        // on this card. If a drag starts before that, fall back
                         // to a blank tile sized to the source so the preview is
                         // still visible — the drag itself shouldn't be blocked by
                         // rendering state.
@@ -131,10 +137,13 @@ fun PasteDataScope.SidePasteItemView(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .hoverable(hoverInteraction)
                     .drawWithContent {
                         // Always render the visible content directly. The graphics
-                        // layer is only used to provide a drag preview, so we keep
-                        // recording off the per-frame draw path of the visible UI.
+                        // layer is only used to provide a drag preview, and a drag
+                        // can only start under the pointer, so only the hovered card
+                        // records it. Recording every visible card on every frame
+                        // doubled draw cost whenever anything on screen animated.
                         drawContent()
                         // Skip layer recording while the LazyRow is actively
                         // scrolling. During fast recycling a freshly composed text
@@ -142,7 +151,7 @@ fun PasteDataScope.SidePasteItemView(
                         // and re-driving the child draw via record { drawContent() }
                         // would crash. The previously recorded layer remains
                         // available for any drag started mid-scroll.
-                        if (!isScrolling) {
+                        if (isHovered && !isScrolling) {
                             try {
                                 graphicsLayer.record {
                                     this@drawWithContent.drawContent()
