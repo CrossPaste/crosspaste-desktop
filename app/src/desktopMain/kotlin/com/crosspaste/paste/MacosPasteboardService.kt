@@ -97,12 +97,17 @@ class MacosPasteboardService(
                 logger.debug { "Ignoring concealed pasteboard content" }
             }
             else -> {
-                consumeChange(firstChange = firstChange, remote = remote.value != 0)
+                consumeChange(
+                    expectedChangeCount = currentChangeCount,
+                    firstChange = firstChange,
+                    remote = remote.value != 0,
+                )
             }
         }
     }
 
     private suspend fun CoroutineScope.consumeChange(
+        expectedChangeCount: Int,
         firstChange: Boolean,
         remote: Boolean,
     ) {
@@ -113,12 +118,14 @@ class MacosPasteboardService(
         }
 
         val contents =
-            controlUtils.exponentialBackoffUntilValid(
-                initTime = 20L,
-                maxTime = 1000L,
-                isValidResult = ::isValidContents,
-            ) {
-                getPasteboardContentsBySafe()
+            readUnchangedSnapshot(expectedChangeCount, ::readChangeCount, logger) {
+                controlUtils.exponentialBackoffUntilValid(
+                    initTime = 20L,
+                    maxTime = 1000L,
+                    isValidResult = ::isValidContents,
+                ) {
+                    getPasteboardContentsBySafe()
+                }
             }
         if (contents == null || contents == ownerTransferable) return
 
@@ -137,6 +144,15 @@ class MacosPasteboardService(
             )
         }
     }
+
+    // With the count unchanged the native side only returns it, no item scan
+    private fun readChangeCount(): Int =
+        MacosApi.INSTANCE.getPasteboardChangeCount(
+            changeCount,
+            IntByReference(),
+            IntByReference(),
+            IntByReference(),
+        )
 
     private suspend fun resolveSource(firstChange: Boolean): String? {
         val source =
@@ -174,5 +190,33 @@ class MacosPasteboardService(
     override fun stop() {
         job?.cancel()
         configManager.updateConfig("lastPasteboardChangeCount", changeCount)
+    }
+
+    companion object {
+        /**
+         * Reads the pasteboard and keeps the result only if no other write landed
+         * while it was being read. AWT reads one type at a time, so a write in
+         * between yields a mix of both contents, and the source and concealed
+         * checks made before the read describe only the first. Discarding leaves
+         * the new count for the next poll, which reads it whole with its own source
+         * (the same rule as ClipboardEventPipeline on Windows).
+         */
+        suspend fun <T> readUnchangedSnapshot(
+            changeCount: Int,
+            readChangeCount: () -> Int,
+            logger: KLogger,
+            read: suspend () -> T?,
+        ): T? {
+            val snapshot = read() ?: return null
+            val changeCountNow = readChangeCount()
+            if (changeCountNow != changeCount) {
+                logger.warn {
+                    "Discarding pasteboard snapshot at change count $changeCount: " +
+                        "it moved to $changeCountNow during the read"
+                }
+                return null
+            }
+            return snapshot
+        }
     }
 }
