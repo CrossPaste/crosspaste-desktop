@@ -1592,6 +1592,126 @@ class SyncResolverTest {
             assertEquals(VersionRelation.EQUAL_TO, capturedRelation)
         }
 
+    // ========== E2. polling backoff settlement (R2-06-001) ==========
+
+    private class FailureCounter {
+        var calls = 0
+        val callback = ResolveCallback(updateVersionRelation = {}, markPollFailure = { calls++ })
+    }
+
+    private fun TestDeps.stubUnreachable() {
+        coEvery { telnetHelper.telnet(any(), any(), any()) } returns null
+        coEvery { telnetHelper.switchHost(any(), any(), any(), any()) } returns null
+    }
+
+    @Test
+    fun pollingResolve_disconnectedNoReachableHost_marksPollFailureOnce() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createSyncRuntimeInfo()
+            deps.stubDbRead(syncRuntimeInfo)
+            deps.stubUnreachable()
+
+            val counter = FailureCounter()
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, counter.callback))
+
+            assertEquals(1, counter.calls)
+        }
+
+    @Test
+    fun pollingResolve_connectingHeartbeatRefused_marksPollFailureOnce() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectingSyncRuntimeInfo()
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns ConnectionRefused
+
+            val captured = slot<SyncRuntimeInfo>()
+            coEvery { deps.syncRuntimeInfoDao.updateConnectInfo(capture(captured)) } returns
+                syncRuntimeInfo.appInstanceId
+
+            val counter = FailureCounter()
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, counter.callback))
+
+            assertEquals(SyncState.DISCONNECTED, captured.captured.connectState)
+            assertEquals(1, counter.calls)
+        }
+
+    @Test
+    fun pollingResolve_connectedHeartbeatAndRediscoveryFail_countsOneFailure() =
+        runTest {
+            // verifyConnection falls through to discoverAndConnect in the same pass;
+            // the two failed stages must still settle as a single poll failure.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo()
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns ConnectionRefused
+            deps.stubUnreachable()
+
+            val counter = FailureCounter()
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, counter.callback))
+
+            assertEquals(1, counter.calls)
+        }
+
+    @Test
+    fun pollingResolve_reconnects_doesNotMarkPollFailure() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createSyncRuntimeInfo()
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns null
+            coEvery { deps.telnetHelper.switchHost(any(), any(), any(), any()) } returns
+                Pair(HostInfo(24, "192.168.1.100"), TelnetResult(VersionRelation.EQUAL_TO, null))
+            coEvery { deps.secureStore.existCryptPublicKey(any()) } returns true
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
+                SuccessResult(VersionRelation.EQUAL_TO)
+
+            val counter = FailureCounter()
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, counter.callback))
+
+            assertEquals(0, counter.calls)
+        }
+
+    @Test
+    fun pollingResolve_unverifiedStillReachable_doesNotMarkPollFailure() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createUnverifiedSyncRuntimeInfo()
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.secureStore.existCryptPublicKey(any()) } returns false
+            coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns
+                TelnetResult(VersionRelation.EQUAL_TO, null)
+
+            val counter = FailureCounter()
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, counter.callback))
+
+            assertEquals(0, counter.calls)
+        }
+
+    @Test
+    fun forceResolve_unreachable_doesNotMarkPollFailure() =
+        runTest {
+            // Discovery/UI-driven refreshes must not escalate the polling backoff.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createSyncRuntimeInfo()
+            deps.stubDbRead(syncRuntimeInfo)
+            deps.stubUnreachable()
+
+            val counter = FailureCounter()
+            resolver.emitEvent(SyncEvent.ForceResolve(syncRuntimeInfo, counter.callback))
+
+            assertEquals(0, counter.calls)
+        }
+
     // ========== F. resolveExtension ==========
 
     @Test
