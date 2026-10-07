@@ -307,7 +307,8 @@ class PasteExportImportServiceTest {
 
     @Test
     fun `PasteExportService export produces valid zip with paste data`() =
-        runTest {
+        // Real IO dispatcher: virtual-time withTimeout would expire before the work finishes
+        runBlocking<Unit> {
             val tempDir = Files.createTempDirectory("export-service-test").toFile()
             tempDir.deleteOnExit()
 
@@ -347,11 +348,11 @@ class PasteExportImportServiceTest {
                     exportPath = exportDir.toOkioPath(),
                 )
 
-            var finalProgress = 0f
-            exportService.export(exportParam) { progress -> finalProgress = progress }
-
-            // Wait for async export to complete
-            Thread.sleep(3000)
+            val done = CompletableDeferred<Float>()
+            exportService.export(exportParam) { progress ->
+                if (progress == 1f || progress < 0f) done.complete(progress)
+            }
+            assertEquals(1f, withTimeout(10.seconds) { done.await() })
 
             // Verify export produced a file
             val exportedFiles = exportDir.listFiles { _, name -> name.endsWith(".data") }
@@ -382,7 +383,8 @@ class PasteExportImportServiceTest {
 
     @Test
     fun `PasteImportService import reports Failed for non-existent file`() =
-        runTest {
+        // Real IO dispatcher: virtual-time withTimeout would expire before the work finishes
+        runBlocking<Unit> {
             val notificationManager = mockk<NotificationManager>(relaxed = true)
             val pasteDao = mockk<PasteDao>(relaxed = true)
             val pasteItemReader = mockk<PasteItemReader>(relaxed = true)
@@ -404,20 +406,14 @@ class PasteExportImportServiceTest {
 
             val fakeParam = DesktopPasteImportParam(File("/tmp/non-existent-archive.data").toOkioPath())
 
-            var result: PasteImportResult? = null
+            val result = CompletableDeferred<PasteImportResult>()
             importService.import(
                 pasteImportParam = fakeParam,
                 updateProgress = {},
-                onResult = { r -> result = r },
+                onResult = { r -> result.complete(r) },
             )
 
-            var tries = 0
-            while (result == null && tries < 50) {
-                Thread.sleep(50)
-                tries++
-            }
-
-            assertEquals(PasteImportResult.Failed, result)
+            assertEquals(PasteImportResult.Failed, withTimeout(10.seconds) { result.await() })
         }
 
     // --- Import must keep archive-controlled paths inside managed storage ---

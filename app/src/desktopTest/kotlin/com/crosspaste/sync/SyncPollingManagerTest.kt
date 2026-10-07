@@ -1,269 +1,209 @@
 package com.crosspaste.sync
 
-import com.crosspaste.test.IntegrationTest
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 /**
- * SyncPollingManager uses real wall-clock time (nowEpochMilliseconds) for scheduling,
- * so these tests use runBlocking with real-time delays instead of runTest with virtual time.
- * The fail() backoff starts at 1500ms (500 + 500*2^1), keeping test times reasonable.
+ * Drives the polling schedule on virtual time: the manager reads the test scheduler's clock,
+ * so each backoff step is asserted at its exact millisecond.
  */
-@IntegrationTest
+@OptIn(ExperimentalCoroutinesApi::class)
 class SyncPollingManagerTest {
 
+    private class Harness(
+        testScope: TestScope,
+    ) {
+        val scope = CoroutineScope(testScope.coroutineContext + Job())
+        val manager = SyncPollingManager(scope) { testScope.testScheduler.currentTime }
+        var actionCount = 0
+    }
+
+    // Advances to one millisecond before [atMs] (relative to now) and checks nothing ran,
+    // then past it and checks exactly one more run.
+    private fun TestScope.assertFiresAt(
+        harness: Harness,
+        atMs: Long,
+    ) {
+        val before = harness.actionCount
+        advanceTimeBy(atMs - 1)
+        runCurrent()
+        assertEquals(before, harness.actionCount, "fired before ${atMs}ms")
+        advanceTimeBy(1)
+        runCurrent()
+        assertEquals(before + 1, harness.actionCount, "did not fire at ${atMs}ms")
+    }
+
     @Test
-    fun fail_triggersActionSooner() =
-        runBlocking {
-            val childScope = CoroutineScope(coroutineContext + Job())
-            val manager = SyncPollingManager(childScope)
-            var actionCount = 0
+    fun noFailure_usesDefaultInterval() =
+        runTest {
+            val h = Harness(this)
+            h.manager.startPollingResolve { h.actionCount++ }
+            runCurrent()
 
-            // After fail(), delay = 500 + 500*2 = 1500ms (much shorter than default 60s)
-            manager.fail()
+            assertFiresAt(h, 60_000)
+            h.scope.cancel()
+        }
 
-            val job =
-                manager.startPollingResolve {
-                    actionCount++
-                }
+    @Test
+    fun fail_triggersActionAtFirstBackoffStep() =
+        runTest {
+            val h = Harness(this)
+            // 500 + 500 * 2^1
+            h.manager.fail()
+            h.manager.startPollingResolve { h.actionCount++ }
+            runCurrent()
 
-            withTimeout(5.seconds) {
-                while (actionCount == 0) {
-                    delay(50.milliseconds)
-                }
-            }
-
-            assertTrue(actionCount >= 1, "Action should execute after fail triggers shorter backoff")
-            job.cancel()
-            childScope.cancel()
+            assertFiresAt(h, 1_500)
+            h.scope.cancel()
         }
 
     @Test
     fun multipleFails_increaseBackoff() =
-        runBlocking {
-            val childScope = CoroutineScope(coroutineContext + Job())
-            val manager = SyncPollingManager(childScope)
+        runTest {
+            val h = Harness(this)
+            // 500 + 500 * 2^3
+            repeat(3) { h.manager.fail() }
+            h.manager.startPollingResolve { h.actionCount++ }
+            runCurrent()
 
-            // 3 fails -> delay = 500 + 500*2^3 = 4500ms
-            manager.fail()
-            manager.fail()
-            manager.fail()
+            assertFiresAt(h, 4_500)
+            h.scope.cancel()
+        }
 
-            var actionCount = 0
-            val job =
-                manager.startPollingResolve {
-                    actionCount++
-                }
+    @Test
+    fun backoff_isCappedNearDefaultInterval() =
+        runTest {
+            val h = Harness(this)
+            // 500 * 2^7 exceeds the 60s default, so the step is capped at 500 + 60_000
+            repeat(7) { h.manager.fail() }
+            h.manager.startPollingResolve { h.actionCount++ }
+            runCurrent()
 
-            // At 1s, should not have fired yet (delay is ~4500ms)
-            delay(1_000)
-            val countAt1s = actionCount
-
-            withTimeout(10.seconds) {
-                while (actionCount == countAt1s) {
-                    delay(50.milliseconds)
-                }
-            }
-
-            assertTrue(actionCount > countAt1s, "Action should fire after sufficient time")
-            job.cancel()
-            childScope.cancel()
+            assertFiresAt(h, 60_500)
+            h.scope.cancel()
         }
 
     @Test
     fun reset_afterFails_restoresDefaultInterval() =
-        runBlocking {
-            val childScope = CoroutineScope(coroutineContext + Job())
-            val manager = SyncPollingManager(childScope)
+        runTest {
+            val h = Harness(this)
+            repeat(5) { h.manager.fail() }
+            h.manager.reset()
+            h.manager.startPollingResolve { h.actionCount++ }
+            runCurrent()
 
-            // Fail several times to increase backoff
-            manager.fail()
-            manager.fail()
-            manager.fail()
-            manager.fail()
-            manager.fail()
+            assertFiresAt(h, 60_000)
+            assertEquals(0, h.manager.currentFailCount)
+            h.scope.cancel()
+        }
 
-            // Reset should bring it back to default 60s poll interval
-            manager.reset()
+    @Test
+    fun fail_afterReset_restartsBackoffFromFirstStep() =
+        runTest {
+            val h = Harness(this)
+            repeat(3) { h.manager.fail() }
+            h.manager.reset()
+            h.manager.fail()
+            h.manager.startPollingResolve { h.actionCount++ }
+            runCurrent()
 
-            var actionCount = 0
-            val job =
-                manager.startPollingResolve {
-                    actionCount++
-                }
+            assertFiresAt(h, 1_500)
+            h.scope.cancel()
+        }
 
-            // After reset, default interval is 60s; within 3s action should NOT fire
-            delay(3_000)
-            assertTrue(actionCount == 0, "Action should not fire within 3s at default 60s interval")
-            job.cancel()
-            childScope.cancel()
+    @Test
+    fun fail_whileWaiting_pullsNextRunForward() =
+        runTest {
+            val h = Harness(this)
+            h.manager.startPollingResolve { h.actionCount++ }
+            runCurrent()
+            advanceTimeBy(10_000)
+
+            // Waiting on the 60s default; a failure reschedules from now
+            h.manager.fail()
+            assertFiresAt(h, 1_500)
+            h.scope.cancel()
         }
 
     @Test
     fun cancelJob_stopsPolling() =
-        runBlocking {
-            val childScope = CoroutineScope(coroutineContext + Job())
-            val manager = SyncPollingManager(childScope)
-            var actionCount = 0
-
-            manager.fail() // Short delay so action fires quickly
-
-            val job =
-                manager.startPollingResolve {
-                    actionCount++
-                }
-
-            withTimeout(5.seconds) {
-                while (actionCount == 0) {
-                    delay(50.milliseconds)
-                }
-            }
-            val countBeforeCancel = actionCount
+        runTest {
+            val h = Harness(this)
+            h.manager.fail()
+            val job = h.manager.startPollingResolve { h.actionCount++ }
+            runCurrent()
+            assertFiresAt(h, 1_500)
 
             job.cancel()
-            delay(3_000)
+            advanceTimeBy(120_000)
+            runCurrent()
 
-            assertTrue(
-                actionCount <= countBeforeCancel + 1,
-                "Action count should not increase significantly after cancel",
-            )
-            childScope.cancel()
-        }
-
-    @Test
-    fun fail_afterReset_usesNewBackoff() =
-        runBlocking {
-            val childScope = CoroutineScope(coroutineContext + Job())
-            val manager = SyncPollingManager(childScope)
-
-            // Fail then reset, then fail again
-            manager.fail()
-            manager.fail()
-            manager.fail()
-            manager.reset()
-            manager.fail() // Back to first fail level: 500 + 500*2 = 1500ms
-
-            var actionCount = 0
-            val job =
-                manager.startPollingResolve {
-                    actionCount++
-                }
-
-            withTimeout(5.seconds) {
-                while (actionCount == 0) {
-                    delay(50.milliseconds)
-                }
-            }
-
-            assertTrue(actionCount >= 1, "Action should fire at first-fail backoff level")
-            job.cancel()
-            childScope.cancel()
-        }
-
-    @Test
-    fun startPollingResolve_actionExceptionDoesNotStopPolling() =
-        runBlocking {
-            val childScope = CoroutineScope(coroutineContext + Job())
-            val manager = SyncPollingManager(childScope)
-            var actionCount = 0
-
-            manager.fail() // Use short backoff so tests run quickly
-
-            val job =
-                manager.startPollingResolve {
-                    actionCount++
-                    if (actionCount == 1) throw RuntimeException("test error")
-                }
-
-            // Wait for first execution
-            withTimeout(5.seconds) {
-                while (actionCount == 0) {
-                    delay(50.milliseconds)
-                }
-            }
-            val firstCount = actionCount
-
-            // Fail again to get another short delay after the exception
-            manager.fail()
-
-            // Wait for second execution
-            withTimeout(5.seconds) {
-                while (actionCount <= firstCount) {
-                    delay(50.milliseconds)
-                }
-            }
-
-            assertTrue(actionCount > firstCount, "Polling should continue after exception")
-            job.cancel()
-            childScope.cancel()
-        }
-
-    @Test
-    fun startPollingResolve_actionCancellationException_stopsPolling() =
-        runBlocking {
-            // Regression guard: if the action raises CancellationException, the polling
-            // loop must terminate instead of swallowing it and spinning (which fed the
-            // resolver infinite-loop). The job should complete and the action must not
-            // run a second time.
-            val childScope = CoroutineScope(coroutineContext + Job())
-            val manager = SyncPollingManager(childScope)
-            var actionCount = 0
-
-            manager.fail() // short backoff so the first run happens quickly
-
-            val job =
-                manager.startPollingResolve {
-                    actionCount++
-                    throw CancellationException("simulated cancellation")
-                }
-
-            // With the fix the cancellation propagates and the job completes promptly.
-            // Without it, join() would never return and this times out.
-            withTimeout(5.seconds) {
-                job.join()
-            }
-
-            assertTrue(job.isCompleted, "Polling job should complete after cancellation")
-            assertEquals(1, actionCount, "Action must not run again after cancellation")
-            childScope.cancel()
+            assertEquals(1, h.actionCount)
+            h.scope.cancel()
         }
 
     @Test
     fun scopeCancel_stopsPolling() =
-        runBlocking {
-            val childScope = CoroutineScope(coroutineContext + Job())
-            val manager = SyncPollingManager(childScope)
-            var actionCount = 0
+        runTest {
+            val h = Harness(this)
+            h.manager.fail()
+            h.manager.startPollingResolve { h.actionCount++ }
+            runCurrent()
+            assertFiresAt(h, 1_500)
 
-            manager.fail()
+            h.scope.cancel()
+            advanceTimeBy(120_000)
+            runCurrent()
 
-            manager.startPollingResolve {
-                actionCount++
+            assertEquals(1, h.actionCount)
+        }
+
+    @Test
+    fun startPollingResolve_actionExceptionDoesNotStopPolling() =
+        runTest {
+            val h = Harness(this)
+            h.manager.fail()
+            h.manager.startPollingResolve {
+                h.actionCount++
+                if (h.actionCount == 1) throw RuntimeException("test error")
             }
+            runCurrent()
+            assertFiresAt(h, 1_500)
 
-            withTimeout(5.seconds) {
-                while (actionCount == 0) {
-                    delay(50.milliseconds)
+            // The fail count still stands, so the next run is one backoff step later
+            assertFiresAt(h, 1_500)
+            h.scope.cancel()
+        }
+
+    @Test
+    fun startPollingResolve_actionCancellationException_stopsPolling() =
+        runTest {
+            // Regression guard: if the action raises CancellationException, the polling
+            // loop must terminate instead of swallowing it and spinning (which fed the
+            // resolver infinite-loop).
+            val h = Harness(this)
+            h.manager.fail()
+            val job =
+                h.manager.startPollingResolve {
+                    h.actionCount++
+                    throw CancellationException("simulated cancellation")
                 }
-            }
+            runCurrent()
+            advanceTimeBy(120_000)
+            runCurrent()
 
-            val countBefore = actionCount
-            childScope.cancel()
-            delay(3_000)
-
-            assertTrue(
-                actionCount <= countBefore + 1,
-                "Polling should stop after scope cancellation",
-            )
+            assertTrue(job.isCompleted, "Polling job should complete after cancellation")
+            assertEquals(1, h.actionCount, "Action must not run again after cancellation")
+            h.scope.cancel()
         }
 }
