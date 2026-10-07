@@ -632,6 +632,27 @@ class PasteDaoTest {
         }
 
     @Test
+    fun `same hash lookup from a row already retired finds nothing`() =
+        runTest {
+            stubDeleteTaskSubmission()
+            val pasteData = createTestPasteData(text = "same")
+            // Two concurrent releases of the same content: both rows land first
+            val firstId = pasteDao.createPasteData(pasteData)
+            val secondId = pasteDao.createPasteData(pasteData)
+
+            // The first release retires the second row ...
+            assertEquals(
+                listOf(secondId),
+                pasteDao.getSameHashPasteDataIds(pasteData.hash, pasteData.pasteType, firstId),
+            )
+            pasteDao.markDeletePasteData(secondId)
+
+            // ... so the second release must not retire the first one in turn
+            assertTrue(pasteDao.getSameHashPasteDataIds(pasteData.hash, pasteData.pasteType, secondId).isEmpty())
+            assertNotNull(pasteDao.getNoDeletePasteData(firstId))
+        }
+
+    @Test
     fun `remote loading ids exclude local and finished rows`() =
         runTest {
             val remoteLoading =

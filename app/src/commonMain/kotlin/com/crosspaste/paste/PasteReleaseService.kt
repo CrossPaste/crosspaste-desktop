@@ -112,20 +112,22 @@ class PasteReleaseService(
             return
         }
 
-        val sameHashIds =
-            pasteDao.getSameHashPasteDataIds(
-                newPasteDataHash,
-                newPasteDataType,
-                newPasteDataId,
-            )
-
-        val idList =
-            refFiles?.let {
-                val referencedPaths = it.canonicalFilePaths()
-                sameHashIds.filterNot { id -> ownsAnyFile(id, referencedPaths) }
-            } ?: sameHashIds
-
+        // Probe and mark in one write transaction, so a concurrent release of the
+        // same content sees this one's result instead of retiring this row too
         database.transaction {
+            val sameHashIds =
+                pasteDao.getSameHashPasteDataIds(
+                    newPasteDataHash,
+                    newPasteDataType,
+                    newPasteDataId,
+                )
+
+            val idList =
+                refFiles?.let {
+                    val referencedPaths = it.canonicalFilePaths()
+                    sameHashIds.filterNot { id -> ownsAnyFile(id, referencedPaths) }
+                } ?: sameHashIds
+
             database.pasteDatabaseQueries.markDeletePasteData(idList)
             addDeletePasteTasks(idList)
         }

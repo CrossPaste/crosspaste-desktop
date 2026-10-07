@@ -166,7 +166,10 @@ WHERE pasteState != -1
 ORDER BY createTime ASC, id ASC
 LIMIT :limit;
 
--- Only finished rows, for the same reason as queryByCleanTime
+-- Only finished rows, for the same reason as queryByCleanTime.
+-- Only while the probing row is itself still live: when two copies of the same
+-- content are released concurrently, the one retired first must not retire the
+-- other, or both disappear.
 getSameHashPasteDataIds:
 SELECT id FROM PasteDataEntity
 WHERE hash = :hash AND
@@ -177,6 +180,10 @@ WHERE hash = :hash AND
     NOT EXISTS (
         SELECT 1 FROM PasteTagEntity
         WHERE PasteTagEntity.pasteId = PasteDataEntity.id
+    ) AND
+    EXISTS (
+        SELECT 1 FROM PasteDataEntity AS probe
+        WHERE probe.id = :id AND probe.pasteState = 1
     );
 
 -- Keep-first dedup probe: a matching row means the paste being released is a
