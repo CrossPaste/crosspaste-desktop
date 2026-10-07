@@ -46,21 +46,11 @@ class ImageItemsTest {
     }
 
     @Test
-    fun `ImageKeyer combines id filePath and useThumbnail into key`() {
+    fun `ImageKeyer combines id and filePath into key`() {
         val coordinate = PasteFileCoordinate(1L, "test-instance", filePath = "/tmp/img.png".toPath())
         val keyer = ImageKeyer()
-        val key = keyer.key(ImageItem(coordinate, useThumbnail = false), io.mockk.mockk())
-        assertEquals("${coordinate.id}_${coordinate.filePath}_false", key)
-    }
-
-    @Test
-    fun `ImageKeyer produces different keys for thumbnail vs non-thumbnail`() {
-        val coordinate = PasteFileCoordinate(1L, "test-instance", filePath = "/tmp/img.png".toPath())
-        val keyer = ImageKeyer()
-        val options = io.mockk.mockk<coil3.request.Options>()
-        val thumbnailKey = keyer.key(ImageItem(coordinate, useThumbnail = true), options)
-        val fullKey = keyer.key(ImageItem(coordinate, useThumbnail = false), options)
-        assertNotEquals(thumbnailKey, fullKey)
+        val key = keyer.key(ImageItem(coordinate), io.mockk.mockk())
+        assertEquals("${coordinate.id}_${coordinate.filePath}", key)
     }
 
     @Test
@@ -70,8 +60,8 @@ class ImageItemsTest {
         val coord1 = PasteFileCoordinate(1L, "inst", filePath = "/a.png".toPath())
         val coord2 = PasteFileCoordinate(1L, "inst", filePath = "/b.png".toPath())
         assertNotEquals(
-            keyer.key(ImageItem(coord1, useThumbnail = false), options),
-            keyer.key(ImageItem(coord2, useThumbnail = false), options),
+            keyer.key(ImageItem(coord1), options),
+            keyer.key(ImageItem(coord2), options),
         )
     }
 }

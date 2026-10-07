@@ -114,12 +114,6 @@ interface MacosApi : Library {
         path: String,
     )
 
-    fun createThumbnail(
-        originalImagePath: String,
-        thumbnailImagePath: String,
-        metadataPath: String,
-    ): Boolean
-
     fun createVideoThumbnail(
         videoPath: String,
         thumbnailPath: String,

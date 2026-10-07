@@ -62,7 +62,7 @@ fun BoxScope.StaticImageSidePreview(
         remember(pasteFileCoordinate, requestSize) {
             ImageRequest
                 .Builder(platformContext)
-                .data(ImageItem(pasteFileCoordinate, false))
+                .data(ImageItem(pasteFileCoordinate))
                 .size(width = requestSize.width.toInt(), height = requestSize.height.toInt())
                 .precision(Precision.INEXACT)
                 .crossfade(true)

@@ -54,12 +54,11 @@ class FileExtKeyer : Keyer<FileExtItem> {
 
 data class ImageItem(
     val pasteFileCoordinate: PasteFileCoordinate,
-    val useThumbnail: Boolean,
 )
 
 class ImageKeyer : Keyer<ImageItem> {
     override fun key(
         data: ImageItem,
         options: Options,
-    ): String = "${data.pasteFileCoordinate.id}_${data.pasteFileCoordinate.filePath}_${data.useThumbnail}"
+    ): String = "${data.pasteFileCoordinate.id}_${data.pasteFileCoordinate.filePath}"
 }

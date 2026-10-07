@@ -42,11 +42,9 @@ import com.crosspaste.config.ReadWritePort
 import com.crosspaste.config.SimpleConfigFactory
 import com.crosspaste.image.DesktopFileExtLoader
 import com.crosspaste.image.DesktopImageHandler
-import com.crosspaste.image.DesktopThumbnailLoader
 import com.crosspaste.image.DesktopVideoThumbnailLoader
 import com.crosspaste.image.FileExtImageLoader
 import com.crosspaste.image.ImageHandler
-import com.crosspaste.image.ThumbnailLoader
 import com.crosspaste.image.VideoThumbnailLoader
 import com.crosspaste.image.coil.AppSourceFactory
 import com.crosspaste.image.coil.AppSourceKeyer
@@ -181,7 +179,7 @@ fun desktopAppModule(
             ImageLoader
                 .Builder(get<PlatformContext>())
                 .components {
-                    add(UserImageFactory(get()))
+                    add(UserImageFactory())
                         .add(ImageKeyer())
                 }.memoryCache { get<MemoryCache>() }
                 .build()
@@ -194,7 +192,6 @@ fun desktopAppModule(
                 .maxSizeBytes(256L * 1024L * 1024L)
                 .build()
         }
-        single<ThumbnailLoader> { DesktopThumbnailLoader(get(), get()) }
         single<VideoThumbnailLoader> { DesktopVideoThumbnailLoader(get(), get()) }
         // endregion
 
