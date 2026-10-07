@@ -204,7 +204,8 @@ abstract class DesktopAppWindowManager(
     fun showPastePanelButton() {
         _pastePanelButtonInfo.update { current ->
             val state =
-                if (current.state.position is WindowPosition.Absolute) {
+                // A remembered position can point at a display that has since been unplugged
+                if (current.state.position is WindowPosition.Absolute && appSize.isOnAnyDisplay(current.state)) {
                     current.state
                 } else {
                     appSize.getPastePanelButtonWindowState()

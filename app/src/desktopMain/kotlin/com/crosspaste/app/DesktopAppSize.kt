@@ -309,22 +309,16 @@ class DesktopAppSize(
 
     /** Paste panel beside the floating button, kept on the display the button is on. */
     fun getPastePanelWindowState(button: WindowState): WindowState {
-        val buttonRect =
-            DpRect(
-                origin = DpOffset(button.position.x, button.position.y),
-                size = button.size,
-            )
-        val center =
-            Point(
-                (buttonRect.left + buttonRect.width / 2).value.roundToInt(),
-                (buttonRect.top + buttonRect.height / 2).value.roundToInt(),
-            )
-        val ge = GraphicsEnvironment.getLocalGraphicsEnvironment()
+        val effectiveButton =
+            if (button.position is WindowPosition.Absolute) {
+                button
+            } else {
+                getPastePanelButtonWindowState()
+            }
+        val buttonRect = effectiveButton.rect()
         val configuration =
-            ge.screenDevices
-                .map { it.defaultConfiguration }
-                .firstOrNull { it.bounds.contains(center) }
-                ?: ge.defaultScreenDevice.defaultConfiguration
+            displayContaining(buttonRect)
+                ?: GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration
         val size = _appSizeValue.value.pastePanelSize
         val position = pastePanelPositionBeside(buttonRect, size, usableBounds(configuration), medium)
         return WindowState(
@@ -332,6 +326,29 @@ class DesktopAppSize(
             position = WindowPosition(position.x, position.y),
             size = size,
         )
+    }
+
+    /** False once the window's display is gone, e.g. an external monitor was unplugged. */
+    fun isOnAnyDisplay(window: WindowState): Boolean =
+        window.position is WindowPosition.Absolute && displayContaining(window.rect()) != null
+
+    private fun WindowState.rect(): DpRect =
+        DpRect(
+            origin = DpOffset(position.x, position.y),
+            size = size,
+        )
+
+    private fun displayContaining(rect: DpRect): GraphicsConfiguration? {
+        val center =
+            Point(
+                (rect.left + rect.width / 2).value.roundToInt(),
+                (rect.top + rect.height / 2).value.roundToInt(),
+            )
+        return GraphicsEnvironment
+            .getLocalGraphicsEnvironment()
+            .screenDevices
+            .map { it.defaultConfiguration }
+            .firstOrNull { it.bounds.contains(center) }
     }
 
     private fun usableBounds(configuration: GraphicsConfiguration): DpRect {

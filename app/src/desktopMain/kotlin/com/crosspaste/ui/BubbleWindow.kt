@@ -273,8 +273,12 @@ fun BubbleWindow(windowIcon: Painter?) {
                         val oppositeWindow = e.oppositeWindow
                         val isSearchWindow = oppositeWindow == appWindowManager.searchComposeWindow
                         val isMainWindow = oppositeWindow == appWindowManager.mainComposeWindow
-                        if (!isSearchWindow && !isMainWindow) {
-                            appWindowManager.hideBubbleWindow()
+                        // Focus went to another app. The search window handed its focus to the
+                        // bubble, so it gets no focus-lost event of its own: close it with the
+                        // bubble instead of leaving it on top. Skip when the bubble is already
+                        // closing (Esc), where the search window must stay.
+                        if (!isSearchWindow && !isMainWindow && appWindowManager.isBubbleWindowVisible()) {
+                            appWindowManager.hideSearchWindow()
                         }
                     }
                 }
