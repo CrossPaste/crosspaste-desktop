@@ -90,7 +90,7 @@ class DesktopHtmlTypePlugin(
         pasteItem as HtmlPasteItem
         var currentHtml = pasteItem.html
         if (platform.isWindows()) {
-            currentHtml = String(HTMLCodec.convertToHTMLFormat(currentHtml))
+            currentHtml = HTMLCodec.convertToHTMLFormat(currentHtml).decodeToString()
         }
         map[DataFlavor.selectionHtmlFlavor.toPasteDataFlavor()] = currentHtml
         map[DataFlavor.fragmentHtmlFlavor.toPasteDataFlavor()] = currentHtml

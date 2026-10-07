@@ -376,6 +376,11 @@ internal class HTMLCodec(
                 stContext = replaceFromIndex(stContext, htmlIndex)
             }
 
+            // AWT writes CF_HTML as text with eoln "\r\n": it expands every lone
+            // "\n" after these offsets are computed, so expand them first or each
+            // one shifts the fragment end by a byte
+            stContext = stContext.replace(LONE_LF, EOLN)
+
             val bytes = stContext.encodeToByteArray()
 
             val searchStartFragment = kmpSearch(bytes, START_FRAGMENT_CMT.encodeToByteArray())
@@ -393,28 +398,23 @@ internal class HTMLCodec(
                         SOURCE_URL.length + stBaseUrl.length + EOLN.length
                 )
 
-            val startFragment =
-                if (searchStartFragment > 0) {
-                    searchStartFragment + START_FRAGMENT_CMT.length
+            val nStartBody = nStartHTML + htmlPrefix.length
+            val nStartFragment =
+                if (searchStartFragment >= 0) {
+                    nStartBody + searchStartFragment + START_FRAGMENT_CMT.length
                 } else {
-                    0
+                    nStartBody
                 }
-
-            val nStartFragment = nStartHTML + htmlPrefix.length + startFragment
             val nEndFragment =
-                if (searchEndFragment > 0) {
-                    nStartHTML + htmlPrefix.length + searchEndFragment
+                if (searchEndFragment >= 0) {
+                    nStartBody + searchEndFragment
                 } else {
-                    nStartFragment + bytes.size - 1
+                    nStartBody + bytes.size
                 }
 
-            val nEndHTML = nEndFragment + htmlSuffix.length
+            val nEndHTML = nStartBody + bytes.size + htmlSuffix.length
 
-            val header =
-                StringBuilder(
-                    nStartFragment +
-                        START_FRAGMENT_CMT.length,
-                )
+            val header = StringBuilder()
             // header
             header.append(VERSION)
             header.append(VERSION_NUM)
@@ -443,41 +443,11 @@ internal class HTMLCodec(
             // HTML
             header.append(htmlPrefix)
 
-            var headerBytes: ByteArray? = null
-            var trailerBytes: ByteArray? = null
-
-            runCatching {
-                headerBytes = header.toString().encodeToByteArray()
-                trailerBytes = htmlSuffix.encodeToByteArray()
-            }
-
-            val retval =
-                ByteArray(
-                    (
-                        headerBytes!!.size + bytes.size +
-                            trailerBytes!!.size
-                    ),
-                )
-
-            System.arraycopy(headerBytes, 0, retval, 0, headerBytes.size)
-            System.arraycopy(
-                bytes,
-                0,
-                retval,
-                headerBytes.size,
-                bytes.size - 1,
-            )
-            System.arraycopy(
-                trailerBytes,
-                0,
-                retval,
-                headerBytes.size + bytes.size - 1,
-                trailerBytes.size,
-            )
-            retval[retval.size - 1] = 0
-
-            return retval
+            // No NUL terminator: AWT appends its own when it writes the clipboard
+            return header.toString().encodeToByteArray() + bytes + htmlSuffix.encodeToByteArray()
         }
+
+        private val LONE_LF = Regex("(?<!\r)\n")
 
         // InputStreamReader uses an 8K buffer. The size is not customizable.
         const val BYTE_BUFFER_LEN: Int = 8192
