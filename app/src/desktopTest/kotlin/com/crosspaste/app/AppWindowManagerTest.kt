@@ -1,6 +1,8 @@
 package com.crosspaste.app
 
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
 import com.crosspaste.config.DesktopAppConfig
 import com.crosspaste.config.DesktopConfigManager
@@ -191,5 +193,39 @@ class AppWindowManagerTest {
 
         assertEquals(DesktopAppSize.MAX_SEARCH_WINDOW_HEIGHT.dp, oversized.appSizeValue.value.sideSearchWindowHeight)
         assertEquals(DesktopAppSize.MIN_SEARCH_WINDOW_HEIGHT.dp, undersized.appSizeValue.value.sideSearchWindowHeight)
+    }
+
+    private fun createPanelButtonWindowManager(onDisplay: Boolean): Pair<TestWindowManager, WindowState> {
+        val defaultState = WindowState(position = WindowPosition(1000.dp, 400.dp), size = DpSize(48.dp, 48.dp))
+        val appSize =
+            spyk(DesktopAppSize(getPlatformUtils().platform, createConfigManager())) {
+                every { getPastePanelButtonWindowState() } returns defaultState
+                every { isOnAnyDisplay(any()) } returns onDisplay
+            }
+        return TestWindowManager(appSize, MockOS()) to defaultState
+    }
+
+    @Test
+    fun `paste panel button keeps its moved position while that position is on a display`() {
+        val (manager, _) = createPanelButtonWindowManager(onDisplay = true)
+        manager.showPastePanelButton()
+        manager.movePastePanelButton(WindowPosition(200.dp, 300.dp))
+        manager.hidePastePanelButton()
+
+        manager.showPastePanelButton()
+
+        assertEquals(WindowPosition(200.dp, 300.dp), manager.pastePanelButtonInfo.value.state.position)
+    }
+
+    @Test
+    fun `paste panel button returns to the default position when its display is gone`() {
+        val (manager, defaultState) = createPanelButtonWindowManager(onDisplay = false)
+        manager.showPastePanelButton()
+        manager.movePastePanelButton(WindowPosition(3000.dp, 300.dp))
+        manager.hidePastePanelButton()
+
+        manager.showPastePanelButton()
+
+        assertEquals(defaultState.position, manager.pastePanelButtonInfo.value.state.position)
     }
 }
