@@ -30,6 +30,7 @@ import com.crosspaste.cli.CliServer
 import com.crosspaste.cli.CliSymlinkService
 import com.crosspaste.config.AppMetadataRepository
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.config.LegacyJsonConfigImporter
 import com.crosspaste.db.DriverFactory
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.log.DesktopCrossPasteLogger
@@ -560,9 +561,11 @@ class CrossPaste {
          */
         private fun bootstrap() {
             appPathProvider = DesktopAppPathProvider(platform)
+            // The pre-DataStore single-document config; only read here for the
+            // appInstanceId migration, DesktopConfigManager imports and archives it.
             val configFilePersist =
                 FilePersist.createOneFilePersist(
-                    appPathProvider.resolve("appConfig.json", AppFileType.USER),
+                    appPathProvider.resolve(LegacyJsonConfigImporter.FILE_NAME, AppFileType.USER),
                 )
             val metadataFilePersist =
                 FilePersist.createOneFilePersist(
@@ -574,7 +577,7 @@ class CrossPaste {
                 configFilePersist = configFilePersist,
             )
             appMetadataRepository = AppMetadataRepository(metadataFilePersist, deviceUtils)
-            configManager = DesktopConfigManager(configFilePersist, localeUtils)
+            configManager = DesktopConfigManager(appPathProvider.resolve(null, AppFileType.USER), localeUtils)
             crossPasteLogger =
                 DesktopCrossPasteLogger(
                     appPathProvider.resolve("crosspaste.log", AppFileType.LOG).toString(),

@@ -3,6 +3,7 @@ package com.crosspaste.config
 import com.crosspaste.utils.getJsonUtils
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -207,12 +208,16 @@ class DesktopAppConfigTest {
     }
 
     @Test
-    fun `copy with unknown key does not change config`() {
+    fun `copy with unknown key throws`() {
         val config: AppConfig = createDefaultConfig()
-        val updated = config.copy("unknownKey", "unknownValue")
-        assertEquals(config.language, updated.language)
-        assertEquals(config.port, updated.port)
-        assertEquals(config.enableEncryptSync, updated.enableEncryptSync)
+        assertFailsWith<IllegalArgumentException> { config.copy("unknownKey", "unknownValue") }
+    }
+
+    @Test
+    fun `copy coerces a value of another type`() {
+        val config: AppConfig = createDefaultConfig()
+        assertEquals(8080, config.copy("port", "8080").port)
+        assertTrue(config.copy("enableEncryptSync", "true").enableEncryptSync)
     }
 
     @Test

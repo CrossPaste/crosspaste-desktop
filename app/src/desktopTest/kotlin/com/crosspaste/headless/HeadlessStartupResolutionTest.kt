@@ -84,10 +84,7 @@ class HeadlessStartupResolutionTest {
             val platform = getPlatformUtils().platform
             val appPathProvider = TempAppPathProvider(tempRoot)
             val configManager =
-                DesktopConfigManager(
-                    FilePersist.createOneFilePersist(appPathProvider.resolve("appConfig.json", AppFileType.USER)),
-                    DesktopLocaleUtils,
-                )
+                DesktopConfigManager(appPathProvider.resolve(null, AppFileType.USER), DesktopLocaleUtils)
             val desktopModule =
                 DesktopModule(
                     appEnv = AppEnv.TEST,

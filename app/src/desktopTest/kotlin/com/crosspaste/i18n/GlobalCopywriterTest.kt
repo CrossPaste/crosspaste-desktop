@@ -8,7 +8,6 @@ import com.crosspaste.db.task.SqlTaskDao
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EMPTY_STRING
 import com.crosspaste.i18n.SupportedLanguages.EN
 import com.crosspaste.i18n.SupportedLanguages.LANGUAGE_LIST
-import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.DesktopLocaleUtils
 import okio.Path.Companion.toOkioPath
@@ -25,14 +24,9 @@ class GlobalCopywriterTest {
     fun testDefaultLanguage() {
         val configDirPath = Files.createTempDirectory("configDir").toOkioPath()
         configDirPath.toFile().deleteOnExit()
-        val configPath = configDirPath.resolve("appConfig.json")
 
         @Suppress("UNCHECKED_CAST")
-        val configManager =
-            DesktopConfigManager(
-                OneFilePersist(configPath),
-                DesktopLocaleUtils,
-            ) as CommonConfigManager
+        val configManager = DesktopConfigManager(configDirPath, DesktopLocaleUtils) as CommonConfigManager
 
         configManager.updateConfig("language", "")
 

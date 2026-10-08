@@ -4,6 +4,7 @@ import com.crosspaste.presist.OneFilePersist
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import okio.Path.Companion.toPath
 
 private val logger = KotlinLogging.logger {}
 
@@ -40,12 +41,22 @@ fun migrateAppInstanceIdIfNeeded(
     metadataPersist.save(AppMetadata(legacyId))
 }
 
+/**
+ * Reads the legacy config, or the archive DesktopConfigManager renames it to once
+ * its values were imported into DataStore: the identity is only ever taken from
+ * here, so the archive keeps serving as the fallback for a corrupt metadata file.
+ */
 private fun readLegacyAppInstanceId(legacyConfigPersist: OneFilePersist): String? =
     runCatching {
-        legacyConfigPersist
-            .read(LegacyAppInstanceIdHolder::class)
-            ?.appInstanceId
-            ?.takeIf { it.isNotBlank() }
+        val archivedPersist =
+            OneFilePersist("${legacyConfigPersist.path}${LegacyJsonConfigImporter.MIGRATED_SUFFIX}".toPath())
+        listOf(legacyConfigPersist, archivedPersist)
+            .firstNotNullOfOrNull { persist ->
+                persist
+                    .read(LegacyAppInstanceIdHolder::class)
+                    ?.appInstanceId
+                    ?.takeIf { it.isNotBlank() }
+            }
     }.onFailure {
         logger.error(it) {
             "Failed to read legacy appInstanceId; " +
