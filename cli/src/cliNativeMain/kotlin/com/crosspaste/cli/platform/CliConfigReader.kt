@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package com.crosspaste.cli.platform
 
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -121,7 +123,6 @@ class CliConfigReader(
  * preferences.proto; the classes below mirror it field for field, exactly as
  * DataStore's own non-JVM serializer does, so no DataStore dependency is needed.
  */
-@OptIn(ExperimentalSerializationApi::class)
 internal fun decodePreferences(bytes: ByteArray): Map<String, PreferenceValue> =
     ProtoBuf.decodeFromByteArray(PreferenceMap.serializer(), bytes).preferences
 

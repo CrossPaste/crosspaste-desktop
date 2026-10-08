@@ -58,10 +58,23 @@ class CliConfigReaderTest {
 
     @Test
     fun `decodes every preference value type`() {
-        val preferences = decodePreferences(settingsBytes())
+        val intEntry =
+            byteArrayOf(0x0A, 0x04) + "port".encodeToByteArray() +
+                byteArrayOf(0x12, 0x03, 0x18, 0xC9.toByte(), 0x66) // Value { integer = 13129 }
+        val longEntry =
+            byteArrayOf(0x0A, 0x0A) + "maxStorage".encodeToByteArray() +
+                byteArrayOf(0x12, 0x03, 0x20, 0x80.toByte(), 0x20) // Value { long = 4096L }
+        val payload =
+            settingsBytes() +
+                byteArrayOf(0x0A, intEntry.size.toByte()) + intEntry +
+                byteArrayOf(0x0A, longEntry.size.toByte()) + longEntry
+
+        val preferences = decodePreferences(payload)
         assertEquals(false, preferences.getValue("useDefaultStoragePath").boolean)
         assertEquals("/data/x", preferences.getValue("storagePath").string)
-        assertEquals(setOf("useDefaultStoragePath", "storagePath"), preferences.keys)
+        assertEquals(13129, preferences.getValue("port").integer)
+        assertEquals(4096L, preferences.getValue("maxStorage").long)
+        assertEquals(setOf("useDefaultStoragePath", "storagePath", "port", "maxStorage"), preferences.keys)
     }
 
     @Test
