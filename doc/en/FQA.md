@@ -31,3 +31,11 @@ avahi-browse -r _crosspasteService._tcp
 
 Note: Devices that have already been added to "My Devices" or blacklisted will not appear in nearby devices.
 If the command-line tools can discover the service, but CrossPaste cannot, it may be an issue with CrossPaste itself. In this case, please submit an issue to us for further investigation.
+
+## 2. Linux: Copies From Wayland Apps Are Not Captured
+
+In a Wayland session CrossPaste reads the compositor's clipboard directly through the `ext-data-control-v1` / `wlr-data-control-unstable-v1` protocol, so copies made in native Wayland apps (including images, e.g. Spectacle screenshots) are captured. KDE Plasma, Sway, Hyprland, COSMIC, niri and other wlroots-based compositors support it.
+
+GNOME (Mutter) does not implement these protocols. There CrossPaste falls back to the X11 clipboard that XWayland mirrors, which Mutter keeps in sync for every content type, so copies are still captured.
+
+If a copy is not captured on another compositor, check `crosspaste.log` for `Compositor offers no data-control protocol`: the compositor is missing the protocol and CrossPaste is on the X11 fallback, which only sees what the compositor mirrors to XWayland.
