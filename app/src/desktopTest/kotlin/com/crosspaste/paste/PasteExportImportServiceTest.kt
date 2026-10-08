@@ -511,6 +511,7 @@ class PasteExportImportServiceTest {
         tempDir: File,
         pastes: List<PasteData>,
         exportParam: PasteExportParam,
+        onProgress: (Float) -> Unit = {},
     ): Float {
         val pasteDao = mockk<PasteDao>()
         coEvery { pasteDao.getExportNum(any()) } returns pastes.size.toLong()
@@ -523,9 +524,13 @@ class PasteExportImportServiceTest {
         every { userDataPathProvider.resolve(appFileType = AppFileType.TEMP) } returns
             File(tempDir, "temp").toOkioPath()
         every { userDataPathProvider.autoCreateDir(any()) } answers { firstArg<okio.Path>().toFile().mkdirs() }
+        every { userDataPathProvider.resolve(any<okio.Path>(), any<String>(), any(), any()) } answers {
+            firstArg<okio.Path>().resolve(secondArg<String>())
+        }
 
         val done = CompletableDeferred<Float>()
         PasteExportService(mockk(relaxed = true), pasteDao, userDataPathProvider).export(exportParam) { progress ->
+            onProgress(progress)
             if (progress == 1f || progress < 0f) done.complete(progress)
         }
         return runBlocking { withTimeout(10.seconds) { done.await() } }
@@ -567,6 +572,106 @@ class PasteExportImportServiceTest {
         }
         assertEquals(1, File(verifyDir, "paste.data").readLines().count { it.isNotBlank() })
         assertTrue(File(verifyDir, "1.count").exists())
+    }
+
+    private fun filesPasteData(
+        sourceDir: File,
+        vararg names: String,
+    ): PasteData {
+        val item =
+            createFilesPasteItem(
+                basePath = sourceDir.absolutePath,
+                relativePathList = names.toList(),
+                fileInfoTreeMap = names.associateWith { SingleFileInfoTree(size = 5, hash = it) },
+            )
+        return createFilesPasteData("remote-app", names.first()).copy(
+            pasteAppearItem = item,
+            size = item.size,
+            hash = item.hash,
+        )
+    }
+
+    private fun exportParam(exportDir: File) =
+        DesktopPasteExportParam(
+            types = PasteType.TYPES.map { it.type.toLong() }.toSet(),
+            onlyTagged = false,
+            maxFileSize = null,
+            exportPath = exportDir.toOkioPath(),
+        )
+
+    private fun unzipSingleExport(
+        exportDir: File,
+        verifyDir: File,
+    ) {
+        verifyDir.mkdirs()
+        exportDir.listFiles()!!.single().inputStream().source().buffer().use { source ->
+            assertTrue(compressUtils.unzip(source, verifyDir.toOkioPath()).isSuccess)
+        }
+    }
+
+    @Test
+    fun `export streams files into the package without staging copies`() {
+        val tempDir = Files.createTempDirectory("export-stream-test").toFile()
+        tempDir.deleteOnExit()
+        val sourceDir = File(tempDir, "source").also { it.mkdirs() }
+        File(sourceDir, "a.txt").writeText("hello")
+        File(sourceDir, "folder/sub").also { it.mkdirs() }.resolve("b.txt").writeText("nested")
+        val exportDir = File(tempDir, "output").also { it.mkdirs() }
+        val stagedFiles = mutableSetOf<String>()
+
+        val progress =
+            runExport(
+                tempDir,
+                listOf(filesPasteData(sourceDir, "a.txt", "folder")),
+                exportParam(exportDir),
+            ) {
+                File(tempDir, "temp").walkTopDown().filter { it.isFile }.forEach { stagedFiles += it.name }
+            }
+
+        assertEquals(1f, progress)
+        // Only the metadata is staged; the file content goes straight into the zip
+        assertEquals(setOf("paste.data", "1.count"), stagedFiles)
+        val verifyDir = File(tempDir, "verify")
+        unzipSingleExport(exportDir, verifyDir)
+        assertEquals("hello", File(verifyDir, "remote-app/1/a.txt").readText())
+        assertEquals("nested", File(verifyDir, "remote-app/1/folder/sub/b.txt").readText())
+        assertEquals(1, File(verifyDir, "paste.data").readLines().count { it.isNotBlank() })
+        assertTrue(File(verifyDir, "1.count").exists())
+    }
+
+    @Test
+    fun `export leaves out a paste whose file is missing and keeps the indices consecutive`() {
+        val tempDir = Files.createTempDirectory("export-missing-test").toFile()
+        tempDir.deleteOnExit()
+        val sourceDir = File(tempDir, "source").also { it.mkdirs() }
+        File(sourceDir, "kept.txt").writeText("kept")
+        val exportDir = File(tempDir, "output").also { it.mkdirs() }
+
+        val progress =
+            runExport(
+                tempDir,
+                listOf(filesPasteData(sourceDir, "gone.txt"), filesPasteData(sourceDir, "kept.txt")),
+                exportParam(exportDir),
+            )
+
+        assertEquals(1f, progress)
+        val verifyDir = File(tempDir, "verify")
+        unzipSingleExport(exportDir, verifyDir)
+        assertEquals("kept", File(verifyDir, "remote-app/1/kept.txt").readText())
+        assertEquals(1, File(verifyDir, "paste.data").readLines().count { it.isNotBlank() })
+        assertTrue(File(verifyDir, "1.count").exists())
+    }
+
+    @Test
+    fun `export with nothing exported leaves no package behind`() {
+        val tempDir = Files.createTempDirectory("export-empty-test").toFile()
+        tempDir.deleteOnExit()
+        val exportDir = File(tempDir, "output").also { it.mkdirs() }
+
+        val progress = runExport(tempDir, listOf(), exportParam(exportDir))
+
+        assertEquals(1f, progress)
+        assertEquals(0, exportDir.listFiles()!!.size)
     }
 
     @Test

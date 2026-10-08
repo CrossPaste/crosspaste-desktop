@@ -3,6 +3,7 @@ package com.crosspaste.utils
 import okio.BufferedSink
 import okio.BufferedSource
 import okio.Path
+import okio.Path.Companion.toOkioPath
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.File
@@ -14,32 +15,18 @@ actual fun getCompressUtils(): CompressUtils = DesktopCompressUtils
 
 object DesktopCompressUtils : CompressUtils {
 
+    override fun openZip(targetBufferedSink: BufferedSink): ZipWriter =
+        DesktopZipWriter(ZipOutputStream(BufferedOutputStream(targetBufferedSink.outputStream())))
+
     override fun zipDir(
         sourceDir: Path,
         targetBufferedSink: BufferedSink,
     ): Result<Unit> =
         runCatching {
             require(sourceDir.isDirectory) { "Source must be a directory" }
-
-            ZipOutputStream(
-                BufferedOutputStream(targetBufferedSink.outputStream()),
-            ).use { zipOut ->
-                val basePath = sourceDir.toFile().absolutePath
-                sourceDir.toFile().walkTopDown().filter { it.isFile }.forEach { file ->
-                    val entryPath =
-                        file.absolutePath
-                            .removePrefix(basePath)
-                            .removePrefix(File.separator)
-                            .replace(File.separatorChar, '/')
-
-                    val entry = ZipEntry(entryPath)
-                    zipOut.putNextEntry(entry)
-
-                    BufferedInputStream(file.inputStream()).use { input ->
-                        input.copyTo(zipOut)
-                    }
-
-                    zipOut.closeEntry()
+            openZip(targetBufferedSink).use { writer ->
+                sourceDir.toFile().listFiles()?.forEach { child ->
+                    writer.addPath(child.name, child.toOkioPath())
                 }
             }
         }
@@ -95,4 +82,38 @@ object DesktopCompressUtils : CompressUtils {
                 }
             }
         }
+}
+
+private class DesktopZipWriter(
+    private val zipOut: ZipOutputStream,
+) : ZipWriter {
+
+    override fun close() {
+        zipOut.close()
+    }
+
+    override fun addPath(
+        entryName: String,
+        path: Path,
+    ) {
+        val file = path.toFile()
+        if (file.isDirectory) {
+            file.walkTopDown().filter { it.isFile }.forEach { child ->
+                addFile("$entryName/${child.relativeTo(file).invariantSeparatorsPath}", child)
+            }
+        } else {
+            addFile(entryName, file)
+        }
+    }
+
+    private fun addFile(
+        entryName: String,
+        file: File,
+    ) {
+        zipOut.putNextEntry(ZipEntry(entryName))
+        BufferedInputStream(file.inputStream()).use { input ->
+            input.copyTo(zipOut)
+        }
+        zipOut.closeEntry()
+    }
 }
