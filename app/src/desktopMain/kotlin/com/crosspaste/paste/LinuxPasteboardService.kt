@@ -93,8 +93,9 @@ class LinuxPasteboardService(
 
     private fun run(): Job =
         serviceScope.launch(CoroutineName("LinuxPasteboardService")) {
-            if (isWaylandSession && runWayland()) {
-                return@launch
+            if (isWaylandSession) {
+                runWayland()
+                logger.warn { "Wayland clipboard monitor unavailable or stopped, falling back to X11" }
             }
             runX11()
         }
@@ -103,17 +104,22 @@ class LinuxPasteboardService(
 
     /**
      * Starts the native Wayland monitor and consumes its selections until
-     * cancelled. Returns false without consuming anything when data-control is
-     * unavailable, so the caller falls back to X11.
+     * cancelled (which throws). Returns normally when data-control is
+     * unavailable or the monitor stops on its own (connection lost, device
+     * finished), so the caller falls back to X11.
      */
-    private suspend fun CoroutineScope.runWayland(): Boolean {
+    private suspend fun CoroutineScope.runWayland() {
         // Conflated: a copy that lands while an earlier one is still being read
         // supersedes it; the read notices (isCurrent) and the newer one is taken.
         val selections = Channel<WaylandSelection>(Channel.CONFLATED)
-        val monitor = WaylandClipboardMonitor { selection -> selections.trySend(selection) }
+        val monitor =
+            WaylandClipboardMonitor(
+                onSelection = { selection -> selections.trySend(selection) },
+                onClose = { selections.close() },
+            )
         if (!monitor.start()) {
             selections.close()
-            return false
+            return
         }
         waylandMonitor = monitor
         try {
@@ -130,7 +136,6 @@ class LinuxPasteboardService(
             waylandMonitor = null
             monitor.stop()
         }
-        return true
     }
 
     private suspend fun onWaylandSelection(

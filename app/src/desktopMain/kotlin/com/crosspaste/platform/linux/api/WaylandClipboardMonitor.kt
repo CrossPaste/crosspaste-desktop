@@ -14,6 +14,7 @@ import com.sun.jna.Native
 import com.sun.jna.Pointer
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.ByteArrayOutputStream
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.time.Duration
@@ -65,6 +66,7 @@ class WaylandClipboardMonitor(
      * absolute socket path, which tests use to reach a private compositor.
      */
     private val displayName: String? = null,
+    private val onClose: (() -> Unit)? = null,
     private val onSelection: (WaylandSelection) -> Unit,
 ) {
     private val logger = KotlinLogging.logger {}
@@ -94,6 +96,8 @@ class WaylandClipboardMonitor(
 
     @Volatile
     private var closed = false
+
+    private val closeNotified = AtomicBoolean(false)
 
     private var wakeReadFd = -1
     private var wakeWriteFd = -1
@@ -149,6 +153,15 @@ class WaylandClipboardMonitor(
             thread.join(STOP_JOIN_TIMEOUT.inWholeMilliseconds)
         }
         lock.withLock { teardown() }
+        notifyClose()
+    }
+
+    private fun notifyClose() {
+        if (closeNotified.compareAndSet(false, true)) {
+            runCatching { onClose?.invoke() }.onFailure { e ->
+                logger.error(e) { "Wayland clipboard monitor close callback failed" }
+            }
+        }
     }
 
     /** True while [selection] is still what the clipboard holds (no later copy, monitor still running). */
@@ -166,27 +179,32 @@ class WaylandClipboardMonitor(
         timeout: Duration = READ_TIMEOUT,
     ): ByteArray? {
         val fds = IntArray(2)
-        val readFd: Int
-        lock.withLock {
-            val offer = currentOffer
-            if (closed || offer == null || selection.serial != currentSerial) {
-                logger.debug { "read $mimeType: selection ${selection.serial} is no longer current" }
-                return null
-            }
-            if (libc.pipe(fds) != 0) {
-                logger.warn { "read $mimeType: pipe() failed, errno=${Native.getLastError()}" }
-                return null
-            }
-            readFd = fds[0]
-            val writeFd = fds[1]
-            // libwayland dup()s the fd while marshalling, so our end can go right away.
-            val args = arguments(mimeType, writeFd)
-            lib.wl_proxy_marshal_array(offer, OFFER_RECEIVE, args.pointer)
-            libc.close(writeFd)
-            flush()
+        if (libc.pipe(fds) != 0) {
+            logger.warn { "read $mimeType: pipe() failed, errno=${Native.getLastError()}" }
+            return null
         }
-        return try {
-            readToEnd(readFd, timeout, mimeType)
+        val readFd = fds[0]
+        val writeFd = fds[1]
+        try {
+            val sent =
+                try {
+                    lock.withLock {
+                        val offer = currentOffer
+                        if (closed || offer == null || selection.serial != currentSerial) {
+                            logger.debug { "read $mimeType: selection ${selection.serial} is no longer current" }
+                            false
+                        } else {
+                            // libwayland dup()s the fd while marshalling, so our end can go right away.
+                            val args = arguments(mimeType, writeFd)
+                            lib.wl_proxy_marshal_array(offer, OFFER_RECEIVE, args.pointer)
+                            flush()
+                            true
+                        }
+                    }
+                } finally {
+                    libc.close(writeFd)
+                }
+            return if (sent) readToEnd(readFd, timeout, mimeType, selection) else null
         } finally {
             libc.close(readFd)
         }
@@ -339,6 +357,7 @@ class WaylandClipboardMonitor(
             logger.error(e) { "Wayland clipboard event loop crashed" }
         } finally {
             running = false
+            notifyClose()
         }
     }
 
@@ -354,6 +373,7 @@ class WaylandClipboardMonitor(
         fd: Int,
         timeout: Duration,
         mimeType: String,
+        selection: WaylandSelection,
     ): ByteArray? {
         val output = ByteArrayOutputStream()
         val buffer = ByteArray(READ_CHUNK)
@@ -361,13 +381,18 @@ class WaylandClipboardMonitor(
         // Monotonic clock: a wall-clock jump must not stretch or cut the wait.
         val deadlineNanos = System.nanoTime() + timeout.inWholeNanoseconds
         while (true) {
+            if (!isCurrent(selection)) {
+                logger.debug { "read $mimeType: selection ${selection.serial} replaced while reading, aborting" }
+                return null
+            }
             val remainingMs = (deadlineNanos - System.nanoTime()) / 1_000_000
             if (remainingMs <= 0) {
                 logger.warn { "read $mimeType: owner did not finish within $timeout, dropping ${output.size()} bytes" }
                 return null
             }
             WaylandLibC.setPollFd(pollFd, 0, fd, WaylandLibC.POLLIN)
-            val ready = libc.poll(pollFd, 1, remainingMs.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+            val pollTimeout = remainingMs.coerceAtMost(POLL_SLICE_MS).toInt()
+            val ready = libc.poll(pollFd, 1, pollTimeout)
             if (ready < 0) {
                 if (Native.getLastError() == WaylandLibC.EINTR) continue
                 logger.warn { "read $mimeType: poll failed, errno=${Native.getLastError()}" }
@@ -436,6 +461,10 @@ class WaylandClipboardMonitor(
                 // finished: the device is defunct (seat gone); nothing more will arrive.
                 WlNoArgCallback { _, _ ->
                     logger.warn { "Wayland data-control device finished; clipboard events stop" }
+                    running = false
+                    if (wakeWriteFd >= 0) {
+                        libc.write(wakeWriteFd, byteArrayOf(1), 1)
+                    }
                 },
                 // primary_selection: not tracked, release the offer.
                 WlOfferCallback { _, _, offer ->
@@ -523,6 +552,8 @@ class WaylandClipboardMonitor(
         val READ_TIMEOUT: Duration = 10.seconds
 
         private val STOP_JOIN_TIMEOUT: Duration = 2.seconds
+
+        private const val POLL_SLICE_MS = 250L
     }
 }
 
