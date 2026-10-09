@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-# [2.2.1] - 2026-10-02
+# [2.2.1] - 2026-10-09
 # Highlights 🌟
 
 - 📋 **Floating paste panel**
@@ -61,6 +61,32 @@ All notable changes to this project will be documented in this file.
   so receiver failures fail the task, and push session finalize and
   expiry are serialized (#4894 #4895 #4915 #4936 #4937 #4945 #5086).
 
+- 🛡️ **Data integrity and storage reclaim**
+  Storage migration saves the new path before deleting the old store,
+  an unreadable config is never overwritten with defaults, deleted
+  pastes take their directories with them, import/export no longer
+  leave broken records and reject paths escaping managed storage,
+  remote LOADING rows always reach a terminal state, concurrent
+  releases of the same content no longer delete each other, and a
+  startup failure before logging leaves a log and exits non-zero
+  (#5094 #5095 #5096 #5097 #5098 #5099 #5124 #5125 #5126 #5127 #5130
+  #5131 #5132 #5133 #5140 #5141).
+
+- 🔁 **Relay and sync hardening**
+  Clipboard relay now forwards non-file pastes and carries a seen set
+  so relays never loop, a removed device can no longer be re-inserted
+  by a racing SyncInfo write, failed polls back off quickly, discarded
+  pushes free their pre-allocated large-file slots, and headless mode
+  stops logging the pairing token (#5108 #5109 #5118 #5119 #5122 #5123
+  #5151 #5152 #5155 #5156).
+
+- 🔍 **Search window**
+  FTS terms are quoted so punctuation no longer breaks search, the
+  selection, query reset and tag filter follow live data, closing
+  without pasting returns focus to the previous app, the window closes
+  together with the edit bubble, and the panel button recovers after
+  its display is unplugged (#5093 #5116 #5117 #5145 #5146 #5147 #5148).
+
 - 🧠 **Memory and runtime**
   Coil's memory cache limit is no longer inflated to 435 MiB, the
   desktop server engine moved from Netty to CIO, Skiko's periodic
@@ -74,6 +100,32 @@ All notable changes to this project will be documented in this file.
   #4970 #4972 #4974 #4976 #4979 #4980 #4985 #4986 #4987 #4988).
 
 # Bug Fixes 🐛
+
+- :bug: Capture copies from native Wayland apps via the data-control protocol (#5173)
+- :bug: Report the displayed size of EXIF-rotated images in the side preview (#5162)
+- :bug: Keep a removed device from being re-inserted by a racing SyncInfo write (#5156)
+- :bug: Back off quickly after a failed poll of a regular device (#5152)
+- :bug: Close the search window with the bubble and re-place the panel button when its display is gone (#5148)
+- :bug: Keep the search window's selection, query reset and tag filter in step with live data (#5146)
+- :bug: Stop concurrent releases of the same content from deleting each other (#5141)
+- :bug: Discard a macOS pasteboard snapshot when another write lands during the read (#5139)
+- :bug: Keep CF_HTML offsets in step with the bytes AWT writes on Windows (#5137)
+- :bug: Leave a startup-failure log and exit non-zero when startup fails before logging (#5133)
+- :bug: Save the new storage path before deleting the old store during migration (#5131)
+- :bug: Refuse to apply a zip update whose staging lost its exe (#5129)
+- :bug: Reclaim paste directories and stop import/export from leaving broken records (#5127)
+- :bug: Give remote LOADING rows a terminal state and stop orphaning their files (#5125)
+- :bug: Relay non-file pastes and make clipboard relay loop-free (#5123)
+- :bug: Delete pre-allocated large-file slots when a push is discarded (#5119)
+- :bug: Return focus to the previous app when the search window is closed without pasting (#5117)
+- :bug: Stop logging the pairing token in headless mode (#5109)
+- :bug: Reference MCP-added files at their original path (#5106)
+- :bug: Refresh companion flavors when editing a paste from the UI (#5104)
+- :bug: Remove tag links when a tag or paste is deleted (#5102)
+- :bug: Never overwrite an unreadable app config with defaults (#5099)
+- :bug: Keep the owning record when a file is copied out of CrossPaste storage (#5097)
+- :bug: Reject import records whose paths escape managed storage (#5095)
+- :bug: Quote FTS search terms so punctuation no longer breaks search (#5093)
 
 - :bug: Fix portable update offline trigger, mirror affinity, cross-mirror resume and rate limiter burst (#5092)
 - :bug: Self-register the initiator's address on the pairing v3 commit so an acceptor that never sees its mDNS can reach it (#5086)
@@ -114,6 +166,14 @@ All notable changes to this project will be documented in this file.
 
 # New Features ✨
 
+- :sparkles: Let PasteContentEditor save an HTML paste's background with its content (#5176)
+- :zap: Stream exported files straight into the package instead of staging copies (#5166)
+- :zap: Record the drag preview layer only for the hovered search card (#5160)
+- :zap: Move drop collection, drag-out image decoding and editor serialization off the UI thread (#5150)
+- :zap: Index the history list by createTime and re-index FTS only on content changes (#5135)
+- :zap: Parse HTML/RTF previews off the UI thread (#5121)
+- :zap: Stop the tutorial button pulse after a few cycles and compose device refresh spinners only while they spin (#5111 #5113)
+
 - :sparkles: Download portable-zip updates in the background with bandwidth throttling and resumable downloads (#5091)
 - :sparkles: Add devices remove, block and unblock CLI commands (#5087)
 - :sparkles: Show sort direction with arrow icons and state-specific tooltips in the search bar (#5081)
@@ -138,6 +198,10 @@ All notable changes to this project will be documented in this file.
 - :zap: Make Skiko's periodic System.gc() a concurrent cycle (#4913)
 
 # Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Remove the unreachable image thumbnail pipeline (#5143)
+- :fire: Remove the unused hand-written SyncApi.SCHEMA route list (#5158)
+- :memo: Fix broken DeepWiki badge and bump download badge to v2.2.1 (#5107)
 
 - :hammer: Name what a clipboard write includes with PasteWriteScope (#5074)
 - :hammer: Mark the device row ripple read-only and skip hover tracking on disabled rows (#5057)
@@ -167,6 +231,12 @@ All notable changes to this project will be documented in this file.
 
 # Build & CI 👷
 
+- :white_check_mark: Keep real shells and wall-clock waits out of the fast test tier (#5164)
+- :white_check_mark: Make eight silently skipped tests run and guard against non-void test methods (#5115)
+- :white_check_mark: Share a withIsolatedHome helper that restores HOME in CLI tests (#5144)
+- :white_check_mark: Initialize JsonUtils before FilePushServiceTest builds paste items (#5154)
+- :arrow_up: Bump gradle-wrapper from 9.7.1 to 9.8.0 (#5169)
+
 - :white_check_mark: Add a logback config to the e2e harness so JmDNS debug output stops drowning the results (#5085)
 - :white_check_mark: Add i18n consistency checks and the i18n style guide (#4961)
 - :whale: Add Glama stdio Dockerfile for the MCP server (#4916)
@@ -180,13 +250,14 @@ All notable changes to this project will be documented in this file.
 - :arrow_up: Bump sqldelight from 2.3.2 to 2.4.0 (#5061)
 - :arrow_up: Bump coil from 3.6.0 to 3.6.3 (#4941 #5060)
 - :arrow_up: Bump imageio from 3.14.0 to 3.15.2 (#4989 #5083)
-- :arrow_up: Bump ch.qos.logback:logback-classic from 1.6.3 to 1.6.4 (#5084)
+- :arrow_up: Bump ch.qos.logback:logback-classic from 1.6.3 to 1.6.5 (#5084 #5171)
 - :arrow_up: Bump com.github.ben-manes.caffeine:caffeine (#5082)
 - :arrow_up: Bump io.github.vinceglb:filekit-dialogs from 0.15.0 to 0.16.0 (#5004)
-- :arrow_up: Bump dev.nucleusframework:composenativetray-jvm (#4942)
+- :arrow_up: Bump dev.nucleusframework:composenativetray-jvm (#4942 #5172)
 - :arrow_up: Bump com.squareup.okio:okio from 3.18.1 to 3.18.2 (#4943)
-- :arrow_up: Bump com.mohamedrejeb.richeditor:richeditor-compose (#4909)
+- :arrow_up: Bump com.mohamedrejeb.richeditor:richeditor-compose (#4909 #5168)
 - :arrow_up: Bump org.yaml:snakeyaml from 2.6 to 2.7 (#4910)
+- :arrow_up: Bump com.helger:ph-css from 8.2.1 to 8.2.2 (#5170)
 - :arrow_up: Bump vitest to 4.1.11 and browserslist/baseline-browser-mapping to fix Dependabot alerts (#4994)
 
 # [2.2.0] - 2026-08-31
