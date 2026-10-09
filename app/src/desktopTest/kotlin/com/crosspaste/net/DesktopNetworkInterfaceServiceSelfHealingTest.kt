@@ -1,7 +1,6 @@
 package com.crosspaste.net
 
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.getJsonUtils
 import kotlinx.coroutines.CoroutineScope
@@ -88,10 +87,7 @@ class DesktopNetworkInterfaceServiceSelfHealingTest {
     private fun newConfigManager(): DesktopConfigManager {
         val configDir = Files.createTempDirectory("netSelfHealConfig").toOkioPath()
         configDir.toFile().deleteOnExit()
-        return DesktopConfigManager(
-            OneFilePersist(configDir.resolve("appConfig.json")),
-            DesktopLocaleUtils,
-        )
+        return DesktopConfigManager(configDir, DesktopLocaleUtils)
     }
 
     @Test
