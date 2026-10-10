@@ -1,6 +1,7 @@
 package com.crosspaste.i18n
 
 import com.crosspaste.utils.DateTimeFormatOptions
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.datetime.LocalDateTime
 
 interface Copywriter {
@@ -23,6 +24,12 @@ interface Copywriter {
 }
 
 interface GlobalCopywriter : Copywriter {
+
+    /**
+     * The active language code, updated synchronously by [switchLanguage]. Lets non-Compose
+     * observers (native shells, services) react to language changes.
+     */
+    val languageFlow: StateFlow<String>
 
     fun switchLanguage(language: String)
 
