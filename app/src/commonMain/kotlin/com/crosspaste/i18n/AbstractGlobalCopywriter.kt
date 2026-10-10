@@ -5,6 +5,8 @@ import com.crosspaste.i18n.SupportedLanguages.EN
 import com.crosspaste.i18n.SupportedLanguages.LANGUAGE_LIST
 import com.crosspaste.utils.DateTimeFormatOptions
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,6 +39,8 @@ abstract class AbstractGlobalCopywriter(
 
     private val currentLanguage: MutableStateFlow<String>
 
+    private val switchLock = SynchronizedObject()
+
     init {
         val initial = configManager.getCurrentConfig().language
         if (!LANGUAGE_LIST.contains(initial)) {
@@ -60,12 +64,21 @@ abstract class AbstractGlobalCopywriter(
     override fun language(): String = copywriter.language()
 
     override fun switchLanguage(language: String) {
+        if (!LANGUAGE_LIST.contains(language)) {
+            logger.warn { "Ignore switching to unsupported language $language" }
+            return
+        }
         logger.info { "Switching language to $language" }
         val next = cache.getOrCreate(language)
-        currentCopywriter.value = next
-        currentLanguage.value = language
-        configManager.updateConfig("language", language)
-        onCopywriterChanged(next)
+        // Serialized so concurrent switches can't leave config, the mirror and the flows on
+        // different languages. languageFlow is published last: by the time an observer sees
+        // the new code, config and getText() (incl. the Compose mirror) already reflect it.
+        synchronized(switchLock) {
+            configManager.updateConfig("language", language)
+            onCopywriterChanged(next)
+            currentCopywriter.value = next
+            currentLanguage.value = language
+        }
         onLanguageSwitched(language)
     }
 

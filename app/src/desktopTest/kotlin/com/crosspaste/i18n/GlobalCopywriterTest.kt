@@ -10,8 +10,12 @@ import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EMPTY_STRING
 import com.crosspaste.i18n.SupportedLanguages.EN
 import com.crosspaste.i18n.SupportedLanguages.LANGUAGE_LIST
 import com.crosspaste.presist.OneFilePersist
-import com.crosspaste.task.TaskExecutor
 import com.crosspaste.utils.DesktopLocaleUtils
+import io.mockk.mockk
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import okio.Path.Companion.toOkioPath
 import java.nio.file.Files
 import kotlin.test.Test
@@ -40,7 +44,9 @@ class GlobalCopywriterTest {
 
         val taskDao = SqlTaskDao(database)
 
-        val copywriter = DesktopGlobalCopywriter(configManager, lazy { TaskExecutor(listOf(), taskDao) }, taskDao)
+        // Relaxed executor: switchLanguage() dispatches a SWITCH_LANGUAGE_TASK in the background,
+        // which must stay a no-op here rather than run real task plumbing after the test returns.
+        val copywriter = DesktopGlobalCopywriter(configManager, lazy { mockk(relaxed = true) }, taskDao)
         return copywriter to configManager
     }
 
@@ -81,6 +87,38 @@ class GlobalCopywriterTest {
         }
         assertTrue(writes.isNotEmpty(), "switchLanguage() must write the snapshot state read by getText()")
         assertTrue(reads.intersect(writes.toSet()).isNotEmpty(), "the state written must be the state read")
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun testLanguageFlowObserverSeesUpdatedTextAndConfig() =
+        runTest {
+            val (copywriter, configManager) = createCopywriter()
+            val zhText = DesktopCopywriter("zh").getText("current_language")
+
+            // Unconfined: the collector runs inside switchLanguage() the moment the flow emits,
+            // so it observes exactly the state published at that point.
+            val seen = mutableListOf<Triple<String, String, String>>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                copywriter.languageFlow.collect {
+                    seen += Triple(it, copywriter.getText("current_language"), configManager.getCurrentConfig().language)
+                }
+            }
+
+            copywriter.switchLanguage("zh")
+
+            assertEquals(Triple("zh", zhText, "zh"), seen.last())
+        }
+
+    @Test
+    fun testSwitchToUnsupportedLanguageIsIgnored() {
+        val (copywriter, configManager) = createCopywriter()
+
+        copywriter.switchLanguage("xx")
+
+        assertEquals(EN, copywriter.language())
+        assertEquals(EN, copywriter.languageFlow.value)
+        assertEquals(EN, configManager.getCurrentConfig().language)
     }
 
     @Test
