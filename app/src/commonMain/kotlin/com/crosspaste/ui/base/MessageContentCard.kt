@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.Color
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Close
 import com.crosspaste.notification.MessageType
-import com.crosspaste.notification.getMessageImageVector
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.xLarge
 
@@ -43,7 +42,7 @@ fun MessageContentCard(
             },
         leadingContent = {
             Icon(
-                imageVector = getMessageImageVector(messageType.getMessageStyle()),
+                imageVector = messageType.getMessageImageVector(),
                 contentDescription = null,
                 modifier = Modifier.size(xLarge),
                 tint = contentColor.copy(alpha = 0.8f),

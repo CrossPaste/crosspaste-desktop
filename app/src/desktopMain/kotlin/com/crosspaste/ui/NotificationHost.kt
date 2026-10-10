@@ -29,6 +29,7 @@ import com.crosspaste.notification.Message
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.base.MessageContentCard
 import com.crosspaste.ui.base.NotificationCard
+import com.crosspaste.ui.base.getMessageColor
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import kotlinx.coroutines.delay
