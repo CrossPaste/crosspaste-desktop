@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.Color
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Close
 import com.crosspaste.notification.MessageType
-import com.crosspaste.notification.getMessageImageVector
 import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.xLarge
 
