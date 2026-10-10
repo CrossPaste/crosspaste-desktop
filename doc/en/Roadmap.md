@@ -28,7 +28,7 @@ graph LR
 
 ## Upcoming
 
-- **Plugin system** — let the community extend CrossPaste with custom paste types and integrations.
+- **Plugin system** — let the community extend CrossPaste with custom paste types and integrations. See the [design notes](PluginSystemDesign.md).
 
 **Note**: This roadmap represents our current development plans and vision for the project. As development progresses, adjustments may be made based on community feedback, technological advancements, and changing priorities. We welcome community involvement and contributions! If you're interested in helping shape the future of this project, please consider joining our community and contributing to its growth.
 
