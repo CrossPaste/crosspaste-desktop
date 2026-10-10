@@ -42,7 +42,7 @@ fun MessageContentCard(
             },
         leadingContent = {
             Icon(
-                imageVector = getMessageImageVector(messageType.getMessageStyle()),
+                imageVector = messageType.getMessageImageVector(),
                 contentDescription = null,
                 modifier = Modifier.size(xLarge),
                 tint = contentColor.copy(alpha = 0.8f),

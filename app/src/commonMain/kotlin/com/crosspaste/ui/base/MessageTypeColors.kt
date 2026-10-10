@@ -20,41 +20,20 @@ import com.crosspaste.ui.LocalThemeExtState
 @Composable
 fun MessageType.getMessageColor(): Pair<Color, Color> =
     when (this) {
-        MessageType.Error -> Pair(ErrorContainer(), OnErrorContainer())
-        MessageType.Info -> Pair(InfoContainer(), OnInfoContainer())
-        MessageType.Success -> Pair(SuccessContainer(), OnSuccessContainer())
-        MessageType.Warning -> Pair(WarningContainer(), OnWarningContainer())
+        MessageType.Error ->
+            MaterialTheme.colorScheme.let { Pair(it.errorContainer, it.onErrorContainer) }
+        MessageType.Info ->
+            LocalThemeExtState.current.info.let { Pair(it.container, it.onContainer) }
+        MessageType.Success ->
+            LocalThemeExtState.current.success.let { Pair(it.container, it.onContainer) }
+        MessageType.Warning ->
+            LocalThemeExtState.current.warning.let { Pair(it.container, it.onContainer) }
     }
 
-@Composable
-fun getMessageImageVector(messageStyle: MessageStyle): ImageVector =
-    when (messageStyle) {
+fun MessageType.getMessageImageVector(): ImageVector =
+    when (getMessageStyle()) {
         MessageStyle.Error -> MaterialSymbols.RoundedFilled.Error
         MessageStyle.Info -> MaterialSymbols.RoundedFilled.Info
         MessageStyle.Success -> MaterialSymbols.RoundedFilled.Check_circle
         MessageStyle.Warning -> MaterialSymbols.RoundedFilled.Warning
     }
-
-@Composable
-fun SuccessContainer(): Color = LocalThemeExtState.current.success.container
-
-@Composable
-fun OnSuccessContainer(): Color = LocalThemeExtState.current.success.onContainer
-
-@Composable
-fun ErrorContainer(): Color = MaterialTheme.colorScheme.errorContainer
-
-@Composable
-fun OnErrorContainer(): Color = MaterialTheme.colorScheme.onErrorContainer
-
-@Composable
-fun WarningContainer(): Color = LocalThemeExtState.current.warning.container
-
-@Composable
-fun OnWarningContainer(): Color = LocalThemeExtState.current.warning.onContainer
-
-@Composable
-fun InfoContainer(): Color = LocalThemeExtState.current.info.container
-
-@Composable
-fun OnInfoContainer(): Color = LocalThemeExtState.current.info.onContainer
