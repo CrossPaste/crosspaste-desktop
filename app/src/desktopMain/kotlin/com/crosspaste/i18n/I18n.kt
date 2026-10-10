@@ -7,6 +7,7 @@ import com.crosspaste.db.task.TaskType
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EMPTY_STRING
 import com.crosspaste.i18n.SupportedLanguages.EN
 import com.crosspaste.task.TaskExecutor
+import com.crosspaste.ui.i18n.ComposeGlobalCopywriter
 import com.crosspaste.utils.DateTimeFormatOptions
 import com.crosspaste.utils.GlobalCoroutineScope.cpuCoroutineDispatcher
 import com.crosspaste.utils.getDateUtils
@@ -22,7 +23,7 @@ class DesktopGlobalCopywriter(
     configManager: CommonConfigManager,
     private val lazyTaskExecutor: Lazy<TaskExecutor>,
     private val taskDao: TaskDao,
-) : AbstractGlobalCopywriter(configManager, { DesktopCopywriter(it) }) {
+) : ComposeGlobalCopywriter(configManager, { DesktopCopywriter(it) }) {
 
     companion object {
 
