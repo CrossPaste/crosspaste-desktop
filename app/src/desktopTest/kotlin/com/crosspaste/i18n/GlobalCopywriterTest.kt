@@ -101,7 +101,12 @@ class GlobalCopywriterTest {
             val seen = mutableListOf<Triple<String, String, String>>()
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
                 copywriter.languageFlow.collect {
-                    seen += Triple(it, copywriter.getText("current_language"), configManager.getCurrentConfig().language)
+                    seen +=
+                        Triple(
+                            it,
+                            copywriter.getText("current_language"),
+                            configManager.getCurrentConfig().language,
+                        )
                 }
             }
 
