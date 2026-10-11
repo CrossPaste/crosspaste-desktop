@@ -24,14 +24,18 @@ import com.crosspaste.utils.isVideoFile
 import com.crosspaste.utils.namedScope
 import com.crosspaste.utils.normalizeUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.withContext
 import okio.Path
 import java.awt.Color
 import java.awt.Desktop
 import java.awt.EventQueue
 import java.io.File
 import java.net.URI
+import java.util.concurrent.TimeUnit
 import javax.swing.JColorChooser
 
 class DesktopUISupport(
@@ -43,6 +47,12 @@ class DesktopUISupport(
     private val userDataPathProvider: UserDataPathProvider,
     private val appWindowManager: DesktopAppWindowManager,
     private val actionScope: CoroutineScope = namedScope(ioDispatcher, "DesktopUISupport"),
+    private val browserProcessStarter: (List<String>) -> Process = { command ->
+        ProcessBuilder(command)
+            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
+            .start()
+    },
 ) : UISupport {
 
     private val logger = KotlinLogging.logger {}
@@ -58,6 +68,12 @@ class DesktopUISupport(
     }
 
     override fun openUrlInBrowser(url: String) {
+        if (platform.isLinux()) {
+            launchXdgOpen("failed_to_open_link", url) {
+                URI(normalizeUrl(url))
+            }
+            return
+        }
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             runCatching {
                 Desktop.getDesktop().browse(URI(normalizeUrl(url)))
@@ -75,6 +91,37 @@ class DesktopUISupport(
                 message = { url },
                 messageType = MessageType.Error,
             )
+        }
+    }
+
+    private fun launchXdgOpen(
+        errorTitle: String,
+        message: String? = null,
+        uriProvider: suspend () -> URI,
+    ) {
+        actionScope.launch {
+            try {
+                val uri = withContext(ioDispatcher) { uriProvider() }
+                runInterruptible(ioDispatcher) {
+                    require(uri.isAbsolute) { "Opening URI must be absolute: $uri" }
+                    // AWT's GVfs capability checks do not reflect the desktop's URI handlers.
+                    val process = browserProcessStarter(listOf("xdg-open", uri.toString()))
+                    process.outputStream.close()
+                    // Some launchers wait for the browser to close; a running process is not a failure.
+                    if (process.waitFor(30, TimeUnit.SECONDS)) {
+                        check(process.exitValue() == 0) { "xdg-open exited with code ${process.exitValue()}" }
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.warn(e) { "Failed to open URI with xdg-open" }
+                notificationManager.sendNotification(
+                    title = { it.getText(errorTitle) },
+                    message = message?.let { text -> { text } },
+                    messageType = MessageType.Error,
+                )
+            }
         }
     }
 
@@ -102,17 +149,22 @@ class DesktopUISupport(
         id: Long,
         html: String,
     ) {
-        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            actionScope.launch {
-                val fileName = "$id.html"
-                val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
-                if (!fileUtils.existFile(filePath)) {
-                    val utf8Html = htmlUtils.ensureHtmlCharsetUtf8(html)
-                    fileUtils.writeFile(filePath) { sink ->
-                        sink.writeUtf8(utf8Html)
-                    }
+        val uriProvider: suspend () -> URI = {
+            val fileName = "$id.html"
+            val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
+            if (!fileUtils.existFile(filePath)) {
+                val utf8Html = htmlUtils.ensureHtmlCharsetUtf8(html)
+                fileUtils.writeFile(filePath) { sink ->
+                    sink.writeUtf8(utf8Html)
                 }
-                Desktop.getDesktop().browse(filePath.toFile().toURI())
+            }
+            if (platform.isLinux()) filePath.toNioPath().toUri() else filePath.toFile().toURI()
+        }
+        if (platform.isLinux()) {
+            launchXdgOpen("failed_to_open_html_pasteboard", uriProvider = uriProvider)
+        } else if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+            actionScope.launch {
+                Desktop.getDesktop().browse(uriProvider())
             }
         } else {
             notificationManager.sendNotification(
@@ -192,7 +244,9 @@ class DesktopUISupport(
 
     override fun openFile(filePath: Path) {
         if (fileUtils.existFile(filePath)) {
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
+            if (platform.isLinux()) {
+                launchXdgOpen("failed_to_open_file") { filePath.toNioPath().toUri() }
+            } else if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
                 Desktop.getDesktop().open(filePath.toFile())
             } else {
                 notificationManager.sendNotification(
@@ -213,18 +267,23 @@ class DesktopUISupport(
     }
 
     override fun openRtf(pasteData: PasteData) {
-        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            actionScope.launch {
-                val fileName = "${pasteData.id}.rtf"
-                val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
-                if (!fileUtils.existFile(filePath)) {
-                    pasteData.getPasteItem(PasteRtf::class)?.let {
-                        fileUtils.writeFile(filePath) { sink ->
-                            sink.writeUtf8(it.rtf)
-                        }
+        val uriProvider: suspend () -> URI = {
+            val fileName = "${pasteData.id}.rtf"
+            val filePath = userDataPathProvider.resolve(fileName, AppFileType.TEMP)
+            if (!fileUtils.existFile(filePath)) {
+                pasteData.getPasteItem(PasteRtf::class)?.let {
+                    fileUtils.writeFile(filePath) { sink ->
+                        sink.writeUtf8(it.rtf)
                     }
                 }
-                Desktop.getDesktop().browse(filePath.toFile().toURI())
+            }
+            if (platform.isLinux()) filePath.toNioPath().toUri() else filePath.toFile().toURI()
+        }
+        if (platform.isLinux()) {
+            launchXdgOpen("failed_to_open_rtf_pasteboard", uriProvider = uriProvider)
+        } else if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+            actionScope.launch {
+                Desktop.getDesktop().browse(uriProvider())
             }
         } else {
             notificationManager.sendNotification(
