@@ -1,0 +1,8 @@
+# EL9 is the minimum RPM compatibility baseline. Pin the base filesystem;
+# dnf still applies supported EL9 updates to the packaging tools.
+FROM docker.io/library/rockylinux:9.3@sha256:d644d203142cd5b54ad2a83a203e1dee68af2229f8fe32f52a30c6e1d3c3a9e0
+
+RUN dnf install -y rpm-build binutils && dnf clean all
+
+WORKDIR /workspace
+ENTRYPOINT ["bash", ".github/scripts/package_rpm.sh"]

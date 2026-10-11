@@ -144,6 +144,21 @@ jobs:
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
+      - name: Package RPM (x86_64 and aarch64)
+        run: |
+          docker build -t crosspaste-rpm-build -f .github/packaging/Dockerfile.rpm .github/packaging
+          docker run --rm -v "$GITHUB_WORKSPACE:/workspace" crosspaste-rpm-build
+
+      - name: Verify RPM on EL9 and Fedora 44 (x86_64)
+        run: |
+          for image in \
+            docker.io/library/rockylinux:9.3@sha256:d644d203142cd5b54ad2a83a203e1dee68af2229f8fe32f52a30c6e1d3c3a9e0 \
+            registry.fedoraproject.org/fedora:44@sha256:05e3c351a7e762aca8fb067a9a92c1f775a7c4fbb1382c97cdd87bd6fb5b162c; do
+            docker run --rm -v "$GITHUB_WORKSPACE:/workspace:ro" \
+              -w /workspace "$image" \
+              bash -c 'bash .github/scripts/verify_rpm.sh output/*.x86_64.rpm'
+          done
+
       - name: Package AppImage (best effort)
         continue-on-error: true
         run: |
@@ -155,6 +170,7 @@ jobs:
           mkdir -p beta-dist
           find output -maxdepth 2 -name 'crosspaste-*-linux-*.tar.gz' -exec cp {} beta-dist/ \;
           find output -maxdepth 2 -name '*.deb' -exec cp {} beta-dist/ \;
+          find output -maxdepth 1 -name '*.rpm' -exec cp {} beta-dist/ \;
           find output -maxdepth 2 -name 'crosspaste-*.AppImage' -exec cp {} beta-dist/ \;
           (cd beta-dist && sha256sum * > SHA256SUMS.txt)
           echo "Collected beta artifacts:"

@@ -1,0 +1,147 @@
+name: "Build and Publish RPM"
+
+# The main build stages packages in OSS; maintainers publish GitHub Releases
+# separately. Repackage the exact tarballs attached to that published release.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to package (e.g. 2.2.1.2706)"
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rpm-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  download:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - name: Download and verify precompiled Linux tarballs
+        run: |
+          # Reject malformed tags before passing the value to gh. Both the
+          # rolling beta and numeric releases are supported for manual runs.
+          if [[ ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ && "$RELEASE_TAG" != beta ]]; then
+            echo "Unexpected release tag: $RELEASE_TAG" >&2
+            exit 1
+          fi
+          mkdir output
+          gh release download "$RELEASE_TAG" --dir output \
+            --pattern 'crosspaste-*-linux-amd64.tar.gz' \
+            --pattern 'crosspaste-*-linux-aarch64.tar.gz'
+          # Only check the tarball entries: other release assets need not be
+          # downloaded, and a checksum file can contain an old self-checksum.
+          if [ "$RELEASE_TAG" = beta ]; then
+            gh release download "$RELEASE_TAG" --dir output --pattern SHA256SUMS.txt
+            CHECKSUM_FILE=SHA256SUMS.txt
+          else
+            gh release download "$RELEASE_TAG" --dir output --pattern checksum.txt
+            CHECKSUM_FILE=checksum.txt
+          fi
+          cd output
+          grep -E '  crosspaste-[0-9.]+-[0-9]+-linux-(amd64|aarch64)\.tar\.gz$' "$CHECKSUM_FILE" > tarball-checksums.txt
+          test "$(wc -l < tarball-checksums.txt)" -eq 2
+          sha256sum -c tarball-checksums.txt
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: rpm-source
+          path: output/*.tar.gz
+          if-no-files-found: error
+          retention-days: 1
+
+  build:
+    needs: download
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
+        with:
+          name: rpm-source
+          path: output
+
+      - name: Build EL9 packaging image
+        run: docker build -t crosspaste-rpm-build -f .github/packaging/Dockerfile.rpm .github/packaging
+
+      - name: Package RPM (x86_64 and aarch64)
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/workspace" \
+            crosspaste-rpm-build
+
+      - name: Generate RPM checksums
+        run: (cd output && sha256sum -- *.rpm > RPM-SHA256SUMS.txt)
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: rpm-dist
+          path: |
+            output/*.rpm
+            output/RPM-SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  verify:
+    needs: build
+    name: Verify x86_64 (${{ matrix.distro }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: Rocky Linux 9
+            image: docker.io/library/rockylinux:9.3@sha256:d644d203142cd5b54ad2a83a203e1dee68af2229f8fe32f52a30c6e1d3c3a9e0
+          - distro: Fedora 44
+            image: registry.fedoraproject.org/fedora:44@sha256:05e3c351a7e762aca8fb067a9a92c1f775a7c4fbb1382c97cdd87bd6fb5b162c
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v8
+        with:
+          name: rpm-dist
+          path: output
+
+      - name: Verify checksums
+        run: (cd output && sha256sum -c RPM-SHA256SUMS.txt)
+
+      # aarch64 is built and its ELF/header architecture is checked during
+      # packaging. These native x86_64 tests do not claim ARM execution coverage.
+      - name: Verify installation, desktop startup and removal
+        env:
+          TEST_IMAGE: ${{ matrix.image }}
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/workspace:ro" \
+            -w /workspace "$TEST_IMAGE" \
+            bash -c 'bash .github/scripts/verify_rpm.sh output/*.x86_64.rpm'
+
+  publish:
+    needs: [build, verify]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: rpm-dist
+          path: output
+
+      - name: Verify checksums
+        run: (cd output && sha256sum -c RPM-SHA256SUMS.txt)
+
+      - name: Upload RPM release assets
+        run: gh release upload "$RELEASE_TAG" output/*.rpm output/RPM-SHA256SUMS.txt --clobber
