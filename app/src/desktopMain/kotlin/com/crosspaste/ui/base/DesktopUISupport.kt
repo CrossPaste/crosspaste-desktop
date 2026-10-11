@@ -24,14 +24,17 @@ import com.crosspaste.utils.isVideoFile
 import com.crosspaste.utils.namedScope
 import com.crosspaste.utils.normalizeUrl
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
 import okio.Path
 import java.awt.Color
 import java.awt.Desktop
 import java.awt.EventQueue
 import java.io.File
 import java.net.URI
+import java.util.concurrent.TimeUnit
 import javax.swing.JColorChooser
 
 class DesktopUISupport(
@@ -43,6 +46,12 @@ class DesktopUISupport(
     private val userDataPathProvider: UserDataPathProvider,
     private val appWindowManager: DesktopAppWindowManager,
     private val actionScope: CoroutineScope = namedScope(ioDispatcher, "DesktopUISupport"),
+    private val browserProcessStarter: (List<String>) -> Process = { command ->
+        ProcessBuilder(command)
+            .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+            .redirectError(ProcessBuilder.Redirect.INHERIT)
+            .start()
+    },
 ) : UISupport {
 
     private val logger = KotlinLogging.logger {}
@@ -58,6 +67,33 @@ class DesktopUISupport(
     }
 
     override fun openUrlInBrowser(url: String) {
+        if (platform.isLinux()) {
+            actionScope.launch {
+                try {
+                    runInterruptible(ioDispatcher) {
+                        val uri = URI(normalizeUrl(url))
+                        require(uri.isAbsolute) { "Browser URL must be absolute: $url" }
+                        // AWT checks GVfs HTTP support, which does not reflect KDE's browser support.
+                        val process = browserProcessStarter(listOf("xdg-open", uri.toString()))
+                        process.outputStream.close()
+                        // Some launchers wait for the browser to close; a running process is not a failure.
+                        if (process.waitFor(30, TimeUnit.SECONDS)) {
+                            check(process.exitValue() == 0) { "xdg-open exited with code ${process.exitValue()}" }
+                        }
+                    }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.warn(e) { "Failed to open url: $url" }
+                    notificationManager.sendNotification(
+                        title = { it.getText("failed_to_open_link") },
+                        message = { url },
+                        messageType = MessageType.Error,
+                    )
+                }
+            }
+            return
+        }
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             runCatching {
                 Desktop.getDesktop().browse(URI(normalizeUrl(url)))
