@@ -309,6 +309,18 @@ jobs:
           cd web/dist
           zip -r "${{ github.workspace }}/output/crosspaste-chrome-extension-${{ env.VERSION }}.${{ env.REVISION }}.zip" .
 
+      # The zip above keeps manifest "key" so unpacked installs get the store
+      # extension ID the native messaging host allowlists, but the Chrome Web
+      # Store rejects any upload containing "key". Ship a key-free copy for
+      # the store upload.
+      - name: Package Chrome Web Store zip
+        run: |
+          store_dir="$(mktemp -d)"
+          cp -r web/dist/. "$store_dir"
+          jq 'del(.key)' web/dist/manifest.json > "$store_dir/manifest.json"
+          cd "$store_dir"
+          zip -r "${{ github.workspace }}/output/crosspaste-chrome-extension-${{ env.VERSION }}.${{ env.REVISION }}-store.zip" .
+
       # Multi-arch Linux builds emit the apt repository as an output/debian/
       # directory tree instead of flat files at the site root. Surface the
       # .debs at the top level for the versioned OSS dir and the GitHub
