@@ -216,6 +216,99 @@ class DesktopUISupportTest {
         }
     }
 
+    private fun browseLinuxFile(
+        existing: Boolean = true,
+        starter: (List<String>) -> Process,
+        assertions: (NotificationManager, java.io.File) -> Unit,
+    ) {
+        val directory = createTempDirectory("crosspaste-browse-").toFile()
+        try {
+            val file = directory.resolve("a, b #.zip")
+            if (existing) {
+                file.writeText("existing content")
+            }
+            openBrowser(
+                operation = { support -> support.browseFile(file.toOkioPath()) },
+                starter = starter,
+            ) { notifications -> assertions(notifications, file) }
+        } finally {
+            directory.deleteRecursively()
+        }
+    }
+
+    private fun browseTitle(notifications: NotificationManager): String {
+        val copywriter = mockk<GlobalCopywriter>()
+        every { copywriter.getText(any()) } answers { firstArg<String>() }
+        val notificationTitle = slot<(GlobalCopywriter) -> String>()
+        verify(exactly = 1) {
+            notifications.sendNotification(capture(notificationTitle), null, MessageType.Error, any())
+        }
+        return notificationTitle.captured(copywriter)
+    }
+
+    @Test
+    fun `Linux shows files through FileManager1 without querying AWT support`() {
+        mockkStatic(Desktop::class)
+        try {
+            every { Desktop.isDesktopSupported() } returns false
+            val commands = mutableListOf<List<String>>()
+            browseLinuxFile(starter = {
+                commands += it
+                process()
+            }) { notifications, file ->
+                val command = commands.single()
+                assertEquals("dbus-send", command.first())
+                assertTrue("--print-reply" in command)
+                assertEquals("org.freedesktop.FileManager1.ShowItems", command[command.size - 3])
+                assertEquals("string:", command.last())
+                val uri = command[command.size - 2].removePrefix("array:string:")
+                assertTrue(uri.startsWith("file:///"))
+                assertTrue(',' !in uri)
+                assertEquals(file.canonicalFile, java.io.File(URI(uri)).canonicalFile)
+                verify(exactly = 0) { Desktop.isDesktopSupported() }
+                verify(exactly = 0) { notifications.sendNotification(any(), any(), any(), any()) }
+            }
+        } finally {
+            unmockkStatic(Desktop::class)
+        }
+    }
+
+    @Test
+    fun `Linux falls back to opening the parent directory when FileManager1 fails`() {
+        for (dbusFailure in listOf<() -> Process>(
+            { throw IOException("dbus-send not found") },
+            { process(exitCode = 1) },
+        )) {
+            val commands = mutableListOf<List<String>>()
+            browseLinuxFile(starter = { command ->
+                commands += command
+                if (command.first() == "dbus-send") dbusFailure() else process()
+            }) { notifications, file ->
+                assertEquals(2, commands.size)
+                val fallback = commands[1]
+                assertEquals("xdg-open", fallback[0])
+                assertEquals(file.parentFile.canonicalFile, java.io.File(URI(fallback[1])).canonicalFile)
+                verify(exactly = 0) { notifications.sendNotification(any(), any(), any(), any()) }
+            }
+        }
+    }
+
+    @Test
+    fun `Linux reports a browse failure when no file manager can be opened`() {
+        browseLinuxFile(starter = { command ->
+            if (command.first() == "dbus-send") process(exitCode = 1) else throw IOException("xdg-open not found")
+        }) { notifications, _ ->
+            assertEquals("failed_to_browse_file_pasteboard", browseTitle(notifications))
+        }
+    }
+
+    @Test
+    fun `Linux browse of a missing file is reported without starting a process`() {
+        browseLinuxFile(existing = false, starter = { error("Must not browse a missing file") }) { notifications, _ ->
+            assertEquals("file_not_found", browseTitle(notifications))
+        }
+    }
+
     @Test
     fun `other platforms continue opening local files through AWT`() {
         val desktop = mockk<Desktop>(relaxed = true)

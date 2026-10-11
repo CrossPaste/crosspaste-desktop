@@ -34,6 +34,7 @@ import java.awt.Color
 import java.awt.Desktop
 import java.awt.EventQueue
 import java.io.File
+import java.io.IOException
 import java.net.URI
 import java.util.concurrent.TimeUnit
 import javax.swing.JColorChooser
@@ -105,12 +106,7 @@ class DesktopUISupport(
                 runInterruptible(ioDispatcher) {
                     require(uri.isAbsolute) { "Opening URI must be absolute: $uri" }
                     // AWT's GVfs capability checks do not reflect the desktop's URI handlers.
-                    val process = browserProcessStarter(listOf("xdg-open", uri.toString()))
-                    process.outputStream.close()
-                    // Some launchers wait for the browser to close; a running process is not a failure.
-                    if (process.waitFor(30, TimeUnit.SECONDS)) {
-                        check(process.exitValue() == 0) { "xdg-open exited with code ${process.exitValue()}" }
-                    }
+                    runLauncher(listOf("xdg-open", uri.toString()))
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -123,6 +119,64 @@ class DesktopUISupport(
                 )
             }
         }
+    }
+
+    private fun runLauncher(command: List<String>) {
+        val process = browserProcessStarter(command)
+        process.outputStream.close()
+        // Some launchers wait for the browser to close; a running process is not a failure.
+        if (process.waitFor(30, TimeUnit.SECONDS)) {
+            check(process.exitValue() == 0) { "${command[0]} exited with code ${process.exitValue()}" }
+        }
+    }
+
+    private fun showInLinuxFileManager(filePath: Path) {
+        actionScope.launch {
+            try {
+                runInterruptible(ioDispatcher) {
+                    val file = filePath.toNioPath().toAbsolutePath()
+                    try {
+                        // AWT never supports BROWSE_FILE_DIR on Linux; FileManager1 selects the file
+                        // in Nautilus, Dolphin, Nemo and others. dbus-send splits arrays on commas.
+                        val uri = file.toUri().toASCIIString().replace(",", "%2C")
+                        runLauncher(
+                            listOf(
+                                "dbus-send",
+                                "--session",
+                                "--print-reply",
+                                "--reply-timeout=5000",
+                                "--dest=org.freedesktop.FileManager1",
+                                "/org/freedesktop/FileManager1",
+                                "org.freedesktop.FileManager1.ShowItems",
+                                "array:string:$uri",
+                                "string:",
+                            ),
+                        )
+                    } catch (e: IOException) {
+                        openParentDirectory(file, e)
+                    } catch (e: IllegalStateException) {
+                        openParentDirectory(file, e)
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.warn(e) { "Failed to show file in the file manager" }
+                notificationManager.sendNotification(
+                    title = { it.getText("failed_to_browse_file_pasteboard") },
+                    messageType = MessageType.Error,
+                )
+            }
+        }
+    }
+
+    private fun openParentDirectory(
+        file: java.nio.file.Path,
+        cause: Exception,
+    ) {
+        logger.info(cause) { "FileManager1 unavailable, opening the parent directory instead" }
+        val directory = requireNotNull(file.parent) { "File has no parent directory: $file" }
+        runLauncher(listOf("xdg-open", directory.toUri().toString()))
     }
 
     override fun getCrossPasteWebUrl(path: String): String = crossPasteWebService.getWebUrl(copywriter.language(), path)
@@ -176,7 +230,11 @@ class DesktopUISupport(
 
     override fun browseFile(filePath: Path) {
         if (fileUtils.existFile(filePath)) {
-            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE_FILE_DIR)) {
+            if (platform.isLinux()) {
+                showInLinuxFileManager(filePath)
+            } else if (Desktop.isDesktopSupported() &&
+                Desktop.getDesktop().isSupported(Desktop.Action.BROWSE_FILE_DIR)
+            ) {
                 val desktop = Desktop.getDesktop()
                 desktop.browseFileDirectory(filePath.toFile())
             } else {
