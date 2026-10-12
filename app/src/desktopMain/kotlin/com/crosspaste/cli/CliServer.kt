@@ -1,6 +1,7 @@
 package com.crosspaste.cli
 
 import com.crosspaste.app.AppEnv
+import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.paste.PasteDao
@@ -13,6 +14,7 @@ import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.platform.Platform
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskSubmitter
@@ -65,6 +67,7 @@ class CliServer(
     private val pasteItemReader: PasteItemReader,
     private val pasteReleaseService: PasteReleaseService,
     private val pasteTagDao: PasteTagDao,
+    private val platform: Platform,
     private val searchContentService: SearchContentService,
     private val syncManager: SyncManager,
     private val syncRuntimeInfoDao: SyncRuntimeInfoDao,
@@ -76,7 +79,7 @@ class CliServer(
 
     companion object {
         // macOS limits sun_path to 104 bytes; leave headroom
-        private const val MAX_SOCKET_PATH_BYTES = 100
+        internal const val MAX_SOCKET_PATH_BYTES = 100
 
         private val SOCKET_READY_POLL_INTERVAL = 50.milliseconds
         private const val SOCKET_READY_MAX_POLLS = 100
@@ -218,13 +221,46 @@ class CliServer(
     }
 
     /**
-     * The socket lives in a short per-user temp directory instead of the user
-     * data path: sun_path is limited to ~104 bytes on macOS and a custom
-     * storagePath could exceed it. The directory must be owned by the current
-     * user with 0700 so that no other local user can pre-create it and plant a
-     * fake socket (relevant on Linux where /tmp is shared).
+     * Resolves the socket location per platform:
+     *
+     * - macOS/Linux: a short per-user directory under [socketBaseDir]
+     *   (java.io.tmpdir) instead of the user data path, because sun_path is
+     *   limited to ~104 bytes on macOS and a custom storagePath could exceed
+     *   it. The directory must be owned by the current user with 0700 so that
+     *   no other local user can pre-create it and plant a fake socket
+     *   (relevant on Linux where /tmp is shared).
+     * - Windows: the user data directory, next to cli-endpoint.json. MSIX
+     *   installs (Microsoft Store and the site installer) virtualize
+     *   java.io.tmpdir into
+     *   `%LOCALAPPDATA%\Packages\<PackageFamilyName>\LocalCache\Local\Temp`,
+     *   which already exceeds the sun_path budget on its own, so the server
+     *   could never start there. `%USERPROFILE%\.crosspaste` is not
+     *   virtualized, is private to the user through the profile ACL, and is
+     *   where the CLI already reads the endpoint file from.
+     *
+     * The length check stays as the last line of defence on every platform.
      */
     private fun resolveSocketPath(): Path {
+        val socketDir =
+            if (platform.isWindows()) {
+                windowsSocketDir()
+            } else {
+                posixSocketDir()
+            }
+
+        val socket = socketDir.resolve(socketFileName)
+        check(socket.toString().toByteArray(Charsets.UTF_8).size <= MAX_SOCKET_PATH_BYTES) {
+            "CLI socket path too long for sun_path: $socket"
+        }
+        return socket
+    }
+
+    private fun windowsSocketDir(): Path =
+        userDataPathProvider
+            .resolve(appFileType = AppFileType.USER)
+            .toNioPath()
+
+    private fun posixSocketDir(): Path {
         val userName = System.getProperty("user.name")
         val sanitizedUserName = userName.replace(Regex("[^A-Za-z0-9._-]"), "_")
         val socketDir = socketBaseDir.resolve("crosspaste-$sanitizedUserName")
@@ -249,12 +285,7 @@ class CliServer(
                 ),
             )
         }
-
-        val socket = socketDir.resolve(socketFileName)
-        check(socket.toString().toByteArray(Charsets.UTF_8).size <= MAX_SOCKET_PATH_BYTES) {
-            "CLI socket path too long for sun_path: $socket"
-        }
-        return socket
+        return socketDir
     }
 
     private fun supportsPosixPermissions(path: Path): Boolean =
@@ -278,7 +309,7 @@ class CliServer(
             )
         }.onFailure {
             // Windows: no POSIX permissions on AF_UNIX socket files; the
-            // per-user temp directory ACL restricts access instead
+            // user profile directory ACL restricts access instead
         }
     }
 }
