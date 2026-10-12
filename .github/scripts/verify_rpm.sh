@@ -3,14 +3,46 @@ set -euo pipefail
 
 # Run inside a disposable RPM-based container, on the package's native arch.
 # Install from the distro's normal repositories, without development packages.
+# Usage: verify_rpm.sh <rpm_file> [repo_dir]
+# With repo_dir (output of package_rpm_repo.sh), the package is installed
+# through that repository with gpgcheck and repo_gpgcheck enabled, which
+# verifies the package and repodata signatures; otherwise the file is
+# installed directly.
 RPM_FILE=$(realpath "$1")
+REPO_DIR=${2:+$(realpath "$2")}
 RPM_ARCH=$(rpm -qp --qf '%{ARCH}' "$RPM_FILE")
 test "$RPM_ARCH" = "$(uname -m)"
 RPM_VERSION=$(rpm -qp --qf '%{VERSION}' "$RPM_FILE")
 RPM_RELEASE=$(rpm -qp --qf '%{RELEASE}' "$RPM_FILE")
 
-dnf -y install "$RPM_FILE" desktop-file-utils
+if [ -n "$REPO_DIR" ]; then
+    cat > /etc/yum.repos.d/crosspaste-local.repo <<EOF
+[crosspaste-local]
+name=CrossPaste (local repository under test)
+baseurl=file://$REPO_DIR
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=file://$REPO_DIR/RPM-GPG-KEY-CrossPaste
+EOF
+    dnf -y install "crosspaste-$RPM_VERSION-$RPM_RELEASE.$RPM_ARCH" desktop-file-utils
+else
+    dnf -y install "$RPM_FILE" desktop-file-utils
+fi
+# The package subscribes the system to the production repository, which is
+# not reachable from a release build of a version that is not published yet;
+# keep it out of the remaining dnf transactions.
+dnf() { command dnf --disablerepo=crosspaste "$@"; }
+test "$(rpm -q --qf '%{VERSION}-%{RELEASE}' crosspaste)" = "$RPM_VERSION-$RPM_RELEASE"
 test "$(readlink /usr/bin/crosspaste)" = /usr/lib/crosspaste/lib/app/bin/crosspaste-cli
+# A fresh install is subscribed to the signed dnf repository.
+grep -Fx 'baseurl=https://oss.crosspaste.com/site/rpm/' /etc/yum.repos.d/crosspaste.repo
+grep -Fx 'gpgcheck=1' /etc/yum.repos.d/crosspaste.repo
+grep -Fx 'repo_gpgcheck=1' /etc/yum.repos.d/crosspaste.repo
+grep -Fx 'gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CrossPaste' /etc/yum.repos.d/crosspaste.repo
+rpm -qc crosspaste | grep -Fx /etc/yum.repos.d/crosspaste.repo
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-CrossPaste
+rpm -K "$RPM_FILE" | grep -F 'digests signatures OK'
 test -x /usr/lib/crosspaste/bin/start.sh
 test -f /usr/share/metainfo/com.crosspaste.metainfo.xml
 desktop-file-validate /usr/share/applications/com.crosspaste.desktop
@@ -74,7 +106,9 @@ APP_PID=
 
 dnf -y remove crosspaste
 test ! -e /usr/bin/crosspaste
+test ! -e /etc/yum.repos.d/crosspaste.repo
+test ! -e /etc/pki/rpm-gpg/RPM-GPG-KEY-CrossPaste
 test ! -e /usr/lib/crosspaste
 test ! -e /usr/share/applications/com.crosspaste.desktop
 test ! -e /usr/share/metainfo/com.crosspaste.metainfo.xml
-echo "PASS: $RPM_ARCH installation, CLI, desktop startup, package verification and removal"
+echo "PASS: $RPM_ARCH installation, repository subscription, CLI, desktop startup, package verification and removal"

@@ -13,6 +13,8 @@ URL:            https://crosspaste.com
 Source0:        %{archive_name}
 Source1:        linux_start.sh
 Source2:        LICENSE
+Source3:        crosspaste.repo
+Source4:        RPM-GPG-KEY-CrossPaste
 
 # Private libraries must not satisfy dependencies of unrelated system packages.
 # package_rpm.sh excludes the capabilities supplied by the bundled payload from
@@ -44,6 +46,10 @@ cp -a share/. %{buildroot}/usr/share/
 # root-inputs are omitted from Conveyor tarballs; retain the GUI restart helper.
 install -m 0755 %{SOURCE1} %{buildroot}/usr/lib/crosspaste/bin/start.sh
 ln -s /usr/lib/crosspaste/lib/app/bin/crosspaste-cli %{buildroot}/usr/bin/crosspaste
+# Subscribe the installation to the dnf repository so `dnf upgrade` picks up
+# new releases; the public key verifies both the packages and the repodata.
+install -D -m 0644 %{SOURCE3} %{buildroot}/etc/yum.repos.d/crosspaste.repo
+install -D -m 0644 %{SOURCE4} %{buildroot}/etc/pki/rpm-gpg/RPM-GPG-KEY-CrossPaste
 
 %check
 test -x %{buildroot}/usr/lib/crosspaste/bin/crosspaste
@@ -62,6 +68,8 @@ done
 
 %files
 %license LICENSE
+%config(noreplace) /etc/yum.repos.d/crosspaste.repo
+/etc/pki/rpm-gpg/RPM-GPG-KEY-CrossPaste
 /usr/bin/crosspaste
 /usr/lib/crosspaste/
 /usr/share/applications/com.crosspaste.desktop

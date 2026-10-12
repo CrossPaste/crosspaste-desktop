@@ -144,10 +144,15 @@ jobs:
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
+      # Same signing key as build-release.yml (see the comment there): the
+      # packages embed its public half together with the crosspaste.repo
+      # subscription. The beta does not publish a dnf repository.
       - name: Package RPM (x86_64 and aarch64)
+        env:
+          RPM_SIGNING_KEY: ${{ secrets.RPM_SIGNING_KEY }}
         run: |
           docker build -t crosspaste-rpm-build -f .github/packaging/Dockerfile.rpm .github/packaging
-          docker run --rm -v "$GITHUB_WORKSPACE:/workspace" crosspaste-rpm-build
+          docker run --rm -e RPM_SIGNING_KEY -v "$GITHUB_WORKSPACE:/workspace" crosspaste-rpm-build
 
       - name: Verify RPM on EL9 and Fedora 44 (x86_64)
         run: |
