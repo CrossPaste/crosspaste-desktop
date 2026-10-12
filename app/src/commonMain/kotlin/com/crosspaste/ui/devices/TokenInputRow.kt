@@ -28,8 +28,10 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -153,8 +155,8 @@ fun TokenInputBox(
                     width = borderWidth,
                     color = borderColor,
                     shape = shape,
-                ).onKeyEvent {
-                    if (isLoading) return@onKeyEvent false
+                ).onPreviewKeyEvent {
+                    if (isLoading) return@onPreviewKeyEvent false
                     handleKeyEvent(it, confirmAction, cancelAction)
                 },
         shape = shape,
@@ -208,12 +210,12 @@ fun handleKeyEvent(
     cancelAction: () -> Unit,
 ): Boolean =
     when (event.key) {
-        Key.Enter -> {
-            confirmAction()
+        Key.Enter, Key.NumPadEnter -> {
+            if (event.type == KeyEventType.KeyDown) confirmAction()
             true
         }
         Key.Escape -> {
-            cancelAction()
+            if (event.type == KeyEventType.KeyDown) cancelAction()
             true
         }
         else -> false
