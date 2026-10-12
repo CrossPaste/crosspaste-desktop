@@ -16,10 +16,10 @@ CLI 二进制随所有桌面安装包一起分发，各平台的差异只在于�
 |---|---|---|
 | macOS | `crosspaste` | 应用首次启动时会提示安装命令行工具；也可以随时在应用内 **扩展 → 命令行** 页安装或修复。安装即创建 `/usr/local/bin/crosspaste` 软链接。 |
 | Windows（安装包 / 微软商店） | `crosspaste` | 自动。安装包同时注册 `crosspaste` 和 `crosspaste-cli` 两个执行别名，都运行 CLI（`crosspaste-cli` 为兼容旧版脚本保留）。 |
-| Linux（deb） | `crosspaste` | 自动。安装包创建 `/usr/bin/crosspaste` 软链接。 |
+| Linux（deb / rpm） | `crosspaste` | 自动。安装包创建 `/usr/bin/crosspaste` 软链接。 |
 | Linux（tarball） | `crosspaste` | 手动：把 `<安装目录>/lib/app/bin/crosspaste-cli` 链接进 `PATH`，例如 `sudo ln -s <安装目录>/lib/app/bin/crosspaste-cli /usr/local/bin/crosspaste`。 |
 | Windows（zip） | `crosspaste-cli` | 手动：把解压后的 `app\bin\` 目录加入 `PATH`（其中的二进制文件名为 `crosspaste-cli.exe`）。 |
-| Linux（AppImage） | — | 二进制打包在镜像内 `bin/crosspaste-cli`，但挂载路径每次运行都会变化，无法建立稳定软链接。需要 CLI 请优先使用 deb 或 tarball。 |
+| Linux（AppImage） | — | 二进制打包在镜像内 `bin/crosspaste-cli`，但挂载路径每次运行都会变化，无法建立稳定软链接。需要 CLI 请优先使用 deb、rpm 或 tarball。 |
 
 ## 命令
 

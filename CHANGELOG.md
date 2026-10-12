@@ -2,6 +2,50 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.2.2] - 2026-10-12
+# Highlights 🌟
+
+- 🪟 **Windows MSIX installs again**
+  The 2.2.0 and 2.2.1 installer packages failed with 0x80080204 on
+  current Windows builds because two appExecutionAlias extensions were
+  declared under one Application. The manifest now declares the CLI
+  alias in its own Application, so the package installs and updates
+  cleanly (#5188 #5189).
+
+- ⌨️ **`crosspaste` is the CLI on Windows installs**
+  Installer and Microsoft Store packages register both `crosspaste` and
+  `crosspaste-cli` as CLI aliases, the Store package ships the CLI, and
+  the control socket moved out of the MSIX-virtualized temp directory so
+  CLI commands no longer report the app as not running (#5190 #5191
+  #5192 #5193 #5195).
+
+- 🐧 **Linux link/file opening and RPM packages**
+  Links, HTML, RTF and files open through xdg-open, "show in file
+  manager" selects the file via FileManager1, and EL9 RPM packages for
+  x86_64 and aarch64 are published alongside the deb (#5184 #5185 #5186
+  #5187).
+
+# Bug Fixes 🐛
+
+- :bug: Declare the MSIX CLI execution alias in its own Application (#5188)
+- :bug: Start the CLI socket from the user data directory on Windows (#5195)
+- :bug: Show files in the file manager on Linux (#5186)
+- :bug: Open browser links, HTML, RTF and files with xdg-open on Linux (#5184)
+
+# New Features ✨
+
+- :sparkles: Make `crosspaste` launch the CLI on Windows MSIX packages (#5192)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Make AbstractGlobalCopywriter Compose-free and publish the language as a StateFlow (#5179)
+- :hammer: Move MessageType's Compose colour and icon helpers into ui.base (#5180)
+
+# Build & CI 👷
+
+- :construction_worker: Build the Microsoft Store MSIX in release CI and publish from it (#5194)
+- :construction_worker: Build EL9 RPM packages for Linux x86_64 and aarch64 (#5187)
+
 # [2.2.1] - 2026-10-09
 # Highlights 🌟
 

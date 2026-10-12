@@ -1,3 +1,14 @@
+# [2.2.2] - 2026-10-12
+
+## 🪟 Windows installer works again
+The Windows installer (MSIX) packages of 2.2.0 and 2.2.1 failed to install or update on current Windows builds with error 0x80080204, because the package declared the terminal command twice. The package manifest is restructured so it installs and updates cleanly again. If you are stuck on an older version, install this one from the download page; after that, updates arrive through the installer channel as before.
+
+## ⌨️ **crosspaste** in the Windows terminal
+On Windows installer and Microsoft Store installs the terminal command is now **crosspaste**, the same as on macOS and Linux; **crosspaste-cli** keeps working for existing scripts. The CLI also actually works on these installs now: the app used to place its control socket in a sandboxed temp folder whose path was too long, so every CLI command reported the app as not running. The Microsoft Store package now ships the CLI as well. The portable zip is unaffected and still uses **crosspaste-cli**.
+
+## 🐧 Linux fixes and RPM packages
+Opening a copied link, or HTML, RTF and files from the history, now goes through xdg-open, so it works on desktops where the bundled runtime did not detect a browser (for example Fedora KDE on Wayland); "Show in file manager" now opens the containing folder with the file selected, instead of always failing. RPM packages for x86_64 and aarch64 (Enterprise Linux 9 and compatible distributions) are now published alongside the deb.
+
 # [2.2.1] - 2026-10-09
 
 ## 📋 Floating paste panel
