@@ -3,9 +3,12 @@
 # Publish a CrossPaste release to the Microsoft Store via msstore-cli.
 #
 # What it does, in order:
-#   1. Downloads the Store-identity MSIX for <version> from the OSS release
-#      bucket (or uses --msix <path>) and verifies its SHA256 against
-#      checksum.txt.
+#   1. Downloads the Store MSIX for <version> from the OSS release bucket
+#      (crosspaste-<x.y.z>-store.x64.msix, built by build-release.yml with
+#      app.revision=0 because Partner Center only accepts a manifest Version
+#      of x.y.z.0 — the site MSIX crosspaste-<x.y.z>-<revision>.x64.msix is
+#      rejected), or uses --msix <path>, and verifies its SHA256 against
+#      checksum.txt plus the manifest Version.
 #   2. Uploads the MSIX into a new pending submission (`msstore publish
 #      --noCommit`). This must happen FIRST: for a live app msstore-cli
 #      deletes any existing pending submission and creates a fresh one, so
@@ -29,7 +32,8 @@
 # Usage:
 #   scripts/publish-msstore.sh <full-version> [--msix <path>] [--product-id <id>] [--dry-run]
 #     <full-version>   e.g. 2.1.7.2452 (the git tag / OSS prefix)
-#     --msix <path>    use a local MSIX instead of downloading from OSS
+#     --msix <path>    use a local Store MSIX (manifest Version x.y.z.0)
+#                      instead of downloading from OSS
 #     --product-id     Store product ID; defaults to $WINDOWS_STORE_ID (same
 #                      secret the Conveyor release build uses)
 #     --dry-run        stop before any msstore call that mutates the submission
@@ -81,10 +85,10 @@ else
   SHA256="shasum -a 256"
 fi
 
-# 2.1.7.2452 -> version=2.1.7 revision=2452 -> crosspaste-2.1.7-2452.x64.msix
+# 2.2.1.2706 -> OSS prefix 2.2.1.2706, Store package crosspaste-2.2.1-store.x64.msix
+# (its manifest Version is 2.2.1.0; the Store assigns the revision itself).
 BASE_VERSION="${VERSION%.*}"
-REVISION="${VERSION##*.}"
-MSIX_NAME="crosspaste-${BASE_VERSION}-${REVISION}.x64.msix"
+MSIX_NAME="crosspaste-${BASE_VERSION}-store.x64.msix"
 
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
@@ -101,6 +105,21 @@ if [[ -z "$MSIX" ]]; then
   MSIX="$WORK_DIR/$MSIX_NAME"
 else
   [[ -f "$MSIX" ]] || { echo "MSIX not found: $MSIX" >&2; exit 1; }
+fi
+
+# Refuse the site package (Version x.y.z.<revision>) early: Partner Center
+# would only reject it after the upload. An MSIX is a zip, so this needs
+# unzip; where it is missing (not guaranteed in the windows-latest runner's
+# bash) the check is skipped — the downloaded file comes from the release
+# prefix that build-release.yml already verified the same way.
+if command -v unzip >/dev/null; then
+  # <Identity> spans several lines; flatten before matching.
+  MANIFEST_VERSION="$(unzip -p "$MSIX" AppxManifest.xml | tr '\n' ' ' | grep -o '<Identity [^>]*>' | grep -o ' Version="[^"]*"' | cut -d'"' -f2)"
+  [[ "$MANIFEST_VERSION" == "$BASE_VERSION.0" ]] || {
+    echo "Manifest Version of $MSIX is '$MANIFEST_VERSION', expected '$BASE_VERSION.0' (Store packages must be built with app.revision=0)." >&2
+    exit 1
+  }
+  echo "Manifest Version verified: $MANIFEST_VERSION"
 fi
 
 # Extract the "# [$BASE_VERSION] - date" section (not blindly the newest one,

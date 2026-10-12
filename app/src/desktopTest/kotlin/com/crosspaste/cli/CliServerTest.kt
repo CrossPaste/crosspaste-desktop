@@ -15,6 +15,7 @@ import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.platform.Platform
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskSubmitter
@@ -47,9 +48,14 @@ import kotlin.test.assertTrue
  */
 class CliServerTest {
 
+    private val posixPlatform = Platform(name = Platform.LINUX, arch = "x86_64", bitMode = 64, version = "6.1")
+
+    private val windowsPlatform = Platform(name = Platform.WINDOWS, arch = "x86_64", bitMode = 64, version = "11")
+
     private fun createServer(
         userDataDir: Path,
         socketBaseDir: Path,
+        platform: Platform = posixPlatform,
     ): Pair<CliServer, CliEndpointFile> {
         val configManager = mockk<DesktopConfigManager>()
         every { configManager.getCurrentConfig() } returns DesktopAppConfig(language = "en")
@@ -87,6 +93,7 @@ class CliServerTest {
                 pasteItemReader = DefaultPasteItemReader(),
                 pasteReleaseService = mockk<PasteReleaseService>(),
                 pasteTagDao = mockk<PasteTagDao>(),
+                platform = platform,
                 searchContentService = mockk<SearchContentService>(),
                 syncManager = mockk<SyncManager>(relaxed = true),
                 syncRuntimeInfoDao = syncRuntimeInfoDao,
@@ -209,6 +216,68 @@ class CliServerTest {
         }
 
         socketBaseDir.toFile().deleteRecursively()
+    }
+
+    /**
+     * MSIX installs virtualize java.io.tmpdir into the package LocalCache
+     * directory, which alone exceeds the sun_path budget; on Windows the
+     * socket must therefore come from the user data directory (next to
+     * cli-endpoint.json) and must not depend on the temp directory at all.
+     */
+    @Test
+    fun `on Windows the socket lives in the user data directory regardless of tmpdir`() {
+        // Short on purpose: the resulting socket path must fit sun_path
+        val userDataDir =
+            Path
+                .of(System.getProperty("java.io.tmpdir"), "ud-${(100000..999999).random()}")
+                .also { Files.createDirectories(it) }
+        // Stands in for the MSIX LocalCache temp dir: unusable as a socket base
+        val virtualizedTmpDir =
+            Path
+                .of(System.getProperty("java.io.tmpdir"), "cs-msix-${"x".repeat(120)}")
+                .also { Files.createDirectories(it) }
+        val (server, endpointFile) = createServer(userDataDir, virtualizedTmpDir, windowsPlatform)
+
+        runBlocking {
+            server.start()
+            try {
+                val endpoint = Json.decodeFromString<CliEndpoint>(endpointFile.getPath().readText())
+                val socketPath = Path.of(endpoint.socketPath)
+                assertEquals(
+                    userDataDir,
+                    socketPath.parent,
+                    "Windows socket must sit directly in the user data directory",
+                )
+                assertTrue(socketPath.exists(), "socket file must exist")
+                assertTrue(
+                    rawHttpGet(socketPath, "/cli/status").startsWith("HTTP/1.1 200"),
+                    "server must answer on the user-data-dir socket",
+                )
+            } finally {
+                server.stop()
+            }
+        }
+
+        userDataDir.toFile().deleteRecursively()
+        virtualizedTmpDir.toFile().deleteRecursively()
+    }
+
+    /**
+     * The real-world Windows layout fits the sun_path budget with room to
+     * spare, while the MSIX-virtualized temp directory does not: this is the
+     * exact pair of paths from the bug report, pinned so the budget cannot
+     * silently regress.
+     */
+    @Test
+    fun `Windows user data directory keeps the socket path within the sun_path budget`() {
+        val userDataSocket = "C:\\Users\\geekcat\\.crosspaste\\cli.sock"
+        val msixTmpSocket =
+            "C:\\Users\\geekcat\\AppData\\Local\\Packages\\" +
+                "ShenzhenCompileFutureTech.CrossPaste_gphsk9mrjnczc\\LocalCache\\Local\\Temp\\" +
+                "crosspaste-geekcat\\cli.sock"
+
+        assertTrue(userDataSocket.toByteArray(Charsets.UTF_8).size <= CliServer.MAX_SOCKET_PATH_BYTES)
+        assertTrue(msixTmpSocket.toByteArray(Charsets.UTF_8).size > CliServer.MAX_SOCKET_PATH_BYTES)
     }
 
     private fun assertSocketRestrictedToOwner(socketPath: Path) {
