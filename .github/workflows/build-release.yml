@@ -301,6 +301,25 @@ jobs:
           chmod +x ./.github/scripts/package_appimage.sh
           ./.github/scripts/package_appimage.sh
 
+      # Repackage the Linux tarballs as EL9-compatible RPMs on the same runner,
+      # after the update-site snapshot: RPMs are not part of the auto-update
+      # site, but they belong next to the other packages in output/ so they
+      # land in checksum.txt, the versioned OSS dir and the GitHub Release.
+      - name: Package RPM (x86_64 and aarch64)
+        run: |
+          docker build -t crosspaste-rpm-build -f .github/packaging/Dockerfile.rpm .github/packaging
+          docker run --rm -v "$GITHUB_WORKSPACE:/workspace" crosspaste-rpm-build
+
+      - name: Verify RPM on EL9 and Fedora 44 (x86_64)
+        run: |
+          for image in \
+            quay.io/rockylinux/rockylinux:9.8@sha256:8101994123cf3d0a8fee517bee7f39e555c7d92bd2d9eb3303cc988a0eeed00f \
+            registry.fedoraproject.org/fedora:44@sha256:1b8544582f974533fb8d9a5d6bf6dc2caf0d977ea54979d5e864a6ffd345c32e; do
+            docker run --rm -v "$GITHUB_WORKSPACE:/workspace:ro" \
+              -w /workspace "$image" \
+              bash -c 'bash .github/scripts/verify_rpm.sh output/*.x86_64.rpm'
+          done
+
       - name: Build Chrome extension
         run: ./gradlew :web:build
 

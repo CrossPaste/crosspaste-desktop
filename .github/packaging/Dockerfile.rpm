@@ -1,6 +1,8 @@
-# EL9 is the minimum RPM compatibility baseline. Pin the base filesystem;
-# dnf still applies supported EL9 updates to the packaging tools.
-FROM docker.io/library/rockylinux:9.3@sha256:d644d203142cd5b54ad2a83a203e1dee68af2229f8fe32f52a30c6e1d3c3a9e0
+# EL9 is the minimum RPM compatibility baseline. The Docker Hub library image
+# (docker.io/library/rockylinux) stopped receiving updates at 9.3; Rocky now
+# publishes its images on quay.io. Pin the multi-arch manifest list so the
+# same Dockerfile builds on amd64 CI runners and arm64 developer machines.
+FROM quay.io/rockylinux/rockylinux:9.8@sha256:8101994123cf3d0a8fee517bee7f39e555c7d92bd2d9eb3303cc988a0eeed00f
 
 RUN dnf install -y rpm-build binutils && dnf clean all
 
