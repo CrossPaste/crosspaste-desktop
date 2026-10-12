@@ -120,6 +120,7 @@ fun desktopNetworkModule(
                 pasteItemReader = get(),
                 pasteReleaseService = get(),
                 pasteTagDao = get(),
+                platform = get(),
                 searchContentService = get(),
                 syncManager = get(),
                 syncRuntimeInfoDao = get(),
