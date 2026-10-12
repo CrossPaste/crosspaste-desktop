@@ -101,7 +101,7 @@ fun NonActivatingWindow(
         } else if (isWindows) {
             WindowsNoActivateEffect(window = this.window)
         }
-        content()
+        DisplayScaleContent { content() }
     }
 }
 
