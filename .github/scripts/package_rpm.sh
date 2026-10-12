@@ -76,8 +76,8 @@ for ARCH_PAIR in amd64:x86_64 aarch64:aarch64; do
 
     RPM_FILE="$TOP_DIR/RPMS/$RPM_ARCH/crosspaste-$APP_VERSION-$APP_REVISION.$RPM_ARCH.rpm"
     rpm --define "_gpg_name $GPG_FINGERPRINT" --define "_gpg_path $GNUPGHOME" --addsign "$RPM_FILE"
-    rpm -K "$RPM_FILE"
-    rpm -qp --qf '%{NAME} %{VERSION}-%{RELEASE} %{ARCH} %{SIGPGP:pgpsig}\n' "$RPM_FILE"
+    rpm -K "$RPM_FILE" | grep -F 'digests signatures OK'
+    rpm -qp --qf '%{NAME} %{VERSION}-%{RELEASE} %{ARCH} %{RSAHEADER:pgpsig}\n' "$RPM_FILE"
     rpm -qp --requires "$RPM_FILE" | sort -u > "$TOP_DIR/package-requires"
     MISSING_REQUIRES=$(comm -23 "$TOP_DIR/system-requires" "$TOP_DIR/package-requires")
     if [ -n "$MISSING_REQUIRES" ]; then
