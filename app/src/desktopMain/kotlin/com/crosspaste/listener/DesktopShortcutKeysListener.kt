@@ -26,6 +26,8 @@ class DesktopShortcutKeysListener(
 
     private val keyboardKeys = getDesktopKeyboardKeys(platform)
 
+    private val linuxSuperKeyState = if (platform.isLinux()) LinuxSuperKeyState() else null
+
     private val comparator = keyboardKeys.getComparator()
 
     private val groupKeys = keyboardKeys.groupModifierKeys
@@ -58,6 +60,7 @@ class DesktopShortcutKeysListener(
     }
 
     private fun clearHeldKeys() {
+        linuxSuperKeyState?.reset()
         heldKeyCodes.value = emptySet()
     }
 
@@ -79,7 +82,8 @@ class DesktopShortcutKeysListener(
     }
 
     override fun nativeKeyPressed(nativeEvent: NativeKeyEvent) {
-        heldKeyCodes.update { it + nativeEvent.keyCode }
+        val event = linuxSuperKeyState?.normalize(nativeEvent) ?: nativeEvent
+        heldKeyCodes.update { it + event.keyCode }
         if (!editShortcutKeysMode) {
             // Drop events while suppressed: this is CrossPaste's own injected paste
             // keystroke coming back, which would otherwise loop (issue #4500).
@@ -87,18 +91,18 @@ class DesktopShortcutKeysListener(
                 return
             }
             shortcutKeys.shortcutKeysCore.value.eventConsumer
-                .accept(nativeEvent)
+                .accept(event)
         } else {
             val list: MutableList<KeyboardKeyDefine> = mutableListOf()
             val combineKeys = groupKeys[true]!!
             for (value in combineKeys.values) {
-                if (value.match(nativeEvent)) {
+                if (value.match(event)) {
                     list.add(value)
                 }
             }
 
             val noCombineKeys = groupKeys[false]!!
-            noCombineKeys[nativeEvent.keyCode]?.let {
+            noCombineKeys[event.keyCode]?.let {
                 list.add(it)
             }
 
@@ -108,7 +112,8 @@ class DesktopShortcutKeysListener(
     }
 
     override fun nativeKeyReleased(nativeEvent: NativeKeyEvent) {
-        heldKeyCodes.update { it - nativeEvent.keyCode }
+        val event = linuxSuperKeyState?.normalize(nativeEvent) ?: nativeEvent
+        heldKeyCodes.update { it - event.keyCode }
         // The injected paste keystroke releasing marks the end of our own simulation:
         // lift suppression now rather than waiting for the safety timeout (issue #4500).
         if (pasteSuppressing) {
