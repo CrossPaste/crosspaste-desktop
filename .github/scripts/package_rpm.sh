@@ -6,7 +6,13 @@ set -euo pipefail
 ROOT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)
 OUTPUT_DIR=$(realpath "${1:-output}")
 BUILD_DIR=$(mktemp -d)
-trap 'rm -rf "$BUILD_DIR"' EXIT
+# shellcheck source=.github/scripts/rpm_signing_key.sh
+source "$ROOT_DIR/.github/scripts/rpm_signing_key.sh"
+trap 'rm -rf "$BUILD_DIR" "$GNUPGHOME"' EXIT
+# The packages carry the signing key's public half so a fresh install can
+# verify the dnf repository they subscribe to (crosspaste.repo).
+gpg --batch --armor --export "$GPG_FINGERPRINT" > "$BUILD_DIR/RPM-GPG-KEY-CrossPaste"
+rpm --import "$BUILD_DIR/RPM-GPG-KEY-CrossPaste"
 
 shopt -s nullglob
 EXPECTED_VERSION=
@@ -36,7 +42,8 @@ for ARCH_PAIR in amd64:x86_64 aarch64:aarch64; do
 
     TOP_DIR="$BUILD_DIR/$RPM_ARCH"
     mkdir -p "$TOP_DIR"/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
-    cp "$TAR_FILE" "$ROOT_DIR/app/script/linux_start.sh" "$ROOT_DIR/LICENSE" "$TOP_DIR/SOURCES/"
+    cp "$TAR_FILE" "$ROOT_DIR/app/script/linux_start.sh" "$ROOT_DIR/LICENSE" \
+        "$ROOT_DIR/.github/packaging/crosspaste.repo" "$BUILD_DIR/RPM-GPG-KEY-CrossPaste" "$TOP_DIR/SOURCES/"
 
     # Exclude only capabilities that the payload itself supplies, preserving
     # versioned ELF requirements on glibc, X11, Wayland and other system libs.
@@ -68,7 +75,9 @@ for ARCH_PAIR in amd64:x86_64 aarch64:aarch64; do
         --define "archive_name $ARCHIVE_NAME"
 
     RPM_FILE="$TOP_DIR/RPMS/$RPM_ARCH/crosspaste-$APP_VERSION-$APP_REVISION.$RPM_ARCH.rpm"
-    rpm -qp --qf '%{NAME} %{VERSION}-%{RELEASE} %{ARCH}\n' "$RPM_FILE"
+    rpm --define "_gpg_name $GPG_FINGERPRINT" --define "_gpg_path $GNUPGHOME" --addsign "$RPM_FILE"
+    rpm -K "$RPM_FILE" | grep -F 'digests signatures OK'
+    rpm -qp --qf '%{NAME} %{VERSION}-%{RELEASE} %{ARCH} %{RSAHEADER:pgpsig}\n' "$RPM_FILE"
     rpm -qp --requires "$RPM_FILE" | sort -u > "$TOP_DIR/package-requires"
     MISSING_REQUIRES=$(comm -23 "$TOP_DIR/system-requires" "$TOP_DIR/package-requires")
     if [ -n "$MISSING_REQUIRES" ]; then
