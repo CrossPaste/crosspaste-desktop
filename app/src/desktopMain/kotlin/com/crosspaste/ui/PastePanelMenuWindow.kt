@@ -118,7 +118,6 @@ fun PastePanelMenuWindow(
     val title = appWindowManager.pastePanelMenuWindowTitle
 
     val gap = MENU_GAP.toWindowUnits().value.toInt()
-    val density = LocalDensity.current
 
     val center = remember(anchor) { Point(anchor.x + anchor.width / 2, anchor.y + anchor.height / 2) }
     val usableScreen =
@@ -169,9 +168,7 @@ fun PastePanelMenuWindow(
 
     LaunchedEffect(menuSize, usableScreen) {
         menuSize?.let { size ->
-            val w = with(density) { size.width.toDp() }.toWindowUnits().value.toInt()
-            val h = with(density) { size.height.toDp() }.toWindowUnits().value.toInt()
-            val pos = currentPosition(w, h)
+            val pos = currentPosition(size.width, size.height)
             windowState.position = WindowPosition(pos.x.dp, pos.y.dp)
         }
     }
@@ -203,6 +200,7 @@ fun PastePanelMenuWindow(
         },
     ) {
         DisplayScaleContent {
+            val density = LocalDensity.current
             val window = this.window
 
             DisposableEffect(window) {
@@ -241,8 +239,23 @@ fun PastePanelMenuWindow(
                     modifier =
                         Modifier
                             .width(IntrinsicSize.Max)
-                            .onSizeChanged { size -> menuSize = size }
-                            .clip(tiny3XRoundedCornerShape)
+                            .onSizeChanged { size ->
+                                menuSize =
+                                    with(density) {
+                                        IntSize(
+                                            size.width
+                                                .toDp()
+                                                .toWindowUnits()
+                                                .value
+                                                .toInt(),
+                                            size.height
+                                                .toDp()
+                                                .toWindowUnits()
+                                                .value
+                                                .toInt(),
+                                        )
+                                    }
+                            }.clip(tiny3XRoundedCornerShape)
                             .background(AppUIColors.generalBackground)
                             .border(tiny5X, AppUIColors.sectionCardBorder, tiny3XRoundedCornerShape)
                             .padding(vertical = tiny3X),
