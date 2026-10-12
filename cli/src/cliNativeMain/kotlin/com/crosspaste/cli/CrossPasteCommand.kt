@@ -27,17 +27,12 @@ import com.github.ajalt.clikt.core.terminal
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.switch
-import kotlin.experimental.ExperimentalNativeApi
 
 /**
- * The name users actually invoke, shown in usage/help output and hints. On
- * Windows the MSIX execution alias is `crosspaste-cli` (`crosspaste` is
- * hardwired by Conveyor to launch the GUI); on macOS/Linux the terminal
- * command is `crosspaste` (symlink to the bundled crosspaste-cli binary).
+ * The name users actually invoke, shown in usage/help output and hints.
+ * Design decision D4: the terminal command is `crosspaste` on every platform.
  */
-@OptIn(ExperimentalNativeApi::class)
-internal val cliCommandName: String =
-    if (Platform.osFamily == OsFamily.WINDOWS) "crosspaste-cli" else "crosspaste"
+internal const val cliCommandName: String = "crosspaste"
 
 class CrossPasteCommand(
     /** Injectable so tests of the implicit-copy path never touch real stdin. */
