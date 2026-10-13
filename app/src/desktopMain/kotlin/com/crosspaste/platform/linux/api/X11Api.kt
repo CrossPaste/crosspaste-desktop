@@ -4,6 +4,7 @@ import com.crosspaste.app.LinuxAppInfo
 import com.crosspaste.platform.linux.api.WMCtrl.getActiveWindow
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
+import com.sun.jna.Pointer
 import com.sun.jna.platform.unix.X11
 import com.sun.jna.platform.unix.X11.Display
 import com.sun.jna.platform.unix.X11.Window
@@ -38,6 +39,10 @@ interface X11Api : X11 {
         focusReturn: X11.WindowByReference,
         revertToReturn: IntByReference,
     ): Int
+
+    // RESOURCE_MANAGER string of the root window (xrdb database, e.g. Xft.dpi);
+    // owned by Xlib, must not be freed.
+    fun XResourceManagerString(display: Display): Pointer?
 
     companion object {
 

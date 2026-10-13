@@ -6,9 +6,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
-import com.sun.jna.Library
-import com.sun.jna.Native
-import com.sun.jna.Pointer
+import com.crosspaste.platform.linux.api.X11Api
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
 
@@ -29,7 +27,7 @@ object DesktopDisplayScale {
         ) {
             1f
         } else {
-            val x11 = Native.load("X11", DisplayResources::class.java)
+            val x11 = X11Api.INSTANCE
             val display = x11.XOpenDisplay(null)
             if (display == null) {
                 1f
@@ -68,14 +66,6 @@ object DesktopDisplayScale {
     fun Dp.toWindowUnits(): Dp = this * correction
 
     fun DpSize.toWindowUnits(): DpSize = DpSize(width.toWindowUnits(), height.toWindowUnits())
-
-    private interface DisplayResources : Library {
-        fun XOpenDisplay(name: String?): Pointer?
-
-        fun XResourceManagerString(display: Pointer): Pointer?
-
-        fun XCloseDisplay(display: Pointer): Int
-    }
 }
 
 /** Install inside each window: Compose replaces the density supplied outside a Window. */
