@@ -59,8 +59,9 @@ fun PairingV3AcceptorTokenCards(
     // v3 pairs per device. A session that reaches a self-dismissing state closes
     // its own card: TRUSTED (the device connected) and CANCELLED (the peer
     // abandoned the handshake) are both non-actionable, so lingering on screen is
-    // just noise. REJECTED/EXPIRED/FAILED stay so the user sees why it failed.
-    // Cards of other devices still pairing are untouched.
+    // just noise. REJECTED is hidden without being dismissed (see
+    // [pairingTokenCardSessions]); EXPIRED/FAILED stay so the user sees why it
+    // failed. Cards of other devices still pairing are untouched.
     val selfDismissingIds = selfDismissingSessionIds(sessions)
     LaunchedEffect(selfDismissingIds) {
         selfDismissingIds.forEach { sessionId ->
@@ -141,14 +142,22 @@ internal fun acceptorPairingSessions(sessions: List<PairingSessionUiState>): Lis
 /**
  * TRUSTED (connected) and CANCELLED (peer abandoned the handshake) close their own
  * card — both are non-actionable, so there is nothing for the user to read or act
- * on. REJECTED/EXPIRED/FAILED are surfaced so the user learns why pairing failed.
+ * on. EXPIRED/FAILED are surfaced so the user learns why pairing failed.
  */
 private fun PairingSessionState.isSelfDismissing(): Boolean =
     this == PairingSessionState.TRUSTED || this == PairingSessionState.CANCELLED
 
-/** Sessions that still need a visible token card; self-dismissing states auto-close instead. */
+/**
+ * Sessions that still need a visible token card.
+ *
+ * Self-dismissing states auto-close instead. REJECTED is hidden too: on the acceptor
+ * side it only ever results from the user's own close click, so echoing "pairing
+ * rejected" back at them is noise. Unlike the self-dismissing states it is NOT
+ * removed from the store — the initiator's next request must still be answered
+ * with PAIRING_REJECTED rather than SESSION_NOT_FOUND; terminal retention prunes it.
+ */
 internal fun pairingTokenCardSessions(sessions: List<PairingSessionUiState>): List<PairingSessionUiState> =
-    sessions.filterNot { it.state.isSelfDismissing() }
+    sessions.filterNot { it.state.isSelfDismissing() || it.state == PairingSessionState.REJECTED }
 
 internal fun selfDismissingSessionIds(sessions: List<PairingSessionUiState>): List<String> =
     sessions.filter { it.state.isSelfDismissing() }.map { it.sessionId }

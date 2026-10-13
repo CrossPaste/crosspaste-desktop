@@ -309,8 +309,9 @@ class PairingV3UiControllerTest {
 
         // TRUSTED (connected) and CANCELLED (peer abandoned) close themselves.
         assertEquals(listOf("trusted", "cancelled"), selfDismissingSessionIds(sessions))
-        // Rejected stays visible so the user sees the failure.
-        assertEquals(listOf("pairing", "rejected"), pairingTokenCardSessions(sessions).map { it.sessionId })
+        // Rejected is the user's own close click: hidden, but kept in the store
+        // (not self-dismissing) so the peer still learns PAIRING_REJECTED.
+        assertEquals(listOf("pairing"), pairingTokenCardSessions(sessions).map { it.sessionId })
     }
 
     private fun pairingSession(
