@@ -53,6 +53,18 @@ fun ApplicationScope.TrayView(windowIcon: Painter) {
         .collectAsState(initial = false)
     val lastVersion by appUpdateService.lastVersion.collectAsState()
 
+    // Clicking the tray icon toggles the search window. Relying on focus loss
+    // alone is not enough: KDE Plasma's tray does not take focus away, so a
+    // second click must close the window explicitly.
+    val toggleSearchWindow: suspend () -> Unit = {
+        if (appWindowManager.getCurrentSearchWindowInfo().show) {
+            appWindowManager.dismissSearchWindow()
+        } else {
+            appWindowManager.saveCurrentActiveAppInfo()
+            appWindowManager.showSearchWindow(WindowTrigger.TRAY_ICON)
+        }
+    }
+
     val menuContent: TrayMenuBuilder.() -> Unit = {
         if (isPortableZip && hasNewVersion) {
             Item(
@@ -108,12 +120,7 @@ fun ApplicationScope.TrayView(windowIcon: Painter) {
             primaryAction = {
                 mainCoroutineDispatcher.launch {
                     appWindowManager.hideMainWindow()
-                    if (appWindowManager.getCurrentSearchWindowInfo().show) {
-                        appWindowManager.dismissSearchWindow()
-                    } else {
-                        appWindowManager.saveCurrentActiveAppInfo()
-                        appWindowManager.showSearchWindow(WindowTrigger.TRAY_ICON)
-                    }
+                    toggleSearchWindow()
                 }
             },
             menuContent = menuContent,
@@ -124,8 +131,7 @@ fun ApplicationScope.TrayView(windowIcon: Painter) {
             tooltip = AppName,
             primaryAction = {
                 mainCoroutineDispatcher.launch {
-                    appWindowManager.saveCurrentActiveAppInfo()
-                    appWindowManager.showSearchWindow(WindowTrigger.TRAY_ICON)
+                    toggleSearchWindow()
                 }
             },
             menuContent = menuContent,
