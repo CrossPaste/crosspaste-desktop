@@ -36,6 +36,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
+import java.awt.EventQueue
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.util.concurrent.atomic.AtomicBoolean
@@ -56,6 +57,7 @@ fun SearchWindow(windowIcon: Painter?) {
     val isDarkTheme = themeConfig.resolveIsDark(isSystemInDarkTheme())
 
     val isMac = remember { platform.isMacos() }
+    val isLinux = remember { platform.isLinux() }
     val isWindowsAndSupportBlurEffect =
         remember {
             platform.isWindows() && WindowsVersionHelper.isWindows11_22H2OrGreater
@@ -81,7 +83,16 @@ fun SearchWindow(windowIcon: Painter?) {
     // in the WindowAdapter callback, so it needs thread-safe access rather than Compose snapshot state.
     // Note: kotlinx.atomicfu.atomic() cannot be used here because the atomicfu compiler plugin
     // only supports class property initializers, not local variables inside functions.
-    val ignoreFocusLoss = remember { AtomicBoolean(true) }
+    // Reset before the window becomes visible, not in LaunchedEffect: AWT can
+    // deliver the first focus event before that coroutine starts.
+    val gainedFocus =
+        remember(searchWindowInfo.show, searchWindowInfo.trigger) {
+            AtomicBoolean(searchWindowInfo.show && appWindowManager.searchComposeWindow?.isFocused == true)
+        }
+    val ignoreFocusLoss =
+        remember(searchWindowInfo.show, searchWindowInfo.trigger) {
+            AtomicBoolean(searchWindowInfo.show && !(isLinux && gainedFocus.get()))
+        }
 
     // Compute and apply the effective window position synchronously during composition.
     // This ensures the Window composable always sees the correct off-screen position on the
@@ -102,7 +113,6 @@ fun SearchWindow(windowIcon: Painter?) {
 
     LaunchedEffect(searchWindowInfo.show, searchWindowInfo.trigger) {
         if (searchWindowInfo.show) {
-            ignoreFocusLoss.set(true)
             if (searchWindowInfo.trigger != WindowTrigger.PREVIEW) {
                 // Reset selection and scroll before an interactive window paints. Preview must
                 // not mutate user state, and a user action can claim an already-visible preview.
@@ -112,6 +122,15 @@ fun SearchWindow(windowIcon: Painter?) {
             delay(1000.milliseconds)
         }
         ignoreFocusLoss.set(false)
+        // A loss ignored during startup will not be delivered again. Check the
+        // final focus, but keep non-focusable previews and bubble transitions.
+        if (searchWindowInfo.show && gainedFocus.get() && searchWindowInfo.trigger != WindowTrigger.PREVIEW) {
+            appWindowManager.searchComposeWindow?.let { searchWindow ->
+                if (!searchWindow.isFocused && appWindowManager.bubbleComposeWindow?.isFocused != true) {
+                    appWindowManager.hideSearchWindow()
+                }
+            }
+        }
     }
 
     Window(
@@ -143,12 +162,19 @@ fun SearchWindow(windowIcon: Painter?) {
                 )
             }
 
-            DisposableEffect(Unit) {
+            DisposableEffect(ignoreFocusLoss) {
                 appWindowManager.searchComposeWindow = window
+                val listenerActive = AtomicBoolean(true)
 
                 val windowListener =
                     object : WindowAdapter() {
                         override fun windowGainedFocus(e: WindowEvent) {
+                            gainedFocus.set(true)
+                            // On Linux, once mapped and focused, outside clicks are
+                            // real dismissals even within the first second.
+                            if (isLinux) {
+                                ignoreFocusLoss.set(false)
+                            }
                             logger.info { "Search window gained focus" }
                             pasteSelectionViewModel.requestPasteListFocus()
                         }
@@ -164,7 +190,17 @@ fun SearchWindow(windowIcon: Painter?) {
                                 appWindowManager.bubbleComposeWindow != null &&
                                     e.oppositeWindow == appWindowManager.bubbleComposeWindow
                             if (!isBubbleWindow) {
-                                appWindowManager.hideSearchWindow()
+                                // Let queued AWT focus changes settle. A transient
+                                // loss followed by a gain must not close the window.
+                                EventQueue.invokeLater {
+                                    if (listenerActive.get() &&
+                                        window.isVisible &&
+                                        !window.isFocused &&
+                                        appWindowManager.bubbleComposeWindow?.isFocused != true
+                                    ) {
+                                        appWindowManager.hideSearchWindow()
+                                    }
+                                }
                             }
                         }
                     }
@@ -172,6 +208,7 @@ fun SearchWindow(windowIcon: Painter?) {
                 window.addWindowFocusListener(windowListener)
 
                 onDispose {
+                    listenerActive.set(false)
                     window.removeWindowFocusListener(windowListener)
                     appWindowManager.searchComposeWindow = null
                 }
