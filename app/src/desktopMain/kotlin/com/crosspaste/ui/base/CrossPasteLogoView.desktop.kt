@@ -1,5 +1,8 @@
 package com.crosspaste.ui.base
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -8,32 +11,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntSize
-import com.crosspaste.app.generated.resources.Res
-import com.crosspaste.app.generated.resources.crosspaste_svg
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.ui.theme.CrossPasteBrand
 import com.crosspaste.utils.getDateUtils
-import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
+
+private const val DRAW_DURATION_MILLIS = 1600
 
 @Composable
 actual fun CrossPasteLogoView(
     size: Dp,
-    color: Color,
     modifier: Modifier,
     enableDebugToggle: Boolean,
 ) {
     val configManager = koinInject<DesktopConfigManager>()
-    var boxSize by remember { mutableStateOf(IntSize.Zero) }
 
     val config by configManager.config.collectAsState()
 
@@ -41,19 +37,27 @@ actual fun CrossPasteLogoView(
     var tapCount by remember { mutableStateOf(0) }
     var firstTapTime by remember { mutableLongStateOf(0L) }
 
+    // The glyph traces itself on first show and again on every tap.
+    var drawRun by remember { mutableIntStateOf(0) }
+    val drawProgress = remember { Animatable(0f) }
+    LaunchedEffect(drawRun) {
+        drawProgress.snapTo(0f)
+        drawProgress.animateTo(1f, tween(DRAW_DURATION_MILLIS, easing = FastOutSlowInEasing))
+    }
+
     Box(
         modifier =
             modifier
                 .clip(RoundedCornerShape(size / 4))
-                .background(color)
+                .background(CrossPasteBrand.gradient)
                 .size(size)
-                .onSizeChanged { boxSize = it }
                 .then(
                     if (enableDebugToggle) {
                         Modifier.clickable(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null, // Hidden feature, no ripple effect
                         ) {
+                            drawRun++
                             val currentTime = getDateUtils().nowEpochMilliseconds()
                             // Check if the 5-second window has expired
                             if (currentTime - firstTapTime > 5000) {
@@ -75,18 +79,13 @@ actual fun CrossPasteLogoView(
                     },
                 ),
     ) {
-        val paddingPercent = 0.1f
-        val paddingPx = minOf(boxSize.width, boxSize.height) * paddingPercent
-        val paddingDp = with(LocalDensity.current) { paddingPx.toDp() }
-
-        Icon(
+        CrossPasteGlyph(
+            progress = drawProgress.value,
+            color = Color.White,
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(paddingDp),
-            painter = painterResource(Res.drawable.crosspaste_svg),
-            tint = MaterialTheme.colorScheme.onPrimary,
-            contentDescription = "CrossPaste Logo",
+                    .padding(size * 0.1f),
         )
     }
 }
