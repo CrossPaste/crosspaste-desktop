@@ -2,6 +2,7 @@ package com.crosspaste.ui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -60,6 +61,7 @@ import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.sun.jna.Memory
 import com.sun.jna.Native
@@ -94,6 +96,7 @@ fun MainWindow(windowIcon: Painter?) {
 
     val isMacos = remember { platform.isMacos() }
     val isWindows = remember { platform.isWindows() }
+    val isLinux = remember { platform.isLinux() }
 
     Window(
         onCloseRequest = {
@@ -137,7 +140,16 @@ fun MainWindow(windowIcon: Painter?) {
                 }
             }
 
-            Box(modifier = Modifier.fillMaxSize()) {
+            // Linux: the undecorated window gets neither a compositor border nor a
+            // shadow, so a light outline keeps it from merging with other windows.
+            val windowBorder =
+                if (isLinux) {
+                    Modifier.border(tiny5X, AppUIColors.sectionCardBorder)
+                } else {
+                    Modifier
+                }
+
+            Box(modifier = Modifier.fillMaxSize().then(windowBorder)) {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     val titleBarOuterModifier =
                         Modifier
