@@ -15,6 +15,7 @@ import com.crosspaste.config.DesktopAppConfig
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ActiveGraphicsDevice
 import com.crosspaste.platform.Platform
+import com.crosspaste.ui.DesktopDisplayScale.toWindowUnits
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.small3X
@@ -74,6 +75,7 @@ class DesktopAppSize(
         fun clampMainWindowSize(
             designSize: DpSize,
             usableScreenSize: DpSize,
+            margin: Dp = SCREEN_CLAMP_MARGIN,
         ): DpSize {
             if (usableScreenSize.height < MIN_PLAUSIBLE_USABLE_SIZE) {
                 return designSize
@@ -83,7 +85,7 @@ class DesktopAppSize(
                 height =
                     minOf(
                         designSize.height,
-                        usableScreenSize.height - SCREEN_CLAMP_MARGIN,
+                        usableScreenSize.height - margin,
                     ),
             )
         }
@@ -250,9 +252,9 @@ class DesktopAppSize(
         )
 
     fun getClampedMainWindowSize(): DpSize {
-        val designSize = _appSizeValue.value.mainWindowSize
+        val designSize = _appSizeValue.value.mainWindowSize.toWindowUnits()
         return getUsableScreenSize()
-            ?.let { clampMainWindowSize(designSize, it) }
+            ?.let { clampMainWindowSize(designSize, it, SCREEN_CLAMP_MARGIN.toWindowUnits()) }
             ?: designSize
     }
 
@@ -276,7 +278,7 @@ class DesktopAppSize(
     override fun getSearchWindowState(init: Boolean): WindowState {
         val graphicsDevice = getGraphicsDevice()
         val bounds = graphicsDevice.defaultConfiguration.bounds
-        val sideSearchWindowHeight = _appSizeValue.value.sideSearchWindowHeight
+        val sideSearchWindowHeight = _appSizeValue.value.sideSearchWindowHeight.toWindowUnits()
         val x = bounds.x.dp
         val y =
             if (init) {
@@ -297,8 +299,8 @@ class DesktopAppSize(
      */
     fun getPastePanelButtonWindowState(): WindowState {
         val usable = usableBounds(getGraphicsDevice().defaultConfiguration)
-        val size = _appSizeValue.value.pastePanelButtonSize
-        val x = usable.right - size - medium
+        val size = _appSizeValue.value.pastePanelButtonSize.toWindowUnits()
+        val x = usable.right - size - medium.toWindowUnits()
         val y = usable.top + (usable.height - size) / 2
         return WindowState(
             placement = WindowPlacement.Floating,
@@ -319,8 +321,8 @@ class DesktopAppSize(
         val configuration =
             displayContaining(buttonRect)
                 ?: GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration
-        val size = _appSizeValue.value.pastePanelSize
-        val position = pastePanelPositionBeside(buttonRect, size, usableBounds(configuration), medium)
+        val size = _appSizeValue.value.pastePanelSize.toWindowUnits()
+        val position = pastePanelPositionBeside(buttonRect, size, usableBounds(configuration), medium.toWindowUnits())
         return WindowState(
             placement = WindowPlacement.Floating,
             position = WindowPosition(position.x, position.y),

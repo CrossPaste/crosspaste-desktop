@@ -22,6 +22,7 @@ import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.windows.WindowsVersionHelper
 import com.crosspaste.platform.windows.api.Dwmapi
 import com.crosspaste.ui.DesktopContext.SearchWindowContext
+import com.crosspaste.ui.DesktopDisplayScale.toWindowUnits
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.search.side.SideSearchWindowContent
 import com.crosspaste.ui.theme.ThemeDetector
@@ -95,7 +96,7 @@ fun SearchWindow(windowIcon: Painter?) {
                 x = searchWindowInfo.state.position.x,
                 y =
                     searchWindowInfo.state.position.y +
-                        (appSizeValue.sideSearchWindowHeight * animationProgress),
+                        (appSizeValue.sideSearchWindowHeight.toWindowUnits() * animationProgress),
             )
     }
 
@@ -129,54 +130,56 @@ fun SearchWindow(windowIcon: Painter?) {
         // settings window (AWT setVisible would otherwise auto-request focus)
         focusable = searchWindowInfo.trigger != WindowTrigger.PREVIEW,
     ) {
-        if (isMac) {
-            MacAcrylicEffect(
-                window = this.window,
-                isDark = isDarkTheme,
-            )
-        } else if (isWindowsAndSupportBlurEffect) {
-            WindowsBlurEffect(
-                window = this.window,
-                isDark = isDarkTheme,
-            )
-        }
-
-        DisposableEffect(Unit) {
-            appWindowManager.searchComposeWindow = window
-
-            val windowListener =
-                object : WindowAdapter() {
-                    override fun windowGainedFocus(e: WindowEvent) {
-                        logger.info { "Search window gained focus" }
-                        pasteSelectionViewModel.requestPasteListFocus()
-                    }
-
-                    override fun windowLostFocus(e: WindowEvent) {
-                        if (ignoreFocusLoss.get()) {
-                            logger.info { "Ignored focus loss during startup grace period" }
-                            return
-                        }
-
-                        logger.info { "Search window lost focus" }
-                        val isBubbleWindow =
-                            appWindowManager.bubbleComposeWindow != null &&
-                                e.oppositeWindow == appWindowManager.bubbleComposeWindow
-                        if (!isBubbleWindow) {
-                            appWindowManager.hideSearchWindow()
-                        }
-                    }
-                }
-
-            window.addWindowFocusListener(windowListener)
-
-            onDispose {
-                window.removeWindowFocusListener(windowListener)
-                appWindowManager.searchComposeWindow = null
+        DisplayScaleContent {
+            if (isMac) {
+                MacAcrylicEffect(
+                    window = this.window,
+                    isDark = isDarkTheme,
+                )
+            } else if (isWindowsAndSupportBlurEffect) {
+                WindowsBlurEffect(
+                    window = this.window,
+                    isDark = isDarkTheme,
+                )
             }
-        }
 
-        SearchWindowContext(searchWindowInfo) {
-            SideSearchWindowContent()
+            DisposableEffect(Unit) {
+                appWindowManager.searchComposeWindow = window
+
+                val windowListener =
+                    object : WindowAdapter() {
+                        override fun windowGainedFocus(e: WindowEvent) {
+                            logger.info { "Search window gained focus" }
+                            pasteSelectionViewModel.requestPasteListFocus()
+                        }
+
+                        override fun windowLostFocus(e: WindowEvent) {
+                            if (ignoreFocusLoss.get()) {
+                                logger.info { "Ignored focus loss during startup grace period" }
+                                return
+                            }
+
+                            logger.info { "Search window lost focus" }
+                            val isBubbleWindow =
+                                appWindowManager.bubbleComposeWindow != null &&
+                                    e.oppositeWindow == appWindowManager.bubbleComposeWindow
+                            if (!isBubbleWindow) {
+                                appWindowManager.hideSearchWindow()
+                            }
+                        }
+                    }
+
+                window.addWindowFocusListener(windowListener)
+
+                onDispose {
+                    window.removeWindowFocusListener(windowListener)
+                    appWindowManager.searchComposeWindow = null
+                }
+            }
+
+            SearchWindowContext(searchWindowInfo) {
+                SideSearchWindowContent()
+            }
         }
     }
 }

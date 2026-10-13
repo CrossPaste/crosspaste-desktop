@@ -35,6 +35,7 @@ import androidx.compose.ui.window.rememberWindowState
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.platform.linux.api.X11Api
 import com.crosspaste.ui.DesktopContext.PastePanelWindowContext
+import com.crosspaste.ui.DesktopDisplayScale.toWindowUnits
 import com.crosspaste.ui.base.NativeMenuEntry
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -116,8 +117,7 @@ fun PastePanelMenuWindow(
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val title = appWindowManager.pastePanelMenuWindowTitle
 
-    val gap = MENU_GAP.value.toInt()
-    val density = LocalDensity.current
+    val gap = MENU_GAP.toWindowUnits().value.toInt()
 
     val center = remember(anchor) { Point(anchor.x + anchor.width / 2, anchor.y + anchor.height / 2) }
     val usableScreen =
@@ -154,7 +154,10 @@ fun PastePanelMenuWindow(
 
     val initialPos =
         remember(anchor, usableScreen) {
-            currentPosition(MENU_WIDTH_GUESS.value.toInt(), MENU_HEIGHT_GUESS.value.toInt())
+            currentPosition(
+                MENU_WIDTH_GUESS.toWindowUnits().value.toInt(),
+                MENU_HEIGHT_GUESS.toWindowUnits().value.toInt(),
+            )
         }
 
     val windowState =
@@ -165,9 +168,7 @@ fun PastePanelMenuWindow(
 
     LaunchedEffect(menuSize, usableScreen) {
         menuSize?.let { size ->
-            val w = with(density) { size.width.toDp() }.value.toInt()
-            val h = with(density) { size.height.toDp() }.value.toInt()
-            val pos = currentPosition(w, h)
+            val pos = currentPosition(size.width, size.height)
             windowState.position = WindowPosition(pos.x.dp, pos.y.dp)
         }
     }
@@ -198,70 +199,88 @@ fun PastePanelMenuWindow(
             }
         },
     ) {
-        val window = this.window
+        DisplayScaleContent {
+            val density = LocalDensity.current
+            val window = this.window
 
-        DisposableEffect(window) {
-            val listener =
-                object : WindowAdapter() {
-                    override fun windowGainedFocus(e: WindowEvent) {
-                        gainedFocus.set(true)
-                    }
+            DisposableEffect(window) {
+                val listener =
+                    object : WindowAdapter() {
+                        override fun windowGainedFocus(e: WindowEvent) {
+                            gainedFocus.set(true)
+                        }
 
-                    override fun windowLostFocus(e: WindowEvent) {
-                        if (!ignoreFocusLoss.get()) {
-                            onDismiss()
+                        override fun windowLostFocus(e: WindowEvent) {
+                            if (!ignoreFocusLoss.get()) {
+                                onDismiss()
+                            }
                         }
                     }
-                }
-            window.addWindowFocusListener(listener)
-            onDispose { window.removeWindowFocusListener(listener) }
-        }
-
-        LaunchedEffect(window) {
-            delay(100.milliseconds)
-            X11Api.bringToFront(X11Api.getWindow(title), source = NativeLong(1))
-            delay(300.milliseconds)
-            ignoreFocusLoss.set(false)
-            // Had the focus and lost it again: the user clicked elsewhere while
-            // the window was coming up, and no further focus event will arrive.
-            // Never had it: the compositor refused, and the menu stays usable
-            // through its items and the button's toggle.
-            if (gainedFocus.get() && !window.isFocused) {
-                onDismiss()
+                window.addWindowFocusListener(listener)
+                onDispose { window.removeWindowFocusListener(listener) }
             }
-        }
 
-        PastePanelWindowContext {
-            Column(
-                modifier =
-                    Modifier
-                        .width(IntrinsicSize.Max)
-                        .onSizeChanged { size -> menuSize = size }
-                        .clip(tiny3XRoundedCornerShape)
-                        .background(AppUIColors.generalBackground)
-                        .border(tiny5X, AppUIColors.sectionCardBorder, tiny3XRoundedCornerShape)
-                        .padding(vertical = tiny3X),
-            ) {
-                entries.forEach { entry ->
-                    when (entry) {
-                        is NativeMenuEntry.Item ->
-                            Text(
-                                text = entry.label,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            onDismiss()
-                                            mainCoroutineDispatcher.launch { entry.action() }
-                                        }.padding(horizontal = medium, vertical = tiny2X),
-                            )
-                        NativeMenuEntry.Separator ->
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = tiny3X),
-                                color = AppUIColors.sectionCardBorder,
-                            )
+            LaunchedEffect(window) {
+                delay(100.milliseconds)
+                X11Api.bringToFront(X11Api.getWindow(title), source = NativeLong(1))
+                delay(300.milliseconds)
+                ignoreFocusLoss.set(false)
+                // Had the focus and lost it again: the user clicked elsewhere while
+                // the window was coming up, and no further focus event will arrive.
+                // Never had it: the compositor refused, and the menu stays usable
+                // through its items and the button's toggle.
+                if (gainedFocus.get() && !window.isFocused) {
+                    onDismiss()
+                }
+            }
+
+            PastePanelWindowContext {
+                Column(
+                    modifier =
+                        Modifier
+                            .width(IntrinsicSize.Max)
+                            .onSizeChanged { size ->
+                                menuSize =
+                                    with(density) {
+                                        IntSize(
+                                            size.width
+                                                .toDp()
+                                                .toWindowUnits()
+                                                .value
+                                                .toInt(),
+                                            size.height
+                                                .toDp()
+                                                .toWindowUnits()
+                                                .value
+                                                .toInt(),
+                                        )
+                                    }
+                            }.clip(tiny3XRoundedCornerShape)
+                            .background(AppUIColors.generalBackground)
+                            .border(tiny5X, AppUIColors.sectionCardBorder, tiny3XRoundedCornerShape)
+                            .padding(vertical = tiny3X),
+                ) {
+                    entries.forEach { entry ->
+                        when (entry) {
+                            is NativeMenuEntry.Item ->
+                                Text(
+                                    text = entry.label,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                onDismiss()
+                                                mainCoroutineDispatcher.launch { entry.action() }
+                                            }.padding(horizontal = medium, vertical = tiny2X),
+                                )
+                            NativeMenuEntry.Separator ->
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(vertical = tiny3X),
+                                    color = AppUIColors.sectionCardBorder,
+                                )
+                        }
                     }
                 }
             }
