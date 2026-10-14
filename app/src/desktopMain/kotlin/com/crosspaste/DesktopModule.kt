@@ -13,6 +13,7 @@ import com.crosspaste.db.paste.QueryPasteTag
 import com.crosspaste.db.paste.SearchPasteData
 import com.crosspaste.db.paste.SqlPasteDao
 import com.crosspaste.db.paste.SqlPasteTagDao
+import com.crosspaste.db.plugin.PluginStateDao
 import com.crosspaste.db.secure.SecureIO
 import com.crosspaste.db.secure.SqlSecureDao
 import com.crosspaste.db.sync.SqlSyncRuntimeInfoDao
@@ -119,6 +120,7 @@ class DesktopModule(
                 )
             }
             single<PasteTagDao> { SqlPasteTagDao(get()) }
+            single<PluginStateDao> { PluginStateDao(get()) }
             single<QueryPasteTag> { get<PasteTagDao>() }
             single<SearchPasteData> { get<PasteDao>() }
             single<SecureIO> { SqlSecureDao(get()) }

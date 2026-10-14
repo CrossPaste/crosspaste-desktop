@@ -18,4 +18,5 @@ enum class AppFileType {
     OPEN_GRAPH,
     TEMP,
     MARKETING,
+    PLUGIN,
 }

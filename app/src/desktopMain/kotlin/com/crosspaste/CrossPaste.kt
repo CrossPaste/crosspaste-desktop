@@ -44,6 +44,7 @@ import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.path.DesktopAppPathProvider
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.plugin.PluginRepository
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.sync.PastePullService
@@ -247,6 +248,7 @@ class CrossPaste {
                         koin.get<NativeMessagingHostService>().register()
                         koin.get<GuidePasteDataService>().initData()
                         ioCoroutineDispatcher.launch { koin.get<CliSymlinkService>().refresh() }
+                        ioCoroutineDispatcher.launch { koin.get<PluginRepository>().reload() }
 
                         appWindowManager.startWindowService()
                         FileKit.init(appId = AppName)

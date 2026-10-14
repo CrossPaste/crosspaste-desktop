@@ -71,6 +71,7 @@ class UserDataPathProvider(
                 AppFileType.VIDEO -> basePath.resolve("videos")
                 AppFileType.TEMP -> basePath.resolve("temp")
                 AppFileType.MARKETING -> basePath.resolve("marketing")
+                AppFileType.PLUGIN -> basePath.resolve("plugins")
                 else -> basePath
             }
 

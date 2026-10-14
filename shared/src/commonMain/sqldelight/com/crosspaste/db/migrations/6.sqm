@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS PluginStateEntity (
+    id TEXT PRIMARY KEY NOT NULL,
+    version TEXT NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 0,
+    source TEXT NOT NULL,
+    installedAt INTEGER NOT NULL
+);
