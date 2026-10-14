@@ -67,7 +67,9 @@ class PluginRepository(
     suspend fun reload() {
         reloadMutex.withLock {
             val states = pluginStateDao.getAll().associateBy { it.id }
-            _plugins.value = withContext(ioDispatcher) { scan(states) }
+            val plugins = withContext(ioDispatcher) { scan(states) }
+            _plugins.value = plugins
+            logger.info { "Loaded ${plugins.size} plugins, ${plugins.count { it.runnable }} runnable" }
         }
     }
 

@@ -41,6 +41,7 @@ import com.crosspaste.ui.extension.CliToolContentView
 import com.crosspaste.ui.extension.ExtensionContentView
 import com.crosspaste.ui.extension.mcp.McpContentView
 import com.crosspaste.ui.extension.ocr.OCRContentView
+import com.crosspaste.ui.extension.plugin.PluginsContentView
 import com.crosspaste.ui.extension.sourcecontrol.SourceControlContentView
 import com.crosspaste.ui.paste.PasteExportContentView
 import com.crosspaste.ui.paste.PasteImportContentView
@@ -175,6 +176,12 @@ class DesktopScreenProvider(
                     enterTransition = { slideInLeft() },
                 ) {
                     OCRSettingsScreen()
+                }
+                composable<Plugins>(
+                    exitTransition = { slideOutRight() },
+                    enterTransition = { slideInLeft() },
+                ) {
+                    PluginsScreen()
                 }
             }
             composable<Import> { ImportScreen() }
@@ -332,6 +339,13 @@ class DesktopScreenProvider(
     private fun OCRSettingsScreen() {
         DesktopScreenLayout {
             OCRContentView()
+        }
+    }
+
+    @Composable
+    private fun PluginsScreen() {
+        DesktopScreenLayout {
+            PluginsContentView()
         }
     }
 

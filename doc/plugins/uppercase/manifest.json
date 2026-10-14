@@ -1,0 +1,16 @@
+{
+  "id": "com.crosspaste.sample.uppercase",
+  "version": "1.0.0",
+  "minAppVersion": "2.2.0",
+  "name": { "en": "Uppercase", "zh": "转为大写" },
+  "pasteTypes": ["text", "url"],
+  "runtime": "process",
+  "headless": false,
+  "hosts": [],
+  "platforms": {
+    "macos": { "command": ["/bin/sh", "run.sh"], "requires": ["jq"] },
+    "linux": { "command": ["/bin/sh", "run.sh"], "requires": ["jq"] },
+    "windows": { "command": ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "run.ps1"] }
+  },
+  "output": "replaceClipboard"
+}

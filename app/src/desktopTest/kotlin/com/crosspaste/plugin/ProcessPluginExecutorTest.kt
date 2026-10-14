@@ -1,0 +1,60 @@
+package com.crosspaste.plugin
+
+import java.io.File
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+
+class ProcessPluginExecutorTest {
+
+    private val pluginDir = File("plugins", "demo").absoluteFile
+
+    @Test
+    fun `relative executables with a separator resolve against the plugin directory`() {
+        assertEquals(
+            listOf(File(pluginDir, "bin/tool").path, "run.sh"),
+            resolvePluginCommand(pluginDir, listOf("bin/tool", "run.sh")),
+        )
+        assertEquals(
+            listOf(File(pluginDir, "./tool").path),
+            resolvePluginCommand(pluginDir, listOf("./tool")),
+        )
+    }
+
+    @Test
+    fun `bare and absolute executables are left for the OS to resolve`() {
+        assertEquals(
+            listOf("powershell", "-File", "run.ps1"),
+            resolvePluginCommand(pluginDir, listOf("powershell", "-File", "run.ps1")),
+        )
+        val absolute = File("/bin/sh").absolutePath
+        assertEquals(listOf(absolute, "run.sh"), resolvePluginCommand(pluginDir, listOf(absolute, "run.sh")))
+    }
+
+    @Test
+    fun `environment drops launcher variables and injects plugin variables`() {
+        val env =
+            mutableMapOf(
+                "PATH" to "/usr/bin",
+                "JAVA_MAIN_CLASS_123" to "com.crosspaste.CrossPaste",
+                "JAVA_STARTED_ON_FIRST_THREAD_123" to "1",
+                "CROSSPASTE_CLI" to "stale",
+            )
+
+        configurePluginEnvironment(env, "/Applications/CrossPaste.app/Contents/bin/crosspaste")
+
+        assertEquals("/usr/bin", env["PATH"])
+        assertEquals("utf-8", env["PYTHONIOENCODING"])
+        assertEquals("/Applications/CrossPaste.app/Contents/bin/crosspaste", env["CROSSPASTE_CLI"])
+        assertFalse(env.keys.any { it.startsWith("JAVA_") })
+
+        configurePluginEnvironment(env, null)
+        assertFalse("CROSSPASTE_CLI" in env)
+    }
+
+    @Test
+    fun `output decoding strips the BOM and normalizes CRLF`() {
+        val bytes = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + "你好\r\nworld\r\n".encodeToByteArray()
+        assertEquals("你好\nworld\n", decodePluginOutput(bytes))
+    }
+}

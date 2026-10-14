@@ -850,16 +850,14 @@ class CliRoutingTest {
     @Test
     fun `copy goes through the standard local release lifecycle`() {
         val fixture = Fixture()
-        val pasteDataSlot = slot<PasteData>()
-        coEvery { fixture.pasteDao.createPasteData(capture(pasteDataSlot)) } returns 77L
-        val releasedItemsSlot = slot<List<PasteItem>>()
+        val pasteItemSlot = slot<PasteItem>()
         coEvery {
-            fixture.pasteReleaseService.releaseLocalPasteData(
-                id = 77L,
-                pasteItems = capture(releasedItemsSlot),
-                targetAppInstanceIds = null,
+            fixture.pasteReleaseService.createLocalPasteData(
+                appInstanceId = any(),
+                pasteItem = capture(pasteItemSlot),
+                source = "CLI",
             )
-        } returns Unit
+        } returns 77L
         coEvery {
             fixture.pasteboardService.tryWritePasteboard(
                 id = any(),
@@ -877,11 +875,9 @@ class CliRoutingTest {
                 }
             assertEquals(HttpStatusCode.OK, response.status)
             assertEquals(77L, json.decodeFromString<CliCopyResponse>(response.bodyAsText()).id)
-            // The row is created LOADING and finished by releaseLocalPasteData,
-            // which owns plugins, dedup and the sync/rendering tasks
-            assertEquals("CLI", pasteDataSlot.captured.source)
-            assertEquals(PasteState.LOADING, pasteDataSlot.captured.pasteState)
-            assertEquals(1, releasedItemsSlot.captured.size)
+            // createLocalPasteData owns the LOADING row and the standard release
+            // (plugins, dedup, sync/rendering tasks)
+            assertEquals("hello from cli", (pasteItemSlot.captured as TextPasteItem).text)
             coVerify {
                 fixture.pasteboardService.tryWritePasteboard(
                     id = 77L,
@@ -903,10 +899,7 @@ class CliRoutingTest {
     @Test
     fun `copy reports a failed pasteboard write`() {
         val fixture = Fixture()
-        coEvery { fixture.pasteDao.createPasteData(any()) } returns 77L
-        coEvery {
-            fixture.pasteReleaseService.releaseLocalPasteData(any(), any(), any())
-        } returns Unit
+        coEvery { fixture.pasteReleaseService.createLocalPasteData(any(), any(), any()) } returns 77L
         coEvery {
             fixture.pasteboardService.tryWritePasteboard(
                 id = any(),
