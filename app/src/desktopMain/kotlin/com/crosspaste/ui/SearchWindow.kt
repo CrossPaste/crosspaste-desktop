@@ -45,6 +45,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import java.awt.EventQueue
+import java.awt.Window
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.util.concurrent.atomic.AtomicBoolean
@@ -101,7 +102,7 @@ fun SearchWindow(windowIcon: Painter?) {
         }
     val ignoreFocusLoss =
         remember(searchWindowInfo.show, searchWindowInfo.trigger) {
-            AtomicBoolean(searchWindowInfo.show && !isWindows && !(isLinux && gainedFocus.get()))
+            AtomicBoolean(searchWindowInfo.show && !isWindows && !isMac && !(isLinux && gainedFocus.get()))
         }
     // The focus listener is registered once per window; it reads the flags of the
     // current show cycle through these, so re-showing does not re-register it.
@@ -118,6 +119,18 @@ fun SearchWindow(windowIcon: Painter?) {
     val currentWindowsFocusSession by rememberUpdatedState(windowsFocusSession)
     DisposableEffect(windowsFocusSession) {
         onDispose { windowsFocusSession?.close() }
+    }
+    val macFocusSession =
+        remember(searchWindowInfo.show, searchWindowInfo.trigger) {
+            if (isMac && searchWindowInfo.show && searchWindowInfo.trigger != WindowTrigger.PREVIEW) {
+                MacSearchWindowFocusSession(appWindowManager.searchComposeWindow?.isFocused == true)
+            } else {
+                null
+            }
+        }
+    val currentMacFocusSession by rememberUpdatedState(macFocusSession)
+    DisposableEffect(macFocusSession) {
+        onDispose { macFocusSession?.close() }
     }
 
     // Compute and apply the effective window position synchronously during composition.
@@ -138,9 +151,9 @@ fun SearchWindow(windowIcon: Painter?) {
     }
 
     LaunchedEffect(searchWindowInfo.show, searchWindowInfo.trigger) {
-        // Windows activation starts inside the window, after its manager registration.
-        // Native foreground events provide protection there without a timed grace period.
-        if (isWindows) return@LaunchedEffect
+        // Windows and macOS activation starts after the window is registered and showing.
+        // Their focus sessions protect startup without a timed grace period.
+        if (isWindows || isMac) return@LaunchedEffect
         if (searchWindowInfo.show) {
             if (searchWindowInfo.trigger != WindowTrigger.PREVIEW) {
                 // Reset selection and scroll before an interactive window paints. Preview must
@@ -289,6 +302,7 @@ fun SearchWindow(windowIcon: Painter?) {
                                 val foreground = appWindowManager.isSearchWindowForeground()
                                 currentWindowsFocusSession?.onFocusGained(foreground)
                             }
+                            currentMacFocusSession?.onFocusGained()
                             // On Linux, once mapped and focused, outside clicks are
                             // real dismissals even within the first second.
                             if (isLinux) {
@@ -309,6 +323,26 @@ fun SearchWindow(windowIcon: Painter?) {
                                     // Only a confirmed native departure can dismiss on Windows.
                                     session?.let { deferWindowsFocusLoss(it) }
                                 }
+                                return
+                            }
+                            if (isMac) {
+                                val macSession = currentMacFocusSession ?: return
+                                val bubble = appWindowManager.bubbleComposeWindow
+                                if (bubble != null && e.oppositeWindow == bubble) return
+                                macSession.deferFocusLoss(
+                                    enqueue = { EventQueue.invokeLater(it) },
+                                    shouldDismiss = {
+                                        listenerActive.get() &&
+                                            currentMacFocusSession === macSession &&
+                                            window.isShowing &&
+                                            !window.hasFocusedWindow() &&
+                                            appWindowManager.bubbleComposeWindow?.hasFocusedWindow() != true
+                                    },
+                                    dismiss = {
+                                        logger.info { "Search window lost focus after macOS focus recheck" }
+                                        appWindowManager.hideSearchWindow()
+                                    },
+                                )
                                 return
                             }
                             if (currentIgnoreFocusLoss.get()) {
@@ -357,12 +391,23 @@ fun SearchWindow(windowIcon: Painter?) {
                 }
             }
 
+            LaunchedEffect(macFocusSession) {
+                if (macFocusSession != null) {
+                    pasteSelectionViewModel.resetToTop()
+                    awaitWindowShowing(window)
+                    appWindowManager.focusSearchWindow(searchWindowInfo.trigger)
+                }
+            }
+
             SearchWindowContext(searchWindowInfo) {
                 SideSearchWindowContent()
             }
         }
     }
 }
+
+/** Owned popup windows can take AWT focus while interaction stays within the search UI. */
+internal fun Window.hasFocusedWindow(): Boolean = isFocused || ownedWindows.any { it.hasFocusedWindow() }
 
 @Composable
 fun MacAcrylicEffect(
