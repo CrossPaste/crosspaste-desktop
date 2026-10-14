@@ -34,6 +34,7 @@ import com.crosspaste.paste.getDesktopPasteboardService
 import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.UpdatePasteItemHelper
+import com.crosspaste.paste.menu.ExtractTextMenuContributor
 import com.crosspaste.paste.plugin.process.DiscardOversizedNonFilePlugin
 import com.crosspaste.paste.plugin.process.DistinctPlugin
 import com.crosspaste.paste.plugin.process.FileToUrlPlugin
@@ -144,12 +145,14 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
                 get(),
                 get(),
                 get(),
-                get(),
-                get(),
+                contributors = listOf(get<ExtractTextMenuContributor>()),
             )
         }
         single<DesktopPasteTagMenuService> {
             DesktopPasteTagMenuService(get(), get())
+        }
+        single<ExtractTextMenuContributor> {
+            ExtractTextMenuContributor(get(), get(), get(), get())
         }
         // endregion
 
