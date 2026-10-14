@@ -1,0 +1,20 @@
+import kotlin.Boolean;
+
+-- User consent for local plugins, keyed by manifest id. The manifest files
+-- themselves are never modified; this only records which plugin version the
+-- user enabled.
+CREATE TABLE IF NOT EXISTS PluginStateEntity (
+    id TEXT PRIMARY KEY NOT NULL,
+    version TEXT NOT NULL,
+    enabled INTEGER AS Boolean NOT NULL DEFAULT 0,
+    source TEXT NOT NULL,
+    installedAt INTEGER NOT NULL
+);
+
+getAllPluginStates:
+SELECT * FROM PluginStateEntity;
+
+upsertPluginState:
+INSERT INTO PluginStateEntity(id, version, enabled, source, installedAt)
+VALUES (?, ?, ?, ?, ?)
+ON CONFLICT(id) DO UPDATE SET version = excluded.version, enabled = excluded.enabled;
