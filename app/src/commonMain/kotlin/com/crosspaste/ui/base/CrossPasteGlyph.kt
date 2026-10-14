@@ -20,7 +20,8 @@ private const val GLYPH_OFFSET_Y = 81f
 private const val OUTLINE_WIDTH = 44f
 private const val TEXT_LINE_WIDTH = 52f
 
-// Distance (in viewport units) over which the clip's shoulder fades in once the pen reaches it.
+// Distance (in viewport units) over which the clip's shoulder fades in. It finishes as the pen
+// reaches it, so the shoulder already covers the right side's end when its cap turns from round to butt.
 private const val SHOULDER_FADE_LENGTH = 40f
 
 private class GlyphStroke(
@@ -29,6 +30,8 @@ private class GlyphStroke(
     val cap: StrokeCap,
 ) {
     val length: Float = PathMeasure().apply { setPath(path, false) }.length
+    val style: Stroke = Stroke(width = width, cap = cap)
+    val partialStyle: Stroke = if (cap == StrokeCap.Round) style else Stroke(width = width, cap = StrokeCap.Round)
 }
 
 private class GlyphGeometry(
@@ -40,6 +43,8 @@ private class GlyphGeometry(
 ) {
     val totalLength: Float = strokes.sumOf { it.length.toDouble() }.toFloat()
 }
+
+private val GEOMETRY: GlyphGeometry by lazy { glyphGeometry() }
 
 private fun svgPath(data: String): Path = PathParser().parsePathString(data).toPath()
 
@@ -97,7 +102,7 @@ private fun glyphGeometry(): GlyphGeometry {
     return GlyphGeometry(
         strokes = listOf(leftSide, rightSide, clip) + textLines,
         shoulder = shoulder,
-        shoulderAt = leftSide.length + rightSide.length,
+        shoulderAt = leftSide.length + rightSide.length - SHOULDER_FADE_LENGTH,
     )
 }
 
@@ -105,22 +110,29 @@ private fun glyphGeometry(): GlyphGeometry {
  * The CrossPaste clipboard glyph, drawn as the single pen stroke it is designed as.
  * [progress] runs from 0 (nothing drawn) to 1 (complete glyph); the pen moves at a
  * constant speed along the outline and then the text lines.
+ *
+ * Providing a lambda allows reading the animation progress directly in the Draw phase,
+ * avoiding recomposition of caller and canvas on every frame.
  */
 @Composable
 fun CrossPasteGlyph(
-    progress: Float,
+    progress: () -> Float,
     color: Color,
     modifier: Modifier = Modifier,
 ) {
-    val geometry = remember { glyphGeometry() }
+    val geometry = GEOMETRY
     val measure = remember { PathMeasure() }
     val segment = remember { Path() }
 
     Canvas(modifier) {
-        val scale = minOf(size.width, size.height) / VIEWPORT
-        val penAt = progress.coerceIn(0f, 1f) * geometry.totalLength
+        val side = minOf(size.width, size.height)
+        val scale = side / VIEWPORT
+        val offsetX = (size.width - side) / 2f
+        val offsetY = (size.height - side) / 2f
+        val penAt = progress().coerceIn(0f, 1f) * geometry.totalLength
 
         withTransform({
+            translate(offsetX, offsetY)
             scale(scale, scale, pivot = Offset.Zero)
             translate(GLYPH_OFFSET_X, GLYPH_OFFSET_Y)
         }) {
@@ -129,14 +141,13 @@ fun CrossPasteGlyph(
                 val drawn = (penAt - travelled).coerceIn(0f, stroke.length)
                 travelled += stroke.length
                 if (drawn <= 0f) break
-                val style = Stroke(width = stroke.width, cap = stroke.cap)
                 if (drawn >= stroke.length) {
-                    drawPath(stroke.path, color, style = style)
+                    drawPath(stroke.path, color, style = stroke.style)
                 } else {
                     segment.reset()
                     measure.setPath(stroke.path, false)
                     measure.getSegment(0f, drawn, segment, true)
-                    drawPath(segment, color, style = style)
+                    drawPath(segment, color, style = stroke.partialStyle)
                 }
             }
 

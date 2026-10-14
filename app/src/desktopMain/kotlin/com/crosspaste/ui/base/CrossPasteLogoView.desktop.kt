@@ -15,6 +15,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.ui.theme.CrossPasteBrand
@@ -49,6 +51,7 @@ actual fun CrossPasteLogoView(
                 .clip(RoundedCornerShape(size / 4))
                 .background(CrossPasteBrand.gradient)
                 .size(size)
+                .semantics { contentDescription = "CrossPaste Logo" }
                 .then(
                     if (enableDebugToggle) {
                         Modifier.clickable(
@@ -77,7 +80,7 @@ actual fun CrossPasteLogoView(
                 ),
     ) {
         CrossPasteGlyph(
-            progress = drawProgress.value,
+            progress = { drawProgress.value },
             color = Color.White,
             modifier =
                 Modifier
