@@ -37,11 +37,12 @@ class DesktopPasteMenuServiceTest {
     private fun pasteData(
         type: PasteType,
         state: Int = PasteState.LOADED,
+        pasteFiles: PasteFiles? = null,
     ): PasteData =
         mockk<PasteData>(relaxed = true) {
             every { getType() } returns type
             every { pasteState } returns state
-            every { getPasteItem(PasteFiles::class) } returns null
+            every { getPasteItem(PasteFiles::class) } returns pasteFiles
         }
 
     private fun labels(
@@ -89,6 +90,60 @@ class DesktopPasteMenuServiceTest {
         assertEquals(
             listOf("copy", "", "delete"),
             labels(service, pasteData(PasteType.IMAGE_TYPE, PasteState.LOADING)),
+        )
+    }
+
+    @Test
+    fun `file type paste includes open and excludes edit`() {
+        val service = createService(emptyList())
+
+        assertEquals(
+            listOf("copy", "open", "tags", "sync_to", "", "delete"),
+            labels(service, pasteData(PasteType.FILE_TYPE)),
+        )
+    }
+
+    @Test
+    fun `owned files add cut action for file and image types`() {
+        val service = createService(listOf(imageOnlyContributor))
+        val ownedFiles = mockk<PasteFiles> { every { isRefFiles() } returns false }
+        val refFiles = mockk<PasteFiles> { every { isRefFiles() } returns true }
+
+        assertEquals(
+            listOf("copy", "cut", "open", "tags", "sync_to", "", "delete"),
+            labels(service, pasteData(PasteType.FILE_TYPE, pasteFiles = ownedFiles)),
+        )
+        assertEquals(
+            listOf("copy", "open", "tags", "sync_to", "", "delete"),
+            labels(service, pasteData(PasteType.FILE_TYPE, pasteFiles = refFiles)),
+        )
+        assertEquals(
+            listOf("copy", "cut", "edit", "extract_text", "tags", "sync_to", "", "delete"),
+            labels(service, pasteData(PasteType.IMAGE_TYPE, pasteFiles = ownedFiles)),
+        )
+    }
+
+    @Test
+    fun `multiple contributors are evaluated in order`() {
+        val contributor1 = PasteMenuContributor { listOf(PasteMenuAction("action_1") {}) }
+        val contributor2 = PasteMenuContributor { listOf(PasteMenuAction("action_2") {}) }
+        val service = createService(listOf(contributor1, contributor2))
+
+        assertEquals(
+            listOf("copy", "edit", "action_1", "action_2", "tags", "sync_to", "", "delete"),
+            labels(service, pasteData(PasteType.TEXT_TYPE)),
+        )
+    }
+
+    @Test
+    fun `faulty contributor does not break remaining menu items`() {
+        val brokenContributor = PasteMenuContributor { error("Boom!") }
+        val workingContributor = PasteMenuContributor { listOf(PasteMenuAction("safe_action") {}) }
+        val service = createService(listOf(brokenContributor, workingContributor))
+
+        assertEquals(
+            listOf("copy", "edit", "safe_action", "tags", "sync_to", "", "delete"),
+            labels(service, pasteData(PasteType.TEXT_TYPE)),
         )
     }
 }

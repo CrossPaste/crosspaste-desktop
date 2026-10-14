@@ -33,7 +33,7 @@ class ExtractTextMenuContributor(
                     ocrModule.extractText(path).getOrNull()
                 }?.joinToString(separator = "\n")
 
-        if (!extractText.isNullOrEmpty()) {
+        if (!extractText.isNullOrBlank()) {
             pasteboardService.tryWritePasteboard(
                 pasteItem = createTextPasteItem(text = extractText),
                 localOnly = false,

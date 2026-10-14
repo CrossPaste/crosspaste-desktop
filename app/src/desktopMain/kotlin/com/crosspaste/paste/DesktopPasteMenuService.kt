@@ -34,6 +34,7 @@ import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -59,6 +60,7 @@ class DesktopPasteMenuService(
 
     companion object {
         private const val CUT_UNDO_DELAY_MS = 60_000L
+        private val logger = KotlinLogging.logger {}
     }
 
     private val desktopAppWindowManager = appWindowManager as DesktopAppWindowManager
@@ -319,8 +321,14 @@ class DesktopPasteMenuService(
 
     private fun createContributedMenuItems(pasteData: PasteData): List<ContextMenuItem> =
         contributors
-            .flatMap { it.contribute(pasteData) }
-            .map { action ->
+            .flatMap { contributor ->
+                try {
+                    contributor.contribute(pasteData)
+                } catch (e: Exception) {
+                    logger.error(e) { "Contributor ${contributor::class.simpleName} failed to contribute menu items" }
+                    emptyList()
+                }
+            }.map { action ->
                 ContextMenuItem(action.label) {
                     menuScope.launch { action.onClick() }
                 }

@@ -5,6 +5,10 @@ import com.crosspaste.paste.PasteData
 /**
  * A context-menu action contributed for a paste item. Kept UI-agnostic so each
  * platform renders it with its own menu components.
+ *
+ * Note: [onClick] is launched inside a background coroutine (e.g. IO dispatcher).
+ * If an action interacts directly with UI/Compose state, it must switch to the
+ * UI dispatcher.
  */
 data class PasteMenuAction(
     val label: String,
