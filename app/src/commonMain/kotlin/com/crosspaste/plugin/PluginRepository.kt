@@ -81,7 +81,10 @@ class PluginRepository(
         enabled: Boolean,
     ) {
         val manifest = plugin.manifest ?: return
-        if (plugin.problem != null) return
+        // A duplicate shares its id's state with the first directory; changing it here would toggle that one
+        if (plugin.problem is PluginProblem.DuplicateId) return
+        // Disabling stays possible so a plugin that broke after being enabled can still be turned off
+        if (enabled && plugin.problem != null) return
         reloadMutex.withLock {
             pluginStateDao.upsert(
                 PluginState(

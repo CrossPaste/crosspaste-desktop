@@ -73,6 +73,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.plugin.PluginEnvironment
 import com.crosspaste.plugin.PluginRepository
 import com.crosspaste.plugin.findMissingExecutables
+import com.crosspaste.plugin.pluginExtraPathDirs
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.share.AppShareService
 import com.crosspaste.share.DesktopAppShareService
@@ -221,12 +222,7 @@ fun desktopAppModule(
         }
         single<PluginRepository> {
             val platform = get<Platform>()
-            val extraDirs =
-                if (platform.isMacos()) {
-                    listOf("/opt/homebrew/bin", "/usr/local/bin")
-                } else {
-                    emptyList()
-                }
+            val extraDirs = pluginExtraPathDirs(platform)
             PluginRepository(
                 environment = get(),
                 pluginStateDao = get(),

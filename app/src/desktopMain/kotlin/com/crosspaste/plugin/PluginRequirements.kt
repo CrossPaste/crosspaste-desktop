@@ -1,6 +1,19 @@
 package com.crosspaste.plugin
 
+import com.crosspaste.platform.Platform
 import java.io.File
+
+/**
+ * Directories an app launched from Finder or the Dock lacks on its PATH but
+ * where users install the tools plugins need (Homebrew). Requirement checks
+ * and the plugin process both use them, so they agree on what is available.
+ */
+fun pluginExtraPathDirs(platform: Platform): List<String> =
+    if (platform.isMacos()) {
+        listOf("/opt/homebrew/bin", "/usr/local/bin")
+    } else {
+        emptyList()
+    }
 
 /**
  * Returns the entries of [requires] that cannot be found as executables, looked

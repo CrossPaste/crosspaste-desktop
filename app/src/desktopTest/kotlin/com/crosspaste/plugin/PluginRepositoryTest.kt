@@ -54,6 +54,7 @@ class PluginRepositoryTest {
         id: String = "com.example.$dirName",
         version: String = "1.0.0",
         requires: List<String> = emptyList(),
+        platformKey: String = "macos",
     ) {
         val dir = pluginsDir.resolve(dirName)
         fileSystem.createDirectories(dir)
@@ -64,7 +65,7 @@ class PluginRepositoryTest {
                 {
                   "id": "$id", "version": "$version", "name": { "en": "$dirName" },
                   "pasteTypes": ["text"], "runtime": "process", "output": "replaceClipboard",
-                  "platforms": { "macos": { "command": ["/bin/sh", "run.sh"], "requires": [$requiresJson] } }
+                  "platforms": { "$platformKey": { "command": ["/bin/sh", "run.sh"], "requires": [$requiresJson] } }
                 }
                 """.trimIndent(),
             )
@@ -173,6 +174,45 @@ class PluginRepositoryTest {
             repository.setEnabled(duplicatePlugin, true)
             assertFalse(repository.plugins.value[1].enabled)
             assertEquals(emptyList(), pluginStateDao.getAll())
+        }
+
+    @Test
+    fun `a plugin that broke after being enabled can still be disabled`() =
+        runTest {
+            writePlugin("p")
+            val repository = repository()
+            repository.reload()
+            repository.setEnabled(repository.plugins.value.single(), true)
+
+            writePlugin("p", platformKey = "linux")
+            repository.reload()
+            val broken = repository.plugins.value.single()
+            assertIs<PluginProblem.UnsupportedPlatform>(broken.problem)
+            assertTrue(broken.enabled)
+
+            repository.setEnabled(broken, false)
+            assertFalse(
+                repository.plugins.value
+                    .single()
+                    .enabled,
+            )
+            assertFalse(pluginStateDao.getAll().single().enabled)
+        }
+
+    @Test
+    fun `disabling a duplicate leaves the first plugin with that id enabled`() =
+        runTest {
+            writePlugin("a", id = "com.example.same")
+            val repository = repository()
+            repository.reload()
+            repository.setEnabled(repository.plugins.value.single(), true)
+
+            writePlugin("b", id = "com.example.same")
+            repository.reload()
+            repository.setEnabled(repository.plugins.value[1], false)
+
+            assertTrue(repository.plugins.value[0].runnable)
+            assertTrue(pluginStateDao.getAll().single().enabled)
         }
 
     @Test
