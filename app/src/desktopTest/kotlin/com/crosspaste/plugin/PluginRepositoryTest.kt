@@ -157,4 +157,33 @@ class PluginRepositoryTest {
                     .runnable,
             )
         }
+
+    @Test
+    fun `setEnabled refuses plugins with problems`() =
+        runTest {
+            writePlugin("a", id = "com.example.same")
+            writePlugin("b", id = "com.example.same")
+
+            val repository = repository()
+            repository.reload()
+
+            val duplicatePlugin = repository.plugins.value[1]
+            assertEquals(PluginProblem.DuplicateId("com.example.same"), duplicatePlugin.problem)
+
+            repository.setEnabled(duplicatePlugin, true)
+            assertFalse(repository.plugins.value[1].enabled)
+            assertEquals(emptyList(), pluginStateDao.getAll())
+        }
+
+    @Test
+    fun `missing requirements are deduplicated`() =
+        runTest {
+            writePlugin("dup-reqs", requires = listOf("jq", "curl", "jq"))
+
+            val repository = repository { requires -> requires.filter { it == "jq" } }
+            repository.reload()
+
+            val plugin = repository.plugins.value.single()
+            assertEquals(listOf("jq"), plugin.missingRequirements)
+        }
 }

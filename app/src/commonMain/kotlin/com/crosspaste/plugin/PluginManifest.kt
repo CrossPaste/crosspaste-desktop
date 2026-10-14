@@ -24,14 +24,21 @@ data class PluginManifest(
 
     /**
      * Label for [language] (a copywriter code such as `zh` or `zh_hant`): exact
-     * match, then the base language, then English, then any declared name.
+     * match, then normalized/hyphenated variations, then the base language,
+     * then English, then any declared name.
      */
-    fun displayName(language: String): String =
-        name[language]
-            ?: name[language.substringBefore('_')]
+    fun displayName(language: String): String {
+        val baseLang = language.substringBefore('_').substringBefore('-')
+        val normalized = language.replace('-', '_')
+        val hyphenated = language.replace('_', '-')
+        return name[language]
+            ?: name[normalized]
+            ?: name[hyphenated]
+            ?: name[baseLang]
             ?: name["en"]
             ?: name.values.firstOrNull()
             ?: id
+    }
 
     fun supportedPasteTypes(): Set<PasteType> = pasteTypes.mapNotNull { PUBLIC_PASTE_TYPES[it] }.toSet()
 

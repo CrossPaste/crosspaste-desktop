@@ -220,7 +220,26 @@ fun desktopAppModule(
             )
         }
         single<PluginRepository> {
-            PluginRepository(get(), get(), get(), getFileUtils().fileSystem) { findMissingExecutables(it) }
+            val platform = get<Platform>()
+            val extraDirs =
+                if (platform.isMacos()) {
+                    listOf("/opt/homebrew/bin", "/usr/local/bin")
+                } else {
+                    emptyList()
+                }
+            PluginRepository(
+                environment = get(),
+                pluginStateDao = get(),
+                userDataPathProvider = get(),
+                fileSystem = getFileUtils().fileSystem,
+                findMissingRequirements = { requires ->
+                    findMissingExecutables(
+                        requires = requires,
+                        isWindows = platform.isWindows(),
+                        extraDirs = extraDirs,
+                    )
+                },
+            )
         }
         // endregion
 

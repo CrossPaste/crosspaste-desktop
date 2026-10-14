@@ -5,24 +5,35 @@ import java.io.File
 /**
  * Returns the entries of [requires] that cannot be found as executables, looked
  * up the way the plugin process will see them: on the inherited PATH (plus
- * PATHEXT on Windows), or directly when an entry is itself a path.
+ * PATHEXT on Windows, and optional [extraDirs] such as Homebrew on macOS), or
+ * directly when an entry is itself a path.
  */
 fun findMissingExecutables(
     requires: List<String>,
     env: Map<String, String> = System.getenv(),
     isWindows: Boolean = File.separatorChar == '\\',
+    extraDirs: List<String> = emptyList(),
 ): List<String> {
+    val rawPath = env.entries.firstOrNull { it.key.equals("PATH", ignoreCase = true) }?.value
+    val pathSeparator = if (isWindows) ';' else File.pathSeparatorChar
     val pathDirs =
-        (env["PATH"] ?: env["Path"])
-            ?.split(File.pathSeparatorChar)
-            ?.filter { it.isNotBlank() }
-            .orEmpty()
-    val extensions =
-        if (isWindows) {
-            listOf("") + (env["PATHEXT"] ?: ".COM;.EXE;.BAT;.CMD").split(';').filter { it.isNotBlank() }
-        } else {
-            listOf("")
-        }
+        (
+            rawPath
+                ?.split(pathSeparator)
+                ?.map { it.trim().removeSurrounding("\"") }
+                ?.filter { it.isNotBlank() }
+                .orEmpty() + extraDirs
+        ).distinct()
+
+    val rawPathext =
+        env.entries.firstOrNull { it.key.equals("PATHEXT", ignoreCase = true) }?.value ?: ".COM;.EXE;.BAT;.CMD"
+    val windowsExtensions =
+        rawPathext
+            .split(';')
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .map { if (it.startsWith('.')) it else ".$it" }
+
     return requires.filterNot { name ->
         val candidates =
             if (name.contains('/') || name.contains('\\')) {
@@ -30,6 +41,19 @@ fun findMissingExecutables(
             } else {
                 pathDirs.map { File(it, name) }
             }
+
+        val extensions =
+            if (isWindows) {
+                val hasExecutableExt = windowsExtensions.any { ext -> name.endsWith(ext, ignoreCase = true) }
+                if (hasExecutableExt) {
+                    listOf("")
+                } else {
+                    windowsExtensions
+                }
+            } else {
+                listOf("")
+            }
+
         candidates.any { base ->
             extensions.any { ext -> isExecutableFile(File(base.path + ext), isWindows) }
         }

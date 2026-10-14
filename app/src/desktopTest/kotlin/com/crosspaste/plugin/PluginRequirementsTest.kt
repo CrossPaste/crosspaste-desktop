@@ -62,4 +62,47 @@ class PluginRequirementsTest {
 
         assertEquals(listOf("jq"), missing)
     }
+
+    @Test
+    fun `windows lookup rejects extensionless file`() {
+        createFile("script", executable = true)
+
+        val missing =
+            findMissingExecutables(
+                requires = listOf("script"),
+                env = mapOf("Path" to binDir.path, "PATHEXT" to ".COM;.EXE"),
+                isWindows = true,
+            )
+
+        assertEquals(listOf("script"), missing)
+    }
+
+    @Test
+    fun `windows lookup accepts file with explicit executable extension`() {
+        createFile("tool.exe", executable = false)
+
+        val missing =
+            findMissingExecutables(
+                requires = listOf("tool.exe"),
+                env = mapOf("Path" to binDir.path, "PATHEXT" to ".COM;.EXE"),
+                isWindows = true,
+            )
+
+        assertEquals(emptyList(), missing)
+    }
+
+    @Test
+    fun `search includes extraDirs`() {
+        createFile("brew-tool", executable = true)
+
+        val missing =
+            findMissingExecutables(
+                requires = listOf("brew-tool"),
+                env = mapOf("PATH" to "/nonexistent"),
+                isWindows = false,
+                extraDirs = listOf(binDir.path),
+            )
+
+        assertEquals(emptyList(), missing)
+    }
 }

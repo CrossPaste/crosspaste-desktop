@@ -81,17 +81,20 @@ class PluginRepository(
         enabled: Boolean,
     ) {
         val manifest = plugin.manifest ?: return
-        pluginStateDao.upsert(
-            PluginState(
-                id = manifest.id,
-                version = manifest.version,
-                enabled = enabled,
-                source = PluginState.SOURCE_LOCAL,
-                installedAt = DateUtils.nowEpochMilliseconds(),
-            ),
-        )
-        _plugins.update { plugins ->
-            plugins.map { if (it.directory == plugin.directory) it.copy(enabled = enabled) else it }
+        if (plugin.problem != null) return
+        reloadMutex.withLock {
+            pluginStateDao.upsert(
+                PluginState(
+                    id = manifest.id,
+                    version = manifest.version,
+                    enabled = enabled,
+                    source = PluginState.SOURCE_LOCAL,
+                    installedAt = DateUtils.nowEpochMilliseconds(),
+                ),
+            )
+            _plugins.update { plugins ->
+                plugins.map { if (it.directory == plugin.directory) it.copy(enabled = enabled) else it }
+            }
         }
     }
 
@@ -131,7 +134,10 @@ class PluginRepository(
                     enabled = state != null && state.enabled && state.version == manifest.version,
                 )
             if (problem == null) {
-                plugin.copy(missingRequirements = findMissingRequirements(plugin.platform(environment)!!.requires))
+                plugin.copy(
+                    missingRequirements =
+                        findMissingRequirements(plugin.platform(environment)!!.requires).distinct(),
+                )
             } else {
                 plugin
             }

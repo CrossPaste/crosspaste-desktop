@@ -88,7 +88,7 @@ fun checkPluginCompatibility(
     if (platform.arch != null && platform.arch.none { normalizePluginArch(it) == arch }) {
         return PluginProblem.UnsupportedArch(arch)
     }
-    if (platform.command.isEmpty()) {
+    if (platform.command.isEmpty() || platform.command.firstOrNull()?.isBlank() == true) {
         return PluginProblem.InvalidManifest("platforms.$platformKey.command is empty")
     }
     manifest.minAppVersion?.let { minAppVersion ->

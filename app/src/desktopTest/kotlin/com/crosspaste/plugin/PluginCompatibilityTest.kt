@@ -59,6 +59,9 @@ class PluginCompatibilityTest {
     fun `display name falls back from exact to base language to english`() {
         assertEquals("翻译", manifest.displayName("zh"))
         assertEquals("翻译", manifest.displayName("zh_hant"))
+        assertEquals("翻译", manifest.displayName("zh-CN"))
+        val bcpManifest = manifest.copy(name = mapOf("zh-Hans" to "简体", "en" to "English"))
+        assertEquals("简体", bcpManifest.displayName("zh_Hans"))
         assertEquals("Translate", manifest.displayName("ja"))
         assertEquals("x", manifest.copy(id = "x", name = emptyMap()).displayName("en"))
     }
@@ -115,6 +118,8 @@ class PluginCompatibilityTest {
                 manifest.copy(version = "latest"),
                 manifest.copy(pasteTypes = listOf("video")),
                 manifest.copy(platforms = mapOf("macos" to PluginPlatform(command = emptyList()))),
+                manifest.copy(platforms = mapOf("macos" to PluginPlatform(command = listOf("")))),
+                manifest.copy(platforms = mapOf("macos" to PluginPlatform(command = listOf("   ")))),
             )
         invalid.forEach {
             val problem = checkPluginCompatibility(it, env())
