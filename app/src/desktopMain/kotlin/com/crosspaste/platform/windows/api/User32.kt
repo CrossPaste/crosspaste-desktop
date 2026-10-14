@@ -11,6 +11,8 @@ import com.sun.jna.win32.StdCallLibrary.StdCallCallback
 import com.sun.jna.win32.W32APIOptions.DEFAULT_OPTIONS
 
 interface User32 : com.sun.jna.platform.win32.User32 {
+    fun WindowFromPoint(point: com.sun.jna.platform.win32.WinDef.POINT.ByValue): HWND?
+
     fun interface WNDPROC : StdCallCallback {
         fun callback(
             hWnd: HWND?,
