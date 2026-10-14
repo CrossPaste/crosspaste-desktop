@@ -26,6 +26,7 @@ class PluginProcessResult(
  */
 class ProcessPluginExecutor(
     private val cliBinaryPath: () -> String?,
+    private val extraPathDirs: List<String> = emptyList(),
     private val timeout: Duration = DEFAULT_TIMEOUT,
 ) {
 
@@ -43,7 +44,7 @@ class ProcessPluginExecutor(
             withContext(ioDispatcher) {
                 ProcessBuilder(resolvePluginCommand(workingDir, command))
                     .directory(workingDir)
-                    .also { configurePluginEnvironment(it.environment(), cliBinaryPath()) }
+                    .also { configurePluginEnvironment(it.environment(), cliBinaryPath(), extraPathDirs) }
                     .start()
             }
         // Blocking pipe I/O lives outside the caller's scope: a reader stuck on a
@@ -91,13 +92,21 @@ internal fun resolvePluginCommand(
 
 /**
  * Inherits the user's environment minus the variables the JVM launcher sets
- * for itself, and adds UTF-8 for Python plus the bundled CLI location.
+ * for itself, and adds UTF-8 for Python plus the bundled CLI location. The
+ * [extraPathDirs] the requirement check searched are appended to PATH, so a
+ * tool reported as available is also found when the plugin runs.
  */
 internal fun configurePluginEnvironment(
     env: MutableMap<String, String>,
     cliBinaryPath: String?,
+    extraPathDirs: List<String> = emptyList(),
 ) {
     env.keys.removeAll { it.startsWith("JAVA_MAIN_CLASS_") || it.startsWith("JAVA_STARTED_ON_FIRST_THREAD_") }
+    if (extraPathDirs.isNotEmpty()) {
+        val pathKey = env.keys.firstOrNull { it.equals("PATH", ignoreCase = true) } ?: "PATH"
+        val pathDirs = env[pathKey].orEmpty().split(File.pathSeparatorChar).filter { it.isNotBlank() }
+        env[pathKey] = (pathDirs + extraPathDirs.filterNot { it in pathDirs }).joinToString(File.pathSeparator)
+    }
     env["PYTHONIOENCODING"] = "utf-8"
     if (cliBinaryPath != null) {
         env["CROSSPASTE_CLI"] = cliBinaryPath

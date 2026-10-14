@@ -53,6 +53,18 @@ class ProcessPluginExecutorTest {
     }
 
     @Test
+    fun `extra PATH dirs are appended once after the inherited PATH`() {
+        val env = mutableMapOf("PATH" to listOf("/usr/bin", "/usr/local/bin").joinToString(File.pathSeparator))
+
+        configurePluginEnvironment(env, null, listOf("/opt/homebrew/bin", "/usr/local/bin"))
+
+        assertEquals(
+            listOf("/usr/bin", "/usr/local/bin", "/opt/homebrew/bin").joinToString(File.pathSeparator),
+            env["PATH"],
+        )
+    }
+
+    @Test
     fun `output decoding strips the BOM and normalizes CRLF`() {
         val bytes = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + "你好\r\nworld\r\n".encodeToByteArray()
         assertEquals("你好\nworld\n", decodePluginOutput(bytes))

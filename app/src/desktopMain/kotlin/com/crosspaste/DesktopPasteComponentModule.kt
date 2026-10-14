@@ -57,6 +57,7 @@ import com.crosspaste.paste.plugin.type.UrlTypePlugin
 import com.crosspaste.plugin.PluginMenuContributor
 import com.crosspaste.plugin.ProcessPluginExecutor
 import com.crosspaste.plugin.ProcessPluginRunner
+import com.crosspaste.plugin.pluginExtraPathDirs
 import com.crosspaste.rendering.OpenGraphService
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.sync.FilePullService
@@ -161,7 +162,10 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
         single<PluginMenuContributor> { PluginMenuContributor(get(), get(), get()) }
         single<ProcessPluginExecutor> {
             val cliSymlinkService = get<CliSymlinkService>()
-            ProcessPluginExecutor(cliBinaryPath = { cliSymlinkService.cliBinaryPath.value?.toString() })
+            ProcessPluginExecutor(
+                cliBinaryPath = { cliSymlinkService.cliBinaryPath.value?.toString() },
+                extraPathDirs = pluginExtraPathDirs(get()),
+            )
         }
         single<ProcessPluginRunner> {
             ProcessPluginRunner(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
