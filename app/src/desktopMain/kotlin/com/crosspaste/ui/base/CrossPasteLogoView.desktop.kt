@@ -37,11 +37,9 @@ actual fun CrossPasteLogoView(
     var tapCount by remember { mutableStateOf(0) }
     var firstTapTime by remember { mutableLongStateOf(0L) }
 
-    // The glyph traces itself on first show and again on every tap.
-    var drawRun by remember { mutableIntStateOf(0) }
+    // The glyph traces itself once each time the logo enters the screen.
     val drawProgress = remember { Animatable(0f) }
-    LaunchedEffect(drawRun) {
-        drawProgress.snapTo(0f)
+    LaunchedEffect(Unit) {
         drawProgress.animateTo(1f, tween(DRAW_DURATION_MILLIS, easing = FastOutSlowInEasing))
     }
 
@@ -57,7 +55,6 @@ actual fun CrossPasteLogoView(
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null, // Hidden feature, no ripple effect
                         ) {
-                            drawRun++
                             val currentTime = getDateUtils().nowEpochMilliseconds()
                             // Check if the 5-second window has expired
                             if (currentTime - firstTapTime > 5000) {
