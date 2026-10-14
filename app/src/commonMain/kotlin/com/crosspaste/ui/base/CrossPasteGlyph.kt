@@ -1,7 +1,11 @@
 package com.crosspaste.ui.base
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -12,6 +16,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.vector.PathParser
+
+private const val TRACE_DURATION_MILLIS = 1600
 
 // Geometry of composeResources/drawable/crosspaste_svg.svg, in its 801x801 viewport.
 private const val VIEWPORT = 801f
@@ -157,4 +163,23 @@ fun CrossPasteGlyph(
             }
         }
     }
+}
+
+/**
+ * [CrossPasteGlyph] tracing itself once each time it enters the composition.
+ */
+@Composable
+fun AnimatedCrossPasteGlyph(
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    val progress = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        progress.animateTo(1f, tween(TRACE_DURATION_MILLIS, easing = FastOutSlowInEasing))
+    }
+    CrossPasteGlyph(
+        progress = { progress.value },
+        color = color,
+        modifier = modifier,
+    )
 }

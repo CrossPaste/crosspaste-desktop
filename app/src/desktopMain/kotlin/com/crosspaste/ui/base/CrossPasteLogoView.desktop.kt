@@ -1,8 +1,5 @@
 package com.crosspaste.ui.base
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -23,8 +20,6 @@ import com.crosspaste.ui.theme.CrossPasteBrand
 import com.crosspaste.utils.getDateUtils
 import org.koin.compose.koinInject
 
-private const val DRAW_DURATION_MILLIS = 1600
-
 @Composable
 actual fun CrossPasteLogoView(
     size: Dp,
@@ -38,12 +33,6 @@ actual fun CrossPasteLogoView(
     // Tap state management
     var tapCount by remember { mutableStateOf(0) }
     var firstTapTime by remember { mutableLongStateOf(0L) }
-
-    // The glyph traces itself once each time the logo enters the screen.
-    val drawProgress = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        drawProgress.animateTo(1f, tween(DRAW_DURATION_MILLIS, easing = FastOutSlowInEasing))
-    }
 
     Box(
         modifier =
@@ -79,8 +68,7 @@ actual fun CrossPasteLogoView(
                     },
                 ),
     ) {
-        CrossPasteGlyph(
-            progress = { drawProgress.value },
+        AnimatedCrossPasteGlyph(
             color = Color.White,
             modifier =
                 Modifier
