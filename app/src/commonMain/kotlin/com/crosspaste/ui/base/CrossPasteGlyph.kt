@@ -20,7 +20,7 @@ private const val GLYPH_OFFSET_Y = 81f
 private const val OUTLINE_WIDTH = 44f
 private const val TEXT_LINE_WIDTH = 52f
 
-// Distance (in viewport units) over which the clip's shoulder fades in as the pen sets off from it.
+// Distance (in viewport units) over which the clip's shoulder fades in once the pen reaches it.
 private const val SHOULDER_FADE_LENGTH = 40f
 
 private class GlyphStroke(
@@ -35,6 +35,8 @@ private class GlyphGeometry(
     // Traced in this order, as one continuous pen movement.
     val strokes: List<GlyphStroke>,
     val shoulder: Path,
+    // Pen distance at which the shoulder starts to appear.
+    val shoulderAt: Float,
 ) {
     val totalLength: Float = strokes.sumOf { it.length.toDouble() }.toFloat()
 }
@@ -64,8 +66,8 @@ private fun glyphGeometry(): GlyphGeometry {
     val rightSide =
         GlyphStroke(
             svgPath(
-                "M356 97h88.948C483.636 97 515 128.398 515 167.13v401.74" +
-                    "c0 38.732-31.364 70.13-70.052 70.13",
+                "M444.948 639C483.636 639 515 607.602 515 568.87V167.13" +
+                    "C515 128.398 483.636 97 444.948 97H356",
             ),
             OUTLINE_WIDTH,
             StrokeCap.Butt,
@@ -73,8 +75,8 @@ private fun glyphGeometry(): GlyphGeometry {
     val leftSide =
         GlyphStroke(
             svgPath(
-                "M445 639H70.158C31.41 639 0 607.602 0 568.87V167.12" +
-                    "c0-38.731 31.41-70.13 70.158-70.13",
+                "M70.158 96.99C31.41 96.99 0 128.389 0 167.12V568.87" +
+                    "C0 607.602 31.41 639 70.158 639H445",
             ),
             OUTLINE_WIDTH,
             StrokeCap.Round,
@@ -93,8 +95,9 @@ private fun glyphGeometry(): GlyphGeometry {
                 "h-30.463c-15.727 0-28.483-12.791-28.511-28.587L320 75Z",
         )
     return GlyphGeometry(
-        strokes = listOf(clip, rightSide, leftSide) + textLines,
+        strokes = listOf(leftSide, rightSide, clip) + textLines,
         shoulder = shoulder,
+        shoulderAt = leftSide.length + rightSide.length,
     )
 }
 
@@ -137,7 +140,7 @@ fun CrossPasteGlyph(
                 }
             }
 
-            val shoulderAlpha = (penAt / SHOULDER_FADE_LENGTH).coerceIn(0f, 1f)
+            val shoulderAlpha = ((penAt - geometry.shoulderAt) / SHOULDER_FADE_LENGTH).coerceIn(0f, 1f)
             if (shoulderAlpha > 0f) {
                 drawPath(geometry.shoulder, color, alpha = shoulderAlpha)
             }
