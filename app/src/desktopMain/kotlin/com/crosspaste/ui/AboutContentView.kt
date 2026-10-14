@@ -93,7 +93,6 @@ fun AboutContentView() {
         ) {
             CrossPasteLogoView(
                 size = giant,
-                color = MaterialTheme.colorScheme.primary,
                 enableDebugToggle = true,
             )
 

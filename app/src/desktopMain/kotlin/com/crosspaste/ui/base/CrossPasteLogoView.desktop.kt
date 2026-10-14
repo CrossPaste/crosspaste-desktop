@@ -8,32 +8,25 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntSize
-import com.crosspaste.app.generated.resources.Res
-import com.crosspaste.app.generated.resources.crosspaste_svg
 import com.crosspaste.config.DesktopConfigManager
+import com.crosspaste.ui.theme.CrossPasteBrand
 import com.crosspaste.utils.getDateUtils
-import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
 
 @Composable
 actual fun CrossPasteLogoView(
     size: Dp,
-    color: Color,
     modifier: Modifier,
     enableDebugToggle: Boolean,
 ) {
     val configManager = koinInject<DesktopConfigManager>()
-    var boxSize by remember { mutableStateOf(IntSize.Zero) }
 
     val config by configManager.config.collectAsState()
 
@@ -45,9 +38,9 @@ actual fun CrossPasteLogoView(
         modifier =
             modifier
                 .clip(RoundedCornerShape(size / 4))
-                .background(color)
+                .background(CrossPasteBrand.gradient)
                 .size(size)
-                .onSizeChanged { boxSize = it }
+                .semantics { contentDescription = "CrossPaste Logo" }
                 .then(
                     if (enableDebugToggle) {
                         Modifier.clickable(
@@ -75,18 +68,12 @@ actual fun CrossPasteLogoView(
                     },
                 ),
     ) {
-        val paddingPercent = 0.1f
-        val paddingPx = minOf(boxSize.width, boxSize.height) * paddingPercent
-        val paddingDp = with(LocalDensity.current) { paddingPx.toDp() }
-
-        Icon(
+        AnimatedCrossPasteGlyph(
+            color = Color.White,
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(paddingDp),
-            painter = painterResource(Res.drawable.crosspaste_svg),
-            tint = MaterialTheme.colorScheme.onPrimary,
-            contentDescription = "CrossPaste Logo",
+                    .padding(size * 0.1f),
         )
     }
 }
