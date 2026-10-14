@@ -10,4 +10,10 @@ object DesktopUrlUtils : UrlUtils {
             URI(string).toURL()
             true
         }.getOrElse { false }
+
+    override fun isHttpUrl(string: String): Boolean =
+        runCatching {
+            val url = URI(string).toURL()
+            (url.protocol == "http" || url.protocol == "https") && url.host.isNotBlank()
+        }.getOrElse { false }
 }

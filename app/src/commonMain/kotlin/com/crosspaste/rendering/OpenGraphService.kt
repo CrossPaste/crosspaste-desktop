@@ -15,6 +15,7 @@ import com.crosspaste.paste.item.getLegacyRenderingFilePath
 import com.crosspaste.paste.item.getRenderingFilePath
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getUrlUtils
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -36,11 +37,16 @@ class OpenGraphService<Image>(
 
     private val fileUtils = getFileUtils()
 
+    private val urlUtils = getUrlUtils()
+
     override suspend fun render(pasteData: PasteData) {
         if (!configManager.getCurrentConfig().enableUrlPreview) {
             return
         }
         pasteData.getPasteItem(UrlPasteItem::class)?.let { urlPasteItem ->
+            if (!urlUtils.isHttpUrl(urlPasteItem.url)) {
+                return
+            }
             val openGraphImage =
                 urlPasteItem.getRenderingFilePath(
                     pasteData.getPasteCoordinate(),
@@ -139,6 +145,9 @@ class OpenGraphService<Image>(
             ).mapNotNull { it() }.firstOrNull { it.isNotBlank() }
 
         ogImage?.let { imageUrl ->
+            if (!urlUtils.isHttpUrl(imageUrl)) {
+                return@let
+            }
             resourcesClient.request(imageUrl, ResourceRequestLimits.IMAGE).onSuccess { imageResponse ->
                 imageHandler.readImage(imageResponse.getBody())?.also { image ->
                     if (imageHandler.writeImage(image, "png", openGraphImage)) {
