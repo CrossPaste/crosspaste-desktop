@@ -320,8 +320,12 @@ class PairingV3UiControllerTest {
     fun tokenPopupUnmountsWhenOnlyHiddenSessionsRemain() {
         val rejected = pairingSession("rejected", PakeRole.ACCEPTOR, "1234", PairingSessionState.REJECTED)
         val pairing = pairingSession("pairing", PakeRole.ACCEPTOR, "5678")
+        val trusted = pairingSession("trusted", PakeRole.ACCEPTOR, null, PairingSessionState.TRUSTED)
+        val cancelled = pairingSession("cancelled", PakeRole.ACCEPTOR, null, PairingSessionState.CANCELLED)
 
+        assertFalse(isTokenPopupVisible(false, emptyList()))
         assertFalse(isTokenPopupVisible(false, pairingTokenCardSessions(listOf(rejected))))
+        assertFalse(isTokenPopupVisible(false, pairingTokenCardSessions(listOf(trusted, cancelled))))
         assertTrue(isTokenPopupVisible(false, pairingTokenCardSessions(listOf(rejected, pairing))))
         assertTrue(isTokenPopupVisible(true, emptyList()))
     }

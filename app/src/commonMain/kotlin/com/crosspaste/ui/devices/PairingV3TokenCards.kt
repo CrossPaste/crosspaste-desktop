@@ -54,7 +54,7 @@ fun PairingV3AcceptanceWindowEffect(controller: PairingV3UiController = koinInje
  * mounted (no visible card and no legacy token).
  */
 @Composable
-fun PairingV3SelfDismissEffect(
+internal fun PairingV3SelfDismissEffect(
     sessions: List<PairingSessionUiState>,
     controller: PairingV3UiController = koinInject(),
 ) {
@@ -74,7 +74,7 @@ fun PairingV3SelfDismissEffect(
 
 /** Renders one card per session in [sessions], already filtered by [pairingTokenCardSessions]. */
 @Composable
-fun PairingV3AcceptorTokenCards(
+internal fun PairingV3AcceptorTokenCards(
     sessions: List<PairingSessionUiState>,
     controller: PairingV3UiController = koinInject(),
 ) {
