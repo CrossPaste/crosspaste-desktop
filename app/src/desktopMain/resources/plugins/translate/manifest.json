@@ -12,5 +12,18 @@
     "linux": { "command": ["python3", "run.py"], "requires": ["python3"] },
     "windows": { "command": ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "run.ps1"] }
   },
+  "actions": [
+    { "id": "en", "name": { "en": "English" } },
+    { "id": "zh-CN", "name": { "zh": "简体中文" } },
+    { "id": "zh-TW", "name": { "zh_hant": "繁體中文" } },
+    { "id": "ja", "name": { "ja": "日本語" } },
+    { "id": "ko", "name": { "ko": "한국어" } },
+    { "id": "de", "name": { "de": "Deutsch" } },
+    { "id": "es", "name": { "es": "Español" } },
+    { "id": "fr", "name": { "fr": "Français" } },
+    { "id": "pt", "name": { "pt": "Português" } },
+    { "id": "ru", "name": { "ru": "Русский" } },
+    { "id": "fa", "name": { "fa": "فارسی" } }
+  ],
   "output": "replaceClipboard"
 }
