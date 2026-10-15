@@ -52,6 +52,8 @@ interface MacosApi : Library {
 
     fun getCurrentActiveAppInfo(): Pointer?
 
+    fun isApplicationActive(): Int
+
     fun getRunningApplications(): Pointer?
 
     fun getAppInfoAtPath(path: String): Pointer?

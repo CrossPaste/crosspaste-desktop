@@ -501,6 +501,14 @@ public func getCurrentActiveAppInfo() -> UnsafePointer<CChar>? {
     return nil
 }
 
+@_cdecl("isApplicationActive")
+public func isApplicationActive() -> Int32 {
+    if Thread.isMainThread {
+        return NSApp.isActive ? 1 : 0
+    }
+    return DispatchQueue.main.sync { NSApp.isActive ? 1 : 0 }
+}
+
 @_cdecl("getRunningApplications")
 public func getRunningApplications() -> UnsafePointer<CChar>? {
     let apps = NSWorkspace.shared.runningApplications

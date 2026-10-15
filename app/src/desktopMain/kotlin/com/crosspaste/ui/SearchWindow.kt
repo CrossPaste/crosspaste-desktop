@@ -37,10 +37,16 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
+import java.awt.Desktop
 import java.awt.EventQueue
+import java.awt.KeyboardFocusManager
 import java.awt.Window
+import java.awt.desktop.AppForegroundEvent
+import java.awt.desktop.AppForegroundListener
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
+import java.beans.PropertyChangeEvent
+import java.beans.PropertyChangeListener
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -187,6 +193,55 @@ fun SearchWindow(windowIcon: Painter?) {
                 appWindowManager.searchComposeWindow = window
                 val listenerActive = AtomicBoolean(true)
 
+                fun deferMacFocusLoss(session: MacSearchWindowFocusSession) {
+                    session.deferFocusLoss(
+                        enqueue = { EventQueue.invokeLater(it) },
+                        shouldDismiss = {
+                            listenerActive.get() &&
+                                currentMacFocusSession === session &&
+                                window.isShowing &&
+                                MacSearchWindowFocusState(
+                                    appActive = MacAppUtils.isApplicationActive(),
+                                    searchFocused = window.hasFocusedWindow(),
+                                    bubbleFocused = appWindowManager.bubbleComposeWindow?.hasFocusedWindow() == true,
+                                    mainFocused = appWindowManager.mainComposeWindow?.hasFocusedWindow() == true,
+                                ).shouldDismiss
+                        },
+                        dismiss = {
+                            logger.info { "Search window lost focus after macOS focus recheck" }
+                            appWindowManager.hideSearchWindow()
+                        },
+                    )
+                }
+
+                val macFocusListener =
+                    if (isMac) {
+                        object : AppForegroundListener, PropertyChangeListener {
+                            override fun appRaisedToForeground(e: AppForegroundEvent) = Unit
+
+                            override fun appMovedToBackground(e: AppForegroundEvent) {
+                                // App deactivation may follow key-window loss without another
+                                // windowLostFocus event (for example, after a tray menu closes).
+                                currentMacFocusSession?.let { deferMacFocusLoss(it) }
+                            }
+
+                            override fun propertyChange(e: PropertyChangeEvent) {
+                                // A tray menu may open the main window after the search
+                                // window has already lost key-window focus.
+                                if (e.newValue != null) {
+                                    currentMacFocusSession?.let { deferMacFocusLoss(it) }
+                                }
+                            }
+                        }.also {
+                            Desktop.getDesktop().addAppEventListener(it)
+                            KeyboardFocusManager
+                                .getCurrentKeyboardFocusManager()
+                                .addPropertyChangeListener("focusedWindow", it)
+                        }
+                    } else {
+                        null
+                    }
+
                 val windowListener =
                     object : WindowAdapter() {
                         override fun windowGainedFocus(e: WindowEvent) {
@@ -206,20 +261,7 @@ fun SearchWindow(windowIcon: Painter?) {
                                 val macSession = currentMacFocusSession ?: return
                                 val bubble = appWindowManager.bubbleComposeWindow
                                 if (bubble != null && e.oppositeWindow == bubble) return
-                                macSession.deferFocusLoss(
-                                    enqueue = { EventQueue.invokeLater(it) },
-                                    shouldDismiss = {
-                                        listenerActive.get() &&
-                                            currentMacFocusSession === macSession &&
-                                            window.isShowing &&
-                                            !window.hasFocusedWindow() &&
-                                            appWindowManager.bubbleComposeWindow?.hasFocusedWindow() != true
-                                    },
-                                    dismiss = {
-                                        logger.info { "Search window lost focus after macOS focus recheck" }
-                                        appWindowManager.hideSearchWindow()
-                                    },
-                                )
+                                deferMacFocusLoss(macSession)
                                 return
                             }
                             if (currentIgnoreFocusLoss.get()) {
@@ -251,6 +293,12 @@ fun SearchWindow(windowIcon: Painter?) {
 
                 onDispose {
                     listenerActive.set(false)
+                    macFocusListener?.let {
+                        Desktop.getDesktop().removeAppEventListener(it)
+                        KeyboardFocusManager
+                            .getCurrentKeyboardFocusManager()
+                            .removePropertyChangeListener("focusedWindow", it)
+                    }
                     window.removeWindowFocusListener(windowListener)
                     appWindowManager.searchComposeWindow = null
                 }
