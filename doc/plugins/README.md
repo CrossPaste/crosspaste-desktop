@@ -13,7 +13,12 @@ directory with a `manifest.json` and a script or program that CrossPaste runs as
    shows the network hosts it declares. Replacing a plugin with a different `version` turns it off again until you
    re-confirm.
 
-[`uppercase/`](uppercase) is a working sample with `run.sh` (macOS/Linux) and `run.ps1` (Windows).
+CrossPaste ships one plugin, **Translate**, and copies it into the plugin folder on first launch (disabled, like any
+plugin). Its source is in [`app/src/desktopMain/resources/plugins/translate`](../../app/src/desktopMain/resources/plugins/translate)
+and needs nothing beyond what each OS ships: JavaScript for Automation on macOS, `python3` on Linux and Windows
+PowerShell on Windows. It is copied only once, so deleting or editing it sticks.
+
+[`uppercase/`](uppercase) is a minimal sample with `run.sh` (macOS/Linux) and `run.ps1` (Windows).
 
 ## manifest.json
 
@@ -68,8 +73,9 @@ The plugin inherits the user's environment, plus:
 - `CROSSPASTE_CLI`: absolute path of the bundled `crosspaste` CLI, when available.
 - `PYTHONIOENCODING=utf-8`.
 
-On macOS the app is started by launchd with a minimal `PATH` (`/usr/bin:/bin:/usr/sbin:/sbin`), so tools installed by
-Homebrew are not found unless you reference them by absolute path.
+On macOS the app is started by launchd with a minimal `PATH` (`/usr/bin:/bin:/usr/sbin:/sbin`). CrossPaste appends
+`/opt/homebrew/bin` and `/usr/local/bin`, both when checking `requires` and when running the plugin, so Homebrew tools
+are found either way.
 
 ## Platform notes
 

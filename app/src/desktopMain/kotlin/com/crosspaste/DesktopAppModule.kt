@@ -70,6 +70,7 @@ import com.crosspaste.path.DesktopMigration
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.path.getPlatformPathProvider
 import com.crosspaste.platform.Platform
+import com.crosspaste.plugin.BundledPluginInstaller
 import com.crosspaste.plugin.PluginEnvironment
 import com.crosspaste.plugin.PluginRepository
 import com.crosspaste.plugin.findMissingExecutables
@@ -213,6 +214,12 @@ fun desktopAppModule(
         // endregion
 
         // region Plugin
+        single<BundledPluginInstaller> {
+            BundledPluginInstaller(
+                pluginsDirectory = { get<PluginRepository>().pluginsDirectory() },
+                fileSystem = getFileUtils().fileSystem,
+            )
+        }
         single<PluginEnvironment> {
             PluginEnvironment(
                 platform = get(),

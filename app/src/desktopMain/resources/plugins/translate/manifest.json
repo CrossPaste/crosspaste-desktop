@@ -1,0 +1,16 @@
+{
+  "id": "com.crosspaste.sample.translate",
+  "version": "1.0.0",
+  "minAppVersion": "2.2.0",
+  "name": { "en": "Translate", "zh": "翻译", "zh_hant": "翻譯", "ja": "翻訳", "ko": "번역", "de": "Übersetzen", "es": "Traducir", "fr": "Traduire", "pt": "Traduzir", "fa": "ترجمه" },
+  "pasteTypes": ["text", "html"],
+  "runtime": "process",
+  "headless": false,
+  "hosts": ["translate.googleapis.com"],
+  "platforms": {
+    "macos": { "command": ["/usr/bin/osascript", "-l", "JavaScript", "run.js"] },
+    "linux": { "command": ["python3", "run.py"], "requires": ["python3"] },
+    "windows": { "command": ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "run.ps1"] }
+  },
+  "output": "replaceClipboard"
+}
