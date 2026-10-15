@@ -105,8 +105,9 @@ fun checkPluginCompatibility(
     return null
 }
 
-private fun validateManifest(manifest: PluginManifest): PluginProblem? =
-    when {
+private fun validateManifest(manifest: PluginManifest): PluginProblem? {
+    val invalidActionId = manifest.actions.firstOrNull { !PLUGIN_ID_REGEX.matches(it.id) }?.id
+    return when {
         !PLUGIN_ID_REGEX.matches(manifest.id) -> PluginProblem.InvalidManifest("invalid id: ${manifest.id}")
         manifest.version.toVersionOrNull(strict = false) == null ->
             PluginProblem.InvalidManifest("invalid version: ${manifest.version}")
@@ -115,8 +116,7 @@ private fun validateManifest(manifest: PluginManifest): PluginProblem? =
         manifest.supportedPasteTypes().isEmpty() ->
             PluginProblem.InvalidManifest("no supported pasteTypes")
         manifest.actions.any { it.id.isBlank() } -> PluginProblem.InvalidManifest("blank action id")
-        manifest.actions.any { !PLUGIN_ID_REGEX.matches(it.id) } ->
-            PluginProblem.InvalidManifest("invalid action id")
+        invalidActionId != null -> PluginProblem.InvalidManifest("invalid action id: $invalidActionId")
         manifest.actions.distinctBy { it.id }.size != manifest.actions.size ->
             PluginProblem.InvalidManifest("duplicate action id")
         manifest.actions.any { it.name.isEmpty() } -> PluginProblem.InvalidManifest("action without name")
@@ -124,3 +124,4 @@ private fun validateManifest(manifest: PluginManifest): PluginProblem? =
             PluginProblem.InvalidManifest("blank action name")
         else -> null
     }
+}

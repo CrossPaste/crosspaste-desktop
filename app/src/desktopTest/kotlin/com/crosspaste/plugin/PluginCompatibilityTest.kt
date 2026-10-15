@@ -159,6 +159,28 @@ class PluginCompatibilityTest {
     }
 
     @Test
+    fun `an invalid action id is named in the problem`() {
+        assertEquals(
+            PluginProblem.InvalidManifest("invalid action id: bad id"),
+            checkPluginCompatibility(
+                manifest.copy(
+                    actions =
+                        listOf(
+                            PluginAction("en", mapOf("en" to "A")),
+                            PluginAction(
+                                "bad id",
+                                mapOf(
+                                    "en" to "B",
+                                ),
+                            ),
+                        ),
+                ),
+                env(),
+            ),
+        )
+    }
+
+    @Test
     fun `arch normalization`() {
         assertEquals("arm64", normalizePluginArch("aarch64"))
         assertEquals("x64", normalizePluginArch("amd64"))
