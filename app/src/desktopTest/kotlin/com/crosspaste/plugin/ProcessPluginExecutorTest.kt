@@ -56,15 +56,21 @@ class ProcessPluginExecutorTest {
         assertEquals("zh_hant", env["CROSSPASTE_LANGUAGE"])
         assertFalse(env.keys.any { it.startsWith("JAVA_") })
 
+        assertFalse("CROSSPASTE_ACTION" in env)
+
+        configurePluginEnvironment(env, null, "en", action = "zh-CN")
+        assertEquals("zh-CN", env["CROSSPASTE_ACTION"])
+
         configurePluginEnvironment(env, null, "en")
         assertFalse("CROSSPASTE_CLI" in env)
+        assertFalse("CROSSPASTE_ACTION" in env)
     }
 
     @Test
     fun `extra PATH dirs are appended once after the inherited PATH`() {
         val env = mutableMapOf("PATH" to listOf("/usr/bin", "/usr/local/bin").joinToString(File.pathSeparator))
 
-        configurePluginEnvironment(env, null, "en", listOf("/opt/homebrew/bin", "/usr/local/bin"))
+        configurePluginEnvironment(env, null, "en", extraPathDirs = listOf("/opt/homebrew/bin", "/usr/local/bin"))
 
         assertEquals(
             listOf("/usr/bin", "/usr/local/bin", "/opt/homebrew/bin").joinToString(File.pathSeparator),

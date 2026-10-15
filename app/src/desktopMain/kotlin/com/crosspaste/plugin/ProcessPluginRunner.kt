@@ -49,6 +49,7 @@ class ProcessPluginRunner(
     suspend fun run(
         plugin: LocalPlugin,
         pasteData: PasteData,
+        action: String? = null,
     ) {
         val manifest = plugin.manifest ?: return
         val command = plugin.platform(environment)?.command ?: return
@@ -63,6 +64,7 @@ class ProcessPluginRunner(
                     directory = plugin.directory,
                     command = command,
                     input = inputJson.encodeToString(CliPasteDetailDto.serializer(), input),
+                    action = action,
                 )
             } catch (e: CancellationException) {
                 throw e

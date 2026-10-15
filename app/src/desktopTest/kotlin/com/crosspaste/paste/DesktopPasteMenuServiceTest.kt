@@ -5,10 +5,12 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.menu.PasteMenuAction
 import com.crosspaste.paste.menu.PasteMenuContributor
+import com.crosspaste.ui.contextmenu.ContextMenuGroup
 import io.mockk.every
 import io.mockk.mockk
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 
 class DesktopPasteMenuServiceTest {
 
@@ -133,6 +135,25 @@ class DesktopPasteMenuServiceTest {
             listOf("copy", "edit", "action_1", "action_2", "tags", "sync_to", "", "delete"),
             labels(service, pasteData(PasteType.TEXT_TYPE)),
         )
+    }
+
+    @Test
+    fun `contributed action with children becomes a submenu`() {
+        val contributor =
+            PasteMenuContributor {
+                listOf(
+                    PasteMenuAction(
+                        label = "translate",
+                        children = listOf(PasteMenuAction("english") {}, PasteMenuAction("chinese") {}),
+                    ),
+                )
+            }
+        val service = createService(listOf(contributor))
+
+        val items = service.pasteMenuItemsProvider(pasteData(PasteType.TEXT_TYPE))()
+        assertEquals(listOf("copy", "edit", "translate", "tags", "sync_to", "", "delete"), items.map { it.label })
+        val group = assertIs<ContextMenuGroup>(items[2])
+        assertEquals(listOf("english", "chinese"), group.items().map { it.label })
     }
 
     @Test
