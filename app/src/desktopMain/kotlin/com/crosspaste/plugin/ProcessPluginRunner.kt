@@ -81,6 +81,11 @@ class ProcessPluginRunner(
                 notifyFailure(name, copywriter.getText("plugin_timed_out"))
             }
             0 -> {
+                if (result.stdoutTruncated) {
+                    logger.warn { "Plugin ${manifest.id} output exceeded the size limit" }
+                    notifyFailure(name, copywriter.getText("plugin_output_too_large"))
+                    return
+                }
                 try {
                     applyOutput(manifest, name, output, result.stdout.trimEnd('\n'))
                 } catch (e: CancellationException) {

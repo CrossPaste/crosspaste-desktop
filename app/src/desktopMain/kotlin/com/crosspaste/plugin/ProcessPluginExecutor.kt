@@ -2,22 +2,29 @@ package com.crosspaste.plugin
 
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import okio.Path
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.InputStream
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-/** [exitCode] is null when the run hit the timeout and the process tree was killed. */
+/**
+ * [exitCode] is null when the run hit the timeout and the process tree was
+ * killed. [stdoutTruncated] means stdout went past the size limit, so [stdout]
+ * holds only its beginning.
+ */
 class PluginProcessResult(
     val exitCode: Int?,
     val stdout: String,
     val stderr: String,
+    val stdoutTruncated: Boolean = false,
 )
 
 /**
@@ -55,8 +62,13 @@ class ProcessPluginExecutor(
         // Blocking pipe I/O lives outside the caller's scope: a reader stuck on a
         // pipe that an orphaned grandchild still holds must not hang the caller
         val pipes = CoroutineScope(ioDispatcher)
-        val stdout = pipes.async { process.inputStream.use { it.readNBytes(MAX_STDOUT_BYTES) } }
-        val stderr = pipes.async { process.errorStream.use { it.readNBytes(MAX_STDERR_BYTES) } }
+        val stdout = PipeCapture(MAX_STDOUT_BYTES)
+        val stderr = PipeCapture(MAX_STDERR_BYTES)
+        val drains =
+            listOf(
+                pipes.launch { runCatching { stdout.drain(process.inputStream) } },
+                pipes.launch { runCatching { stderr.drain(process.errorStream) } },
+            )
         pipes.launch {
             // A plugin may exit without reading its input; the broken pipe is expected
             runCatching { process.outputStream.use { it.write(input.encodeToByteArray()) } }
@@ -64,12 +76,14 @@ class ProcessPluginExecutor(
         try {
             return withTimeoutOrNull(timeout) {
                 val exitCode = process.onExit().await().exitValue()
-                val outBytes = withTimeoutOrNull(pipeDrainTimeout) { stdout.await() } ?: ByteArray(0)
-                val errBytes = withTimeoutOrNull(pipeDrainTimeout) { stderr.await() } ?: ByteArray(0)
+                // A grandchild that inherited the pipes can keep them open after the
+                // plugin exits; keep whatever arrived instead of waiting for EOF
+                withTimeoutOrNull(pipeDrainTimeout) { drains.joinAll() }
                 PluginProcessResult(
                     exitCode = exitCode,
-                    stdout = decodePluginOutput(outBytes),
-                    stderr = decodePluginOutput(errBytes),
+                    stdout = decodePluginOutput(stdout.bytes()),
+                    stderr = decodePluginOutput(stderr.bytes()),
+                    stdoutTruncated = stdout.truncated,
                 )
             } ?: PluginProcessResult(exitCode = null, stdout = "", stderr = "")
         } finally {
@@ -82,6 +96,38 @@ class ProcessPluginExecutor(
             runCatching { process.outputStream.close() }
         }
     }
+}
+
+/**
+ * Reads a pipe to EOF, keeping at most [limit] bytes. Reading continues past the
+ * limit so a chatty plugin never blocks on a full pipe, and what was kept stays
+ * readable while the drain is still running.
+ */
+internal class PipeCapture(
+    private val limit: Int,
+) {
+    private val buffer = ByteArrayOutputStream()
+
+    @Volatile
+    var truncated = false
+        private set
+
+    fun drain(stream: InputStream) {
+        stream.use {
+            val chunk = ByteArray(8192)
+            while (true) {
+                val read = it.read(chunk)
+                if (read < 0) break
+                synchronized(buffer) {
+                    val kept = minOf(read, limit - buffer.size())
+                    if (kept > 0) buffer.write(chunk, 0, kept)
+                    if (kept < read) truncated = true
+                }
+            }
+        }
+    }
+
+    fun bytes(): ByteArray = synchronized(buffer) { buffer.toByteArray() }
 }
 
 /**

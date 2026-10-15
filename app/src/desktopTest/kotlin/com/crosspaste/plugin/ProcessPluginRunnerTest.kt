@@ -159,4 +159,16 @@ class ProcessPluginRunnerTest {
 
             verify { notificationManager.sendNotification(any(), any(), MessageType.Error, any()) }
         }
+
+    @Test
+    fun `oversized output is reported instead of applied`() =
+        runTest {
+            coEvery { executor.execute(any(), any(), any()) } returns
+                PluginProcessResult(0, "HELLO", "", stdoutTruncated = true)
+
+            runner.run(plugin("replaceClipboard"), pasteData)
+
+            coVerify(exactly = 0) { pasteboardService.tryWritePasteboard(any(), any<TextPasteItem>(), any(), any()) }
+            verify { notificationManager.sendNotification(any(), any(), MessageType.Error, any()) }
+        }
 }

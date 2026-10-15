@@ -1,9 +1,11 @@
 package com.crosspaste.plugin
 
+import java.io.ByteArrayInputStream
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class ProcessPluginExecutorTest {
 
@@ -73,5 +75,23 @@ class ProcessPluginExecutorTest {
     fun `output decoding strips the BOM and normalizes CRLF`() {
         val bytes = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()) + "你好\r\nworld\r\n".encodeToByteArray()
         assertEquals("你好\nworld\n", decodePluginOutput(bytes))
+    }
+
+    @Test
+    fun `pipe capture keeps output up to the limit and flags the rest`() {
+        val capture = PipeCapture(limit = 4)
+        capture.drain(ByteArrayInputStream("hello world".encodeToByteArray()))
+
+        assertEquals("hell", capture.bytes().decodeToString())
+        assertTrue(capture.truncated)
+    }
+
+    @Test
+    fun `pipe capture within the limit is not truncated`() {
+        val capture = PipeCapture(limit = 64)
+        capture.drain(ByteArrayInputStream("hello".encodeToByteArray()))
+
+        assertEquals("hello", capture.bytes().decodeToString())
+        assertFalse(capture.truncated)
     }
 }
