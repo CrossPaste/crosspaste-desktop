@@ -48,14 +48,16 @@ fun PairingV3AcceptanceWindowEffect(controller: PairingV3UiController = koinInje
     }
 }
 
+/**
+ * Closes the cards of sessions that reached a self-dismissing state. Kept apart
+ * from [PairingV3AcceptorTokenCards] so it keeps running while the popup is not
+ * mounted (no visible card and no legacy token).
+ */
 @Composable
-fun PairingV3AcceptorTokenCards(
+fun PairingV3SelfDismissEffect(
     sessions: List<PairingSessionUiState>,
     controller: PairingV3UiController = koinInject(),
 ) {
-    val copywriter = koinInject<GlobalCopywriter>()
-    val coroutineScope = rememberCoroutineScope()
-
     // v3 pairs per device. A session that reaches a self-dismissing state closes
     // its own card: TRUSTED (the device connected) and CANCELLED (the peer
     // abandoned the handshake) are both non-actionable, so lingering on screen is
@@ -68,8 +70,18 @@ fun PairingV3AcceptorTokenCards(
             controller.dismiss(sessionId)
         }
     }
+}
 
-    pairingTokenCardSessions(sessions).forEach { session ->
+/** Renders one card per session in [sessions], already filtered by [pairingTokenCardSessions]. */
+@Composable
+fun PairingV3AcceptorTokenCards(
+    sessions: List<PairingSessionUiState>,
+    controller: PairingV3UiController = koinInject(),
+) {
+    val copywriter = koinInject<GlobalCopywriter>()
+    val coroutineScope = rememberCoroutineScope()
+
+    sessions.forEach { session ->
         key(session.sessionId) {
             PairingV3SessionTokenCard(
                 session = session,
@@ -158,6 +170,17 @@ private fun PairingSessionState.isSelfDismissing(): Boolean =
  */
 internal fun pairingTokenCardSessions(sessions: List<PairingSessionUiState>): List<PairingSessionUiState> =
     sessions.filterNot { it.state.isSelfDismissing() || it.state == PairingSessionState.REJECTED }
+
+/**
+ * The token popup is mounted only while it has a card to show. Mounting it for
+ * sessions that render no card (e.g. REJECTED, retained for minutes after the
+ * user's close click) leaves an empty, zero-width popup window behind, which on
+ * Android keeps showing the last frame of the closed card, shifted off-center.
+ */
+internal fun isTokenPopupVisible(
+    showToken: Boolean,
+    visiblePairingSessions: List<PairingSessionUiState>,
+): Boolean = showToken || visiblePairingSessions.isNotEmpty()
 
 internal fun selfDismissingSessionIds(sessions: List<PairingSessionUiState>): List<String> =
     sessions.filter { it.state.isSelfDismissing() }.map { it.sessionId }
