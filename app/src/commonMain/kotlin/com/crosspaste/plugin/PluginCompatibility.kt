@@ -115,8 +115,12 @@ private fun validateManifest(manifest: PluginManifest): PluginProblem? =
         manifest.supportedPasteTypes().isEmpty() ->
             PluginProblem.InvalidManifest("no supported pasteTypes")
         manifest.actions.any { it.id.isBlank() } -> PluginProblem.InvalidManifest("blank action id")
+        manifest.actions.any { !PLUGIN_ID_REGEX.matches(it.id) } ->
+            PluginProblem.InvalidManifest("invalid action id")
         manifest.actions.distinctBy { it.id }.size != manifest.actions.size ->
             PluginProblem.InvalidManifest("duplicate action id")
         manifest.actions.any { it.name.isEmpty() } -> PluginProblem.InvalidManifest("action without name")
+        manifest.actions.any { it.name.values.any { v -> v.isBlank() } } ->
+            PluginProblem.InvalidManifest("blank action name")
         else -> null
     }

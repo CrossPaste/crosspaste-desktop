@@ -144,10 +144,13 @@ class PluginCompatibilityTest {
                 manifest.copy(platforms = mapOf("macos" to PluginPlatform(command = listOf("")))),
                 manifest.copy(platforms = mapOf("macos" to PluginPlatform(command = listOf("   ")))),
                 manifest.copy(actions = listOf(PluginAction(" ", mapOf("en" to "Blank")))),
+                manifest.copy(actions = listOf(PluginAction("invalid id", mapOf("en" to "Valid")))),
                 manifest.copy(
                     actions = listOf(PluginAction("en", mapOf("en" to "A")), PluginAction("en", mapOf("en" to "B"))),
                 ),
                 manifest.copy(actions = listOf(PluginAction("en"))),
+                manifest.copy(actions = listOf(PluginAction("en", mapOf("en" to "")))),
+                manifest.copy(actions = listOf(PluginAction("en", mapOf("en" to "   ")))),
             )
         invalid.forEach {
             val problem = checkPluginCompatibility(it, env())

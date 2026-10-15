@@ -59,7 +59,7 @@ PowerShell on Windows. It is copied only once, so deleting or editing it sticks.
 | `platforms.*.arch` | Optional `arm64` / `x64` list; omit for architecture-independent scripts. |
 | `platforms.*.command` | argv, run **without a shell**. The working directory is the plugin directory, so `run.sh` resolves there; an executable path with a separator (`./bin/tool`) is resolved against it too. |
 | `platforms.*.requires` | Executables that must be on `PATH`; the plugin is marked unavailable while one is missing. |
-| `actions` | Optional. Turns the menu entry into a submenu with one item per action, in the listed order. Each has a non-blank `id`, unique within the plugin, and a `name` map (at least one entry, same language fallback as `name`, then the first declared label). The chosen `id` is passed as `CROSSPASTE_ACTION`. |
+| `actions` | Optional. Turns the menu entry into a submenu with one item per action, in the listed order. Each has an `id` (letters, digits, `.`, `_`, `-`), unique within the plugin, and a `name` map (at least one entry, none blank, same language fallback as `name`, then the first declared label). The chosen `id` is passed as `CROSSPASTE_ACTION`. |
 | `output` | What CrossPaste does with stdout: `replaceClipboard` (put it on the clipboard), `newPaste` (add it to history without touching the clipboard), `notification` (show it), `openUrl` (open it in the browser). |
 
 ## Input and output
