@@ -51,14 +51,22 @@ class ProcessPluginExecutor(
         directory: Path,
         command: List<String>,
         input: String,
+        action: String? = null,
     ): PluginProcessResult {
         val workingDir = directory.toFile()
         val process =
             withContext(ioDispatcher) {
                 ProcessBuilder(resolvePluginCommand(workingDir, command))
                     .directory(workingDir)
-                    .also { configurePluginEnvironment(it.environment(), cliBinaryPath(), language(), extraPathDirs) }
-                    .start()
+                    .also {
+                        configurePluginEnvironment(
+                            it.environment(),
+                            cliBinaryPath(),
+                            language(),
+                            action,
+                            extraPathDirs,
+                        )
+                    }.start()
             }
         // Blocking pipe I/O lives outside the caller's scope: a reader stuck on a
         // pipe that an orphaned grandchild still holds must not hang the caller
@@ -151,8 +159,9 @@ internal fun resolvePluginCommand(
 
 /**
  * Inherits the user's environment minus the variables the JVM launcher sets
- * for itself, and adds UTF-8 for Python, the bundled CLI location and the app's
- * UI [language] (a copywriter code such as `en` or `zh_hant`). The
+ * for itself, and adds UTF-8 for Python, the bundled CLI location, the app's
+ * UI [language] (a copywriter code such as `en` or `zh_hant`) and the chosen
+ * [action] id (only for plugins that declare actions). The
  * [extraPathDirs] the requirement check searched are appended to PATH, so a
  * tool reported as available is also found when the plugin runs.
  */
@@ -160,6 +169,7 @@ internal fun configurePluginEnvironment(
     env: MutableMap<String, String>,
     cliBinaryPath: String?,
     language: String,
+    action: String? = null,
     extraPathDirs: List<String> = emptyList(),
 ) {
     env.keys.removeAll { it.startsWith("JAVA_MAIN_CLASS_") || it.startsWith("JAVA_STARTED_ON_FIRST_THREAD_") }
@@ -170,6 +180,11 @@ internal fun configurePluginEnvironment(
     }
     env["PYTHONIOENCODING"] = "utf-8"
     env["CROSSPASTE_LANGUAGE"] = language
+    if (action != null) {
+        env["CROSSPASTE_ACTION"] = action
+    } else {
+        env.remove("CROSSPASTE_ACTION")
+    }
     if (cliBinaryPath != null) {
         env["CROSSPASTE_CLI"] = cliBinaryPath
     } else {

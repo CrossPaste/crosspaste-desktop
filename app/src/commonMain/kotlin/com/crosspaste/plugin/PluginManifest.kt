@@ -20,25 +20,11 @@ data class PluginManifest(
     val hosts: List<String> = emptyList(),
     val platforms: Map<String, PluginPlatform> = emptyMap(),
     val output: String,
+    /** When present, the menu entry becomes a submenu with one item per action. */
+    val actions: List<PluginAction> = emptyList(),
 ) {
 
-    /**
-     * Label for [language] (a copywriter code such as `zh` or `zh_hant`): exact
-     * match, then normalized/hyphenated variations, then the base language,
-     * then English, then any declared name.
-     */
-    fun displayName(language: String): String {
-        val baseLang = language.substringBefore('_').substringBefore('-')
-        val normalized = language.replace('-', '_')
-        val hyphenated = language.replace('_', '-')
-        return name[language]
-            ?: name[normalized]
-            ?: name[hyphenated]
-            ?: name[baseLang]
-            ?: name["en"]
-            ?: name.values.firstOrNull()
-            ?: id
-    }
+    fun displayName(language: String): String = localizedName(name, language) ?: id
 
     fun supportedPasteTypes(): Set<PasteType> = pasteTypes.mapNotNull { PUBLIC_PASTE_TYPES[it] }.toSet()
 
@@ -58,6 +44,35 @@ data class PluginManifest(
                 "files" to PasteType.FILE_TYPE,
             )
     }
+}
+
+/** A submenu item; the chosen [id] reaches the process as `CROSSPASTE_ACTION`. */
+@Serializable
+data class PluginAction(
+    val id: String,
+    val name: Map<String, String> = emptyMap(),
+) {
+    fun displayName(language: String): String = localizedName(name, language) ?: id
+}
+
+/**
+ * Label for [language] (a copywriter code such as `zh` or `zh_hant`): exact
+ * match, then normalized/hyphenated variations, then the base language,
+ * then English, then any declared name.
+ */
+private fun localizedName(
+    name: Map<String, String>,
+    language: String,
+): String? {
+    val baseLang = language.substringBefore('_').substringBefore('-')
+    val normalized = language.replace('-', '_')
+    val hyphenated = language.replace('_', '-')
+    return name[language]
+        ?: name[normalized]
+        ?: name[hyphenated]
+        ?: name[baseLang]
+        ?: name["en"]
+        ?: name.values.firstOrNull()
 }
 
 @Serializable

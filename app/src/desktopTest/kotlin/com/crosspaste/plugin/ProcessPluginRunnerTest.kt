@@ -114,6 +114,16 @@ class ProcessPluginRunnerTest {
         }
 
     @Test
+    fun `the chosen action reaches the executor`() =
+        runTest {
+            coEvery { executor.execute(any(), any(), any(), "zh-CN") } returns PluginProcessResult(0, "你好", "")
+
+            runner.run(plugin("replaceClipboard"), pasteData, "zh-CN")
+
+            coVerify { executor.execute(any(), any(), any(), "zh-CN") }
+        }
+
+    @Test
     fun `newPaste records a history entry attributed to the plugin and notifies success`() =
         runTest {
             coEvery { executor.execute(any(), any(), any()) } returns PluginProcessResult(0, "HELLO", "")

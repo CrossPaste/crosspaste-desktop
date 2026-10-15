@@ -114,5 +114,9 @@ private fun validateManifest(manifest: PluginManifest): PluginProblem? =
             PluginProblem.InvalidManifest("invalid minAppVersion: ${manifest.minAppVersion}")
         manifest.supportedPasteTypes().isEmpty() ->
             PluginProblem.InvalidManifest("no supported pasteTypes")
+        manifest.actions.any { it.id.isBlank() } -> PluginProblem.InvalidManifest("blank action id")
+        manifest.actions.distinctBy { it.id }.size != manifest.actions.size ->
+            PluginProblem.InvalidManifest("duplicate action id")
+        manifest.actions.any { it.name.isEmpty() } -> PluginProblem.InvalidManifest("action without name")
         else -> null
     }

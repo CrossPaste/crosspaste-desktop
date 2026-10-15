@@ -22,6 +22,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.PasteFiles
+import com.crosspaste.paste.menu.PasteMenuAction
 import com.crosspaste.paste.menu.PasteMenuContributor
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskSubmitter
@@ -328,11 +329,16 @@ class DesktopPasteMenuService(
                     logger.error(e) { "Contributor ${contributor::class.simpleName} failed to contribute menu items" }
                     emptyList()
                 }
-            }.map { action ->
-                ContextMenuItem(action.label) {
-                    menuScope.launch { action.onClick() }
-                }
+            }.map(::toContextMenuItem)
+
+    private fun toContextMenuItem(action: PasteMenuAction): ContextMenuItem =
+        if (action.children.isEmpty()) {
+            ContextMenuItem(action.label) {
+                menuScope.launch { action.onClick() }
             }
+        } else {
+            ContextMenuGroup(action.label) { action.children.map(::toContextMenuItem) }
+        }
 
     private fun createMenuItems(pasteData: PasteData): List<ContextMenuItem> {
         if (pasteData.pasteState == PasteState.LOADING) {

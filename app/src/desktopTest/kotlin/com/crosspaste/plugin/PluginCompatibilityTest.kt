@@ -67,6 +67,29 @@ class PluginCompatibilityTest {
     }
 
     @Test
+    fun `actions parse in order and their names fall back like the plugin name`() {
+        val withActions =
+            json.decodeFromString(
+                PluginManifest.serializer(),
+                manifestJson.replace(
+                    "\"output\":",
+                    """"actions": [
+                        { "id": "en", "name": { "en": "English" } },
+                        { "id": "zh-CN", "name": { "zh": "简体中文" } }
+                    ],
+                    "output":""",
+                ),
+            )
+
+        assertEquals(listOf("en", "zh-CN"), withActions.actions.map { it.id })
+        assertEquals("简体中文", withActions.actions[1].displayName("zh_hant"))
+        assertEquals("简体中文", withActions.actions[1].displayName("ja"))
+        assertEquals("English", withActions.actions[0].displayName("zh"))
+        assertNull(checkPluginCompatibility(withActions, env()))
+        assertEquals(emptyList(), manifest.actions)
+    }
+
+    @Test
     fun `compatible on every declared platform with raw arch values`() {
         assertNull(checkPluginCompatibility(manifest, env()))
         assertNull(checkPluginCompatibility(manifest, env(arch = "x86_64")))
@@ -120,6 +143,11 @@ class PluginCompatibilityTest {
                 manifest.copy(platforms = mapOf("macos" to PluginPlatform(command = emptyList()))),
                 manifest.copy(platforms = mapOf("macos" to PluginPlatform(command = listOf("")))),
                 manifest.copy(platforms = mapOf("macos" to PluginPlatform(command = listOf("   ")))),
+                manifest.copy(actions = listOf(PluginAction(" ", mapOf("en" to "Blank")))),
+                manifest.copy(
+                    actions = listOf(PluginAction("en", mapOf("en" to "A")), PluginAction("en", mapOf("en" to "B"))),
+                ),
+                manifest.copy(actions = listOf(PluginAction("en"))),
             )
         invalid.forEach {
             val problem = checkPluginCompatibility(it, env())
