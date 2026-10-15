@@ -93,6 +93,12 @@ object OCR : Route {
 }
 
 @Serializable
+object Plugins : Route {
+    const val NAME: String = "plugins"
+    override val name: String = NAME
+}
+
+@Serializable
 object SourceControl : Route {
     const val NAME: String = "source_control_settings"
     override val name: String = NAME

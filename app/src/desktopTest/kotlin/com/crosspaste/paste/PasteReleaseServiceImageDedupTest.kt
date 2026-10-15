@@ -341,6 +341,30 @@ class PasteReleaseServiceImageDedupTest {
         }
 
     @Test
+    fun `createLocalPasteData stores a new paste through the local release path`() =
+        runTest {
+            val fixture = newFixture()
+
+            val id =
+                fixture.service.createLocalPasteData(
+                    appInstanceId = appInfo.appInstanceId,
+                    pasteItem = createTextPasteItem(text = "from a plugin"),
+                    source = "com.example.plugin",
+                )
+
+            val released = fixture.pasteDao.getNoDeletePasteDataBlock(id)
+            assertNotNull(released)
+            assertEquals(PasteState.LOADED, released.pasteState)
+            assertEquals(PasteType.TEXT_TYPE.type, released.pasteType)
+            assertEquals("com.example.plugin", released.source)
+            assertEquals(
+                1,
+                fixture.taskSubmitter.builder.syncTaskCount
+                    .get(),
+            )
+        }
+
+    @Test
     fun `dedup query ignores deleted records`() =
         runTest {
             val fixture = newFixture()

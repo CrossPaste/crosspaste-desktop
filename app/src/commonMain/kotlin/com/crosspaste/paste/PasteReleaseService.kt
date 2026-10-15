@@ -25,6 +25,7 @@ import com.crosspaste.sync.FilePullService
 import com.crosspaste.sync.PastePullCursorManager
 import com.crosspaste.task.TaskBuilder
 import com.crosspaste.task.TaskSubmitter
+import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
@@ -161,6 +162,34 @@ class PasteReleaseService(
         getFilePaths(userDataPathProvider)
             .map { path -> runCatching { fileUtils.fileSystem.canonicalize(path) }.getOrDefault(path).toString() }
             .toSet()
+
+    /**
+     * Records [pasteItem] as a new local paste with the same lifecycle as a
+     * pasteboard capture: a LOADING row, then the standard local release
+     * (process plugins, dedup, sync and rendering tasks). Returns the row id;
+     * the row is mark-deleted if a process plugin discards the item.
+     */
+    suspend fun createLocalPasteData(
+        appInstanceId: String,
+        pasteItem: PasteItem,
+        source: String,
+    ): Long {
+        val id =
+            pasteDao.createPasteData(
+                PasteData(
+                    appInstanceId = appInstanceId,
+                    pasteCollection = PasteCollection(listOf(pasteItem)),
+                    pasteType = PasteType.INVALID_TYPE.type,
+                    source = source,
+                    size = 0L,
+                    hash = "",
+                    pasteState = PasteState.LOADING,
+                    createTime = DateUtils.nowEpochMilliseconds(),
+                ),
+            )
+        releaseLocalPasteData(id = id, pasteItems = listOf(pasteItem), targetAppInstanceIds = null)
+        return id
+    }
 
     suspend fun releaseLocalPasteData(
         id: Long,
