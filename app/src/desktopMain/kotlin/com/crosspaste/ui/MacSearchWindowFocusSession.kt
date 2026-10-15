@@ -1,5 +1,16 @@
 package com.crosspaste.ui
 
+/** A status item can take key-window focus while the application remains active. */
+internal data class MacSearchWindowFocusState(
+    val appActive: Boolean,
+    val searchFocused: Boolean,
+    val bubbleFocused: Boolean,
+    val mainFocused: Boolean,
+) {
+    val shouldDismiss: Boolean
+        get() = !searchFocused && !bubbleFocused && (!appActive || mainFocused)
+}
+
 /** Focus protection belongs to one interactive appearance, without a timed grace period. */
 internal class MacSearchWindowFocusSession(
     private var gainedFocus: Boolean = false,
