@@ -120,4 +120,17 @@ class ProcessPluginExecutorIntegrationTest {
         ProcessHandle.of(childPid).ifPresent { it.onExit().get(5, TimeUnit.SECONDS) }
         assertTrue(ProcessHandle.of(childPid).map { !it.isAlive }.orElse(true), "grandchild survived")
     }
+
+    @Test
+    fun `grandchild holding pipe open does not hang execution after main process exits`() {
+        if (File.separatorChar == '\\') return
+        val executor = ProcessPluginExecutor(cliBinaryPath = { null }, pipeDrainTimeout = 1.seconds)
+        // Grandchild sleeps 30s holding stdout open, but main process exits immediately
+        val command = script("sleep 30 & echo done")
+
+        val result = runBlocking { executor.execute(pluginDir.toOkioPath(), command, "") }
+
+        assertEquals(0, result.exitCode)
+        assertEquals("done\n", result.stdout)
+    }
 }

@@ -114,7 +114,7 @@ class ProcessPluginRunnerTest {
         }
 
     @Test
-    fun `newPaste records a history entry attributed to the plugin`() =
+    fun `newPaste records a history entry attributed to the plugin and notifies success`() =
         runTest {
             coEvery { executor.execute(any(), any(), any()) } returns PluginProcessResult(0, "HELLO", "")
 
@@ -122,6 +122,7 @@ class ProcessPluginRunnerTest {
 
             coVerify { pasteReleaseService.createLocalPasteData(any(), any(), "com.example.upper") }
             coVerify(exactly = 0) { pasteboardService.tryWritePasteboard(any(), any<TextPasteItem>(), any(), any()) }
+            verify { notificationManager.sendNotification(any(), any(), MessageType.Success, any()) }
         }
 
     @Test
@@ -132,6 +133,30 @@ class ProcessPluginRunnerTest {
             runner.run(plugin("replaceClipboard"), pasteData)
 
             coVerify(exactly = 0) { pasteboardService.tryWritePasteboard(any(), any<TextPasteItem>(), any(), any()) }
+            verify { notificationManager.sendNotification(any(), any(), MessageType.Error, any()) }
+        }
+
+    @Test
+    fun `replaceClipboard notifies failure when tryWritePasteboard fails`() =
+        runTest {
+            coEvery { executor.execute(any(), any(), any()) } returns PluginProcessResult(0, "HELLO", "")
+            coEvery { pasteboardService.tryWritePasteboard(any(), any<TextPasteItem>(), false, false) } returns
+                Result.failure(RuntimeException("locked"))
+
+            runner.run(plugin("replaceClipboard"), pasteData)
+
+            verify { notificationManager.sendNotification(any(), any(), MessageType.Error, any()) }
+        }
+
+    @Test
+    fun `applyOutput exception is caught and notified as failure`() =
+        runTest {
+            coEvery { executor.execute(any(), any(), any()) } returns PluginProcessResult(0, "HELLO", "")
+            coEvery { pasteReleaseService.createLocalPasteData(any(), any(), any()) } throws
+                IllegalStateException("disk error")
+
+            runner.run(plugin("newPaste"), pasteData)
+
             verify { notificationManager.sendNotification(any(), any(), MessageType.Error, any()) }
         }
 }

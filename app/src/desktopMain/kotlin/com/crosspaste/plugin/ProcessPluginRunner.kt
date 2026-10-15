@@ -52,6 +52,7 @@ class ProcessPluginRunner(
     ) {
         val manifest = plugin.manifest ?: return
         val command = plugin.platform(environment)?.command ?: return
+        if (command.isEmpty()) return
         val output = PluginOutput.fromWireName(manifest.output) ?: return
         val name = manifest.displayName(copywriter.language())
 
@@ -79,7 +80,16 @@ class ProcessPluginRunner(
                 logger.warn { "Plugin ${manifest.id} timed out" }
                 notifyFailure(name, copywriter.getText("plugin_timed_out"))
             }
-            0 -> applyOutput(manifest, name, output, result.stdout.trimEnd('\n'))
+            0 -> {
+                try {
+                    applyOutput(manifest, name, output, result.stdout.trimEnd('\n'))
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.warn(e) { "Plugin ${manifest.id} failed to apply output" }
+                    notifyFailure(name, e.message ?: e::class.simpleName.orEmpty())
+                }
+            }
             else -> {
                 logger.warn { "Plugin ${manifest.id} exited with ${result.exitCode}" }
                 notifyFailure(
@@ -113,13 +123,21 @@ class ProcessPluginRunner(
                             message = { it.getText("copy_successful") },
                             messageType = MessageType.Success,
                         )
+                    }.onFailure {
+                        notifyFailure(name, it.message ?: copywriter.getText("copy_failed"))
                     }
-            PluginOutput.NEW_PASTE ->
+            PluginOutput.NEW_PASTE -> {
                 pasteReleaseService.createLocalPasteData(
                     appInstanceId = appInfo.appInstanceId,
                     pasteItem = textPasteItem(text),
                     source = manifest.id,
                 )
+                notificationManager.sendNotification(
+                    title = { name },
+                    message = { it.getText("save_successful") },
+                    messageType = MessageType.Success,
+                )
+            }
             PluginOutput.NOTIFICATION ->
                 notificationManager.sendNotification(
                     title = { name },

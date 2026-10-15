@@ -32,6 +32,11 @@ class ProcessPluginExecutorTest {
     }
 
     @Test
+    fun `empty command returns empty list`() {
+        assertEquals(emptyList(), resolvePluginCommand(pluginDir, emptyList()))
+    }
+
+    @Test
     fun `environment drops launcher variables and injects plugin variables`() {
         val env =
             mutableMapOf(

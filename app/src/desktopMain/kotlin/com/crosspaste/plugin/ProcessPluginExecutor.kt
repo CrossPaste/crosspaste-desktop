@@ -3,6 +3,7 @@ package com.crosspaste.plugin
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -28,10 +29,14 @@ class ProcessPluginExecutor(
     private val cliBinaryPath: () -> String?,
     private val extraPathDirs: List<String> = emptyList(),
     private val timeout: Duration = DEFAULT_TIMEOUT,
+    private val pipeDrainTimeout: Duration = DEFAULT_PIPE_DRAIN_TIMEOUT,
 ) {
 
     companion object {
         val DEFAULT_TIMEOUT = 30.seconds
+        val DEFAULT_PIPE_DRAIN_TIMEOUT = 2.seconds
+        const val MAX_STDOUT_BYTES = 10 * 1024 * 1024
+        const val MAX_STDERR_BYTES = 64 * 1024
     }
 
     suspend fun execute(
@@ -50,8 +55,8 @@ class ProcessPluginExecutor(
         // Blocking pipe I/O lives outside the caller's scope: a reader stuck on a
         // pipe that an orphaned grandchild still holds must not hang the caller
         val pipes = CoroutineScope(ioDispatcher)
-        val stdout = pipes.async { process.inputStream.use { it.readBytes() } }
-        val stderr = pipes.async { process.errorStream.use { it.readBytes() } }
+        val stdout = pipes.async { process.inputStream.use { it.readNBytes(MAX_STDOUT_BYTES) } }
+        val stderr = pipes.async { process.errorStream.use { it.readNBytes(MAX_STDERR_BYTES) } }
         pipes.launch {
             // A plugin may exit without reading its input; the broken pipe is expected
             runCatching { process.outputStream.use { it.write(input.encodeToByteArray()) } }
@@ -59,16 +64,22 @@ class ProcessPluginExecutor(
         try {
             return withTimeoutOrNull(timeout) {
                 val exitCode = process.onExit().await().exitValue()
+                val outBytes = withTimeoutOrNull(pipeDrainTimeout) { stdout.await() } ?: ByteArray(0)
+                val errBytes = withTimeoutOrNull(pipeDrainTimeout) { stderr.await() } ?: ByteArray(0)
                 PluginProcessResult(
                     exitCode = exitCode,
-                    stdout = decodePluginOutput(stdout.await()),
-                    stderr = decodePluginOutput(stderr.await()),
+                    stdout = decodePluginOutput(outBytes),
+                    stderr = decodePluginOutput(errBytes),
                 )
             } ?: PluginProcessResult(exitCode = null, stdout = "", stderr = "")
         } finally {
             if (process.isAlive) {
                 killProcessTree(process)
             }
+            pipes.cancel()
+            runCatching { process.inputStream.close() }
+            runCatching { process.errorStream.close() }
+            runCatching { process.outputStream.close() }
         }
     }
 }
@@ -83,6 +94,7 @@ internal fun resolvePluginCommand(
     directory: File,
     command: List<String>,
 ): List<String> {
+    if (command.isEmpty()) return emptyList()
     val executable = command.first()
     val isRelativePath =
         !File(executable).isAbsolute && (executable.contains('/') || executable.contains('\\'))
@@ -119,7 +131,7 @@ internal fun configurePluginEnvironment(
 internal fun decodePluginOutput(bytes: ByteArray): String =
     bytes
         .decodeToString()
-        .removePrefix("﻿")
+        .removePrefix("\uFEFF")
         .replace("\r\n", "\n")
 
 /** Descendants are collected first: once the parent dies they are reparented and unreachable. */
