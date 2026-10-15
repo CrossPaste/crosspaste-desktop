@@ -1,5 +1,6 @@
 package com.crosspaste.platform.windows
 
+import com.crosspaste.platform.windows.api.Shell32
 import com.crosspaste.platform.windows.api.User32
 import com.sun.jna.platform.win32.BaseTSD.ULONG_PTR
 import com.sun.jna.platform.win32.Kernel32
@@ -21,7 +22,16 @@ object WindowsFocusUtils {
 
     private val searchActivation = WindowsSearchWindowActivation(user32, Kernel32.INSTANCE)
 
-    private val searchPointer = WindowsSearchWindowPointer(user32)
+    private val trayHitTest = WindowsTrayHitTest(user32, Shell32.INSTANCE, Kernel32.INSTANCE.GetCurrentProcessId())
+
+    private val searchPointer = WindowsSearchWindowPointer(user32, trayHitTest::contains)
+
+    fun isTrayForeground(): Boolean = user32.GetForegroundWindow()?.let(trayHitTest::ownsForeground) == true
+
+    fun isTrayIcon(
+        x: Int,
+        y: Int,
+    ): Boolean = trayHitTest.contains(x, y)
 
     fun isOutsideSearchWindow(
         x: Int,

@@ -10,6 +10,7 @@ import com.sun.jna.platform.win32.WinUser.GW_OWNER
 /** Hit-test native pixels, including owned menus and the editor bubble on any monitor. */
 internal class WindowsSearchWindowPointer(
     private val user32: User32,
+    private val isTrayIcon: (Int, Int) -> Boolean,
 ) {
     fun isOutside(
         x: Int,
@@ -18,6 +19,7 @@ internal class WindowsSearchWindowPointer(
         bubble: HWND?,
     ): Boolean {
         if (search == null) return false
+        if (isTrayIcon(x, y)) return false
         val hit = user32.WindowFromPoint(POINT.ByValue(x, y)) ?: return false
         var window: HWND? = user32.GetAncestor(hit, GA_ROOT) ?: return false
         val visited = mutableSetOf<HWND>()

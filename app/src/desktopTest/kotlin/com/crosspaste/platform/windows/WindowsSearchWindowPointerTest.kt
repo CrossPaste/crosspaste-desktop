@@ -1,6 +1,7 @@
 package com.crosspaste.platform.windows
 
 import com.crosspaste.platform.windows.api.User32
+import com.crosspaste.ui.SearchWindowFocusSession
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HWND
@@ -9,6 +10,7 @@ import com.sun.jna.platform.win32.WinUser.GW_OWNER
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.condition.EnabledOnOs
 import org.junit.jupiter.api.condition.OS
 import kotlin.test.Test
@@ -21,7 +23,37 @@ class WindowsSearchWindowPointerTest {
     private val search = HWND(Pointer(101))
     private val bubble = HWND(Pointer(202))
     private val child = HWND(Pointer(303))
-    private val pointer = WindowsSearchWindowPointer(user32)
+    private var trayHit = false
+    private val pointer = WindowsSearchWindowPointer(user32) { _, _ -> trayHit }
+
+    @Test
+    fun `own tray press is left to tray toggle instead of hiding before its callback`() {
+        trayHit = true
+        assertFalse(pointer.isOutside(100, 200, search, bubble))
+        verify(exactly = 0) { user32.WindowFromPoint(any()) }
+    }
+
+    @Test
+    fun `tray toggle closes once whether queued outside check runs before or after callback`() =
+        runTest {
+            trayHit = true
+            for (outsideFirst in listOf(true, false)) {
+                val session = SearchWindowFocusSession()
+                session.activate { true }
+                var shown = true
+                var outsideDismissals = 0
+                val queued = mutableListOf<() -> Unit>()
+                session.deferOutsidePress(queued::add, { pointer.isOutside(100, 200, search, bubble) }) {
+                    outsideDismissals++
+                    shown = false
+                }
+                if (outsideFirst) queued.single().invoke()
+                shown = !shown
+                if (!outsideFirst) queued.single().invoke()
+                assertFalse(shown)
+                kotlin.test.assertEquals(0, outsideDismissals)
+            }
+        }
 
     @Test
     fun `external press uses native coordinates including negative monitor coordinates`() {

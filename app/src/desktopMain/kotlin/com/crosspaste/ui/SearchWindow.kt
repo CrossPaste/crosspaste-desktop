@@ -225,6 +225,7 @@ fun SearchWindow(windowIcon: Painter?) {
                                 !searchForeground &&
                                 !window.isFocused &&
                                 !bubbleFocused &&
+                                !WindowsFocusUtils.isTrayForeground() &&
                                 (otherForeground || manager.isMainWindowForeground())
                         },
                         dismiss = {
@@ -263,6 +264,9 @@ fun SearchWindow(windowIcon: Painter?) {
                                 val session = currentWindowsFocusSession ?: return
                                 val x = nativeEvent.x
                                 val y = nativeEvent.y
+                                // Capture before queuing: releasing an overflow icon can close
+                                // its panel before the EDT processes this press.
+                                if (WindowsFocusUtils.isTrayIcon(x, y)) return
                                 session.deferOutsidePress(
                                     enqueue = { EventQueue.invokeLater(it) },
                                     shouldDismiss = {
