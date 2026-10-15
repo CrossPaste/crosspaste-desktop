@@ -48,14 +48,15 @@ class ProcessPluginExecutorTest {
                 "CROSSPASTE_CLI" to "stale",
             )
 
-        configurePluginEnvironment(env, "/Applications/CrossPaste.app/Contents/bin/crosspaste")
+        configurePluginEnvironment(env, "/Applications/CrossPaste.app/Contents/bin/crosspaste", "zh_hant")
 
         assertEquals("/usr/bin", env["PATH"])
         assertEquals("utf-8", env["PYTHONIOENCODING"])
         assertEquals("/Applications/CrossPaste.app/Contents/bin/crosspaste", env["CROSSPASTE_CLI"])
+        assertEquals("zh_hant", env["CROSSPASTE_LANGUAGE"])
         assertFalse(env.keys.any { it.startsWith("JAVA_") })
 
-        configurePluginEnvironment(env, null)
+        configurePluginEnvironment(env, null, "en")
         assertFalse("CROSSPASTE_CLI" in env)
     }
 
@@ -63,7 +64,7 @@ class ProcessPluginExecutorTest {
     fun `extra PATH dirs are appended once after the inherited PATH`() {
         val env = mutableMapOf("PATH" to listOf("/usr/bin", "/usr/local/bin").joinToString(File.pathSeparator))
 
-        configurePluginEnvironment(env, null, listOf("/opt/homebrew/bin", "/usr/local/bin"))
+        configurePluginEnvironment(env, null, "en", listOf("/opt/homebrew/bin", "/usr/local/bin"))
 
         assertEquals(
             listOf("/usr/bin", "/usr/local/bin", "/opt/homebrew/bin").joinToString(File.pathSeparator),

@@ -3,6 +3,7 @@ package com.crosspaste
 import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.cli.CliSymlinkService
 import com.crosspaste.headless.HeadlessPasteboardService
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.paste.CurrentPaste
@@ -162,8 +163,10 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
         single<PluginMenuContributor> { PluginMenuContributor(get(), get(), get()) }
         single<ProcessPluginExecutor> {
             val cliSymlinkService = get<CliSymlinkService>()
+            val copywriter = get<GlobalCopywriter>()
             ProcessPluginExecutor(
                 cliBinaryPath = { cliSymlinkService.cliBinaryPath.value?.toString() },
+                language = { copywriter.language() },
                 extraPathDirs = pluginExtraPathDirs(get()),
             )
         }

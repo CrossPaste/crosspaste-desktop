@@ -34,6 +34,7 @@ class PluginProcessResult(
  */
 class ProcessPluginExecutor(
     private val cliBinaryPath: () -> String?,
+    private val language: () -> String,
     private val extraPathDirs: List<String> = emptyList(),
     private val timeout: Duration = DEFAULT_TIMEOUT,
     private val pipeDrainTimeout: Duration = DEFAULT_PIPE_DRAIN_TIMEOUT,
@@ -56,7 +57,7 @@ class ProcessPluginExecutor(
             withContext(ioDispatcher) {
                 ProcessBuilder(resolvePluginCommand(workingDir, command))
                     .directory(workingDir)
-                    .also { configurePluginEnvironment(it.environment(), cliBinaryPath(), extraPathDirs) }
+                    .also { configurePluginEnvironment(it.environment(), cliBinaryPath(), language(), extraPathDirs) }
                     .start()
             }
         // Blocking pipe I/O lives outside the caller's scope: a reader stuck on a
@@ -150,13 +151,15 @@ internal fun resolvePluginCommand(
 
 /**
  * Inherits the user's environment minus the variables the JVM launcher sets
- * for itself, and adds UTF-8 for Python plus the bundled CLI location. The
+ * for itself, and adds UTF-8 for Python, the bundled CLI location and the app's
+ * UI [language] (a copywriter code such as `en` or `zh_hant`). The
  * [extraPathDirs] the requirement check searched are appended to PATH, so a
  * tool reported as available is also found when the plugin runs.
  */
 internal fun configurePluginEnvironment(
     env: MutableMap<String, String>,
     cliBinaryPath: String?,
+    language: String,
     extraPathDirs: List<String> = emptyList(),
 ) {
     env.keys.removeAll { it.startsWith("JAVA_MAIN_CLASS_") || it.startsWith("JAVA_STARTED_ON_FIRST_THREAD_") }
@@ -166,6 +169,7 @@ internal fun configurePluginEnvironment(
         env[pathKey] = (pathDirs + extraPathDirs.filterNot { it in pathDirs }).joinToString(File.pathSeparator)
     }
     env["PYTHONIOENCODING"] = "utf-8"
+    env["CROSSPASTE_LANGUAGE"] = language
     if (cliBinaryPath != null) {
         env["CROSSPASTE_CLI"] = cliBinaryPath
     } else {

@@ -35,7 +35,7 @@ class ProcessPluginExecutorIntegrationTest {
     @Test
     fun `round trips UTF-8 through stdin and stdout in the plugin directory`() {
         if (File.separatorChar == '\\') return
-        val executor = ProcessPluginExecutor(cliBinaryPath = { "/opt/crosspaste-cli" })
+        val executor = ProcessPluginExecutor(cliBinaryPath = { "/opt/crosspaste-cli" }, language = { "en" })
         val command =
             script(
                 """
@@ -62,7 +62,7 @@ class ProcessPluginExecutorIntegrationTest {
     @Test
     fun `a plugin that ignores stdin still completes`() {
         if (File.separatorChar == '\\') return
-        val executor = ProcessPluginExecutor(cliBinaryPath = { null })
+        val executor = ProcessPluginExecutor(cliBinaryPath = { null }, language = { "en" })
         val command = script("echo done")
 
         val result = runBlocking { executor.execute(pluginDir.toOkioPath(), command, "x".repeat(1 shl 20)) }
@@ -88,7 +88,7 @@ class ProcessPluginExecutorIntegrationTest {
 
         val result =
             runBlocking {
-                ProcessPluginExecutor(cliBinaryPath = { null }).execute(
+                ProcessPluginExecutor(cliBinaryPath = { null }, language = { "en" }).execute(
                     directory = sampleDir.toOkioPath(),
                     command = manifest.platforms.getValue("macos").command,
                     input = """{"id":1,"typeName":"text","content":"x","rawContent":"hello crosspaste"}""",
@@ -102,7 +102,7 @@ class ProcessPluginExecutorIntegrationTest {
     @Test
     fun `timeout kills the whole process tree`() {
         if (File.separatorChar == '\\') return
-        val executor = ProcessPluginExecutor(cliBinaryPath = { null }, timeout = 1.seconds)
+        val executor = ProcessPluginExecutor(cliBinaryPath = { null }, language = { "en" }, timeout = 1.seconds)
         val pidFile = File(pluginDir, "child.pid")
         // The grandchild holds stdout open: without the tree kill the run would never end
         val command = script("sleep 30 & echo ${'$'}! > child.pid; wait")
@@ -124,7 +124,8 @@ class ProcessPluginExecutorIntegrationTest {
     @Test
     fun `grandchild holding pipe open does not hang execution after main process exits`() {
         if (File.separatorChar == '\\') return
-        val executor = ProcessPluginExecutor(cliBinaryPath = { null }, pipeDrainTimeout = 1.seconds)
+        val executor =
+            ProcessPluginExecutor(cliBinaryPath = { null }, language = { "en" }, pipeDrainTimeout = 1.seconds)
         // Grandchild sleeps 30s holding stdout open, but main process exits immediately
         val command = script("sleep 30 & echo done")
 
