@@ -32,10 +32,6 @@ internal class WindowsSearchWindowActivation(
         val foregroundThread =
             foreground?.let { user32.GetWindowThreadProcessId(it, IntByReference()) } ?: 0
         val attach = foreground != window && foregroundThread != 0 && foregroundThread != callerThread
-        logger.info {
-            "Search activation: callerThread=$callerThread, windowThread=$windowThread, " +
-                "foregroundThread=$foregroundThread, attach=$attach"
-        }
         if (attach && !user32.AttachThreadInput(DWORD(callerThread.toLong()), DWORD(foregroundThread.toLong()), true)) {
             logger.error { "Search activation AttachThreadInput failed: ${kernel32.GetLastError()}" }
             return false
@@ -70,8 +66,6 @@ internal class WindowsSearchWindowActivation(
                 user32.AttachThreadInput(DWORD(callerThread.toLong()), DWORD(foregroundThread.toLong()), false)
             }
         }
-        val confirmed = user32.GetForegroundWindow() == window
-        logger.info { "Search native activation confirmed: foreground=$confirmed" }
-        return confirmed
+        return user32.GetForegroundWindow() == window
     }
 }

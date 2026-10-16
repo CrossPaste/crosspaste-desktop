@@ -38,11 +38,6 @@ object WindowsFocusUtils {
         y: Int,
     ): Boolean = trayHitTest.contains(x, y)
 
-    fun describePointerWindow(
-        x: Int,
-        y: Int,
-    ): String = searchPointer.describePoint(x, y)
-
     fun isOutsideSearchWindow(
         x: Int,
         y: Int,

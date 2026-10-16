@@ -214,11 +214,6 @@ fun SearchWindow(windowIcon: Painter?) {
                             val searchForeground = manager.isSearchWindowForeground()
                             val bubbleFocused =
                                 manager.bubbleComposeWindow?.isFocused == true || manager.isBubbleWindowForeground()
-                            logger.info {
-                                "Search focus loss check: startup=${currentIgnoreFocusLoss.get()}, " +
-                                    "focused=${window.isFocused}, bubbleFocused=$bubbleFocused, " +
-                                    "searchForeground=$searchForeground, otherForeground=$otherForeground"
-                            }
                             listenerActive.get() &&
                                 currentWindowsFocusSession === session &&
                                 window.isVisible &&
@@ -229,7 +224,6 @@ fun SearchWindow(windowIcon: Painter?) {
                                 (otherForeground || manager.isMainWindowForeground())
                         },
                         dismiss = {
-                            logger.info { "Search window lost focus to another window" }
                             appWindowManager.hideSearchWindow()
                         },
                     )
@@ -246,7 +240,6 @@ fun SearchWindow(windowIcon: Painter?) {
                                     val acquired =
                                         appWindowManager.isSearchWindow(hwnd) &&
                                             appWindowManager.isSearchWindowForeground()
-                                    logger.info { "Search native foreground event: acquired=$acquired" }
                                     session.onForegroundChanged(acquired) {
                                         deferWindowsFocusLoss(session)
                                     }
@@ -259,69 +252,26 @@ fun SearchWindow(windowIcon: Painter?) {
 
                 val mouseListener =
                     if (appWindowManager is WinAppWindowManager) {
-                        logger.info {
-                            "Windows search diagnostics enabled: osName=${System.getProperty("os.name")}, " +
-                                "osVersion=${System.getProperty("os.version")}, " +
-                                "osArch=${System.getProperty("os.arch")}, " +
-                                "javaRuntime=${System.getProperty("java.runtime.version")}, " +
-                                "javaVendor=${System.getProperty("java.vendor")}, " +
-                                "appEnv=${System.getProperty("appEnv")}"
-                        }
                         object : NativeMouseListener {
                             override fun nativeMousePressed(nativeEvent: NativeMouseEvent) {
                                 val session = currentWindowsFocusSession ?: return
                                 val x = nativeEvent.x
                                 val y = nativeEvent.y
-                                val pressId = System.nanoTime()
-                                val sessionId = System.identityHashCode(session)
                                 // Candidate selection can commit before the deferred outside
-                                // check runs. Sample before tray hit-testing and diagnostic work.
+                                // check runs. Sample before tray hit-testing and deferred dismissal.
                                 val composing = appWindowManager.isSearchWindowComposing()
                                 // Capture before queuing: releasing an overflow icon can close
                                 // its panel before the EDT processes this press.
-                                val trayIcon = WindowsFocusUtils.isTrayIcon(x, y)
-                                logger.info {
-                                    "Windows search mouse pressed: press=$pressId, session=$sessionId, " +
-                                        "x=$x, y=$y, button=${nativeEvent.button}, " +
-                                        "trayIcon=$trayIcon, composing=$composing, " +
-                                        "searchFocused=${window.isFocused}, " +
-                                        "bubbleFocused=${appWindowManager.bubbleComposeWindow?.isFocused}, " +
-                                        WindowsFocusUtils.describePointerWindow(x, y)
-                                }
-                                if (trayIcon || composing) return
+                                if (WindowsFocusUtils.isTrayIcon(x, y) || composing) return
                                 session.deferOutsidePress(
-                                    enqueue = { check ->
-                                        EventQueue.invokeLater {
-                                            logger.info {
-                                                "Windows search outside check dispatched: press=$pressId, " +
-                                                    "session=$sessionId, " +
-                                                    "queueDelayMs=${(System.nanoTime() - pressId) / 1_000_000.0}"
-                                            }
-                                            check()
-                                        }
-                                    },
+                                    enqueue = { EventQueue.invokeLater(it) },
                                     shouldDismiss = {
-                                        val eligible =
-                                            listenerActive.get() &&
-                                                currentWindowsFocusSession === session &&
-                                                window.isVisible
-                                        val outside = eligible && appWindowManager.isOutsideSearchWindow(x, y)
-                                        logger.info {
-                                            "Windows search outside check result: press=$pressId, " +
-                                                "session=$sessionId, eligible=$eligible, outside=$outside, " +
-                                                "searchFocused=${window.isFocused}, " +
-                                                "searchForeground=${appWindowManager.isSearchWindowForeground()}, " +
-                                                "bubbleFocused=${appWindowManager.bubbleComposeWindow?.isFocused}, " +
-                                                "bubbleForeground=${appWindowManager.isBubbleWindowForeground()}, " +
-                                                "show=${appWindowManager.getCurrentSearchWindowInfo().show}"
-                                        }
-                                        outside
+                                        listenerActive.get() &&
+                                            currentWindowsFocusSession === session &&
+                                            window.isVisible &&
+                                            appWindowManager.isOutsideSearchWindow(x, y)
                                     },
                                     dismiss = {
-                                        logger.info {
-                                            "Search window dismissed by outside mouse press: " +
-                                                "press=$pressId, session=$sessionId"
-                                        }
                                         appWindowManager.hideSearchWindow()
                                     },
                                 )
@@ -338,7 +288,6 @@ fun SearchWindow(windowIcon: Painter?) {
                             if (appWindowManager is WinAppWindowManager) {
                                 val foreground = appWindowManager.isSearchWindowForeground()
                                 currentWindowsFocusSession?.onFocusGained(foreground)
-                                logger.info { "Search AWT focus gained: nativeForeground=$foreground" }
                             }
                             // On Linux, once mapped and focused, outside clicks are
                             // real dismissals even within the first second.
