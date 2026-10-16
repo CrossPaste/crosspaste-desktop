@@ -6,9 +6,10 @@ internal data class MacSearchWindowFocusState(
     val searchFocused: Boolean,
     val bubbleFocused: Boolean,
     val mainFocused: Boolean,
+    val trayClickPending: Boolean = false,
 ) {
     val shouldDismiss: Boolean
-        get() = !searchFocused && !bubbleFocused && (!appActive || mainFocused)
+        get() = !trayClickPending && !searchFocused && !bubbleFocused && (!appActive || mainFocused)
 }
 
 /** Focus protection belongs to one interactive appearance, without a timed grace period. */
@@ -28,6 +29,7 @@ internal class MacSearchWindowFocusSession(
     fun deferFocusLoss(
         enqueue: (() -> Unit) -> Unit,
         shouldDismiss: () -> Boolean,
+        isCurrentAppearance: () -> Boolean = { true },
         dismiss: () -> Unit,
     ) {
         val generation =
@@ -37,7 +39,7 @@ internal class MacSearchWindowFocusSession(
             }
         enqueue {
             synchronized(this) {
-                if (active && generation == focusGeneration && shouldDismiss()) {
+                if (active && generation == focusGeneration && isCurrentAppearance() && shouldDismiss()) {
                     active = false
                     dismiss()
                 }
