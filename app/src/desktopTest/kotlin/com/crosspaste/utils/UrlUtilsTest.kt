@@ -46,6 +46,50 @@ class UrlUtilsTest {
     }
 
     @Test
+    fun `isValidUrl accepts a local file URL`() {
+        assertTrue(urlUtils.isValidUrl("file:///tmp/example.txt"))
+    }
+
+    @Test
+    fun `isHttpUrl accepts web URLs with a host`() {
+        listOf(
+            "http://example.com/page",
+            "https://example.com/page",
+            "HTTPS://example.com/page",
+            "http://localhost:8080/page",
+            "https://[::1]:8443/page",
+            "https://例子.测试/page",
+        ).forEach { url -> assertTrue(urlUtils.isHttpUrl(url), url) }
+    }
+
+    @Test
+    fun `isHttpUrl rejects unsupported schemes`() {
+        listOf(
+            "file:/tmp/example.txt",
+            "file:///tmp/example.txt",
+            "file://server/shared/example.txt",
+            "ftp://files.example.com/readme.txt",
+            "mailto:user@example.com",
+            "data:text/plain,hello",
+        ).forEach { url -> assertFalse(urlUtils.isHttpUrl(url), url) }
+    }
+
+    @Test
+    fun `isHttpUrl rejects missing hosts and malformed URLs`() {
+        listOf(
+            "http://",
+            "https:///favicon.ico",
+            "http://?query=value",
+            "http://#fragment",
+            "https://example.com:invalid/page",
+            "https://example.com/a b",
+            "//example.com/page",
+            "/relative/path",
+            "",
+        ).forEach { url -> assertFalse(urlUtils.isHttpUrl(url), url) }
+    }
+
+    @Test
     fun `removeUrlScheme strips http scheme`() {
         assertEquals("example.com/path", urlUtils.removeUrlScheme("http://example.com/path"))
     }

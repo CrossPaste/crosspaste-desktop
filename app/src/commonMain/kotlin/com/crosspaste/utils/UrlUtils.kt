@@ -9,6 +9,8 @@ interface UrlUtils {
 
     fun isValidUrl(string: String): Boolean
 
+    fun isHttpUrl(string: String): Boolean
+
     fun createMiddleEllipsisText(
         url: String,
         maxLines: Int,

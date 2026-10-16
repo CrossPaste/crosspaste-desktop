@@ -60,6 +60,137 @@ class OpenGraphServiceTest {
         }
 
     @Test
+    fun `render skips non-web URLs and HTTP URLs without a host`() =
+        runTest {
+            val resourcesClient = mockk<ResourcesClient>()
+            val pathProvider = mockk<UserDataPathProvider>()
+            val service =
+                OpenGraphService<Any>(
+                    configManager = TestConfigManager(TestAppConfig()),
+                    generateImageService = mockk(),
+                    imageHandler = mockk(),
+                    resourcesClient = resourcesClient,
+                    updatePasteItemHelper = mockk(),
+                    userDataPathProvider = pathProvider,
+                    pasteDao = mockk(),
+                )
+
+            listOf(
+                "file:/tmp/example.txt",
+                "file:///tmp/example.txt",
+                "file://server/shared/example.txt",
+                "ftp://files.example.com/readme.txt",
+                "mailto:user@example.com",
+                "data:text/plain,hello",
+                "https:///favicon.ico",
+                "http://",
+                "https://example.com:invalid/page",
+                "//example.com/page",
+                "/relative/path",
+            ).forEachIndexed { index, url ->
+                service.render(createPasteData(8000L + index, createUrlPasteItem(url = url)))
+            }
+
+            verify { resourcesClient wasNot Called }
+            verify { pathProvider wasNot Called }
+        }
+
+    @Test
+    fun `render still fetches HTTP and HTTPS pages`() =
+        runTest {
+            val resourcesClient = mockk<ResourcesClient>()
+            val service =
+                OpenGraphService<Any>(
+                    configManager = TestConfigManager(TestAppConfig()),
+                    generateImageService = mockk(),
+                    imageHandler = mockk(),
+                    resourcesClient = resourcesClient,
+                    updatePasteItemHelper = mockk(),
+                    userDataPathProvider = createPathProvider(),
+                    pasteDao = mockk(),
+                )
+            coEvery { resourcesClient.request(any(), ResourceRequestLimits.HTML) } returns
+                Result.failure(IllegalStateException("No response"))
+
+            listOf("http://example.com/page", "https://example.com/page", "HTTPS://example.com/page")
+                .forEachIndexed { index, url ->
+                    service.render(createPasteData(8100L + index, createUrlPasteItem(url = url)))
+                    coVerify(exactly = 1) { resourcesClient.request(url, ResourceRequestLimits.HTML) }
+                }
+        }
+
+    @Test
+    fun `render skips non-web image URLs in page metadata`() =
+        runTest {
+            val item = createUrlPasteItem(url = "https://example.com/non-web-image")
+            val resourcesClient = mockk<ResourcesClient>()
+            val imageHandler = mockk<ImageHandler<Any>>()
+            val service =
+                OpenGraphService(
+                    configManager = TestConfigManager(TestAppConfig()),
+                    generateImageService = mockk(),
+                    imageHandler = imageHandler,
+                    resourcesClient = resourcesClient,
+                    updatePasteItemHelper = mockk(),
+                    userDataPathProvider = createPathProvider(),
+                    pasteDao = mockk(),
+                )
+
+            listOf("file:///tmp/preview.png", "data:image/png;base64,AAAA", "https:///preview.png")
+                .forEachIndexed { index, imageUrl ->
+                    val response = mockk<ClientResponse>()
+                    every { response.getContentType() } returns ContentType.Text.Html
+                    coEvery { response.getBody() } returns
+                        ByteReadChannel("""<meta property="og:image" content="$imageUrl">""")
+                    coEvery { resourcesClient.request(item.url, ResourceRequestLimits.HTML) } returns
+                        Result.success(response)
+
+                    service.render(createPasteData(8200L + index, item))
+                }
+
+            coVerify(exactly = 3) { resourcesClient.request(item.url, ResourceRequestLimits.HTML) }
+            coVerify(exactly = 0) { resourcesClient.request(any(), ResourceRequestLimits.IMAGE) }
+            verify { imageHandler wasNot Called }
+        }
+
+    @Test
+    fun `render falls back past non-web image candidates to valid HTTP image`() =
+        runTest {
+            val item = createUrlPasteItem(url = "https://example.com/fallback-image")
+            val fallbackImageUrl = "https://cdn.example.com/hero.png"
+            val resourcesClient = mockk<ResourcesClient>()
+            val service =
+                OpenGraphService<Any>(
+                    configManager = TestConfigManager(TestAppConfig()),
+                    generateImageService = mockk(),
+                    imageHandler = mockk(),
+                    resourcesClient = resourcesClient,
+                    updatePasteItemHelper = mockk(),
+                    userDataPathProvider = createPathProvider(),
+                    pasteDao = mockk(),
+                )
+            val response = mockk<ClientResponse>()
+            every { response.getContentType() } returns ContentType.Text.Html
+            coEvery { response.getBody() } returns
+                ByteReadChannel(
+                    """
+                    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+                    <article><img src="data:image/png;base64,AAAA" width="800" height="600"></article>
+                    <img src="/local-large.png" width="1200" height="900">
+                    <img src="$fallbackImageUrl" width="600" height="400">
+                    """.trimIndent(),
+                )
+            coEvery { resourcesClient.request(item.url, ResourceRequestLimits.HTML) } returns
+                Result.success(response)
+            coEvery { resourcesClient.request(fallbackImageUrl, ResourceRequestLimits.IMAGE) } returns
+                Result.failure(IllegalStateException("Stop after image request"))
+
+            service.render(createPasteData(8250L, item))
+
+            coVerify(exactly = 1) { resourcesClient.request(fallbackImageUrl, ResourceRequestLimits.IMAGE) }
+        }
+
+    @Test
     fun `preview path is keyed by url hash`() {
         val pathProvider = createPathProvider()
         val coordinate = PasteCoordinate(7L, "instance", 123L)
