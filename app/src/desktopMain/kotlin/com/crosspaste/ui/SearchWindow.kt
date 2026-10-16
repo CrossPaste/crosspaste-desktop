@@ -259,24 +259,65 @@ fun SearchWindow(windowIcon: Painter?) {
 
                 val mouseListener =
                     if (appWindowManager is WinAppWindowManager) {
+                        logger.info {
+                            "Windows search diagnostics enabled: osName=${System.getProperty("os.name")}, " +
+                                "osVersion=${System.getProperty("os.version")}, " +
+                                "osArch=${System.getProperty("os.arch")}, " +
+                                "javaRuntime=${System.getProperty("java.runtime.version")}, " +
+                                "javaVendor=${System.getProperty("java.vendor")}, " +
+                                "appEnv=${System.getProperty("appEnv")}"
+                        }
                         object : NativeMouseListener {
                             override fun nativeMousePressed(nativeEvent: NativeMouseEvent) {
                                 val session = currentWindowsFocusSession ?: return
                                 val x = nativeEvent.x
                                 val y = nativeEvent.y
+                                val pressId = System.nanoTime()
+                                val sessionId = System.identityHashCode(session)
                                 // Capture before queuing: releasing an overflow icon can close
                                 // its panel before the EDT processes this press.
-                                if (WindowsFocusUtils.isTrayIcon(x, y)) return
+                                val trayIcon = WindowsFocusUtils.isTrayIcon(x, y)
+                                logger.info {
+                                    "Windows search mouse pressed: press=$pressId, session=$sessionId, " +
+                                        "x=$x, y=$y, button=${nativeEvent.button}, trayIcon=$trayIcon, " +
+                                        "searchFocused=${window.isFocused}, " +
+                                        "bubbleFocused=${appWindowManager.bubbleComposeWindow?.isFocused}, " +
+                                        WindowsFocusUtils.describePointerWindow(x, y)
+                                }
+                                if (trayIcon) return
                                 session.deferOutsidePress(
-                                    enqueue = { EventQueue.invokeLater(it) },
+                                    enqueue = { check ->
+                                        EventQueue.invokeLater {
+                                            logger.info {
+                                                "Windows search outside check dispatched: press=$pressId, " +
+                                                    "session=$sessionId, " +
+                                                    "queueDelayMs=${(System.nanoTime() - pressId) / 1_000_000.0}"
+                                            }
+                                            check()
+                                        }
+                                    },
                                     shouldDismiss = {
-                                        listenerActive.get() &&
-                                            currentWindowsFocusSession === session &&
-                                            window.isVisible &&
-                                            appWindowManager.isOutsideSearchWindow(x, y)
+                                        val eligible =
+                                            listenerActive.get() &&
+                                                currentWindowsFocusSession === session &&
+                                                window.isVisible
+                                        val outside = eligible && appWindowManager.isOutsideSearchWindow(x, y)
+                                        logger.info {
+                                            "Windows search outside check result: press=$pressId, " +
+                                                "session=$sessionId, eligible=$eligible, outside=$outside, " +
+                                                "searchFocused=${window.isFocused}, " +
+                                                "searchForeground=${appWindowManager.isSearchWindowForeground()}, " +
+                                                "bubbleFocused=${appWindowManager.bubbleComposeWindow?.isFocused}, " +
+                                                "bubbleForeground=${appWindowManager.isBubbleWindowForeground()}, " +
+                                                "show=${appWindowManager.getCurrentSearchWindowInfo().show}"
+                                        }
+                                        outside
                                     },
                                     dismiss = {
-                                        logger.info { "Search window dismissed by outside mouse press" }
+                                        logger.info {
+                                            "Search window dismissed by outside mouse press: " +
+                                                "press=$pressId, session=$sessionId"
+                                        }
                                         appWindowManager.hideSearchWindow()
                                     },
                                 )
