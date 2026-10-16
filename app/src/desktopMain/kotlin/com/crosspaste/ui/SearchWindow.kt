@@ -157,6 +157,13 @@ fun SearchWindow(windowIcon: Painter?) {
     }
 
     LaunchedEffect(searchWindowInfo.show, searchWindowInfo.trigger) {
+        if (isMac) {
+            logger.info {
+                "Mac search visibility: show=${searchWindowInfo.show}, trigger=${searchWindowInfo.trigger}, " +
+                    "session=${macFocusSession?.let { System.identityHashCode(it) }}, " +
+                    "mainShow=${appWindowManager.getCurrentMainWindowInfo().show}"
+            }
+        }
         // Windows and macOS activation starts after the window is registered and showing.
         // Their focus sessions protect startup without a timed grace period.
         if (isWindows || isMac) return@LaunchedEffect
@@ -248,22 +255,66 @@ fun SearchWindow(windowIcon: Painter?) {
                     )
                 }
 
-                fun deferMacFocusLoss(session: MacSearchWindowFocusSession) {
+                fun macWindowLabel(value: Any?): String =
+                    when (value) {
+                        null -> "null"
+                        window -> "search"
+                        appWindowManager.bubbleComposeWindow -> "bubble"
+                        appWindowManager.mainComposeWindow -> "main"
+                        else -> "${value.javaClass.simpleName}@${System.identityHashCode(value)}"
+                    }
+
+                fun deferMacFocusLoss(
+                    session: MacSearchWindowFocusSession,
+                    source: String,
+                ) {
+                    val sessionId = System.identityHashCode(session)
+                    logger.info {
+                        "Mac search focus loss requested: source=$source, session=$sessionId, " +
+                            "show=${appWindowManager.getCurrentSearchWindowInfo().show}"
+                    }
                     session.deferFocusLoss(
-                        enqueue = { EventQueue.invokeLater(it) },
+                        enqueue = { check ->
+                            logger.info { "Mac search focus recheck queued: source=$source, session=$sessionId" }
+                            EventQueue.invokeLater {
+                                logger.info {
+                                    "Mac search focus recheck dispatched: source=$source, session=$sessionId, " +
+                                        "currentSession=${currentMacFocusSession?.let { System.identityHashCode(it) }}"
+                                }
+                                check()
+                            }
+                        },
                         shouldDismiss = {
-                            listenerActive.get() &&
-                                currentMacFocusSession === session &&
-                                window.isShowing &&
-                                MacSearchWindowFocusState(
-                                    appActive = MacAppUtils.isApplicationActive(),
-                                    searchFocused = window.hasFocusedWindow(),
-                                    bubbleFocused = appWindowManager.bubbleComposeWindow?.hasFocusedWindow() == true,
-                                    mainFocused = appWindowManager.mainComposeWindow?.hasFocusedWindow() == true,
-                                ).shouldDismiss
+                            val eligible =
+                                listenerActive.get() && currentMacFocusSession === session && window.isShowing
+                            if (eligible) {
+                                val focus =
+                                    MacSearchWindowFocusState(
+                                        appActive = MacAppUtils.isApplicationActive(),
+                                        searchFocused = window.hasFocusedWindow(),
+                                        bubbleFocused =
+                                            appWindowManager.bubbleComposeWindow?.hasFocusedWindow() == true,
+                                        mainFocused = appWindowManager.mainComposeWindow?.hasFocusedWindow() == true,
+                                    )
+                                logger.info {
+                                    "Mac search focus recheck result: source=$source, session=$sessionId, " +
+                                        "state=$focus, dismiss=${focus.shouldDismiss}, " +
+                                        "show=${appWindowManager.getCurrentSearchWindowInfo().show}"
+                                }
+                                focus.shouldDismiss
+                            } else {
+                                logger.info {
+                                    "Mac search focus recheck ineligible: source=$source, session=$sessionId, " +
+                                        "listenerActive=${listenerActive.get()}, " +
+                                        "currentSession=${currentMacFocusSession === session}, showing=${window.isShowing}"
+                                }
+                                false
+                            }
                         },
                         dismiss = {
-                            logger.info { "Search window lost focus after macOS focus recheck" }
+                            logger.info {
+                                "Search window lost focus after macOS focus recheck: source=$source, session=$sessionId"
+                            }
                             appWindowManager.hideSearchWindow()
                         },
                     )
@@ -271,20 +322,33 @@ fun SearchWindow(windowIcon: Painter?) {
 
                 val macFocusListener =
                     if (isMac) {
+                        logger.info {
+                            "Mac search diagnostics enabled: osVersion=${System.getProperty("os.version")}, " +
+                                "javaRuntime=${System.getProperty("java.runtime.version")}, " +
+                                "javaVendor=${System.getProperty("java.vendor")}, " +
+                                "appEnv=${System.getProperty("appEnv")}"
+                        }
                         object : AppForegroundListener, PropertyChangeListener {
-                            override fun appRaisedToForeground(e: AppForegroundEvent) = Unit
+                            override fun appRaisedToForeground(e: AppForegroundEvent) {
+                                logger.info { "Mac application raised to foreground" }
+                            }
 
                             override fun appMovedToBackground(e: AppForegroundEvent) {
+                                logger.info { "Mac application moved to background" }
                                 // App deactivation may follow key-window loss without another
                                 // windowLostFocus event (for example, after a tray menu closes).
-                                currentMacFocusSession?.let { deferMacFocusLoss(it) }
+                                currentMacFocusSession?.let { deferMacFocusLoss(it, "appMovedToBackground") }
                             }
 
                             override fun propertyChange(e: PropertyChangeEvent) {
+                                logger.info {
+                                    "Mac focusedWindow changed: old=${macWindowLabel(e.oldValue)}, " +
+                                        "new=${macWindowLabel(e.newValue)}"
+                                }
                                 // A tray menu may open the main window after the search
                                 // window has already lost key-window focus.
                                 if (e.newValue != null) {
-                                    currentMacFocusSession?.let { deferMacFocusLoss(it) }
+                                    currentMacFocusSession?.let { deferMacFocusLoss(it, "focusedWindow") }
                                 }
                             }
                         }.also {
@@ -358,6 +422,12 @@ fun SearchWindow(windowIcon: Painter?) {
                                 currentWindowsFocusSession?.onFocusGained(foreground)
                             }
                             currentMacFocusSession?.onFocusGained()
+                            if (isMac) {
+                                logger.info {
+                                    "Mac search gained focus: opposite=${macWindowLabel(e.oppositeWindow)}, " +
+                                        "session=${currentMacFocusSession?.let { System.identityHashCode(it) }}"
+                                }
+                            }
                             // On Linux, once mapped and focused, outside clicks are
                             // real dismissals even within the first second.
                             if (isLinux) {
@@ -381,10 +451,14 @@ fun SearchWindow(windowIcon: Painter?) {
                                 return
                             }
                             if (isMac) {
+                                logger.info {
+                                    "Mac search lost focus: opposite=${macWindowLabel(e.oppositeWindow)}, " +
+                                        "session=${currentMacFocusSession?.let { System.identityHashCode(it) }}"
+                                }
                                 val macSession = currentMacFocusSession ?: return
                                 val bubble = appWindowManager.bubbleComposeWindow
                                 if (bubble != null && e.oppositeWindow == bubble) return
-                                deferMacFocusLoss(macSession)
+                                deferMacFocusLoss(macSession, "windowLostFocus")
                                 return
                             }
                             if (currentIgnoreFocusLoss.get()) {
