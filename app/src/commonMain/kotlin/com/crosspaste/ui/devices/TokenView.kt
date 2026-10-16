@@ -70,6 +70,7 @@ fun TokenView(intOffset: IntOffset) {
     val token by appTokenApi.token.collectAsState()
     val pairingSessions by pairingV3UiController.sessions.collectAsState()
     val incomingPairingSessions = acceptorPairingSessions(pairingSessions)
+    val visiblePairingSessions = pairingTokenCardSessions(incomingPairingSessions)
 
     // Reap pending verifiers whose device left UNVERIFIED without completing the
     // handshake here (went offline / disconnected / trusted out-of-band). This is
@@ -99,7 +100,12 @@ fun TokenView(intOffset: IntOffset) {
         }
     }
 
-    if (showToken || incomingPairingSessions.isNotEmpty()) {
+    PairingV3SelfDismissEffect(
+        sessions = incomingPairingSessions,
+        controller = pairingV3UiController,
+    )
+
+    if (isTokenPopupVisible(showToken, visiblePairingSessions)) {
         TokenPopupStack(intOffset = intOffset) {
             if (showToken) {
                 TokenPopupCard(
@@ -124,7 +130,7 @@ fun TokenView(intOffset: IntOffset) {
                 )
             }
             PairingV3AcceptorTokenCards(
-                sessions = incomingPairingSessions,
+                sessions = visiblePairingSessions,
                 controller = pairingV3UiController,
             )
         }
