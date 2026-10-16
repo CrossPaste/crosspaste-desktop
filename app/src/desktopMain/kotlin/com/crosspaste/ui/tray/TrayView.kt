@@ -3,6 +3,7 @@ package com.crosspaste.ui.tray
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -22,6 +23,7 @@ import com.crosspaste.app.generated.resources.Res
 import com.crosspaste.app.generated.resources.crosspaste_mac_tray
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.Platform
+import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.ui.LocalExitApplication
 import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
@@ -47,6 +49,13 @@ fun ApplicationScope.TrayView(windowIcon: Painter) {
     val isMacos = remember { platform.isMacos() }
     val isLinux = remember { platform.isLinux() }
     val logger = remember { KotlinLogging.logger("TrayView") }
+
+    DisposableEffect(isMacos) {
+        if (isMacos) MacAppUtils.startStatusItemClickTracking()
+        onDispose {
+            if (isMacos) MacAppUtils.stopStatusItemClickTracking()
+        }
+    }
 
     // Windows portable-zip only: an actionable "update to vX.Y.Z" entry.
     val isPortableZip =
@@ -125,8 +134,10 @@ fun ApplicationScope.TrayView(windowIcon: Painter) {
             tooltip = AppName,
             primaryAction = {
                 val clickId = System.nanoTime()
+                val pendingClick = MacAppUtils.pendingStatusItemClick()
                 logger.info {
                     "Mac tray primaryAction received: click=$clickId, " +
+                        "nativeClickPending=${pendingClick != null}, " +
                         "searchShow=${appWindowManager.getCurrentSearchWindowInfo().show}, " +
                         "mainShow=${appWindowManager.getCurrentMainWindowInfo().show}"
                 }
@@ -142,7 +153,11 @@ fun ApplicationScope.TrayView(windowIcon: Painter) {
                             "searchShow=${appWindowManager.getCurrentSearchWindowInfo().show}, " +
                             "mainShow=${appWindowManager.getCurrentMainWindowInfo().show}"
                     }
-                    toggleSearchWindow()
+                    try {
+                        toggleSearchWindow()
+                    } finally {
+                        MacAppUtils.completeStatusItemClick(pendingClick)
+                    }
                     logger.info {
                         "Mac tray toggle completed: click=$clickId, " +
                             "searchShow=${appWindowManager.getCurrentSearchWindowInfo().show}"

@@ -1,5 +1,9 @@
 package com.crosspaste.ui
 
+import androidx.compose.ui.window.WindowState
+import com.crosspaste.app.WindowInfo
+import com.crosspaste.app.WindowTrigger
+import com.crosspaste.platform.macos.MacStatusItemClickTracker
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -7,18 +11,127 @@ import kotlin.test.assertTrue
 
 class MacSearchWindowFocusSessionTest {
     @Test
-    fun `tray focus loss leaves a delayed tray toggle on the hide branch`() {
+    fun `actual tray click preserves the window when the focus recheck arrives before toggle`() {
+        for (appActive in listOf(true, false)) {
+            val session = MacSearchWindowFocusSession(gainedFocus = true)
+            val queued = mutableListOf<() -> Unit>()
+            val clicks = MacStatusItemClickTracker()
+            clicks.onInput(isStatusItemClick = true)
+            val pendingClick = clicks.pendingClick
+            var shown = true
+            session.deferFocusLoss(
+                queued::add,
+                { focusState(appActive = appActive, trayClickPending = clicks.pendingClick != null).shouldDismiss },
+            ) {
+                error("Only the tray toggle may hide the window during a tray click")
+            }
+
+            // macOS 27 can deactivate the app before delivering the tray callback.
+            queued.single()()
+            assertTrue(shown)
+            shown = !shown
+            clicks.complete(pendingClick)
+            assertFalse(shown, "The delayed tray toggle must hide instead of reopening")
+        }
+    }
+
+    @Test
+    fun `tray toggle arriving first leaves queued focus loss unable to close a new appearance`() {
         val session = MacSearchWindowFocusSession(gainedFocus = true)
         val queued = mutableListOf<() -> Unit>()
-        val focus = focusState(appActive = true)
-        var shown = true
-        session.deferFocusLoss(queued::add, { focus.shouldDismiss }) { shown = false }
+        val appearance = WindowInfo(true, WindowState(), WindowTrigger.TRAY_ICON)
+        var current = appearance
+        val clicks = MacStatusItemClickTracker()
+        clicks.onInput(isStatusItemClick = true)
+        val pendingClick = clicks.pendingClick
+        session.deferFocusLoss(
+            enqueue = queued::add,
+            shouldDismiss = {
+                focusState(appActive = false, trayClickPending = clicks.pendingClick != null).shouldDismiss
+            },
+            isCurrentAppearance = { current === appearance },
+            dismiss = { error("An old tray departure must not close a reopened window") },
+        )
 
-        // The AWT loss callback runs before the tray library delivers its click.
+        // The tray callback hides first; a shortcut then opens a new appearance.
+        current = current.copy(show = !current.show)
+        clicks.complete(pendingClick)
+        assertFalse(current.show)
+        current = current.copy(show = true, trigger = WindowTrigger.SHORTCUT)
+        // Run before Compose has disposed the original session.
         queued.single()()
-        assertTrue(shown)
-        shown = !shown
-        assertFalse(shown, "The tray click must hide the existing appearance instead of reopening it")
+        assertTrue(current.show)
+
+        val reopened = MacSearchWindowFocusSession(gainedFocus = true)
+        reopened.deferFocusLoss({ it() }, { focusState(appActive = false).shouldDismiss }) {
+            current = current.copy(show = false)
+        }
+        assertFalse(current.show, "A real outside click must still dismiss the new appearance")
+    }
+
+    @Test
+    fun `stale queued losses are rejected after focus recheck then tray toggle and reopen`() {
+        val session = MacSearchWindowFocusSession(gainedFocus = true)
+        val queued = mutableListOf<() -> Unit>()
+        val appearance = WindowInfo(true, WindowState(), WindowTrigger.TRAY_ICON)
+        var current = appearance
+        val clicks = MacStatusItemClickTracker()
+        clicks.onInput(isStatusItemClick = true)
+        val pendingClick = clicks.pendingClick
+        repeat(2) {
+            session.deferFocusLoss(
+                enqueue = queued::add,
+                shouldDismiss = {
+                    focusState(appActive = false, trayClickPending = clicks.pendingClick != null).shouldDismiss
+                },
+                isCurrentAppearance = { current === appearance },
+                dismiss = { error("The old appearance must leave dismissal to the tray toggle") },
+            )
+        }
+        queued[0]()
+        current = current.copy(show = !current.show)
+        clicks.complete(pendingClick)
+        assertFalse(current.show)
+        // Even an identical show/trigger pair is a different window appearance.
+        current = current.copy(show = true)
+        queued[1]()
+        assertTrue(current.show)
+    }
+
+    @Test
+    fun `Cmd Tab while hovering the tray still dismisses after a completed tray click`() {
+        val clicks = MacStatusItemClickTracker()
+        clicks.onInput(isStatusItemClick = true)
+        clicks.complete(clicks.pendingClick)
+        val session = MacSearchWindowFocusSession(gainedFocus = true)
+        val queued = mutableListOf<() -> Unit>()
+        var dismissed = false
+
+        // The pointer can stay on the icon after the click that opened this
+        // appearance. Hover produces no input; Cmd+Tab is keyboard input.
+        clicks.onInput(isStatusItemClick = false)
+        session.deferFocusLoss(
+            queued::add,
+            { focusState(appActive = false, trayClickPending = clicks.pendingClick != null).shouldDismiss },
+        ) { dismissed = true }
+        queued.single()()
+        assertTrue(dismissed)
+    }
+
+    @Test
+    fun `keyboard switch cancels a tray click whose callback is still pending`() {
+        val clicks = MacStatusItemClickTracker()
+        clicks.onInput(isStatusItemClick = true)
+        val session = MacSearchWindowFocusSession(gainedFocus = true)
+        val queued = mutableListOf<() -> Unit>()
+        var dismissed = false
+        session.deferFocusLoss(
+            queued::add,
+            { focusState(appActive = false, trayClickPending = clicks.pendingClick != null).shouldDismiss },
+        ) { dismissed = true }
+        clicks.onInput(isStatusItemClick = false)
+        queued.single()()
+        assertTrue(dismissed)
     }
 
     @Test
@@ -173,11 +286,13 @@ class MacSearchWindowFocusSessionTest {
         searchFocused: Boolean = false,
         bubbleFocused: Boolean = false,
         mainFocused: Boolean = false,
+        trayClickPending: Boolean = false,
     ): MacSearchWindowFocusState =
         MacSearchWindowFocusState(
             appActive = appActive,
             searchFocused = searchFocused,
             bubbleFocused = bubbleFocused,
             mainFocused = mainFocused,
+            trayClickPending = trayClickPending,
         )
 }

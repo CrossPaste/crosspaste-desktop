@@ -269,6 +269,7 @@ fun SearchWindow(windowIcon: Painter?) {
                     source: String,
                 ) {
                     val sessionId = System.identityHashCode(session)
+                    val appearance = appWindowManager.getCurrentSearchWindowInfo()
                     logger.info {
                         "Mac search focus loss requested: source=$source, session=$sessionId, " +
                             "show=${appWindowManager.getCurrentSearchWindowInfo().show}"
@@ -284,9 +285,16 @@ fun SearchWindow(windowIcon: Painter?) {
                                 check()
                             }
                         },
+                        // Visibility can change twice before Compose replaces the focus session.
+                        // Reject the old appearance even when hide/show was coalesced into one frame.
+                        isCurrentAppearance = {
+                            appearance.show && appWindowManager.getCurrentSearchWindowInfo() === appearance
+                        },
                         shouldDismiss = {
                             val eligible =
-                                listenerActive.get() && currentMacFocusSession === session && window.isShowing
+                                listenerActive.get() &&
+                                    currentMacFocusSession === session &&
+                                    window.isShowing
                             if (eligible) {
                                 val focus =
                                     MacSearchWindowFocusState(
@@ -295,6 +303,7 @@ fun SearchWindow(windowIcon: Painter?) {
                                         bubbleFocused =
                                             appWindowManager.bubbleComposeWindow?.hasFocusedWindow() == true,
                                         mainFocused = appWindowManager.mainComposeWindow?.hasFocusedWindow() == true,
+                                        trayClickPending = MacAppUtils.pendingStatusItemClick() != null,
                                     )
                                 logger.info {
                                     "Mac search focus recheck result: source=$source, session=$sessionId, " +
