@@ -114,6 +114,7 @@ class WindowsTrayHitTestTest {
     fun `foreground shell overflow containing own icon is left to mouse and tray actions`() {
         assertTrue(hitTest.ownsForeground(overflow))
         assertFalse(hitTest.ownsForeground(taskbar))
+        verify(exactly = 2) { user32.WindowFromPoint(0x0000_00d2_ffff_ffa6L) }
     }
 
     @Test

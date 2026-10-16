@@ -3,10 +3,10 @@ package com.crosspaste.platform.windows
 import com.crosspaste.platform.windows.api.Shell32
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.platform.windows.api.WndEnumProc
+import com.crosspaste.platform.windows.api.windowFromPoint
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.WinDef.HWND
-import com.sun.jna.platform.win32.WinDef.POINT
 import com.sun.jna.platform.win32.WinDef.RECT
 import com.sun.jna.platform.win32.WinUser.GA_ROOT
 import com.sun.jna.ptr.IntByReference
@@ -29,7 +29,7 @@ internal class WindowsTrayHitTest(
     fun ownsForeground(foreground: HWND): Boolean {
         val rect = iconRect() ?: return false
         val hit =
-            user32.WindowFromPoint(POINT.ByValue((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2))
+            user32.windowFromPoint((rect.left + rect.right) / 2, (rect.top + rect.bottom) / 2)
                 ?: return false
         val root = user32.GetAncestor(hit, GA_ROOT) ?: return false
         if (root != foreground) return false

@@ -1,10 +1,10 @@
 package com.crosspaste.platform.windows
 
 import com.crosspaste.platform.windows.api.User32
+import com.crosspaste.platform.windows.api.windowFromPoint
 import com.sun.jna.Native
 import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HWND
-import com.sun.jna.platform.win32.WinDef.POINT
 import com.sun.jna.platform.win32.WinUser.GA_ROOT
 import com.sun.jna.platform.win32.WinUser.GW_OWNER
 import com.sun.jna.ptr.IntByReference
@@ -22,7 +22,7 @@ internal class WindowsSearchWindowPointer(
         x: Int,
         y: Int,
     ): String {
-        val hit = user32.WindowFromPoint(POINT.ByValue(x, y))
+        val hit = user32.windowFromPoint(x, y)
         return "hit=${describeWindow(hit)}, foreground=${describeWindow(user32.GetForegroundWindow())}"
     }
 
@@ -48,7 +48,11 @@ internal class WindowsSearchWindowPointer(
 
         if (search == null) return report(false, "search-missing")
         if (isTrayIcon(x, y)) return report(false, "tray-icon")
-        val hit = user32.WindowFromPoint(POINT.ByValue(x, y)) ?: return report(false, "hit-unresolved")
+        // IME candidates can live in another process without taking foreground.
+        // Once search owns foreground, let real focus departure dismiss it. The
+        // outside-press path still closes it when activation was denied or pending.
+        if (user32.GetForegroundWindow() == search) return report(false, "search-foreground")
+        val hit = user32.windowFromPoint(x, y) ?: return report(false, "hit-unresolved")
         var window: HWND? = user32.GetAncestor(hit, GA_ROOT) ?: return report(false, "root-unresolved", hit)
         val visited = mutableSetOf<HWND>()
         while (window != null && visited.add(window)) {

@@ -57,11 +57,79 @@ class WindowsSearchWindowPointerTest {
 
     @Test
     fun `external press uses native coordinates including negative monitor coordinates`() {
-        every { user32.WindowFromPoint(match { it.x == -100 && it.y == 250 }) } returns child
+        every { user32.WindowFromPoint(0x0000_00fa_ffff_ff9cL) } returns child
         every { user32.GetAncestor(child, GA_ROOT) } returns child
         every { user32.GetWindow(child, DWORD(GW_OWNER.toLong())) } returns null
         assertTrue(pointer.isOutside(-100, 250, search, bubble))
     }
+
+    @Test
+    fun `monitor above and left preserves both signed coordinate bit patterns`() {
+        every { user32.WindowFromPoint(0xffff_ffe7_ffff_ff9cUL.toLong()) } returns child
+        every { user32.GetAncestor(child, GA_ROOT) } returns child
+        every { user32.GetWindow(child, DWORD(GW_OWNER.toLong())) } returns null
+        assertTrue(pointer.isOutside(-100, -25, search, bubble))
+    }
+
+    @Test
+    fun `foreign IME candidate preserves foreground search whether candidate disappears or remains visible`() =
+        runTest {
+            val session = SearchWindowFocusSession()
+            session.activate { true }
+            every { user32.GetForegroundWindow() } returns search
+            every { user32.WindowFromPoint(any()) } returns child
+            every { user32.GetAncestor(child, GA_ROOT) } returns child
+            every { user32.GetWindow(child, DWORD(GW_OWNER.toLong())) } returns null
+
+            val queued = mutableListOf<() -> Unit>()
+            repeat(2) { attempt ->
+                session.deferOutsidePress(queued::add, { pointer.isOutside(100, 200, search, bubble) }) {
+                    error("Candidate selection must not dismiss search")
+                }
+                // Candidate may remain visible or commit before the EDT runs.
+                if (attempt == 1) every { user32.WindowFromPoint(any()) } returns search
+                queued.removeAt(0).invoke()
+            }
+
+            // Suppressing those clicks must leave the session able to close on departure.
+            every { user32.GetForegroundWindow() } returns child
+            var dismissed = false
+            session.onForegroundChanged(false) {
+                session.deferFocusLoss({ it() }, { true }) { dismissed = true }
+            }
+            assertTrue(dismissed)
+        }
+
+    @Test
+    fun `outside check before foreground transfer leaves later focus loss to dismiss`() =
+        runTest {
+            val session = SearchWindowFocusSession()
+            session.activate { true }
+            every { user32.GetForegroundWindow() } returns search
+            session.deferOutsidePress({ it() }, { pointer.isOutside(100, 200, search, bubble) }) {
+                error("Foreground transfer has not happened yet")
+            }
+            every { user32.GetForegroundWindow() } returns child
+            var dismissed = false
+            session.onForegroundChanged(false) {
+                session.deferFocusLoss({ it() }, { user32.GetForegroundWindow() != search }) { dismissed = true }
+            }
+            assertTrue(dismissed)
+        }
+
+    @Test
+    fun `outside check after foreground transfer closes search`() =
+        runTest {
+            val session = SearchWindowFocusSession()
+            session.activate { true }
+            every { user32.GetForegroundWindow() } returns child
+            every { user32.WindowFromPoint(any()) } returns child
+            every { user32.GetAncestor(child, GA_ROOT) } returns child
+            every { user32.GetWindow(child, DWORD(GW_OWNER.toLong())) } returns null
+            var dismissed = false
+            session.deferOutsidePress({ it() }, { pointer.isOutside(100, 200, search, bubble) }) { dismissed = true }
+            assertTrue(dismissed)
+        }
 
     @Test
     fun `search child press is inside`() {
