@@ -228,10 +228,10 @@ class MacosAppPathProvider : AppPathProvider {
 
     private fun getAppJarPath(): Path {
         systemProperty.getOption("compose.application.resources.dir")?.let {
-            return it.toPath()
+            return it.toPath(normalize = true)
         }
         systemProperty.getOption("skiko.library.path")?.let {
-            return it.toPath()
+            return it.toPath(normalize = true)
         }
         throw IllegalStateException("Could not find app path")
     }
