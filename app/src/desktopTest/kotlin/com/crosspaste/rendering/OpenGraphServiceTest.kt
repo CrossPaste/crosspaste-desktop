@@ -154,6 +154,43 @@ class OpenGraphServiceTest {
         }
 
     @Test
+    fun `render falls back past non-web image candidates to valid HTTP image`() =
+        runTest {
+            val item = createUrlPasteItem(url = "https://example.com/fallback-image")
+            val fallbackImageUrl = "https://cdn.example.com/hero.png"
+            val resourcesClient = mockk<ResourcesClient>()
+            val service =
+                OpenGraphService<Any>(
+                    configManager = TestConfigManager(TestAppConfig()),
+                    generateImageService = mockk(),
+                    imageHandler = mockk(),
+                    resourcesClient = resourcesClient,
+                    updatePasteItemHelper = mockk(),
+                    userDataPathProvider = createPathProvider(),
+                    pasteDao = mockk(),
+                )
+            val response = mockk<ClientResponse>()
+            every { response.getContentType() } returns ContentType.Text.Html
+            coEvery { response.getBody() } returns
+                ByteReadChannel(
+                    """
+                    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+                    <article><img src="data:image/png;base64,AAAA" width="800" height="600"></article>
+                    <img src="/local-large.png" width="1200" height="900">
+                    <img src="$fallbackImageUrl" width="600" height="400">
+                    """.trimIndent(),
+                )
+            coEvery { resourcesClient.request(item.url, ResourceRequestLimits.HTML) } returns
+                Result.success(response)
+            coEvery { resourcesClient.request(fallbackImageUrl, ResourceRequestLimits.IMAGE) } returns
+                Result.failure(IllegalStateException("Stop after image request"))
+
+            service.render(createPasteData(8250L, item))
+
+            coVerify(exactly = 1) { resourcesClient.request(fallbackImageUrl, ResourceRequestLimits.IMAGE) }
+        }
+
+    @Test
     fun `preview path is keyed by url hash`() {
         val pathProvider = createPathProvider()
         val coordinate = PasteCoordinate(7L, "instance", 123L)

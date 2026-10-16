@@ -142,12 +142,9 @@ class OpenGraphService<Image>(
                 { doc.select("header img").firstOrNull()?.attr("src") },
                 // 8. The largest image on the page (final fallback)
                 { findLargestImage(doc) },
-            ).mapNotNull { it() }.firstOrNull { it.isNotBlank() }
+            ).mapNotNull { it() }.firstOrNull { urlUtils.isHttpUrl(it) }
 
         ogImage?.let { imageUrl ->
-            if (!urlUtils.isHttpUrl(imageUrl)) {
-                return@let
-            }
             resourcesClient.request(imageUrl, ResourceRequestLimits.IMAGE).onSuccess { imageResponse ->
                 imageHandler.readImage(imageResponse.getBody())?.also { image ->
                     if (imageHandler.writeImage(image, "png", openGraphImage)) {
@@ -212,7 +209,8 @@ class OpenGraphService<Image>(
             .select("img[src]")
             .filter { img ->
                 val src = img.attr("src")
-                !src.contains("pixel") &&
+                urlUtils.isHttpUrl(src) &&
+                    !src.contains("pixel") &&
                     !src.contains("tracking") &&
                     !src.contains("1x1") &&
                     !src.endsWith(".gif")
