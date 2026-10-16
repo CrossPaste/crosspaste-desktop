@@ -72,7 +72,7 @@ class WindowsSearchWindowPointerTest {
     }
 
     @Test
-    fun `foreign IME candidate preserves foreground search whether candidate disappears or remains visible`() =
+    fun `candidate that commits before queued hit test leaves the press inside search`() =
         runTest {
             val session = SearchWindowFocusSession()
             session.activate { true }
@@ -82,14 +82,13 @@ class WindowsSearchWindowPointerTest {
             every { user32.GetWindow(child, DWORD(GW_OWNER.toLong())) } returns null
 
             val queued = mutableListOf<() -> Unit>()
-            repeat(2) { attempt ->
-                session.deferOutsidePress(queued::add, { pointer.isOutside(100, 200, search, bubble) }) {
-                    error("Candidate selection must not dismiss search")
-                }
-                // Candidate may remain visible or commit before the EDT runs.
-                if (attempt == 1) every { user32.WindowFromPoint(any()) } returns search
-                queued.removeAt(0).invoke()
+            session.deferOutsidePress(queued::add, { pointer.isOutside(100, 200, search, bubble) }) {
+                error("Committed candidate selection must not dismiss search")
             }
+            // The composition may already be empty when the mouse callback runs.
+            every { user32.WindowFromPoint(any()) } returns search
+            every { user32.GetAncestor(search, GA_ROOT) } returns search
+            queued.single().invoke()
 
             // Suppressing those clicks must leave the session able to close on departure.
             every { user32.GetForegroundWindow() } returns child
@@ -101,19 +100,16 @@ class WindowsSearchWindowPointerTest {
         }
 
     @Test
-    fun `outside check before foreground transfer leaves later focus loss to dismiss`() =
+    fun `non activating foreign press dismisses even while search retains foreground`() =
         runTest {
             val session = SearchWindowFocusSession()
             session.activate { true }
             every { user32.GetForegroundWindow() } returns search
-            session.deferOutsidePress({ it() }, { pointer.isOutside(100, 200, search, bubble) }) {
-                error("Foreground transfer has not happened yet")
-            }
-            every { user32.GetForegroundWindow() } returns child
+            every { user32.WindowFromPoint(any()) } returns child
+            every { user32.GetAncestor(child, GA_ROOT) } returns child
+            every { user32.GetWindow(child, DWORD(GW_OWNER.toLong())) } returns null
             var dismissed = false
-            session.onForegroundChanged(false) {
-                session.deferFocusLoss({ it() }, { user32.GetForegroundWindow() != search }) { dismissed = true }
-            }
+            session.deferOutsidePress({ it() }, { pointer.isOutside(100, 200, search, bubble) }) { dismissed = true }
             assertTrue(dismissed)
         }
 

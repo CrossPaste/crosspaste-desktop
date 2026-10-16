@@ -52,6 +52,8 @@ class WinAppWindowManager(
 
     fun isSearchWindowForeground(): Boolean = WindowsFocusUtils.isWindowForeground(searchHWND)
 
+    fun isSearchWindowComposing(): Boolean = WindowsFocusUtils.isSearchWindowComposing(searchHWND)
+
     fun isOutsideSearchWindow(
         x: Int,
         y: Int,

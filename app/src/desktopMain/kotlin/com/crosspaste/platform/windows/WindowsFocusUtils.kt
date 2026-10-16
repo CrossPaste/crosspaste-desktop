@@ -1,5 +1,6 @@
 package com.crosspaste.platform.windows
 
+import com.crosspaste.platform.windows.api.Imm32
 import com.crosspaste.platform.windows.api.Shell32
 import com.crosspaste.platform.windows.api.User32
 import com.sun.jna.platform.win32.BaseTSD.ULONG_PTR
@@ -25,6 +26,10 @@ object WindowsFocusUtils {
     private val trayHitTest = WindowsTrayHitTest(user32, Shell32.INSTANCE, Kernel32.INSTANCE.GetCurrentProcessId())
 
     private val searchPointer = WindowsSearchWindowPointer(user32, trayHitTest::contains)
+
+    private val inputMethod = WindowsInputMethod(user32, Imm32.INSTANCE)
+
+    fun isSearchWindowComposing(search: HWND?): Boolean = inputMethod.isComposing(search)
 
     fun isTrayForeground(): Boolean = user32.GetForegroundWindow()?.let(trayHitTest::ownsForeground) == true
 

@@ -274,17 +274,21 @@ fun SearchWindow(windowIcon: Painter?) {
                                 val y = nativeEvent.y
                                 val pressId = System.nanoTime()
                                 val sessionId = System.identityHashCode(session)
+                                // Candidate selection can commit before the deferred outside
+                                // check runs. Sample before tray hit-testing and diagnostic work.
+                                val composing = appWindowManager.isSearchWindowComposing()
                                 // Capture before queuing: releasing an overflow icon can close
                                 // its panel before the EDT processes this press.
                                 val trayIcon = WindowsFocusUtils.isTrayIcon(x, y)
                                 logger.info {
                                     "Windows search mouse pressed: press=$pressId, session=$sessionId, " +
-                                        "x=$x, y=$y, button=${nativeEvent.button}, trayIcon=$trayIcon, " +
+                                        "x=$x, y=$y, button=${nativeEvent.button}, " +
+                                        "trayIcon=$trayIcon, composing=$composing, " +
                                         "searchFocused=${window.isFocused}, " +
                                         "bubbleFocused=${appWindowManager.bubbleComposeWindow?.isFocused}, " +
                                         WindowsFocusUtils.describePointerWindow(x, y)
                                 }
-                                if (trayIcon) return
+                                if (trayIcon || composing) return
                                 session.deferOutsidePress(
                                     enqueue = { check ->
                                         EventQueue.invokeLater {

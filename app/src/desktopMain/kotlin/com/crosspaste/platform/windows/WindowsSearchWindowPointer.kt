@@ -48,10 +48,6 @@ internal class WindowsSearchWindowPointer(
 
         if (search == null) return report(false, "search-missing")
         if (isTrayIcon(x, y)) return report(false, "tray-icon")
-        // IME candidates can live in another process without taking foreground.
-        // Once search owns foreground, let real focus departure dismiss it. The
-        // outside-press path still closes it when activation was denied or pending.
-        if (user32.GetForegroundWindow() == search) return report(false, "search-foreground")
         val hit = user32.windowFromPoint(x, y) ?: return report(false, "hit-unresolved")
         var window: HWND? = user32.GetAncestor(hit, GA_ROOT) ?: return report(false, "root-unresolved", hit)
         val visited = mutableSetOf<HWND>()
