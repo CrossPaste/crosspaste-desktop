@@ -11,6 +11,7 @@ import com.crosspaste.platform.windows.WindowFocusRecorder
 import com.crosspaste.platform.windows.WindowsFocusUtils
 import com.crosspaste.platform.windows.api.User32.Companion.INSTANCE
 import com.crosspaste.platform.windows.api.WndEnumProc
+import com.crosspaste.ui.awaitWindowShowing
 import com.sun.jna.Native
 import com.sun.jna.platform.win32.WinDef
 import com.sun.jna.platform.win32.WinDef.HWND
@@ -43,10 +44,35 @@ class WinAppWindowManager(
     val searchHWND: HWND?
         get() {
             if (_cachedSearchHWND == null) {
-                _cachedSearchHWND = WindowsFocusUtils.findPasteWindow(searchWindowTitle)
+                val window = searchComposeWindow?.takeIf { it.isDisplayable } ?: return null
+                _cachedSearchHWND = HWND(Native.getWindowPointer(window))
             }
             return _cachedSearchHWND
         }
+
+    fun isSearchWindowForeground(): Boolean = WindowsFocusUtils.isWindowForeground(searchHWND)
+
+    fun isSearchWindowComposing(): Boolean = WindowsFocusUtils.isSearchWindowComposing(searchHWND)
+
+    fun isOutsideSearchWindow(
+        x: Int,
+        y: Int,
+    ): Boolean {
+        val bubble = bubbleComposeWindow?.takeIf { it.isShowing }?.let { HWND(Native.getWindowPointer(it)) }
+        return WindowsFocusUtils.isOutsideSearchWindow(x, y, searchHWND, bubble)
+    }
+
+    fun isSearchWindow(hwnd: HWND?): Boolean = hwnd != null && hwnd == searchHWND
+
+    fun isMainWindowForeground(): Boolean {
+        val window = mainComposeWindow?.takeIf { it.isDisplayable } ?: return false
+        return WindowsFocusUtils.isWindowForeground(HWND(Native.getWindowPointer(window)))
+    }
+
+    fun isBubbleWindowForeground(): Boolean {
+        val window = bubbleComposeWindow?.takeIf { it.isDisplayable } ?: return false
+        return WindowsFocusUtils.isWindowForeground(HWND(Native.getWindowPointer(window)))
+    }
 
     val bubbleHWND: HWND?
         get() {
@@ -59,6 +85,9 @@ class WinAppWindowManager(
     private val winAppInfoCaches = WinAppInfoCaches(appInfo, userDataPathProvider, ioScope)
 
     private val windowFocusRecorder = WindowFocusRecorder(this)
+
+    fun subscribeForegroundChanges(listener: (HWND?) -> Unit): AutoCloseable =
+        windowFocusRecorder.subscribeForegroundChanges(listener)
 
     override fun getPrevAppName(): Flow<String?> =
         windowFocusRecorder.lastWinAppInfo.map { appInfo ->
@@ -147,12 +176,9 @@ class WinAppWindowManager(
     }
 
     override suspend fun focusSearchWindow(windowTrigger: WindowTrigger) {
-        // Wait for the window to be ready, otherwise bringToFront may cause the window to fail to get focus
-        delay(500.milliseconds)
-        WindowsFocusUtils.bringToFront(
-            windowFocusRecorder.lastWinAppInfo.value?.getThreadId(winAppInfoCaches),
-            searchHWND,
-        )
+        val window = searchComposeWindow ?: return
+        awaitWindowShowing(window)
+        WindowsFocusUtils.activateSearchWindow(searchHWND)
     }
 
     override suspend fun focusBubbleWindow() {

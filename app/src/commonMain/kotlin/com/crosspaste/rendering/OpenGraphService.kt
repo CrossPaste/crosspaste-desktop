@@ -15,6 +15,7 @@ import com.crosspaste.paste.item.getLegacyRenderingFilePath
 import com.crosspaste.paste.item.getRenderingFilePath
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getUrlUtils
 import com.fleeksoft.ksoup.Ksoup
 import com.fleeksoft.ksoup.nodes.Document
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -36,11 +37,16 @@ class OpenGraphService<Image>(
 
     private val fileUtils = getFileUtils()
 
+    private val urlUtils = getUrlUtils()
+
     override suspend fun render(pasteData: PasteData) {
         if (!configManager.getCurrentConfig().enableUrlPreview) {
             return
         }
         pasteData.getPasteItem(UrlPasteItem::class)?.let { urlPasteItem ->
+            if (!urlUtils.isHttpUrl(urlPasteItem.url)) {
+                return
+            }
             val openGraphImage =
                 urlPasteItem.getRenderingFilePath(
                     pasteData.getPasteCoordinate(),
@@ -136,7 +142,7 @@ class OpenGraphService<Image>(
                 { doc.select("header img").firstOrNull()?.attr("src") },
                 // 8. The largest image on the page (final fallback)
                 { findLargestImage(doc) },
-            ).mapNotNull { it() }.firstOrNull { it.isNotBlank() }
+            ).mapNotNull { it() }.firstOrNull { urlUtils.isHttpUrl(it) }
 
         ogImage?.let { imageUrl ->
             resourcesClient.request(imageUrl, ResourceRequestLimits.IMAGE).onSuccess { imageResponse ->
@@ -203,7 +209,8 @@ class OpenGraphService<Image>(
             .select("img[src]")
             .filter { img ->
                 val src = img.attr("src")
-                !src.contains("pixel") &&
+                urlUtils.isHttpUrl(src) &&
+                    !src.contains("pixel") &&
                     !src.contains("tracking") &&
                     !src.contains("1x1") &&
                     !src.endsWith(".gif")
