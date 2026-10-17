@@ -303,7 +303,7 @@ fun SearchWindow(windowIcon: Painter?) {
                                         bubbleFocused =
                                             appWindowManager.bubbleComposeWindow?.hasFocusedWindow() == true,
                                         mainFocused = appWindowManager.mainComposeWindow?.hasFocusedWindow() == true,
-                                        trayClickPending = MacAppUtils.pendingStatusItemClick() != null,
+                                        pointerOnStatusItem = MacAppUtils.isPointerOnStatusItem(),
                                     )
                                 logger.info {
                                     "Mac search focus recheck result: source=$source, session=$sessionId, " +
@@ -328,6 +328,27 @@ fun SearchWindow(windowIcon: Painter?) {
                         },
                     )
                 }
+
+                val foregroundSubscription =
+                    if (appWindowManager is WinAppWindowManager) {
+                        appWindowManager.subscribeForegroundChanges { hwnd ->
+                            val session = currentWindowsFocusSession
+                            EventQueue.invokeLater {
+                                if (listenerActive.get() && session != null && currentWindowsFocusSession === session) {
+                                    // Ignore historical startup gains that already reverted.
+                                    // Outside presses have their own independent dismissal path.
+                                    val acquired =
+                                        appWindowManager.isSearchWindow(hwnd) &&
+                                            appWindowManager.isSearchWindowForeground()
+                                    session.onForegroundChanged(acquired) {
+                                        deferWindowsFocusLoss(session)
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        null
+                    }
 
                 val macFocusListener =
                     if (isMac) {
@@ -365,27 +386,6 @@ fun SearchWindow(windowIcon: Painter?) {
                             KeyboardFocusManager
                                 .getCurrentKeyboardFocusManager()
                                 .addPropertyChangeListener("focusedWindow", it)
-                        }
-                    } else {
-                        null
-                    }
-
-                val foregroundSubscription =
-                    if (appWindowManager is WinAppWindowManager) {
-                        appWindowManager.subscribeForegroundChanges { hwnd ->
-                            val session = currentWindowsFocusSession
-                            EventQueue.invokeLater {
-                                if (listenerActive.get() && session != null && currentWindowsFocusSession === session) {
-                                    // Ignore historical startup gains that already reverted.
-                                    // Outside presses have their own independent dismissal path.
-                                    val acquired =
-                                        appWindowManager.isSearchWindow(hwnd) &&
-                                            appWindowManager.isSearchWindowForeground()
-                                    session.onForegroundChanged(acquired) {
-                                        deferWindowsFocusLoss(session)
-                                    }
-                                }
-                            }
                         }
                     } else {
                         null
@@ -447,6 +447,17 @@ fun SearchWindow(windowIcon: Painter?) {
                         }
 
                         override fun windowLostFocus(e: WindowEvent) {
+                            if (isMac) {
+                                logger.info {
+                                    "Mac search lost focus: opposite=${macWindowLabel(e.oppositeWindow)}, " +
+                                        "session=${currentMacFocusSession?.let { System.identityHashCode(it) }}"
+                                }
+                                val macSession = currentMacFocusSession ?: return
+                                val bubble = appWindowManager.bubbleComposeWindow
+                                if (bubble != null && e.oppositeWindow == bubble) return
+                                deferMacFocusLoss(macSession, "windowLostFocus")
+                                return
+                            }
                             val session = currentWindowsFocusSession
                             if (isWindows) {
                                 val isBubbleWindow =
@@ -457,17 +468,6 @@ fun SearchWindow(windowIcon: Painter?) {
                                     // Only a confirmed native departure can dismiss on Windows.
                                     session?.let { deferWindowsFocusLoss(it) }
                                 }
-                                return
-                            }
-                            if (isMac) {
-                                logger.info {
-                                    "Mac search lost focus: opposite=${macWindowLabel(e.oppositeWindow)}, " +
-                                        "session=${currentMacFocusSession?.let { System.identityHashCode(it) }}"
-                                }
-                                val macSession = currentMacFocusSession ?: return
-                                val bubble = appWindowManager.bubbleComposeWindow
-                                if (bubble != null && e.oppositeWindow == bubble) return
-                                deferMacFocusLoss(macSession, "windowLostFocus")
                                 return
                             }
                             if (currentIgnoreFocusLoss.get()) {
@@ -499,14 +499,14 @@ fun SearchWindow(windowIcon: Painter?) {
 
                 onDispose {
                     listenerActive.set(false)
+                    foregroundSubscription?.close()
+                    mouseListener?.let { GlobalScreen.removeNativeMouseListener(it) }
                     macFocusListener?.let {
                         Desktop.getDesktop().removeAppEventListener(it)
                         KeyboardFocusManager
                             .getCurrentKeyboardFocusManager()
                             .removePropertyChangeListener("focusedWindow", it)
                     }
-                    foregroundSubscription?.close()
-                    mouseListener?.let { GlobalScreen.removeNativeMouseListener(it) }
                     window.removeWindowFocusListener(windowListener)
                     appWindowManager.searchComposeWindow = null
                 }

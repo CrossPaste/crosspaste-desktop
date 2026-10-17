@@ -6,10 +6,11 @@ internal data class MacSearchWindowFocusState(
     val searchFocused: Boolean,
     val bubbleFocused: Boolean,
     val mainFocused: Boolean,
-    val trayClickPending: Boolean = false,
+    // The tray toggle handles a status item click; dismissing first would make it reopen.
+    val pointerOnStatusItem: Boolean = false,
 ) {
     val shouldDismiss: Boolean
-        get() = !trayClickPending && !searchFocused && !bubbleFocused && (!appActive || mainFocused)
+        get() = !pointerOnStatusItem && !searchFocused && !bubbleFocused && (!appActive || mainFocused)
 }
 
 /** Focus protection belongs to one interactive appearance, without a timed grace period. */

@@ -54,13 +54,7 @@ interface MacosApi : Library {
 
     fun isApplicationActive(): Int
 
-    fun interface StatusItemInteractionCallback : Callback {
-        fun onInput(isStatusItemClick: Int)
-    }
-
-    fun startStatusItemClickTracking(callback: StatusItemInteractionCallback)
-
-    fun stopStatusItemClickTracking()
+    fun isPointerOnStatusItem(): Int
 
     fun getRunningApplications(): Pointer?
 

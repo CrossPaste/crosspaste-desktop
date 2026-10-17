@@ -6,14 +6,6 @@ import com.sun.jna.Pointer
 
 object MacAppUtils {
 
-    private val statusItemClicks = MacStatusItemClickTracker()
-
-    // Keep the JNA callback alive for the lifetime of the native event monitors.
-    private val statusItemInteractionCallback =
-        MacosApi.StatusItemInteractionCallback { isStatusItemClick ->
-            statusItemClicks.onInput(isStatusItemClick != 0)
-        }
-
     fun saveAppIcon(
         bundleIdentifier: String,
         path: String,
@@ -88,20 +80,7 @@ object MacAppUtils {
 
     fun isApplicationActive(): Boolean = INSTANCE.isApplicationActive() != 0
 
-    fun startStatusItemClickTracking() {
-        INSTANCE.startStatusItemClickTracking(statusItemInteractionCallback)
-    }
-
-    fun stopStatusItemClickTracking() {
-        INSTANCE.stopStatusItemClickTracking()
-        statusItemClicks.onInput(false)
-    }
-
-    fun pendingStatusItemClick(): Any? = statusItemClicks.pendingClick
-
-    fun completeStatusItemClick(click: Any?) {
-        statusItemClicks.complete(click)
-    }
+    fun isPointerOnStatusItem(): Boolean = INSTANCE.isPointerOnStatusItem() != 0
 
     fun getRunningApplications(): List<Pair<String, String>> {
         val raw = MacosApi.getString(INSTANCE.getRunningApplications()) ?: return emptyList()
