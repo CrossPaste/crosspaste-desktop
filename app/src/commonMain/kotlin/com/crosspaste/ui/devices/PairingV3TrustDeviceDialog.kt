@@ -424,15 +424,19 @@ class PairingV3DialogState(
 
     val uiState: StateFlow<PairingV3DialogUiState> = _uiState
 
+    /** Snapshot of [uiState.value.isLoading]. In Compose, collect [uiState] instead to observe changes. */
     val isLoading: Boolean
         get() = _uiState.value.isLoading
 
+    /** Snapshot of [uiState.value.uiError]. In Compose, collect [uiState] instead to observe changes. */
     val uiError: PairingV3UiError?
         get() = _uiState.value.uiError
 
+    /** Snapshot of [uiState.value.recovery]. In Compose, collect [uiState] instead to observe changes. */
     val recovery: PairingV3Recovery
         get() = _uiState.value.recovery
 
+    /** Snapshot of [uiState.value.inputResetGeneration]. In Compose, collect [uiState] instead to observe changes. */
     val inputResetGeneration: Int
         get() = _uiState.value.inputResetGeneration
 
@@ -485,8 +489,17 @@ class PairingV3DialogState(
         autoRefreshIncorrectPinSessionId: String? = null,
         action: suspend () -> PairingV3UiResult,
     ) {
-        if (isLoading) return
-        _uiState.update { it.copy(isLoading = true, uiError = null) }
+        var shouldLaunch = false
+        _uiState.update { current ->
+            if (current.isLoading) {
+                current
+            } else {
+                shouldLaunch = true
+                current.copy(isLoading = true, uiError = null)
+            }
+        }
+        if (!shouldLaunch) return
+
         coroutineScope.launch {
             runAction(
                 action = action,
@@ -528,23 +541,41 @@ class PairingV3DialogState(
 
         _uiState.update { it.copy(uiError = null) }
         val result = executeAction { controller.recover(sessionId) }
-        _uiState.update { it.copy(inputResetGeneration = it.inputResetGeneration + 1) }
-        applyResult(result)
+        applyResult(result, inputResetGenerationIncrement = 1)
     }
 
-    private fun applyResult(result: PairingV3UiResult) {
-        _uiState.update { it.copy(isLoading = false) }
-        when (result) {
-            is PairingV3UiResult.SessionReady -> resetFeedback()
-            PairingV3UiResult.Paired -> completePairing()
-            is PairingV3UiResult.Error -> {
-                _uiState.update { it.copy(uiError = result.reason, recovery = result.recovery) }
+    private fun applyResult(
+        result: PairingV3UiResult,
+        inputResetGenerationIncrement: Int = 0,
+    ) {
+        _uiState.update { current ->
+            val nextGeneration = current.inputResetGeneration + inputResetGenerationIncrement
+            when (result) {
+                is PairingV3UiResult.SessionReady,
+                PairingV3UiResult.Paired,
+                ->
+                    current.copy(
+                        isLoading = false,
+                        uiError = null,
+                        recovery = PairingV3Recovery.NONE,
+                        inputResetGeneration = nextGeneration,
+                    )
+
+                is PairingV3UiResult.Error ->
+                    current.copy(
+                        isLoading = false,
+                        uiError = result.reason,
+                        recovery = result.recovery,
+                        inputResetGeneration = nextGeneration,
+                    )
             }
+        }
+        if (result is PairingV3UiResult.Paired) {
+            completePairing()
         }
     }
 
     private fun completePairing() {
-        resetFeedback()
         syncManager.ignoreVerify(appInstanceId)
         syncManager.refresh(listOf(appInstanceId))
     }
