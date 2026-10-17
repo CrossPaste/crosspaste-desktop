@@ -303,7 +303,7 @@ fun SearchWindow(windowIcon: Painter?) {
                                         bubbleFocused =
                                             appWindowManager.bubbleComposeWindow?.hasFocusedWindow() == true,
                                         mainFocused = appWindowManager.mainComposeWindow?.hasFocusedWindow() == true,
-                                        trayClickPending = MacAppUtils.pendingStatusItemClick() != null,
+                                        pointerOnStatusItem = MacAppUtils.isPointerOnStatusItem(),
                                     )
                                 logger.info {
                                     "Mac search focus recheck result: source=$source, session=$sessionId, " +

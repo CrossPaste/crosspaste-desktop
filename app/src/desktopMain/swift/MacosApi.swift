@@ -509,50 +509,23 @@ public func isApplicationActive() -> Int32 {
     return DispatchQueue.main.sync { NSApp.isActive ? 1 : 0 }
 }
 
-private var statusItemLocalMonitor: Any?
-private var statusItemGlobalMonitor: Any?
-
-@_cdecl("startStatusItemClickTracking")
-public func startStatusItemClickTracking(_ callback: @escaping @convention(c) (Int32) -> Void) {
+@_cdecl("isPointerOnStatusItem")
+public func isPointerOnStatusItem() -> Int32 {
     if !Thread.isMainThread {
-        DispatchQueue.main.sync { startStatusItemClickTracking(callback) }
-        return
+        return DispatchQueue.main.sync { isPointerOnStatusItem() }
     }
-
-    // Observe mouse-down before AppKit dispatches it to the status button. The
-    // library delivers primaryAction asynchronously after mouse-up, so the
-    // protection must outlive the physical button press. Hover creates no token.
-    let mouseDown: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
-    statusItemLocalMonitor = NSEvent.addLocalMonitorForEvents(matching: mouseDown.union([.keyDown, .flagsChanged])) { event in
-        var isStatusItemClick = false
-        if event.type == .leftMouseDown,
-           !event.modifierFlags.contains(.control),
-           let window = event.window,
-           NSStringFromClass(type(of: window)) == "NSStatusBarWindow",
-           window.isVisible {
-            let point = window.convertPoint(toScreen: event.locationInWindow)
-            isStatusItemClick = window.frame.contains(point)
-        }
-        // Keyboard input (including Cmd+Tab), other buttons and other windows
-        // cancel a pending click instead of inheriting its focus-loss exemption.
-        callback(isStatusItemClick ? 1 : 0)
-        return event
+    // macOS 27 deactivates the app before it forwards the status item mouse-down,
+    // so the click event arrives too late. Hardware state is already current:
+    // the button is down over the icon. Requiring the press keeps Cmd+Tab while
+    // hovering the icon a real dismissal.
+    guard NSEvent.pressedMouseButtons & 1 != 0 else { return 0 }
+    let pointer = NSEvent.mouseLocation
+    let onStatusItem = NSApp.windows.contains { window in
+        NSStringFromClass(type(of: window)) == "NSStatusBarWindow" &&
+            window.isVisible &&
+            window.frame.contains(pointer)
     }
-    // A mouse-down in another app must also cancel an abandoned tray click.
-    // Mouse-only observation does not request keyboard-monitoring permission.
-    statusItemGlobalMonitor = NSEvent.addGlobalMonitorForEvents(matching: mouseDown) { _ in callback(0) }
-}
-
-@_cdecl("stopStatusItemClickTracking")
-public func stopStatusItemClickTracking() {
-    if !Thread.isMainThread {
-        DispatchQueue.main.sync { stopStatusItemClickTracking() }
-        return
-    }
-    if let monitor = statusItemLocalMonitor { NSEvent.removeMonitor(monitor) }
-    if let monitor = statusItemGlobalMonitor { NSEvent.removeMonitor(monitor) }
-    statusItemLocalMonitor = nil
-    statusItemGlobalMonitor = nil
+    return onStatusItem ? 1 : 0
 }
 
 @_cdecl("getRunningApplications")
