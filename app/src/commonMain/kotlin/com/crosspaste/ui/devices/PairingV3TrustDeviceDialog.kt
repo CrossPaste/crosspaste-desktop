@@ -46,6 +46,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -489,16 +490,11 @@ class PairingV3DialogState(
         autoRefreshIncorrectPinSessionId: String? = null,
         action: suspend () -> PairingV3UiResult,
     ) {
-        var shouldLaunch = false
-        _uiState.update { current ->
-            if (current.isLoading) {
-                current
-            } else {
-                shouldLaunch = true
-                current.copy(isLoading = true, uiError = null)
+        val previous =
+            _uiState.getAndUpdate { current ->
+                if (current.isLoading) current else current.copy(isLoading = true, uiError = null)
             }
-        }
-        if (!shouldLaunch) return
+        if (previous.isLoading) return
 
         coroutineScope.launch {
             runAction(
