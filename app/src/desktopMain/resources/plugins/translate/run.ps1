@@ -17,11 +17,20 @@ function Translate-Text([string]$text, [string]$target) {
     return ($response[0] | ForEach-Object { $_[0] }) -join ''
 }
 
-$reader = New-Object System.IO.StreamReader([Console]::OpenStandardInput(), $utf8)
-$paste = $reader.ReadToEnd() | ConvertFrom-Json
-$text = if ($paste.content) { $paste.content } else { $paste.rawContent }
-$target = if ($env:CROSSPASTE_ACTION) { $env:CROSSPASTE_ACTION } else { 'en' }
-$bytes = $utf8.GetBytes((Translate-Text $text $target))
-$stdout = [Console]::OpenStandardOutput()
-$stdout.Write($bytes, 0, $bytes.Length)
-$stdout.Flush()
+try {
+    $reader = New-Object System.IO.StreamReader([Console]::OpenStandardInput(), $utf8)
+    $paste = $reader.ReadToEnd() | ConvertFrom-Json
+    $text = if ($paste.content) { $paste.content } else { $paste.rawContent }
+    $target = if ($env:CROSSPASTE_ACTION) { $env:CROSSPASTE_ACTION } else { 'en' }
+    $bytes = $utf8.GetBytes((Translate-Text $text $target))
+    $stdout = [Console]::OpenStandardOutput()
+    $stdout.Write($bytes, 0, $bytes.Length)
+    $stdout.Flush()
+} catch {
+    # CrossPaste shows the tail of stderr to the user; one line reads better than an error record
+    $errBytes = $utf8.GetBytes($_.Exception.Message + "`n")
+    $stderr = [Console]::OpenStandardError()
+    $stderr.Write($errBytes, 0, $errBytes.Length)
+    $stderr.Flush()
+    exit 1
+}

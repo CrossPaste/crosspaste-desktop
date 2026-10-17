@@ -88,7 +88,7 @@ are found either way.
 
 ## Platform notes
 
-- **Windows PowerShell 5.1** reads and writes the console in the OEM code page. Read stdin and write stdout as raw
+- **Windows PowerShell 5.1** reads and writes the console in the OEM code page. Read stdin and write stdout and stderr as raw
   UTF-8 bytes, as `uppercase/run.ps1` does.
 - **macOS**: running a script through an interpreter (`/bin/sh run.sh`) is not affected by Gatekeeper quarantine;
   a downloaded native binary is.
