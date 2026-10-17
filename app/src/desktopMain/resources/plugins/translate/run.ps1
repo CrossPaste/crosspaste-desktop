@@ -28,6 +28,9 @@ try {
     $stdout.Flush()
 } catch {
     # CrossPaste shows the tail of stderr to the user; one line reads better than an error record
-    [Console]::Error.WriteLine($_.Exception.Message)
+    $errBytes = $utf8.GetBytes($_.Exception.Message + "`n")
+    $stderr = [Console]::OpenStandardError()
+    $stderr.Write($errBytes, 0, $errBytes.Length)
+    $stderr.Flush()
     exit 1
 }
