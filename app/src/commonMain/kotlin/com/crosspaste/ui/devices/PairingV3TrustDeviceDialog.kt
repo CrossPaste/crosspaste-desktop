@@ -18,12 +18,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -47,12 +44,16 @@ import com.crosspaste.ui.theme.AppUISize.xLarge
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-private const val PAIRING_PIN_LENGTH = 6
+const val PAIRING_PIN_LENGTH = 6
 private val INCORRECT_PIN_FEEDBACK_DURATION = 1.seconds
 
 @Composable
@@ -82,11 +83,14 @@ fun DeviceScope.PairingV3TrustDeviceDialog() {
             List(PAIRING_PIN_LENGTH) { FocusRequester() }
         }
 
+    val dialogUi by dialogState.uiState.collectAsState()
+
     PairingV3DialogLifecycle(
         appInstanceId = appInstanceId,
         session = session,
         controller = controller,
         dialogState = dialogState,
+        inputResetGeneration = dialogUi.inputResetGeneration,
         resetInput = {
             tokens.indices.forEach { index -> tokens[index] = "" }
         },
@@ -99,9 +103,9 @@ fun DeviceScope.PairingV3TrustDeviceDialog() {
                 deviceDisplayName = syncRuntimeInfo.getDeviceDisplayName(),
                 peerKeyFingerprint = session?.peerKeyFingerprintDisplay,
                 sessionState = session?.state,
-                isLoading = dialogState.isLoading,
-                uiError = dialogState.uiError,
-                recovery = dialogState.recovery,
+                isLoading = dialogUi.isLoading,
+                uiError = dialogUi.uiError,
+                recovery = dialogUi.recovery,
                 pinComplete = tokens.all { it.length == 1 },
             ),
         tokens = tokens,
@@ -127,6 +131,7 @@ private fun PairingV3DialogLifecycle(
     session: PairingSessionUiState?,
     controller: PairingV3UiController,
     dialogState: PairingV3DialogState,
+    inputResetGeneration: Int,
     resetInput: () -> Unit,
 ) {
     LaunchedEffect(appInstanceId) {
@@ -140,8 +145,8 @@ private fun PairingV3DialogLifecycle(
         dialogState.resetFeedback()
     }
 
-    LaunchedEffect(dialogState.inputResetGeneration) {
-        if (dialogState.inputResetGeneration > 0) {
+    LaunchedEffect(inputResetGeneration) {
+        if (inputResetGeneration > 0) {
             resetInput()
         }
     }
@@ -357,7 +362,7 @@ private fun PairingV3ConfirmAction(
     }
 }
 
-internal data class PairingV3DialogModel(
+data class PairingV3DialogModel(
     val deviceDisplayName: String,
     val peerKeyFingerprint: String?,
     val sessionState: PairingSessionState?,
@@ -396,28 +401,48 @@ internal data class PairingV3DialogModel(
                 recovery != PairingV3Recovery.NONE
 }
 
-internal class PairingV3DialogState(
+/** What the v3 PIN dialog shows besides the session itself. */
+data class PairingV3DialogUiState(
+    val isLoading: Boolean = false,
+    val uiError: PairingV3UiError? = null,
+    val recovery: PairingV3Recovery = PairingV3Recovery.NONE,
+    /** Bumped when the PIN input must be cleared (a refreshed offer after an incorrect PIN). */
+    val inputResetGeneration: Int = 0,
+)
+
+/**
+ * The v3 PIN dialog's actions and feedback, independent of the UI toolkit: the
+ * Compose dialog collects [uiState], and so can a native one.
+ */
+class PairingV3DialogState(
     private val appInstanceId: String,
     private val controller: PairingV3UiController,
     private val syncManager: SyncManager,
     private val coroutineScope: CoroutineScope,
     private val incorrectPinFeedbackDuration: Duration = INCORRECT_PIN_FEEDBACK_DURATION,
 ) {
-    var isLoading by mutableStateOf(false)
-        private set
+    private val _uiState = MutableStateFlow(PairingV3DialogUiState())
 
-    var uiError by mutableStateOf<PairingV3UiError?>(null)
-        private set
+    val uiState: StateFlow<PairingV3DialogUiState> = _uiState
 
-    var recovery by mutableStateOf(PairingV3Recovery.NONE)
-        private set
+    /** Snapshot of [uiState.value.isLoading]. In Compose, collect [uiState] instead to observe changes. */
+    val isLoading: Boolean
+        get() = _uiState.value.isLoading
 
-    var inputResetGeneration by mutableIntStateOf(0)
-        private set
+    /** Snapshot of [uiState.value.uiError]. In Compose, collect [uiState] instead to observe changes. */
+    val uiError: PairingV3UiError?
+        get() = _uiState.value.uiError
+
+    /** Snapshot of [uiState.value.recovery]. In Compose, collect [uiState] instead to observe changes. */
+    val recovery: PairingV3Recovery
+        get() = _uiState.value.recovery
+
+    /** Snapshot of [uiState.value.inputResetGeneration]. In Compose, collect [uiState] instead to observe changes. */
+    val inputResetGeneration: Int
+        get() = _uiState.value.inputResetGeneration
 
     fun resetFeedback() {
-        uiError = null
-        recovery = PairingV3Recovery.NONE
+        _uiState.update { it.copy(uiError = null, recovery = PairingV3Recovery.NONE) }
     }
 
     fun startPairing() {
@@ -465,9 +490,12 @@ internal class PairingV3DialogState(
         autoRefreshIncorrectPinSessionId: String? = null,
         action: suspend () -> PairingV3UiResult,
     ) {
-        if (isLoading) return
-        isLoading = true
-        uiError = null
+        val previous =
+            _uiState.getAndUpdate { current ->
+                if (current.isLoading) current else current.copy(isLoading = true, uiError = null)
+            }
+        if (previous.isLoading) return
+
         coroutineScope.launch {
             runAction(
                 action = action,
@@ -503,48 +531,64 @@ internal class PairingV3DialogState(
         }
 
     private suspend fun autoRefreshAfterIncorrectPin(sessionId: String) {
-        uiError = PairingV3UiError.INCORRECT_PIN
-        recovery = PairingV3Recovery.NONE
+        _uiState.update { it.copy(uiError = PairingV3UiError.INCORRECT_PIN, recovery = PairingV3Recovery.NONE) }
 
         delay(incorrectPinFeedbackDuration)
 
-        uiError = null
+        _uiState.update { it.copy(uiError = null) }
         val result = executeAction { controller.recover(sessionId) }
-        inputResetGeneration += 1
-        applyResult(result)
+        applyResult(result, inputResetGenerationIncrement = 1)
     }
 
-    private fun applyResult(result: PairingV3UiResult) {
-        isLoading = false
-        when (result) {
-            is PairingV3UiResult.SessionReady -> resetFeedback()
-            PairingV3UiResult.Paired -> completePairing()
-            is PairingV3UiResult.Error -> {
-                uiError = result.reason
-                recovery = result.recovery
+    private fun applyResult(
+        result: PairingV3UiResult,
+        inputResetGenerationIncrement: Int = 0,
+    ) {
+        _uiState.update { current ->
+            val nextGeneration = current.inputResetGeneration + inputResetGenerationIncrement
+            when (result) {
+                is PairingV3UiResult.SessionReady,
+                PairingV3UiResult.Paired,
+                ->
+                    current.copy(
+                        isLoading = false,
+                        uiError = null,
+                        recovery = PairingV3Recovery.NONE,
+                        inputResetGeneration = nextGeneration,
+                    )
+
+                is PairingV3UiResult.Error ->
+                    current.copy(
+                        isLoading = false,
+                        uiError = result.reason,
+                        recovery = result.recovery,
+                        inputResetGeneration = nextGeneration,
+                    )
             }
+        }
+        if (result is PairingV3UiResult.Paired) {
+            completePairing()
         }
     }
 
     private fun completePairing() {
-        resetFeedback()
         syncManager.ignoreVerify(appInstanceId)
         syncManager.refresh(listOf(appInstanceId))
     }
 }
 
-private fun List<PairingSessionUiState>.latestInitiatorSession(appInstanceId: String): PairingSessionUiState? =
+fun List<PairingSessionUiState>.latestInitiatorSession(appInstanceId: String): PairingSessionUiState? =
     filter { it.role == PakeRole.INITIATOR && it.peerAppInstanceId == appInstanceId }
         .maxByOrNull { it.createdAt }
 
-private fun List<PairingSessionUiState>.latestActiveInitiatorSession(appInstanceId: String): PairingSessionUiState? =
+fun List<PairingSessionUiState>.latestActiveInitiatorSession(appInstanceId: String): PairingSessionUiState? =
     filter {
         it.role == PakeRole.INITIATOR &&
             it.peerAppInstanceId == appInstanceId &&
             !it.state.isTerminal
     }.maxByOrNull { it.createdAt }
 
-internal fun PairingV3UiError.copyKey(): String =
+fun PairingV3UiError.copyKey(): String =
     when (this) {
         PairingV3UiError.PIN_EXPIRED -> "pairing_v3_pin_expired"
         PairingV3UiError.INCORRECT_PIN -> "pairing_v3_incorrect_pin"
@@ -560,7 +604,7 @@ internal fun PairingV3UiError.copyKey(): String =
         PairingV3UiError.FAILED -> "pairing_v3_failed"
     }
 
-internal fun PairingSessionState.copyKey(): String =
+fun PairingSessionState.copyKey(): String =
     when (this) {
         PairingSessionState.INTENT_RECEIVED,
         PairingSessionState.PIN_AVAILABLE,

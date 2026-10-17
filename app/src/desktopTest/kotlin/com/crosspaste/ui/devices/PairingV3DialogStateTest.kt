@@ -1,5 +1,6 @@
 package com.crosspaste.ui.devices
 
+import app.cash.turbine.test
 import com.crosspaste.pairing.v3.PairingSessionState
 import com.crosspaste.pairing.v3.PairingSessionUiState
 import com.crosspaste.pairing.v3.PakeRole
@@ -158,5 +159,156 @@ class PairingV3DialogStateTest {
             assertEquals(null, state.uiError)
             assertEquals(PairingV3Recovery.NONE, state.recovery)
             assertFalse(state.isLoading)
+        }
+
+    @Test
+    fun uiState_atomicErrorTransition_neverEmitsTransientEmptyState() =
+        runTest {
+            val controller = mockk<PairingV3UiController>()
+            val state =
+                PairingV3DialogState(
+                    appInstanceId = "peer",
+                    controller = controller,
+                    syncManager = mockk<SyncManager>(relaxed = true),
+                    coroutineScope = this,
+                )
+            coEvery { controller.submitPin("session", any()) } returns
+                PairingV3UiResult.Error(
+                    PairingV3UiError.NETWORK_FAILURE,
+                    PairingV3Recovery.RESTART,
+                )
+
+            state.uiState.test {
+                // Initial idle state
+                assertEquals(
+                    PairingV3DialogUiState(
+                        isLoading = false,
+                        uiError = null,
+                        recovery = PairingV3Recovery.NONE,
+                        inputResetGeneration = 0,
+                    ),
+                    awaitItem(),
+                )
+
+                state.submitPin("session", "123456")
+
+                // Transitions to loading
+                assertEquals(
+                    PairingV3DialogUiState(
+                        isLoading = true,
+                        uiError = null,
+                        recovery = PairingV3Recovery.NONE,
+                        inputResetGeneration = 0,
+                    ),
+                    awaitItem(),
+                )
+
+                runCurrent()
+
+                // Transitions directly to error without any intermediate (isLoading=false, uiError=null) item
+                assertEquals(
+                    PairingV3DialogUiState(
+                        isLoading = false,
+                        uiError = PairingV3UiError.NETWORK_FAILURE,
+                        recovery = PairingV3Recovery.RESTART,
+                        inputResetGeneration = 0,
+                    ),
+                    awaitItem(),
+                )
+
+                expectNoEvents()
+            }
+        }
+
+    @Test
+    fun uiState_autoRefreshIncorrectPin_emitsAtomicTransitions() =
+        runTest {
+            val controller = mockk<PairingV3UiController>()
+            val state =
+                PairingV3DialogState(
+                    appInstanceId = "peer",
+                    controller = controller,
+                    syncManager = mockk<SyncManager>(relaxed = true),
+                    coroutineScope = this,
+                    incorrectPinFeedbackDuration = 1.seconds,
+                )
+            coEvery { controller.submitPin("session", any()) } returns
+                PairingV3UiResult.Error(
+                    PairingV3UiError.INCORRECT_PIN,
+                    PairingV3Recovery.REFRESH_OFFER,
+                )
+            coEvery { controller.recover("session") } returns
+                PairingV3UiResult.SessionReady(
+                    sessionId = "session",
+                    tokenGeneration = 2,
+                    pinExpiresAt = 60_000,
+                    peerKeyFingerprintDisplay = "aabbccdd",
+                )
+
+            state.uiState.test {
+                assertEquals(
+                    PairingV3DialogUiState(
+                        isLoading = false,
+                        uiError = null,
+                        recovery = PairingV3Recovery.NONE,
+                        inputResetGeneration = 0,
+                    ),
+                    awaitItem(),
+                )
+
+                state.submitPin("session", "123456")
+
+                // Step 1: Loading
+                assertEquals(
+                    PairingV3DialogUiState(
+                        isLoading = true,
+                        uiError = null,
+                        recovery = PairingV3Recovery.NONE,
+                        inputResetGeneration = 0,
+                    ),
+                    awaitItem(),
+                )
+
+                runCurrent()
+
+                // Step 2: Incorrect PIN feedback shown (isLoading remains true)
+                assertEquals(
+                    PairingV3DialogUiState(
+                        isLoading = true,
+                        uiError = PairingV3UiError.INCORRECT_PIN,
+                        recovery = PairingV3Recovery.NONE,
+                        inputResetGeneration = 0,
+                    ),
+                    awaitItem(),
+                )
+
+                // Advance past incorrect pin feedback duration
+                advanceTimeBy(1_000)
+                runCurrent()
+
+                // Step 3: Error cleared while recover is executed
+                assertEquals(
+                    PairingV3DialogUiState(
+                        isLoading = true,
+                        uiError = null,
+                        recovery = PairingV3Recovery.NONE,
+                        inputResetGeneration = 0,
+                    ),
+                    awaitItem(),
+                )
+
+                // Step 4: Recover finishes; inputResetGeneration incremented and loading ends in one atomic emission
+                assertEquals(
+                    PairingV3DialogUiState(
+                        isLoading = false,
+                        uiError = null,
+                        recovery = PairingV3Recovery.NONE,
+                        inputResetGeneration = 1,
+                    ),
+                    awaitItem(),
+                )
+
+                expectNoEvents()
+            }
         }
 }

@@ -222,7 +222,7 @@ fun DeviceScope.TrustDeviceDialog() {
     )
 }
 
-internal suspend fun refreshPairingCredentialTypeUntilKnown(
+suspend fun refreshPairingCredentialTypeUntilKnown(
     syncManager: SyncManager,
     appInstanceId: String,
     initialBackoff: Duration = 1.seconds,
