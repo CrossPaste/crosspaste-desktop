@@ -78,6 +78,10 @@ object MacAppUtils {
 
     fun getCurrentActiveAppInfo(): String? = MacosApi.getString(INSTANCE.getCurrentActiveAppInfo())
 
+    fun isApplicationActive(): Boolean = INSTANCE.isApplicationActive() != 0
+
+    fun isPointerOnStatusItem(): Boolean = INSTANCE.isPointerOnStatusItem() != 0
+
     fun getRunningApplications(): List<Pair<String, String>> {
         val raw = MacosApi.getString(INSTANCE.getRunningApplications()) ?: return emptyList()
         return raw.split("\n\n").mapNotNull { entry ->

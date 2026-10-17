@@ -501,6 +501,33 @@ public func getCurrentActiveAppInfo() -> UnsafePointer<CChar>? {
     return nil
 }
 
+@_cdecl("isApplicationActive")
+public func isApplicationActive() -> Int32 {
+    if Thread.isMainThread {
+        return NSApp.isActive ? 1 : 0
+    }
+    return DispatchQueue.main.sync { NSApp.isActive ? 1 : 0 }
+}
+
+@_cdecl("isPointerOnStatusItem")
+public func isPointerOnStatusItem() -> Int32 {
+    if !Thread.isMainThread {
+        return DispatchQueue.main.sync { isPointerOnStatusItem() }
+    }
+    // macOS 27 deactivates the app before it forwards the status item mouse-down,
+    // so the click event arrives too late. Hardware state is already current:
+    // the button is down over the icon. Requiring the press keeps Cmd+Tab while
+    // hovering the icon a real dismissal.
+    guard NSEvent.pressedMouseButtons & 1 != 0 else { return 0 }
+    let pointer = NSEvent.mouseLocation
+    let onStatusItem = NSApp.windows.contains { window in
+        NSStringFromClass(type(of: window)) == "NSStatusBarWindow" &&
+            window.isVisible &&
+            window.frame.contains(pointer)
+    }
+    return onStatusItem ? 1 : 0
+}
+
 @_cdecl("getRunningApplications")
 public func getRunningApplications() -> UnsafePointer<CChar>? {
     let apps = NSWorkspace.shared.runningApplications
