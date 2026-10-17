@@ -1,5 +1,7 @@
 package com.crosspaste.platform.windows
 
+import com.crosspaste.platform.windows.api.Imm32
+import com.crosspaste.platform.windows.api.Shell32
 import com.crosspaste.platform.windows.api.User32
 import com.sun.jna.platform.win32.BaseTSD.ULONG_PTR
 import com.sun.jna.platform.win32.Kernel32
@@ -19,9 +21,46 @@ object WindowsFocusUtils {
 
     private val user32 = User32.INSTANCE
 
+    private val searchActivation = WindowsSearchWindowActivation(user32, Kernel32.INSTANCE)
+
+    private val trayHitTest = WindowsTrayHitTest(user32, Shell32.INSTANCE, Kernel32.INSTANCE.GetCurrentProcessId())
+
+    private val searchPointer = WindowsSearchWindowPointer(user32, trayHitTest::contains)
+
+    private val inputMethod = WindowsInputMethod(user32, Imm32.INSTANCE)
+
+    fun isSearchWindowComposing(search: HWND?): Boolean = inputMethod.isComposing(search)
+
+    fun isTrayForeground(): Boolean = user32.GetForegroundWindow()?.let(trayHitTest::ownsForeground) == true
+
+    fun isTrayIcon(
+        x: Int,
+        y: Int,
+    ): Boolean = trayHitTest.contains(x, y)
+
+    fun isOutsideSearchWindow(
+        x: Int,
+        y: Int,
+        search: HWND?,
+        bubble: HWND?,
+    ): Boolean = searchPointer.isOutside(x, y, search, bubble)
+
+    fun activateSearchWindow(hwnd: HWND?): Boolean = searchActivation.activate(hwnd)
+
     private const val WS_EX_TOOLWINDOW = 0x00000080
 
     private const val WS_EX_NOACTIVATE = 0x08000000
+
+    fun isWindowForeground(hwnd: HWND?): Boolean = hwnd != null && user32.GetForegroundWindow() == hwnd
+
+    fun isOtherApplicationForeground(): Boolean {
+        val foreground = user32.GetForegroundWindow() ?: return false
+        val processId = IntByReference()
+        if (user32.GetWindowThreadProcessId(foreground, processId) == 0) {
+            return false
+        }
+        return processId.value != 0 && processId.value != Kernel32.INSTANCE.GetCurrentProcessId()
+    }
 
     @Synchronized
     fun bringToFront(
@@ -37,7 +76,8 @@ object WindowsFocusUtils {
                 0
             }
 
-        val shouldAttach = prevThreadId != null
+        // Attaching a thread to itself is invalid (ERROR_INVALID_PARAMETER).
+        val shouldAttach = prevThreadId != null && prevThreadId != targetThreadId
         if (shouldAttach) {
             val success =
                 user32.AttachThreadInput(

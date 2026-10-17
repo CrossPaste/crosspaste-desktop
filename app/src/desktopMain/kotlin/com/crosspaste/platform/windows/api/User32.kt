@@ -11,6 +11,10 @@ import com.sun.jna.win32.StdCallLibrary.StdCallCallback
 import com.sun.jna.win32.W32APIOptions.DEFAULT_OPTIONS
 
 interface User32 : com.sun.jna.platform.win32.User32 {
+    // POINT is two 32-bit LONGs, passed as one 64-bit value by the Windows x64 ABI.
+    // Avoid JNA's aggregate marshalling here: it can return null for valid desktop points.
+    fun WindowFromPoint(point: Long): HWND?
+
     fun interface WNDPROC : StdCallCallback {
         fun callback(
             hWnd: HWND?,
@@ -189,3 +193,8 @@ interface User32 : com.sun.jna.platform.win32.User32 {
         const val WINEVENT_OUTOFCONTEXT = 0x0000
     }
 }
+
+internal fun User32.windowFromPoint(
+    x: Int,
+    y: Int,
+): HWND? = WindowFromPoint((x.toLong() and 0xffff_ffffL) or (y.toLong() shl 32))
