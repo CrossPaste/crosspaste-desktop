@@ -568,78 +568,88 @@ class PasteReleaseService(
         writePasteboard: Boolean = true,
         historyPull: Boolean = false,
         tryWritePasteboard: (PasteData) -> Unit,
-    ): Result<Unit?> {
-        return receiveMutex.withLock(pasteData.appInstanceId) {
+    ): Result<Unit?> =
+        receiveMutex.withLock(pasteData.appInstanceId) {
             runCatching {
-                if (historyPull && pastePullCursorManager.shouldSkipHistory(pasteData)) return@runCatching null
-                if (pasteData.isFileType() &&
-                    pastePullCursorManager.hasActiveReceive(pasteData)
-                ) {
-                    return@runCatching null
-                }
-                pastePullCursorManager.reserve(pasteData.appInstanceId, listOf(pasteData.id))
-                if (discardOversizedRemoteNonFilePaste(pasteData)) {
-                    return@runCatching null
-                }
-                val remotePasteDataId = pasteData.id
-                val isFileType = pasteData.isFileType()
-                if (isFileType) {
-                    try {
-                        validateFileTransferMetadata(pasteData)
-                    } catch (e: IllegalArgumentException) {
-                        discardInvalidRemoteFilePaste(pasteData, e)
-                        return@runCatching null
-                    }
-                }
-                val existIconFile: Boolean? =
+                if (!prepareRemotePasteReceive(pasteData, historyPull)) return@runCatching null
+                val existIconFile =
                     pasteData.source?.let {
                         fileUtils.existFile(userDataPathProvider.resolveIconPath(pasteData.appInstanceId, it))
                     }
 
                 taskSubmitter.submit {
-                    val id: Long =
-                        if (!isFileType) {
-                            val newId = pasteDao.createPasteData(pasteData, PasteState.LOADED)
-                            pastePullCursorManager.settle(pasteData.appInstanceId, pasteData.id)
-                            markDeleteSameHash(newId, pasteData.pasteType, pasteData.hash)
-                            addRenderingTask(newId, pasteData.getType())
-                            if (!historyPull) addRelaySyncTask(newId, pasteData.appInstanceId, seenAppInstanceIds)
-                            tryWritePasteboard(pasteData)
-                            newId
+                    val id =
+                        if (pasteData.isFileType()) {
+                            scheduleRemoteFilePull(pasteData, seenAppInstanceIds, writePasteboard, historyPull)
+                                ?: return@submit
                         } else {
-                            val newPasteData =
-                                bindFilePasteForReceive(pasteData) ?: run {
-                                    logger.warn {
-                                        "File-type paste from ${pasteData.appInstanceId} has no PasteFiles item, skipping"
-                                    }
-                                    return@submit
-                                }
-                            // Relayed once the files have landed, see releaseRemotePasteDataWithFile
-                            try {
-                                addPullFileTask(
-                                    newPasteData.id,
-                                    remotePasteDataId,
-                                    seenAppInstanceIds,
-                                    writePasteboard,
-                                    historyPull,
-                                )
-                            } catch (e: Exception) {
-                                // A LOADING row without a task must not suppress a later catch-up retry.
-                                discardPushPrepared(newPasteData.id)
-                                throw e
-                            }
-                            newPasteData.id
+                            releaseRemoteNonFilePaste(pasteData, seenAppInstanceIds, historyPull, tryWritePasteboard)
                         }
-
-                    existIconFile?.let {
-                        addPullIconTask(id, it)
-                    }
+                    existIconFile?.let { addPullIconTask(id, it) }
                 }
                 Unit
             }.onFailure { e ->
                 logger.error(e) { "Release remote paste data failed" }
             }
         }
+
+    private suspend fun prepareRemotePasteReceive(
+        pasteData: PasteData,
+        historyPull: Boolean,
+    ): Boolean {
+        if (historyPull && pastePullCursorManager.shouldSkipHistory(pasteData)) return false
+        if (pasteData.isFileType() && pastePullCursorManager.hasActiveReceive(pasteData)) return false
+
+        pastePullCursorManager.reserve(pasteData.appInstanceId, listOf(pasteData.id))
+        if (discardOversizedRemoteNonFilePaste(pasteData)) return false
+        if (pasteData.isFileType()) {
+            try {
+                validateFileTransferMetadata(pasteData)
+            } catch (e: IllegalArgumentException) {
+                discardInvalidRemoteFilePaste(pasteData, e)
+                return false
+            }
+        }
+        return true
+    }
+
+    private suspend fun TaskBuilder.releaseRemoteNonFilePaste(
+        pasteData: PasteData,
+        seenAppInstanceIds: Set<String>,
+        historyPull: Boolean,
+        tryWritePasteboard: (PasteData) -> Unit,
+    ): Long {
+        val id = pasteDao.createPasteData(pasteData, PasteState.LOADED)
+        pastePullCursorManager.settle(pasteData.appInstanceId, pasteData.id)
+        markDeleteSameHash(id, pasteData.pasteType, pasteData.hash)
+        addRenderingTask(id, pasteData.getType())
+        if (!historyPull) addRelaySyncTask(id, pasteData.appInstanceId, seenAppInstanceIds)
+        tryWritePasteboard(pasteData)
+        return id
+    }
+
+    private suspend fun TaskBuilder.scheduleRemoteFilePull(
+        pasteData: PasteData,
+        seenAppInstanceIds: Set<String>,
+        writePasteboard: Boolean,
+        historyPull: Boolean,
+    ): Long? {
+        val newPasteData =
+            bindFilePasteForReceive(pasteData) ?: run {
+                logger.warn {
+                    "File-type paste from ${pasteData.appInstanceId} has no PasteFiles item, skipping"
+                }
+                return null
+            }
+        // Relayed once the files have landed, see releaseRemotePasteDataWithFile.
+        try {
+            addPullFileTask(newPasteData.id, pasteData.id, seenAppInstanceIds, writePasteboard, historyPull)
+        } catch (e: Exception) {
+            // A LOADING row without a task must not suppress a later catch-up retry.
+            discardPushPrepared(newPasteData.id)
+            throw e
+        }
+        return newPasteData.id
     }
 
     suspend fun releaseRemotePasteDataList(
