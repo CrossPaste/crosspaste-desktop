@@ -117,7 +117,7 @@ class PasteReleaseServicePushTest {
 
             assertNull(result, "invalid file metadata should yield null result")
             coVerify(exactly = 0) { pasteDao.createPasteData(any(), any()) }
-            coVerify(exactly = 0) { pasteDao.markDeletePasteData(any()) }
+            coVerify(exactly = 0) { pasteDao.markDeleteFailedReceive(any()) }
         }
 
     @Test
@@ -491,7 +491,7 @@ class PasteReleaseServicePushTest {
 
         assertFalse(File(destination, "big(1).apk").exists(), "pre-allocated slot must be deleted")
         assertEquals("existing-file", File(destination, "big.apk").readText())
-        coVerify(exactly = 1) { pasteDao.markDeletePasteData(7L) }
+        coVerify(exactly = 1) { pasteDao.markDeleteFailedReceive(7L) }
     }
 
     @Test
@@ -529,20 +529,20 @@ class PasteReleaseServicePushTest {
 
         assertFalse(File(destination, "big(1).apk").exists(), "pre-allocated slot must be cleaned up on failure")
         assertEquals("existing-file", File(destination, "big.apk").readText(), "user file must remain intact")
-        coVerify(exactly = 1) { pasteDao.markDeletePasteData(7L) }
+        coVerify(exactly = 1) { pasteDao.markDeleteFailedReceive(7L) }
     }
 
     @Test
     fun discardPushPrepared_marksPreparedPasteDeleted() =
         runBlocking {
             val pasteDao = mockk<PasteDao>(relaxed = true)
-            coEvery { pasteDao.markDeletePasteData(42L) } returns Result.success(Unit)
+            coEvery { pasteDao.markDeleteFailedReceive(42L) } returns Result.success(Unit)
             val service = newService(pasteDao = pasteDao)
 
             val result = service.discardPushPrepared(42L)
 
             assertTrue(result.isSuccess)
-            coVerify(exactly = 1) { pasteDao.markDeletePasteData(42L) }
+            coVerify(exactly = 1) { pasteDao.markDeleteFailedReceive(42L) }
         }
 
     @Test
@@ -550,14 +550,14 @@ class PasteReleaseServicePushTest {
         runBlocking {
             val failure = Result.failure<Unit>(IllegalStateException("busy"))
             val pasteDao = mockk<PasteDao>()
-            coEvery { pasteDao.markDeletePasteData(42L) } returnsMany
+            coEvery { pasteDao.markDeleteFailedReceive(42L) } returnsMany
                 listOf(failure, failure, Result.success(Unit))
             val service = newService(pasteDao = pasteDao)
 
             val result = service.discardPushPrepared(42L)
 
             assertTrue(result.isSuccess)
-            coVerify(exactly = 3) { pasteDao.markDeletePasteData(42L) }
+            coVerify(exactly = 3) { pasteDao.markDeleteFailedReceive(42L) }
         }
 
     @Test
@@ -565,13 +565,13 @@ class PasteReleaseServicePushTest {
         runBlocking {
             val failure = Result.failure<Unit>(IllegalStateException("unavailable"))
             val pasteDao = mockk<PasteDao>()
-            coEvery { pasteDao.markDeletePasteData(42L) } returns failure
+            coEvery { pasteDao.markDeleteFailedReceive(42L) } returns failure
             val service = newService(pasteDao = pasteDao)
 
             val result = service.discardPushPrepared(42L)
 
             assertTrue(result.isFailure)
-            coVerify(exactly = 3) { pasteDao.markDeletePasteData(42L) }
+            coVerify(exactly = 3) { pasteDao.markDeleteFailedReceive(42L) }
         }
 
     @Test

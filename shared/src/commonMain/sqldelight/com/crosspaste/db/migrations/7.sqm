@@ -1,0 +1,18 @@
+
+-- Remote IDs are independent of local display timestamps. Never migrate the
+-- old time cursor into this table: it belongs to a different clock domain.
+CREATE TABLE IF NOT EXISTS PasteRemoteCursorEntity (
+    appInstanceId TEXT PRIMARY KEY NOT NULL,
+    remotePasteId INTEGER NOT NULL
+);
+
+-- Outstanding receives keep a newer completed ID from hiding a failed or
+-- unfinished file receive. localPasteId identifies an existing download task.
+CREATE TABLE IF NOT EXISTS PastePendingReceiveEntity (
+    appInstanceId TEXT NOT NULL,
+    remotePasteId INTEGER NOT NULL,
+    localPasteId INTEGER,
+    PRIMARY KEY (appInstanceId, remotePasteId)
+);
+
+CREATE INDEX IF NOT EXISTS IdxPasteDataInstanceStateId ON PasteDataEntity(appInstanceId, pasteState, id);

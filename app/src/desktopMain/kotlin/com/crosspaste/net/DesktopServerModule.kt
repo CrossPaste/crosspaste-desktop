@@ -20,7 +20,6 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.NearbyDeviceManager
-import com.crosspaste.sync.PastePullService
 import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.sync.PushSessionManager
 import io.ktor.server.application.*
@@ -40,7 +39,6 @@ class DesktopServerModule(
     pendingKeyExchangeStore: PendingKeyExchangeStore,
     pasteboardService: PasteboardService,
     pasteDao: PasteDao,
-    pastePullService: PastePullService,
     pasteReleaseService: PasteReleaseService,
     pushSessionManager: PushSessionManager,
     secureKeyPairSerializer: SecureKeyPairSerializer,
@@ -67,7 +65,6 @@ class DesktopServerModule(
         pendingKeyExchangeStore,
         pasteboardService,
         pasteDao,
-        pastePullService,
         pasteReleaseService,
         pushSessionManager,
         secureKeyPairSerializer,

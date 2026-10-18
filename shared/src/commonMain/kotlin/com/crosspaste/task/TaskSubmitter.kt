@@ -36,6 +36,15 @@ interface TaskBuilder {
         writePasteboard: Boolean,
     ): TaskBuilder = addPullFileTask(id, remotePasteDataId, seenAppInstanceIds)
 
+    // Older platform implementations retain their existing task behavior until ported.
+    fun addPullFileTask(
+        id: Long,
+        remotePasteDataId: Long,
+        seenAppInstanceIds: Set<String>,
+        writePasteboard: Boolean,
+        historyPull: Boolean,
+    ): TaskBuilder = addPullFileTask(id, remotePasteDataId, seenAppInstanceIds, writePasteboard)
+
     fun addSyncTask(
         id: Long,
         fileSize: Long,

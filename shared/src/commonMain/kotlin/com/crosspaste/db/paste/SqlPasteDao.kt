@@ -164,6 +164,7 @@ class SqlPasteDao(
                         database.transactionWithResult {
                             val ids = doQuery().executeAsList()
                             if (ids.isNotEmpty()) {
+                                settleDeletedReceipts(ids)
                                 pasteDatabaseQueries.markDeletePasteData(ids)
                                 addDeletePasteTasks(ids)
                             }
@@ -182,11 +183,26 @@ class SqlPasteDao(
             logger.error(e) { "Mark all delete except tagged failed" }
         }
 
-    override suspend fun markDeletePasteData(id: Long): Result<Unit> =
+    override suspend fun markDeletePasteData(id: Long): Result<Unit> = markDelete(id, settleReceipt = true)
+
+    override suspend fun markDeleteFailedReceive(id: Long): Result<Unit> = markDelete(id, settleReceipt = false)
+
+    private fun settleDeletedReceipts(ids: List<Long>) {
+        pasteDatabaseQueries.getPendingReceivesByLocalIds(ids).executeAsList().forEach {
+            pasteDatabaseQueries.upsertRemotePasteCursor(it.appInstanceId, it.remotePasteId)
+            pasteDatabaseQueries.completePasteReceive(it.appInstanceId, it.remotePasteId)
+        }
+    }
+
+    private suspend fun markDelete(
+        id: Long,
+        settleReceipt: Boolean,
+    ): Result<Unit> =
         withContext(ioDispatcher) {
             runCatching {
                 taskSubmitter.submit {
                     database.transaction {
+                        if (settleReceipt) settleDeletedReceipts(listOf(id))
                         pasteDatabaseQueries.markDeletePasteData(listOf(id))
                         addDeletePasteTasks(listOf(id))
                     }
@@ -204,6 +220,7 @@ class SqlPasteDao(
             runCatching {
                 taskSubmitter.submit {
                     database.transaction {
+                        settleDeletedReceipts(listOf(id))
                         pasteDatabaseQueries.markDeletePasteData(listOf(id))
                         addDelayedDeletePasteTask(id, delayMillis)
                     }
@@ -618,6 +635,132 @@ class SqlPasteDao(
                     PasteData::mapper,
                 ).executeAsList()
         }
+
+    override suspend fun getRecentPasteDataAfterRemoteId(
+        afterId: Long,
+        limit: Long,
+    ): List<PasteData> =
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries
+                .getRecentPasteDataAfterRemoteId(
+                    appInfo.appInstanceId,
+                    afterId,
+                    limit,
+                    PasteData::mapper,
+                ).executeAsList()
+        }
+
+    override suspend fun getRemotePasteCursor(appInstanceId: String): Long? =
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries.getRemotePasteCursor(appInstanceId).executeAsOneOrNull()
+        }
+
+    override suspend fun getRemotePasteCursors(): Map<String, Long> =
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries.getRemotePasteCursors().executeAsList().associate {
+                it.appInstanceId to
+                    it.remotePasteId
+            }
+        }
+
+    override suspend fun getPendingPasteReceives(appInstanceId: String): Map<Long, Long?> =
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries
+                .getPendingPasteReceives(appInstanceId)
+                .executeAsList()
+                .associate { it.remotePasteId to it.localPasteId }
+        }
+
+    override suspend fun getUnreceivedPasteIds(
+        appInstanceId: String,
+        remotePasteIds: List<Long>,
+    ): Set<Long> =
+        withContext(ioDispatcher) {
+            database.transactionWithResult {
+                val cursor = pasteDatabaseQueries.getRemotePasteCursor(appInstanceId).executeAsOneOrNull() ?: 0L
+                val pending =
+                    pasteDatabaseQueries
+                        .getPendingPasteReceives(appInstanceId)
+                        .executeAsList()
+                        .associate { it.remotePasteId to it.localPasteId }
+                remotePasteIds
+                    .filter { id ->
+                        if (id <= 0 || (id <= cursor && id !in pending)) {
+                            false
+                        } else {
+                            val stored = pending[id]?.let { getNoDeletePasteDataBlock(it) }
+                            if (stored?.pasteState == PasteState.LOADED) {
+                                pasteDatabaseQueries.upsertRemotePasteCursor(appInstanceId, id)
+                                pasteDatabaseQueries.completePasteReceive(appInstanceId, id)
+                            }
+                            stored == null
+                        }
+                    }.toSet()
+            }
+        }
+
+    override suspend fun reservePasteReceives(
+        appInstanceId: String,
+        remotePasteIds: List<Long>,
+    ) {
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries.transaction {
+                // A delayed response must not recreate a receipt the user just deleted.
+                // Existing unfinished receipts remain even if a newer ID has completed.
+                val cursor = pasteDatabaseQueries.getRemotePasteCursor(appInstanceId).executeAsOneOrNull() ?: 0L
+                remotePasteIds.filter { it > cursor }.forEach {
+                    pasteDatabaseQueries.reservePasteReceive(appInstanceId, it)
+                }
+            }
+        }
+    }
+
+    override suspend fun bindPasteReceive(
+        appInstanceId: String,
+        remotePasteId: Long,
+        localPasteId: Long,
+    ) {
+        withContext(ioDispatcher) {
+            database.transaction {
+                // Removed peers and already-settled receipts must not be recreated by late binding.
+                if (pasteDatabaseQueries
+                        .getPendingPasteReceives(appInstanceId)
+                        .executeAsList()
+                        .none { it.remotePasteId == remotePasteId }
+                ) {
+                    return@transaction
+                }
+                // User deletion can race the initial row creation before the pending ID is bound.
+                if (getNoDeletePasteDataBlock(localPasteId) == null) {
+                    pasteDatabaseQueries.upsertRemotePasteCursor(appInstanceId, remotePasteId)
+                    pasteDatabaseQueries.completePasteReceive(appInstanceId, remotePasteId)
+                } else {
+                    pasteDatabaseQueries.bindPasteReceive(localPasteId, appInstanceId, remotePasteId)
+                }
+            }
+        }
+    }
+
+    override suspend fun completePasteReceive(
+        appInstanceId: String,
+        remotePasteId: Long,
+    ) {
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries.transaction {
+                pasteDatabaseQueries.upsertRemotePasteCursor(appInstanceId, remotePasteId)
+                pasteDatabaseQueries.completePasteReceive(appInstanceId, remotePasteId)
+            }
+        }
+    }
+
+    override suspend fun deleteRemotePasteCursor(appInstanceId: String) {
+        withContext(ioDispatcher) {
+            pasteDatabaseQueries.transaction {
+                pasteDatabaseQueries.deleteRemotePasteCursor(appInstanceId)
+                pasteDatabaseQueries.deletePendingPasteReceives(appInstanceId)
+            }
+        }
+    }
 
     override suspend fun getMaxCreateTimeByRemoteAppInstanceId(): Map<String, Long> =
         withContext(ioDispatcher) {

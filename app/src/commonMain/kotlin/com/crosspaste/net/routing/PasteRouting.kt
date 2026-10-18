@@ -10,7 +10,6 @@ import com.crosspaste.net.plugin.isEncryptedPayloadException
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
-import com.crosspaste.sync.PastePullService
 import com.crosspaste.sync.PushSessionManager
 import com.crosspaste.sync.RelaySeen
 import com.crosspaste.utils.failResponse
@@ -33,7 +32,6 @@ fun Routing.pasteRouting(
     appInfo: AppInfo,
     pasteboardService: PasteboardService,
     pasteReleaseService: PasteReleaseService,
-    pastePullService: PastePullService,
     pushSessionManager: PushSessionManager,
     syncRoutingApi: SyncRoutingApi,
 ) {
@@ -44,7 +42,6 @@ fun Routing.pasteRouting(
             appInfo,
             pasteboardService,
             pasteReleaseService,
-            pastePullService,
             pushSessionManager,
             syncRoutingApi,
         )
@@ -57,7 +54,6 @@ private suspend fun handleSyncPaste(
     appInfo: AppInfo,
     pasteboardService: PasteboardService,
     pasteReleaseService: PasteReleaseService,
-    pastePullService: PastePullService,
     pushSessionManager: PushSessionManager,
     syncRoutingApi: SyncRoutingApi,
 ) {
@@ -92,7 +88,6 @@ private suspend fun handleSyncPaste(
             pasteData,
             appControl,
             pasteReleaseService,
-            pastePullService,
             pushSessionManager,
         )
     } else {
@@ -102,7 +97,6 @@ private suspend fun handleSyncPaste(
             pasteData,
             appControl,
             pasteboardService,
-            pastePullService,
         )
     }
 }
@@ -159,7 +153,6 @@ private suspend fun handlePushPrepare(
     pasteData: PasteData,
     appControl: AppControl,
     pasteReleaseService: PasteReleaseService,
-    pastePullService: PastePullService,
     pushSessionManager: PushSessionManager,
 ) {
     if (!pasteData.isFileType()) {
@@ -201,7 +194,6 @@ private suspend fun handlePushPrepare(
             return
         }
 
-        pastePullService.updateMaxCreateTime(appInstanceId, pasteData.createTime)
         appControl.completeReceiveOperation()
         logger.debug {
             "sync handler ($appInstanceId) push prepare ok: pasteId=${prepared.pasteId} " +
@@ -228,7 +220,6 @@ private suspend fun handlePullSync(
     pasteData: PasteData,
     appControl: AppControl,
     pasteboardService: PasteboardService,
-    pastePullService: PastePullService,
 ) {
     val seenAppInstanceIds = RelaySeen.decode(call.request.headers[RelaySeen.HEADER])
     val ingestResult = pasteboardService.tryWriteRemotePasteboard(pasteData, seenAppInstanceIds)
@@ -246,7 +237,6 @@ private suspend fun handlePullSync(
     // ACK only after the paste is durable (or deliberately discarded by the
     // receiver's size/metadata policy). Cursor and operation accounting must
     // not advance for an actual ingest failure.
-    pastePullService.updateMaxCreateTime(appInstanceId, pasteData.createTime)
     logger.debug { "sync handler ($appInstanceId) receive pasteData: $pasteData" }
     appControl.completeReceiveOperation()
     successResponse(call)

@@ -146,6 +146,37 @@ fun Routing.pullRouting(
         }
     }
 
+    get("/pull/pasteBatchById") {
+        getAppInstanceId(call)?.let { fromAppInstanceId ->
+            if (!requireTargetAppInstance(call, appInfo)) return@let
+
+            val syncHandler = requireSyncHandler(call, syncRoutingApi, fromAppInstanceId) ?: return@let
+
+            if (!syncHandler.currentSyncRuntimeInfo.allowSend) {
+                logger.debug { "sync handler ($fromAppInstanceId) not allow send" }
+                failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_USER.toErrorCode())
+                return@let
+            }
+
+            val afterId = call.request.queryParameters["afterId"]?.toLongOrNull()
+            if (afterId == null || afterId < 0) {
+                call.respondText("Invalid afterId", ContentType.Text.Plain, HttpStatusCode.BadRequest)
+                return@let
+            }
+            val limit = normalizePasteBatchLimit(call.request.queryParameters["limit"])
+            val recentPasteData = pasteDao.getRecentPasteDataAfterRemoteId(afterId, limit)
+            val batch =
+                recentPasteData
+                    .filterSyncAllowed(appControl, configManager.getCurrentConfig())
+                    .encodeJsonArrayWithinLimit()
+
+            logger.debug {
+                "pull pasteBatch by ($fromAppInstanceId): ${batch.count}/${recentPasteData.size} items"
+            }
+            call.respondText(batch.json, ContentType.Application.Json, HttpStatusCode.OK)
+        }
+    }
+
     get("/pull/paste") {
         getAppInstanceId(call)?.let { fromAppInstanceId ->
             if (!requireTargetAppInstance(call, appInfo)) return@let

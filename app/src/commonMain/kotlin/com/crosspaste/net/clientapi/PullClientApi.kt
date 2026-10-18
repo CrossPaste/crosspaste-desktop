@@ -112,6 +112,31 @@ class PullClientApi(
             response.body<List<PasteData>>().map { it.copy(remote = true) }
         }
 
+    suspend fun pullPasteBatchById(
+        targetAppInstanceId: String,
+        afterId: Long,
+        limit: Long,
+        toUrl: URLBuilder.() -> Unit,
+    ): ClientApiResult =
+        request(logger, exceptionHandler, request = {
+            pasteClient.get(
+                headersBuilder = {
+                    append("targetAppInstanceId", targetAppInstanceId)
+                    if (configManager.getCurrentConfig().enableEncryptSync) {
+                        append("secure", "1")
+                    }
+                },
+                urlBuilder = {
+                    toUrl()
+                    buildUrl("pull", "pasteBatchById")
+                    parameters.append("afterId", afterId.toString())
+                    parameters.append("limit", limit.toString())
+                },
+            )
+        }) { response ->
+            response.body<List<PasteData>>().map { it.copy(remote = true) }
+        }
+
     private suspend fun result(
         response: HttpResponse,
         api: String,

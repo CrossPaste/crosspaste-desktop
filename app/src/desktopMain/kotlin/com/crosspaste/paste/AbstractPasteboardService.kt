@@ -108,32 +108,40 @@ abstract class AbstractPasteboardService :
         pasteData: PasteData,
         seenAppInstanceIds: Set<String>,
     ): Result<Unit?> =
-        pasteReleaseService.releaseRemotePasteData(pasteData, seenAppInstanceIds) { storePasteData ->
-            remotePasteboardChannel
-                .trySend {
-                    tryWritePasteboard(
-                        pasteData = storePasteData,
-                        localOnly = true,
-                    ).onFailure {
-                        notificationManager.sendNotification(
-                            title = { copyWriter -> copyWriter.getText("copy_failed") },
-                            messageType = MessageType.Error,
-                        )
-                    }
-                }.onFailure { e ->
-                    logger.error(e) { "Failed to send remote pasteboard task to channel" }
+        pasteReleaseService.releaseRemotePasteData(
+            pasteData,
+            seenAppInstanceIds,
+            tryWritePasteboard = ::enqueueRemotePaste,
+        )
+
+    private fun enqueueRemotePaste(storePasteData: PasteData) {
+        remotePasteboardChannel
+            .trySend {
+                tryWritePasteboard(
+                    pasteData = storePasteData,
+                    localOnly = true,
+                ).onFailure {
+                    notificationManager.sendNotification(
+                        title = { copyWriter -> copyWriter.getText("copy_failed") },
+                        messageType = MessageType.Error,
+                    )
                 }
-        }
+            }.onFailure { e ->
+                logger.error(e) { "Failed to send remote pasteboard task to channel" }
+            }
+    }
 
     override suspend fun tryWriteRemotePasteboardList(
         pasteDataList: List<PasteData>,
         writeToPasteboard: Boolean,
     ): Result<Unit?> =
-        pasteReleaseService.releaseRemotePasteDataList(pasteDataList) {
-            if (writeToPasteboard) {
-                tryWriteRemotePasteboard(it)
-            } else {
-                pasteReleaseService.releaseRemotePasteData(it, writePasteboard = false) { _ -> }
+        pasteReleaseService.releaseRemotePasteDataList(pasteDataList, historyPull = true) {
+            pasteReleaseService.releaseRemotePasteData(
+                it,
+                writePasteboard = writeToPasteboard,
+                historyPull = true,
+            ) { paste ->
+                if (writeToPasteboard) enqueueRemotePaste(paste)
             }
         }
 
@@ -150,7 +158,15 @@ abstract class AbstractPasteboardService :
         seenAppInstanceIds: Set<String>,
         writeToPasteboard: Boolean,
     ): Result<Unit?> =
-        pasteReleaseService.releaseRemotePasteDataWithFile(pasteId, seenAppInstanceIds) { storePasteData ->
+        tryWriteRemotePasteboardWithFile(pasteId, seenAppInstanceIds, writeToPasteboard, historyPull = false)
+
+    override suspend fun tryWriteRemotePasteboardWithFile(
+        pasteId: Long,
+        seenAppInstanceIds: Set<String>,
+        writeToPasteboard: Boolean,
+        historyPull: Boolean,
+    ): Result<Unit?> =
+        pasteReleaseService.releaseRemotePasteDataWithFile(pasteId, seenAppInstanceIds, historyPull) { storePasteData ->
             if (writeToPasteboard) {
                 remotePasteboardChannel
                     .trySend {

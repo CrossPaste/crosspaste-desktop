@@ -16,6 +16,8 @@ class PullExtraInfo(
     // stored by older versions, which always wrote it
     @SerialName("writePasteboard")
     val writePasteboard: Boolean = true,
+    @SerialName("historyPull")
+    val historyPull: Boolean = false,
 ) : PasteTaskExtraInfo {
 
     @SerialName("executionHistories")

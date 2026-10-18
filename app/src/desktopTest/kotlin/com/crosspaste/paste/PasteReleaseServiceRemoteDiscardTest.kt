@@ -112,9 +112,9 @@ class PasteReleaseServiceRemoteDiscardTest {
             assertTrue(!wrotePasteboard)
             coVerify(exactly = 0) { taskSubmitter.submit(any()) }
             coVerify(exactly = 1) {
-                pastePullCursorManager.persistMaxCreateTime(
+                pastePullCursorManager.settle(
                     appInstanceId = "remote-device",
-                    createTime = any(),
+                    remotePasteId = any(),
                 )
             }
             verify(exactly = 1) { notificationManager.sendNotification(any(), any(), any(), any()) }
@@ -186,7 +186,7 @@ class PasteReleaseServiceRemoteDiscardTest {
                     size = 0L,
                     hash = "",
                     remote = true,
-                ).copy(createTime = 100L)
+                ).copy(id = 100L, createTime = 5000000000000L)
             val laterTextPaste =
                 remotePasteData(createTextPasteItem(text = "after")).copy(createTime = 200L)
 
@@ -197,9 +197,9 @@ class PasteReleaseServiceRemoteDiscardTest {
 
             assertTrue(result.isSuccess)
             coVerify(exactly = 1) {
-                pastePullCursorManager.persistMaxCreateTime(
+                pastePullCursorManager.settle(
                     appInstanceId = "remote-device",
-                    createTime = 100L,
+                    remotePasteId = 100L,
                 )
             }
             verify(exactly = 1) { notificationManager.sendNotification(any(), any(), any(), any()) }
@@ -217,7 +217,10 @@ class PasteReleaseServiceRemoteDiscardTest {
                     pastePullCursorManager = pastePullCursorManager,
                     taskSubmitter = taskSubmitter,
                 )
-            val normalPaste = remotePasteData(createTextPasteItem(text = "small")).copy(createTime = 100L)
+            val normalPaste =
+                remotePasteData(
+                    createTextPasteItem(text = "small"),
+                ).copy(id = 100L, createTime = 5000000000000L)
             val laterDiscard = remotePasteData(oversizedTextItem()).copy(createTime = 200L)
 
             val result =
@@ -226,7 +229,7 @@ class PasteReleaseServiceRemoteDiscardTest {
                 }
 
             assertTrue(result.isFailure)
-            coVerify(exactly = 0) { pastePullCursorManager.persistMaxCreateTime(any(), any()) }
+            coVerify(exactly = 0) { pastePullCursorManager.settle(any(), any()) }
         }
 
     @Test
@@ -242,13 +245,16 @@ class PasteReleaseServiceRemoteDiscardTest {
                     pastePullCursorManager = pastePullCursorManager,
                     taskSubmitter = taskSubmitter,
                 )
-            val pasteData = remotePasteData(createTextPasteItem(text = "small")).copy(createTime = 100L)
+            val pasteData =
+                remotePasteData(
+                    createTextPasteItem(text = "small"),
+                ).copy(id = 100L, createTime = 5000000000000L)
 
             val result = service.releaseRemotePasteData(pasteData) { _ -> }
 
             assertTrue(result.isSuccess)
             // Durable, so deleting the paste later cannot rewind the cursor and pull it back
-            coVerify(exactly = 1) { pastePullCursorManager.persistMaxCreateTime("remote-device", 100L) }
+            coVerify(exactly = 1) { pastePullCursorManager.settle("remote-device", 100L) }
         }
 
     @Test
@@ -256,13 +262,13 @@ class PasteReleaseServiceRemoteDiscardTest {
         runBlocking {
             val pasteDao = mockk<PasteDao>(relaxed = true)
             coEvery { pasteDao.getRemoteLoadingPasteIds() } returns listOf(3L, 5L)
-            coEvery { pasteDao.markDeletePasteData(any()) } returns Result.success(Unit)
+            coEvery { pasteDao.markDeleteFailedReceive(any()) } returns Result.success(Unit)
             val service = newService(pasteDao = pasteDao)
 
             service.discardInterruptedReceives()
 
-            coVerify(exactly = 1) { pasteDao.markDeletePasteData(3L) }
-            coVerify(exactly = 1) { pasteDao.markDeletePasteData(5L) }
+            coVerify(exactly = 1) { pasteDao.markDeleteFailedReceive(3L) }
+            coVerify(exactly = 1) { pasteDao.markDeleteFailedReceive(5L) }
             // The pre-allocated files outside managed storage are looked up per row
             coVerify(exactly = 1) { pasteDao.getLoadingPasteData(3L) }
             coVerify(exactly = 1) { pasteDao.getLoadingPasteData(5L) }
