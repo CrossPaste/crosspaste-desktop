@@ -1,9 +1,14 @@
 package com.crosspaste.net.routing
 
+import com.crosspaste.app.AppControl
+import com.crosspaste.config.TestAppConfig
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteType
+import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.utils.getJsonUtils
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.serialization.builtins.ListSerializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -61,6 +66,36 @@ class PullRoutingTest {
 
         assertEquals(listOf(first.source), decodeSources(batch))
         assertTrue(batch.json.encodeToByteArray().size > 2)
+    }
+
+    @Test
+    fun `paste batch leaves out types and file sizes this device does not sync`() {
+        val appControl = mockk<AppControl>()
+        every { appControl.isFileSizeSyncEnabled(any()) } answers { firstArg<Long>() <= 100L }
+        val text = pasteData("text")
+        val url = pasteData("url").copy(pasteType = PasteType.URL_TYPE.type)
+        val smallFile = filePasteData("small", fileSize = 100L)
+        val largeFile = filePasteData("large", fileSize = 101L)
+
+        val allowed =
+            listOf(text, url, smallFile, largeFile)
+                .filterSyncAllowed(appControl, TestAppConfig(enableSyncUrl = false))
+
+        assertEquals(listOf("text", "small"), allowed.map { it.source })
+    }
+
+    private fun filePasteData(
+        source: String,
+        fileSize: Long,
+    ): PasteData {
+        val item =
+            createFilesPasteItem(relativePathList = emptyList(), fileInfoTreeMap = emptyMap())
+                .copy(size = fileSize)
+        return pasteData(source).copy(
+            pasteAppearItem = item,
+            pasteType = PasteType.FILE_TYPE.type,
+            size = fileSize,
+        )
     }
 
     private fun encodedSize(pasteData: List<PasteData>): Long =

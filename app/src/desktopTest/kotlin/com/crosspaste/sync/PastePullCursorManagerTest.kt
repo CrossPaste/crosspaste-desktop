@@ -44,7 +44,7 @@ class PastePullCursorManagerTest {
             coEvery { syncRuntimeInfoDao.getSyncRuntimeInfo("remote-device") } returns mockk()
             val manager = PastePullCursorManager(pasteDao, syncRuntimeInfoDao)
 
-            val persisted = manager.persistDiscardedMaxCreateTime("remote-device", 200L)
+            val persisted = manager.persistMaxCreateTime("remote-device", 200L)
 
             assertTrue(persisted)
             assertEquals(200L, manager.getMaxCreateTime("remote-device"))
@@ -65,7 +65,7 @@ class PastePullCursorManagerTest {
 
             manager.updateMaxCreateTime("remote-device", 150L)
             manager.removeDevice("remote-device")
-            val persisted = manager.persistDiscardedMaxCreateTime("remote-device", 200L)
+            val persisted = manager.persistMaxCreateTime("remote-device", 200L)
 
             assertFalse(persisted)
             assertEquals(100L, manager.getMaxCreateTime("remote-device"))

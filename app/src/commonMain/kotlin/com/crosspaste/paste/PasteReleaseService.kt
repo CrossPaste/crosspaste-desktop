@@ -509,7 +509,7 @@ class PasteReleaseService(
             "Discard oversized remote non-file paste from ${pasteData.appInstanceId}: " +
                 "size=${pasteData.size}, limit=$maxSize"
         }
-        pastePullCursorManager.persistDiscardedMaxCreateTime(
+        pastePullCursorManager.persistMaxCreateTime(
             appInstanceId = pasteData.appInstanceId,
             createTime = pasteData.createTime,
         )
@@ -540,7 +540,7 @@ class PasteReleaseService(
             "Discard invalid remote file paste from ${pasteData.appInstanceId}: " +
                 "createTime=${pasteData.createTime}"
         }
-        pastePullCursorManager.persistDiscardedMaxCreateTime(
+        pastePullCursorManager.persistMaxCreateTime(
             appInstanceId = pasteData.appInstanceId,
             createTime = pasteData.createTime,
         )
@@ -583,6 +583,7 @@ class PasteReleaseService(
                 val id: Long =
                     if (!isFileType) {
                         val newId = pasteDao.createPasteData(pasteData, PasteState.LOADED)
+                        pastePullCursorManager.persistMaxCreateTime(pasteData.appInstanceId, pasteData.createTime)
                         markDeleteSameHash(newId, pasteData.pasteType, pasteData.hash)
                         addRenderingTask(newId, pasteData.getType())
                         addRelaySyncTask(newId, pasteData.appInstanceId, seenAppInstanceIds)
@@ -642,6 +643,7 @@ class PasteReleaseService(
                                 database.pasteDatabaseQueries.updatePasteDataState(PasteState.LOADED.toLong(), id)
                                 storedPasteData.copy(pasteState = PasteState.LOADED)
                             }
+                    pastePullCursorManager.persistMaxCreateTime(pasteData.appInstanceId, pasteData.createTime)
                     markDeleteSameHash(id, pasteData.pasteType, pasteData.hash)
                     addRelaySyncTask(id, pasteData.appInstanceId, seenAppInstanceIds)
                     tryWritePasteboard(pasteData)

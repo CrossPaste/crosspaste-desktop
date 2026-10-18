@@ -146,8 +146,10 @@ open class DefaultServerModule(
                     syncRoutingApi,
                 )
                 pullRouting(
+                    appControl,
                     appInfo,
                     cacheManager,
+                    configManager,
                     pasteDao,
                     syncRoutingApi,
                     userDataPathProvider,

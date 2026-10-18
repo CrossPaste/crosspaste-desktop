@@ -12,6 +12,7 @@ import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.sync.PastePullCursorManager
+import com.crosspaste.task.TaskBuilder
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.getJsonUtils
 import io.mockk.coEvery
@@ -111,7 +112,7 @@ class PasteReleaseServiceRemoteDiscardTest {
             assertTrue(!wrotePasteboard)
             coVerify(exactly = 0) { taskSubmitter.submit(any()) }
             coVerify(exactly = 1) {
-                pastePullCursorManager.persistDiscardedMaxCreateTime(
+                pastePullCursorManager.persistMaxCreateTime(
                     appInstanceId = "remote-device",
                     createTime = any(),
                 )
@@ -196,7 +197,7 @@ class PasteReleaseServiceRemoteDiscardTest {
 
             assertTrue(result.isSuccess)
             coVerify(exactly = 1) {
-                pastePullCursorManager.persistDiscardedMaxCreateTime(
+                pastePullCursorManager.persistMaxCreateTime(
                     appInstanceId = "remote-device",
                     createTime = 100L,
                 )
@@ -225,7 +226,29 @@ class PasteReleaseServiceRemoteDiscardTest {
                 }
 
             assertTrue(result.isFailure)
-            coVerify(exactly = 0) { pastePullCursorManager.persistDiscardedMaxCreateTime(any(), any()) }
+            coVerify(exactly = 0) { pastePullCursorManager.persistMaxCreateTime(any(), any()) }
+        }
+
+    @Test
+    fun `a remote non-file paste that lands durably advances the persisted pull cursor`() =
+        runBlocking {
+            val pastePullCursorManager = mockk<PastePullCursorManager>(relaxed = true)
+            val taskSubmitter = mockk<TaskSubmitter>()
+            coEvery { taskSubmitter.submit(any()) } coAnswers {
+                firstArg<suspend TaskBuilder.() -> Unit>().invoke(mockk(relaxed = true))
+            }
+            val service =
+                newService(
+                    pastePullCursorManager = pastePullCursorManager,
+                    taskSubmitter = taskSubmitter,
+                )
+            val pasteData = remotePasteData(createTextPasteItem(text = "small")).copy(createTime = 100L)
+
+            val result = service.releaseRemotePasteData(pasteData) { _ -> }
+
+            assertTrue(result.isSuccess)
+            // Durable, so deleting the paste later cannot rewind the cursor and pull it back
+            coVerify(exactly = 1) { pastePullCursorManager.persistMaxCreateTime("remote-device", 100L) }
         }
 
     @Test

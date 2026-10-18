@@ -53,7 +53,13 @@ class PastePullCursorManager(
         }
     }
 
-    suspend fun persistDiscardedMaxCreateTime(
+    /**
+     * Durably advances the cursor past a remote paste that is now settled on this
+     * device: landed as LOADED or deliberately discarded. Unlike [updateMaxCreateTime]
+     * the value survives a restart and later deletion of the paste, so a pull never
+     * brings back a paste the user already removed.
+     */
+    suspend fun persistMaxCreateTime(
         appInstanceId: String,
         createTime: Long,
     ): Boolean =

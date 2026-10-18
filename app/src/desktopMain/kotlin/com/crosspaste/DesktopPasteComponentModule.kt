@@ -62,6 +62,7 @@ import com.crosspaste.plugin.pluginExtraPathDirs
 import com.crosspaste.rendering.OpenGraphService
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.sync.FilePullService
+import com.crosspaste.sync.PasteAutoPullService
 import com.crosspaste.sync.PastePullCursorManager
 import com.crosspaste.sync.PastePullService
 import com.crosspaste.task.CleanPasteTaskExecutor
@@ -239,6 +240,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
 
         // region Sync pull
         single<FilePullService> { FilePullService(get(), get(), get(), get(), get()) }
+        single<PasteAutoPullService> { PasteAutoPullService(get(), get(), get()) }
         single<PastePullCursorManager> { PastePullCursorManager(get(), get()) }
         single<PastePullService> { PastePullService(get(), get(), get(), get()) }
         // endregion

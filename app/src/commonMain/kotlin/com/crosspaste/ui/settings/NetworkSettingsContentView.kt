@@ -28,6 +28,7 @@ import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Docs
 import com.composables.icons.materialsymbols.rounded.Power
 import com.composables.icons.materialsymbols.rounded.Shield
+import com.composables.icons.materialsymbols.rounded.Sync
 import com.composables.icons.materialsymbols.rounded.Sync_alt
 import com.composables.icons.materialsymbols.rounded.Visibility
 import com.crosspaste.config.CommonConfigManager
@@ -225,6 +226,14 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                             }
                         },
                     )
+                }
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListSwitchItem(
+                    title = "auto_pull_missed_pastes",
+                    icon = IconData(MaterialSymbols.Rounded.Sync, themeExt.blueIconColor),
+                    checked = config.enableAutoPastePull,
+                ) { enableAutoPastePull ->
+                    configManager.updateConfig("enableAutoPastePull", enableAutoPastePull)
                 }
                 syncExtContent()
             }

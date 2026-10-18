@@ -1,5 +1,8 @@
 package com.crosspaste.sync
 
+import com.crosspaste.db.sync.SyncState
+import com.crosspaste.net.VersionRelation
+import com.crosspaste.net.clientapi.ConnectionRefused
 import com.crosspaste.net.clientapi.PullClientApi
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.paste.PasteCollection
@@ -10,6 +13,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.utils.getJsonUtils
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -51,7 +55,7 @@ class PastePullServiceTest {
 
             assertEquals(300L, service.getMaxCreateTime("remote-device"))
             coVerify(exactly = 1) { cursorManager.updateMaxCreateTime("remote-device", 300L) }
-            coVerify(exactly = 0) { cursorManager.persistDiscardedMaxCreateTime(any(), any()) }
+            coVerify(exactly = 0) { cursorManager.persistMaxCreateTime(any(), any()) }
         }
 
     @Test
@@ -88,5 +92,129 @@ class PastePullServiceTest {
 
             assertEquals("remote-device", pulled.appInstanceId)
             assertTrue(pulled.remote)
+        }
+
+    private fun remotePaste(createTime: Long): PasteData {
+        val item = createTextPasteItem(text = "pulled-$createTime")
+        return PasteData(
+            appInstanceId = "remote-device",
+            pasteAppearItem = item,
+            pasteCollection = PasteCollection(emptyList()),
+            pasteType = PasteType.TEXT_TYPE.type,
+            source = null,
+            size = item.size,
+            hash = item.hash,
+            createTime = createTime,
+        )
+    }
+
+    private fun connectedSyncManager(
+        connectState: Int = SyncState.CONNECTED,
+        versionRelation: VersionRelation = VersionRelation.EQUAL_TO,
+    ): SyncManager {
+        val handler = mockk<SyncHandler>(relaxed = true)
+        coEvery { handler.getConnectHostAddress() } returns "192.168.1.100"
+        every { handler.currentSyncRuntimeInfo } returns
+            SyncTestFixtures.createSyncRuntimeInfo(appInstanceId = "remote-device", connectState = connectState)
+        every { handler.currentVersionRelation } returns versionRelation
+        val syncManager = mockk<SyncManager>(relaxed = true)
+        every { syncManager.getSyncHandler("remote-device") } returns handler
+        return syncManager
+    }
+
+    @Test
+    fun `pullDevice writes the batch oldest first and then advances the cursor`() =
+        runTest {
+            val cursorManager = mockk<PastePullCursorManager>(relaxed = true)
+            every { cursorManager.getMaxCreateTime("remote-device") } returns 100L
+            val pullClientApi = mockk<PullClientApi>()
+            // The peer answers newest first
+            coEvery { pullClientApi.pullPasteBatch("remote-device", 100L, 50L, any()) } returns
+                SuccessResult(listOf(remotePaste(300L), remotePaste(200L)))
+            val pasteboardService = mockk<PasteboardService>()
+            var written: List<PasteData> = emptyList()
+            coEvery { pasteboardService.tryWriteRemotePasteboardList(any()) } answers {
+                written = firstArg()
+                Result.success(null)
+            }
+            val service = PastePullService(cursorManager, pasteboardService, pullClientApi, connectedSyncManager())
+
+            service.pullDevice("remote-device")
+
+            // Restamped from the local clock, oldest first, so history keeps the peer's order
+            assertEquals(listOf(remotePaste(200L).hash, remotePaste(300L).hash), written.map { it.hash })
+            assertTrue(written[0].createTime < written[1].createTime)
+            coVerify(exactly = 1) { cursorManager.updateMaxCreateTime("remote-device", written[1].createTime) }
+        }
+
+    @Test
+    fun `a failed write leaves the cursor for a later retry`() =
+        runTest {
+            val cursorManager = mockk<PastePullCursorManager>(relaxed = true)
+            every { cursorManager.getMaxCreateTime("remote-device") } returns 100L
+            val pullClientApi = mockk<PullClientApi>()
+            coEvery { pullClientApi.pullPasteBatch(any(), any(), any(), any()) } returns
+                SuccessResult(listOf(remotePaste(200L)))
+            val pasteboardService = mockk<PasteboardService>()
+            coEvery { pasteboardService.tryWriteRemotePasteboardList(any()) } returns
+                Result.failure(IllegalStateException("database write failed"))
+            val service = PastePullService(cursorManager, pasteboardService, pullClientApi, connectedSyncManager())
+
+            service.pullDevice("remote-device")
+
+            coVerify(exactly = 0) { cursorManager.updateMaxCreateTime(any(), any()) }
+        }
+
+    @Test
+    fun `a failed fetch writes nothing and keeps the cursor`() =
+        runTest {
+            val cursorManager = mockk<PastePullCursorManager>(relaxed = true)
+            every { cursorManager.getMaxCreateTime("remote-device") } returns 100L
+            val pullClientApi = mockk<PullClientApi>()
+            coEvery { pullClientApi.pullPasteBatch(any(), any(), any(), any()) } returns ConnectionRefused
+            val pasteboardService = mockk<PasteboardService>(relaxed = true)
+            val service = PastePullService(cursorManager, pasteboardService, pullClientApi, connectedSyncManager())
+
+            service.pullDevice("remote-device")
+
+            coVerify(exactly = 0) { pasteboardService.tryWriteRemotePasteboardList(any()) }
+            coVerify(exactly = 0) { cursorManager.updateMaxCreateTime(any(), any()) }
+        }
+
+    @Test
+    fun `pullDevice does nothing without a cursor`() =
+        runTest {
+            val cursorManager = mockk<PastePullCursorManager>(relaxed = true)
+            every { cursorManager.getMaxCreateTime("remote-device") } returns null
+            val pullClientApi = mockk<PullClientApi>(relaxed = true)
+            val service =
+                PastePullService(cursorManager, mockk(relaxed = true), pullClientApi, connectedSyncManager())
+
+            service.pullDevice("remote-device")
+
+            coVerify(exactly = 0) { pullClientApi.pullPasteBatch(any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun `pullDevice skips peers that are not connected or not compatible`() =
+        runTest {
+            val cursorManager = mockk<PastePullCursorManager>(relaxed = true)
+            every { cursorManager.getMaxCreateTime("remote-device") } returns 100L
+            val pullClientApi = mockk<PullClientApi>(relaxed = true)
+
+            PastePullService(
+                cursorManager,
+                mockk(relaxed = true),
+                pullClientApi,
+                connectedSyncManager(connectState = SyncState.DISCONNECTED),
+            ).pullDevice("remote-device")
+            PastePullService(
+                cursorManager,
+                mockk(relaxed = true),
+                pullClientApi,
+                connectedSyncManager(versionRelation = VersionRelation.LOWER_THAN),
+            ).pullDevice("remote-device")
+
+            coVerify(exactly = 0) { pullClientApi.pullPasteBatch(any(), any(), any(), any()) }
         }
 }

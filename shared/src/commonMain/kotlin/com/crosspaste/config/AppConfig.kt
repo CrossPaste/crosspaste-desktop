@@ -56,6 +56,10 @@ interface AppConfig {
     val enableSyncColor: Boolean
     val enableRemoteShowPairingCode: Boolean
 
+    // Catch up on a trusted peer's pastes (missed while disconnected) through the
+    // incremental pull cursor whenever that peer becomes CONNECTED
+    val enableAutoPastePull: Boolean
+
     fun copy(
         key: String,
         value: Any,
