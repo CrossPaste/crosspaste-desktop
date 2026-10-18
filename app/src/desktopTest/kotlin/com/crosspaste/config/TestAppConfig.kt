@@ -40,6 +40,7 @@ data class TestAppConfig(
     override val enableSyncColor: Boolean = true,
     override val enableRemoteShowPairingCode: Boolean = true,
     override val enableAutoPastePull: Boolean = true,
+    override val enableAutoPullWriteClipboard: Boolean = false,
 ) : AppConfig {
     override fun copy(
         key: String,
@@ -48,6 +49,7 @@ data class TestAppConfig(
         when (key) {
             "enableRemoteShowPairingCode" -> copy(enableRemoteShowPairingCode = toBoolean(value))
             "enableAutoPastePull" -> copy(enableAutoPastePull = toBoolean(value))
+            "enableAutoPullWriteClipboard" -> copy(enableAutoPullWriteClipboard = toBoolean(value))
             else -> this
         }
 }

@@ -133,32 +133,40 @@ abstract class AbstractPasteboardService :
             if (writeToPasteboard) {
                 tryWriteRemotePasteboard(it)
             } else {
-                pasteReleaseService.releaseRemotePasteData(it) { _ -> }
+                pasteReleaseService.releaseRemotePasteData(it, writePasteboard = false) { _ -> }
             }
         }
 
     override suspend fun tryWriteRemotePasteboardWithFile(pasteId: Long): Result<Unit?> =
-        tryWriteRemotePasteboardWithFile(pasteId, emptySet())
+        tryWriteRemotePasteboardWithFile(pasteId, emptySet(), writeToPasteboard = true)
 
     override suspend fun tryWriteRemotePasteboardWithFile(
         pasteId: Long,
         seenAppInstanceIds: Set<String>,
+    ): Result<Unit?> = tryWriteRemotePasteboardWithFile(pasteId, seenAppInstanceIds, writeToPasteboard = true)
+
+    override suspend fun tryWriteRemotePasteboardWithFile(
+        pasteId: Long,
+        seenAppInstanceIds: Set<String>,
+        writeToPasteboard: Boolean,
     ): Result<Unit?> =
         pasteReleaseService.releaseRemotePasteDataWithFile(pasteId, seenAppInstanceIds) { storePasteData ->
-            remotePasteboardChannel
-                .trySend {
-                    tryWritePasteboard(
-                        pasteData = storePasteData,
-                        localOnly = true,
-                    ).onFailure {
-                        notificationManager.sendNotification(
-                            title = { copyWriter -> copyWriter.getText("copy_failed") },
-                            messageType = MessageType.Error,
-                        )
+            if (writeToPasteboard) {
+                remotePasteboardChannel
+                    .trySend {
+                        tryWritePasteboard(
+                            pasteData = storePasteData,
+                            localOnly = true,
+                        ).onFailure {
+                            notificationManager.sendNotification(
+                                title = { copyWriter -> copyWriter.getText("copy_failed") },
+                                messageType = MessageType.Error,
+                            )
+                        }
+                    }.onFailure { e ->
+                        logger.error(e) { "Failed to send remote pasteboard task to channel" }
                     }
-                }.onFailure { e ->
-                    logger.error(e) { "Failed to send remote pasteboard task to channel" }
-                }
+            }
         }
 
     @Synchronized

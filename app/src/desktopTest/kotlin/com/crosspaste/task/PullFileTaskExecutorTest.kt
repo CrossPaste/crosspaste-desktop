@@ -91,8 +91,11 @@ class PullFileTaskExecutorTest {
         )
     }
 
-    private fun pullTask(previousFailures: Int): PasteTask {
-        val extraInfo = PullExtraInfo(id = 99L)
+    private fun pullTask(
+        previousFailures: Int,
+        writePasteboard: Boolean = true,
+    ): PasteTask {
+        val extraInfo = PullExtraInfo(id = 99L, writePasteboard = writePasteboard)
         repeat(previousFailures) {
             extraInfo.executionHistories.add(ExecutionHistory(0L, 1L, TaskStatus.FAILURE, "boom"))
         }
@@ -220,7 +223,7 @@ class PullFileTaskExecutorTest {
             }
         val pasteboardService =
             mockk<PasteboardService>(relaxed = true).also {
-                coEvery { it.tryWriteRemotePasteboardWithFile(7L, any()) } returns finalizeResult
+                coEvery { it.tryWriteRemotePasteboardWithFile(7L, any(), any()) } returns finalizeResult
             }
         val soundService = mockk<SoundService>(relaxed = true)
         val executor =
@@ -290,6 +293,20 @@ class PullFileTaskExecutorTest {
     }
 
     @Test
+    fun `file pull with writePasteboard false finalizes with writeToPasteboard false and skips sound`(
+        @TempDir tempDir: File,
+    ) = runTest {
+        val fixture = Fixture(tempDir, { FilePullResult.Success(emptyMap()) }, rowAfterPull = null)
+        coEvery { fixture.pasteDao.getNoDeletePasteData(7L) } returns fixture.pasteData
+
+        val result = fixture.executor.doExecuteTask(pullTask(previousFailures = 0, writePasteboard = false))
+
+        assertIs<SuccessPasteTaskResult>(result)
+        coVerify(exactly = 1) { fixture.pasteboardService.tryWriteRemotePasteboardWithFile(7L, any(), false) }
+        coVerify(exactly = 0) { fixture.soundService.successSound() }
+    }
+
+    @Test
     fun `row deleted during the pull is reclaimed quietly and never finalized`(
         @TempDir tempDir: File,
     ) = runTest {
@@ -298,7 +315,7 @@ class PullFileTaskExecutorTest {
         assertIs<SuccessPasteTaskResult>(fixture.executor.doExecuteTask(pullTask(previousFailures = 0)))
 
         assertFalse(fixture.slotFile.exists())
-        coVerify(exactly = 0) { fixture.pasteboardService.tryWriteRemotePasteboardWithFile(any(), any()) }
+        coVerify(exactly = 0) { fixture.pasteboardService.tryWriteRemotePasteboardWithFile(any(), any(), any()) }
         coVerify(exactly = 0) { fixture.soundService.errorSound() }
         coVerify(exactly = 0) { fixture.pasteDao.markDeletePasteData(any()) }
     }
@@ -314,7 +331,7 @@ class PullFileTaskExecutorTest {
         assertIs<SuccessPasteTaskResult>(fixture.executor.doExecuteTask(pullTask(previousFailures = 1)))
 
         assertFalse(fixture.slotFile.exists())
-        coVerify(exactly = 0) { fixture.pasteboardService.tryWriteRemotePasteboardWithFile(any(), any()) }
+        coVerify(exactly = 0) { fixture.pasteboardService.tryWriteRemotePasteboardWithFile(any(), any(), any()) }
         coVerify(exactly = 0) { fixture.soundService.errorSound() }
     }
 }

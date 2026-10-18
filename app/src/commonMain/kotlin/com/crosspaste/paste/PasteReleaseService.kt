@@ -555,9 +555,16 @@ class PasteReleaseService(
         )
     }
 
+    /**
+     * [writePasteboard] only matters for file-type pastes, whose clipboard write
+     * happens later when the download finalizes. Non-file pastes write through
+     * [tryWritePasteboard] immediately, so callers that must not touch the
+     * clipboard pass a no-op there and false here.
+     */
     suspend fun releaseRemotePasteData(
         pasteData: PasteData,
         seenAppInstanceIds: Set<String> = emptySet(),
+        writePasteboard: Boolean = true,
         tryWritePasteboard: (PasteData) -> Unit,
     ): Result<Unit?> {
         return runCatching {
@@ -598,7 +605,7 @@ class PasteReleaseService(
                                 return@submit
                             }
                         // Relayed once the files have landed, see releaseRemotePasteDataWithFile
-                        addPullFileTask(newPasteData.id, remotePasteDataId, seenAppInstanceIds)
+                        addPullFileTask(newPasteData.id, remotePasteDataId, seenAppInstanceIds, writePasteboard)
                         newPasteData.id
                     }
 
@@ -618,8 +625,10 @@ class PasteReleaseService(
     ): Result<Unit?> {
         if (pasteDataList.isEmpty()) return Result.success(null)
 
+        // Only the newest item may reach the clipboard (decided by releaseLast);
+        // file items included, whose write would otherwise happen at finalize
         for (index in 0 until pasteDataList.lastIndex) {
-            releaseRemotePasteData(pasteDataList[index]) { _ -> }
+            releaseRemotePasteData(pasteDataList[index], writePasteboard = false) { _ -> }
                 .onFailure { return Result.failure(it) }
         }
 

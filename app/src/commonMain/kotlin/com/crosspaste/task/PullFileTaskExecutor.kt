@@ -120,10 +120,15 @@ class PullFileTaskExecutor(
                     pasteDao.updateFilePath(pulledPasteData)
                 }
                 pasteboardService
-                    .tryWriteRemotePasteboardWithFile(pasteData.id, pullExtraInfo.seenAppInstanceIds)
-                    .fold(
+                    .tryWriteRemotePasteboardWithFile(
+                        pasteData.id,
+                        pullExtraInfo.seenAppInstanceIds,
+                        pullExtraInfo.writePasteboard,
+                    ).fold(
                         onSuccess = {
-                            soundService.successSound()
+                            if (pullExtraInfo.writePasteboard) {
+                                soundService.successSound()
+                            }
                             SuccessPasteTaskResult()
                         },
                         onFailure = { e -> abandonUnfinalized(pulledPasteData, pullExtraInfo, startTime, e) },

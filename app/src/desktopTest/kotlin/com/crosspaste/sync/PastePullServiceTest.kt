@@ -1,5 +1,7 @@
 package com.crosspaste.sync
 
+import com.crosspaste.config.AppConfig
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.net.VersionRelation
 import com.crosspaste.net.clientapi.ConnectionRefused
@@ -222,5 +224,37 @@ class PastePullServiceTest {
             ).pullDevice("remote-device")
 
             coVerify(exactly = 0) { pullClientApi.pullPasteBatch(any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun `pullDevice forwards enableAutoPullWriteClipboard config when writing pastes`() =
+        runTest {
+            val cursorManager = mockk<PastePullCursorManager>(relaxed = true)
+            every { cursorManager.getMaxCreateTime("remote-device") } returns 100L
+            val pullClientApi = mockk<PullClientApi>()
+            coEvery { pullClientApi.pullPasteBatch(any(), any(), any(), any()) } returns
+                SuccessResult(listOf(remotePaste(200L)))
+            val config =
+                mockk<AppConfig> {
+                    every { enableAutoPullWriteClipboard } returns true
+                }
+            val configManager =
+                mockk<CommonConfigManager> {
+                    every { getCurrentConfig() } returns config
+                }
+            val pasteboardService =
+                mockk<PasteboardService> {
+                    every { this@mockk.configManager } returns configManager
+                }
+            var wroteToPasteboard = false
+            coEvery { pasteboardService.tryWriteRemotePasteboardList(any(), any()) } answers {
+                wroteToPasteboard = secondArg()
+                Result.success(null)
+            }
+            val service = PastePullService(cursorManager, pasteboardService, pullClientApi, connectedSyncManager())
+
+            service.pullDevice("remote-device")
+
+            assertTrue(wroteToPasteboard)
         }
 }

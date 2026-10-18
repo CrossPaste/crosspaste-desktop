@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Content_paste
 import com.composables.icons.materialsymbols.rounded.Docs
 import com.composables.icons.materialsymbols.rounded.Power
 import com.composables.icons.materialsymbols.rounded.Shield
@@ -234,6 +235,16 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
                     checked = config.enableAutoPastePull,
                 ) { enableAutoPastePull ->
                     configManager.updateConfig("enableAutoPastePull", enableAutoPastePull)
+                }
+                DependentSettings(visible = config.enableAutoPastePull) {
+                    HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                    SettingListSwitchItem(
+                        title = "auto_pull_write_clipboard",
+                        icon = IconData(MaterialSymbols.Rounded.Content_paste, themeExt.purpleIconColor),
+                        checked = config.enableAutoPullWriteClipboard,
+                    ) { enableAutoPullWriteClipboard ->
+                        configManager.updateConfig("enableAutoPullWriteClipboard", enableAutoPullWriteClipboard)
+                    }
                 }
                 syncExtContent()
             }

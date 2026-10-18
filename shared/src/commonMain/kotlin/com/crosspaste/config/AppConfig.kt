@@ -61,6 +61,12 @@ interface AppConfig {
     val enableAutoPastePull: Boolean
         get() = true
 
+    // Whether the newest paste fetched by a catch-up pull also replaces the
+    // system clipboard. Off by default: a catch-up runs in the background on
+    // reconnect and must not overwrite what the user has just copied locally
+    val enableAutoPullWriteClipboard: Boolean
+        get() = false
+
     fun copy(
         key: String,
         value: Any,

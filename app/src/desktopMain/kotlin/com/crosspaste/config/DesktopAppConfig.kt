@@ -66,6 +66,7 @@ data class DesktopAppConfig(
     val pastePanelButtonSize: String = "normal",
     val enableClipboardRelay: Boolean = false,
     override val enableAutoPastePull: Boolean = true,
+    override val enableAutoPullWriteClipboard: Boolean = false,
     // Sync content type controls
     override val enableSyncText: Boolean = true,
     override val enableSyncUrl: Boolean = true,
@@ -185,6 +186,8 @@ data class DesktopAppConfig(
             useNetworkInterfaces = if (key == "useNetworkInterfaces") toString(value) else useNetworkInterfaces,
             enableClipboardRelay = if (key == "enableClipboardRelay") toBoolean(value) else enableClipboardRelay,
             enableAutoPastePull = if (key == "enableAutoPastePull") toBoolean(value) else enableAutoPastePull,
+            enableAutoPullWriteClipboard =
+                if (key == "enableAutoPullWriteClipboard") toBoolean(value) else enableAutoPullWriteClipboard,
             ocrLanguage = if (key == "ocrLanguage") toString(value) else ocrLanguage,
             useManualProxy = if (key == "useManualProxy") toBoolean(value) else useManualProxy,
             proxyType = if (key == "proxyType") toString(value) else proxyType,

@@ -70,5 +70,11 @@ interface PasteboardService : PasteboardMonitor {
     suspend fun tryWriteRemotePasteboardWithFile(
         pasteId: Long,
         seenAppInstanceIds: Set<String>,
-    ): Result<Unit?> = tryWriteRemotePasteboardWithFile(pasteId)
+    ): Result<Unit?> = tryWriteRemotePasteboardWithFile(pasteId, seenAppInstanceIds, writeToPasteboard = true)
+
+    suspend fun tryWriteRemotePasteboardWithFile(
+        pasteId: Long,
+        seenAppInstanceIds: Set<String>,
+        writeToPasteboard: Boolean,
+    ): Result<Unit?> = tryWriteRemotePasteboardWithFile(pasteId, seenAppInstanceIds)
 }

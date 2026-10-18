@@ -109,7 +109,16 @@ class PasteReleaseServiceRelayTest {
             val result = service.releaseRemotePasteData(filePasteData(), seen) {}
 
             assertTrue(result.isSuccess)
-            verify(exactly = 1) { taskBuilder.addPullFileTask(42L, any(), seen) }
+            verify(exactly = 1) { taskBuilder.addPullFileTask(42L, any(), seen, true) }
             verify(exactly = 0) { taskBuilder.addRelaySyncTask(any(), any(), any()) }
+        }
+
+    @Test
+    fun `remote file paste passes writePasteboard false to pull task`() =
+        runBlocking<Unit> {
+            val result = service.releaseRemotePasteData(filePasteData(), seen, writePasteboard = false) {}
+
+            assertTrue(result.isSuccess)
+            verify(exactly = 1) { taskBuilder.addPullFileTask(42L, any(), seen, false) }
         }
 }

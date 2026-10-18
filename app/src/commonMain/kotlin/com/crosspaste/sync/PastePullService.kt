@@ -152,13 +152,16 @@ class PastePullService(
     }
 
     /**
-     * Stores the pulled pastes in createTime order (without writing to the active
-     * system clipboard), then advances each device's cursor. A failed write leaves the
-     * cursors untouched so a later pull fetches the batch again.
+     * Stores the pulled pastes in createTime order (writing to the active system
+     * clipboard only if enableAutoPullWriteClipboard is enabled), then advances each
+     * device's cursor. A failed write leaves the cursors untouched so a later pull
+     * fetches the batch again.
      */
     private suspend fun writePulled(
         pasteDataList: List<PasteData>,
-        writeToPasteboard: Boolean = false,
+        writeToPasteboard: Boolean =
+            runCatching { pasteboardService.configManager.getCurrentConfig().enableAutoPullWriteClipboard }
+                .getOrDefault(false),
     ) {
         if (pasteDataList.isEmpty()) {
             return

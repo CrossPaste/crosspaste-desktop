@@ -67,12 +67,19 @@ class DesktopTaskBuilder(
         id: Long,
         remotePasteDataId: Long,
         seenAppInstanceIds: Set<String>,
+    ): TaskBuilder = addPullFileTask(id, remotePasteDataId, seenAppInstanceIds, writePasteboard = true)
+
+    override fun addPullFileTask(
+        id: Long,
+        remotePasteDataId: Long,
+        seenAppInstanceIds: Set<String>,
+        writePasteboard: Boolean,
     ): TaskBuilder {
         taskIds.add(
             taskDao.createTaskBlock(
                 id,
                 TaskType.PULL_FILE_TASK,
-                PullExtraInfo(remotePasteDataId, seenAppInstanceIds),
+                PullExtraInfo(remotePasteDataId, seenAppInstanceIds, writePasteboard),
             ),
         )
         return this

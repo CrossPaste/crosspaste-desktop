@@ -28,6 +28,14 @@ interface TaskBuilder {
         seenAppInstanceIds: Set<String>,
     ): TaskBuilder = addPullFileTask(id, remotePasteDataId)
 
+    // Defaults to dropping the flag so implementations predating it still compile
+    fun addPullFileTask(
+        id: Long,
+        remotePasteDataId: Long,
+        seenAppInstanceIds: Set<String>,
+        writePasteboard: Boolean,
+    ): TaskBuilder = addPullFileTask(id, remotePasteDataId, seenAppInstanceIds)
+
     fun addSyncTask(
         id: Long,
         fileSize: Long,
