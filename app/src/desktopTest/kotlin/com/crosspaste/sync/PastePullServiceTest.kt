@@ -18,6 +18,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class PastePullServiceTest {
@@ -123,18 +124,21 @@ class PastePullServiceTest {
     }
 
     @Test
-    fun `pullDevice writes the batch oldest first and then advances the cursor`() =
+    fun `pullDevice writes the batch oldest first without touching clipboard and advances cursor monotonically`() =
         runTest {
             val cursorManager = mockk<PastePullCursorManager>(relaxed = true)
-            every { cursorManager.getMaxCreateTime("remote-device") } returns 100L
+            val previousCursor = 5000000000000L
+            every { cursorManager.getMaxCreateTime("remote-device") } returns previousCursor
             val pullClientApi = mockk<PullClientApi>()
             // The peer answers newest first
-            coEvery { pullClientApi.pullPasteBatch("remote-device", 100L, 50L, any()) } returns
+            coEvery { pullClientApi.pullPasteBatch("remote-device", previousCursor, 50L, any()) } returns
                 SuccessResult(listOf(remotePaste(300L), remotePaste(200L)))
             val pasteboardService = mockk<PasteboardService>()
             var written: List<PasteData> = emptyList()
-            coEvery { pasteboardService.tryWriteRemotePasteboardList(any()) } answers {
+            var wroteToPasteboard = true
+            coEvery { pasteboardService.tryWriteRemotePasteboardList(any(), any()) } answers {
                 written = firstArg()
+                wroteToPasteboard = secondArg()
                 Result.success(null)
             }
             val service = PastePullService(cursorManager, pasteboardService, pullClientApi, connectedSyncManager())
@@ -143,7 +147,9 @@ class PastePullServiceTest {
 
             // Restamped from the local clock, oldest first, so history keeps the peer's order
             assertEquals(listOf(remotePaste(200L).hash, remotePaste(300L).hash), written.map { it.hash })
+            assertTrue(written[0].createTime > previousCursor)
             assertTrue(written[0].createTime < written[1].createTime)
+            assertFalse(wroteToPasteboard)
             coVerify(exactly = 1) { cursorManager.updateMaxCreateTime("remote-device", written[1].createTime) }
         }
 
@@ -156,7 +162,7 @@ class PastePullServiceTest {
             coEvery { pullClientApi.pullPasteBatch(any(), any(), any(), any()) } returns
                 SuccessResult(listOf(remotePaste(200L)))
             val pasteboardService = mockk<PasteboardService>()
-            coEvery { pasteboardService.tryWriteRemotePasteboardList(any()) } returns
+            coEvery { pasteboardService.tryWriteRemotePasteboardList(any(), any()) } returns
                 Result.failure(IllegalStateException("database write failed"))
             val service = PastePullService(cursorManager, pasteboardService, pullClientApi, connectedSyncManager())
 
@@ -177,7 +183,7 @@ class PastePullServiceTest {
 
             service.pullDevice("remote-device")
 
-            coVerify(exactly = 0) { pasteboardService.tryWriteRemotePasteboardList(any()) }
+            coVerify(exactly = 0) { pasteboardService.tryWriteRemotePasteboardList(any(), any()) }
             coVerify(exactly = 0) { cursorManager.updateMaxCreateTime(any(), any()) }
         }
 

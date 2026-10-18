@@ -48,7 +48,7 @@ class PasteAutoPullService(
         if (!started.compareAndSet(expect = false, update = true)) return
 
         scope.launch {
-            var connected = emptySet<String>()
+            var pullable = emptySet<String>()
             combine(
                 syncManager.realTimeSyncRuntimeInfos,
                 configManager.config.map { it.enableAutoPastePull }.distinctUntilChanged(),
@@ -60,13 +60,13 @@ class PasteAutoPullService(
                     if (!enabled) {
                         workers.keys.toList().forEach { stopWorker(it) }
                         // Re-enabling then counts every connected peer as newly connected
-                        connected = emptySet()
+                        pullable = emptySet()
                         return@collect
                     }
 
-                    val nowConnected = syncRuntimeInfos.connectedIds()
-                    (nowConnected - connected).forEach { requestPull(it) }
-                    connected = nowConnected
+                    val nowPullable = syncRuntimeInfos.pullableIds()
+                    (nowPullable - pullable).forEach { requestPull(it) }
+                    pullable = nowPullable
                 }
         }
     }
@@ -109,6 +109,6 @@ class PasteAutoPullService(
         }
     }
 
-    private fun List<SyncRuntimeInfo>.connectedIds(): Set<String> =
-        filter { it.connectState == SyncState.CONNECTED }.map { it.appInstanceId }.toSet()
+    private fun List<SyncRuntimeInfo>.pullableIds(): Set<String> =
+        filter { it.connectState == SyncState.CONNECTED && it.allowReceive }.map { it.appInstanceId }.toSet()
 }

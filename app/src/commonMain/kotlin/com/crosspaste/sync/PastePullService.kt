@@ -107,7 +107,7 @@ class PastePullService(
                 result
                     .getResult<List<PasteData>>()
                     .map { it.bindAuthenticatedRemoteIdentity(appInstanceId) }
-                    .toOldestFirst()
+                    .toOldestFirst(createTime)
             logger.debug { "Pulled ${pasteDataList.size} paste(s) from $appInstanceId" }
             pasteDataList
         } else {
@@ -119,12 +119,15 @@ class PastePullService(
     /**
      * The peer answers newest first, and createTime is not on the wire: decoding
      * stamps every paste with the local receive time. Restamp them oldest first,
-     * strictly increasing up to now, so history keeps the peer's order.
+     * strictly increasing up to now (and strictly newer than [previousMaxCreateTime]),
+     * so history keeps the peer's order and timestamps are monotonic.
      */
-    private fun List<PasteData>.toOldestFirst(): List<PasteData> {
+    private fun List<PasteData>.toOldestFirst(previousMaxCreateTime: Long? = null): List<PasteData> {
+        if (isEmpty()) return emptyList()
         val now = nowEpochMilliseconds()
+        val baseTime = maxOf(now, (previousMaxCreateTime ?: 0L) + size)
         return asReversed().mapIndexed { index, pasteData ->
-            pasteData.copy(createTime = now - (lastIndex - index))
+            pasteData.copy(createTime = baseTime - (lastIndex - index))
         }
     }
 
@@ -149,11 +152,14 @@ class PastePullService(
     }
 
     /**
-     * Stores the pulled pastes in createTime order (the newest also goes to the
+     * Stores the pulled pastes in createTime order (without writing to the active
      * system clipboard), then advances each device's cursor. A failed write leaves the
      * cursors untouched so a later pull fetches the batch again.
      */
-    private suspend fun writePulled(pasteDataList: List<PasteData>) {
+    private suspend fun writePulled(
+        pasteDataList: List<PasteData>,
+        writeToPasteboard: Boolean = false,
+    ) {
         if (pasteDataList.isEmpty()) {
             return
         }
@@ -161,7 +167,7 @@ class PastePullService(
         val sorted = pasteDataList.sortedBy { it.createTime }
 
         pasteboardService
-            .tryWriteRemotePasteboardList(sorted)
+            .tryWriteRemotePasteboardList(sorted, writeToPasteboard)
             .onSuccess {
                 sorted
                     .groupBy { it.appInstanceId }

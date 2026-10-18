@@ -27,7 +27,13 @@ class PasteAutoPullServiceTest {
     private fun info(
         connectState: Int,
         appInstanceId: String = peer,
-    ): SyncRuntimeInfo = createSyncRuntimeInfo(appInstanceId = appInstanceId, connectState = connectState)
+        allowReceive: Boolean = true,
+    ): SyncRuntimeInfo =
+        createSyncRuntimeInfo(
+            appInstanceId = appInstanceId,
+            connectState = connectState,
+            allowReceive = allowReceive,
+        )
 
     private class Harness(
         val service: PasteAutoPullService,
@@ -183,6 +189,21 @@ class PasteAutoPullServiceTest {
             runCurrent()
 
             h.configManager.updateConfig("enableAutoPastePull", true)
+            runCurrent()
+
+            coVerify(exactly = 1) { h.pastePullService.pullDevice(peer) }
+        }
+
+    @Test
+    fun `enabling allowReceive on an already connected peer triggers a pull`() =
+        runTest {
+            val h = harness(initial = listOf(info(SyncState.CONNECTED, allowReceive = false)))
+            h.service.start()
+            runCurrent()
+
+            coVerify(exactly = 0) { h.pastePullService.pullDevice(peer) }
+
+            h.infos.value = listOf(info(SyncState.CONNECTED, allowReceive = true))
             runCurrent()
 
             coVerify(exactly = 1) { h.pastePullService.pullDevice(peer) }

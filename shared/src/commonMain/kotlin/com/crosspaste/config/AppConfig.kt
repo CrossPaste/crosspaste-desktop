@@ -59,6 +59,7 @@ interface AppConfig {
     // Catch up on a trusted peer's pastes (missed while disconnected) through the
     // incremental pull cursor whenever that peer becomes CONNECTED
     val enableAutoPastePull: Boolean
+        get() = true
 
     fun copy(
         key: String,

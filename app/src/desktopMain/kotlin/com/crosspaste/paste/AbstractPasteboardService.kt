@@ -125,8 +125,17 @@ abstract class AbstractPasteboardService :
                 }
         }
 
-    override suspend fun tryWriteRemotePasteboardList(pasteDataList: List<PasteData>): Result<Unit?> =
-        pasteReleaseService.releaseRemotePasteDataList(pasteDataList) { tryWriteRemotePasteboard(it) }
+    override suspend fun tryWriteRemotePasteboardList(
+        pasteDataList: List<PasteData>,
+        writeToPasteboard: Boolean,
+    ): Result<Unit?> =
+        pasteReleaseService.releaseRemotePasteDataList(pasteDataList) {
+            if (writeToPasteboard) {
+                tryWriteRemotePasteboard(it)
+            } else {
+                pasteReleaseService.releaseRemotePasteData(it) { _ -> }
+            }
+        }
 
     override suspend fun tryWriteRemotePasteboardWithFile(pasteId: Long): Result<Unit?> =
         tryWriteRemotePasteboardWithFile(pasteId, emptySet())
