@@ -2,7 +2,6 @@ package com.crosspaste.task
 
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
-import com.crosspaste.config.AppConfig
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.sync.SyncState
@@ -25,11 +24,11 @@ import com.crosspaste.net.ws.WsMessageType
 import com.crosspaste.net.ws.WsPayloadSendResult
 import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.paste.PasteData
-import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncManager
+import com.crosspaste.sync.isSyncEnabledForType
 import com.crosspaste.utils.HostAndPort
 import com.crosspaste.utils.TaskUtils
 import com.crosspaste.utils.buildUrl
@@ -83,26 +82,8 @@ class SyncPasteTaskExecutor(
         }
     }
 
-    private fun isSyncEnabledForPasteType(pasteData: PasteData): Boolean {
-        val config = configManager.config.value
-        val pasteType = pasteData.getType()
-        return isSyncEnabledForType(config, pasteType)
-    }
-
-    private fun isSyncEnabledForType(
-        config: AppConfig,
-        pasteType: PasteType,
-    ): Boolean =
-        when (pasteType) {
-            PasteType.TEXT_TYPE -> config.enableSyncText
-            PasteType.URL_TYPE -> config.enableSyncUrl
-            PasteType.HTML_TYPE -> config.enableSyncHtml
-            PasteType.RTF_TYPE -> config.enableSyncRtf
-            PasteType.IMAGE_TYPE -> config.enableSyncImage
-            PasteType.FILE_TYPE -> config.enableSyncFile
-            PasteType.COLOR_TYPE -> config.enableSyncColor
-            else -> true
-        }
+    private fun isSyncEnabledForPasteType(pasteData: PasteData): Boolean =
+        configManager.config.value.isSyncEnabledForType(pasteData.getType())
 
     private fun createEmptyResult(syncExtraInfo: SyncExtraInfo): PasteTaskResult {
         syncExtraInfo.syncFails.clear()

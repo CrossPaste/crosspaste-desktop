@@ -31,7 +31,6 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.secure.SecureKeyPairSerializer
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.NearbyDeviceManager
-import com.crosspaste.sync.PastePullService
 import com.crosspaste.sync.PendingKeyExchangeStore
 import com.crosspaste.sync.PushSessionManager
 import com.crosspaste.utils.failResponse
@@ -59,7 +58,6 @@ open class DefaultServerModule(
     private val pendingKeyExchangeStore: PendingKeyExchangeStore,
     private val pasteboardService: PasteboardService,
     private val pasteDao: PasteDao,
-    private val pastePullService: PastePullService,
     private val pasteReleaseService: PasteReleaseService,
     private val pushSessionManager: PushSessionManager,
     private val secureKeyPairSerializer: SecureKeyPairSerializer,
@@ -141,13 +139,14 @@ open class DefaultServerModule(
                     appInfo,
                     pasteboardService,
                     pasteReleaseService,
-                    pastePullService,
                     pushSessionManager,
                     syncRoutingApi,
                 )
                 pullRouting(
+                    appControl,
                     appInfo,
                     cacheManager,
+                    configManager,
                     pasteDao,
                     syncRoutingApi,
                     userDataPathProvider,

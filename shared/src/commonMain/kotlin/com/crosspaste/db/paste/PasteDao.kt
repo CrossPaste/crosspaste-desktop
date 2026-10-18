@@ -37,6 +37,9 @@ interface PasteDao : SearchPasteData {
 
     suspend fun markDeletePasteData(id: Long): Result<Unit>
 
+    // Failed receives may be retried; user deletion through markDeletePasteData is terminal.
+    suspend fun markDeleteFailedReceive(id: Long): Result<Unit> = markDeletePasteData(id)
+
     suspend fun cutPasteData(
         id: Long,
         delayMillis: Long,
@@ -142,6 +145,41 @@ interface PasteDao : SearchPasteData {
         createTime: Long,
         limit: Long,
     ): List<PasteData>
+
+    suspend fun getRecentPasteDataAfterRemoteId(
+        afterId: Long,
+        limit: Long,
+    ): List<PasteData>
+
+    suspend fun getRemotePasteCursors(): Map<String, Long>
+
+    suspend fun getRemotePasteCursor(appInstanceId: String): Long?
+
+    suspend fun getPendingPasteReceives(appInstanceId: String): Map<Long, Long?>
+
+    /** Reads cursor, pending receipts and local state from one database snapshot. */
+    suspend fun getUnreceivedPasteIds(
+        appInstanceId: String,
+        remotePasteIds: List<Long>,
+    ): Set<Long>
+
+    suspend fun reservePasteReceives(
+        appInstanceId: String,
+        remotePasteIds: List<Long>,
+    )
+
+    suspend fun bindPasteReceive(
+        appInstanceId: String,
+        remotePasteId: Long,
+        localPasteId: Long,
+    )
+
+    suspend fun completePasteReceive(
+        appInstanceId: String,
+        remotePasteId: Long,
+    )
+
+    suspend fun deleteRemotePasteCursor(appInstanceId: String)
 
     suspend fun getMaxCreateTimeByRemoteAppInstanceId(): Map<String, Long>
 

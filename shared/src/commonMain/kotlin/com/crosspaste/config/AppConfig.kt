@@ -56,6 +56,17 @@ interface AppConfig {
     val enableSyncColor: Boolean
     val enableRemoteShowPairingCode: Boolean
 
+    // Catch up on a trusted peer's pastes (missed while disconnected) through the
+    // incremental pull cursor whenever that peer becomes CONNECTED
+    val enableAutoPastePull: Boolean
+        get() = true
+
+    // Whether the newest paste fetched by a catch-up pull also replaces the
+    // system clipboard. Off by default: a catch-up runs in the background on
+    // reconnect and must not overwrite what the user has just copied locally
+    val enableAutoPullWriteClipboard: Boolean
+        get() = false
+
     fun copy(
         key: String,
         value: Any,

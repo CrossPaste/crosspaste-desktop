@@ -29,16 +29,19 @@ class PasteReleaseServiceRelayTest {
 
     private val taskBuilder = mockk<TaskBuilder>(relaxed = true)
 
+    private val pasteDao =
+        mockk<PasteDao>(relaxed = true).also {
+            coEvery { it.createPasteData(any(), any()) } returns 42L
+            coEvery { it.markDeleteFailedReceive(any()) } returns Result.success(Unit)
+        }
+
     private val service =
         PasteReleaseService(
             commonConfigManager = configManager(),
             currentPaste = mockk(relaxed = true),
             database = mockk<Database>(relaxed = true),
             notificationManager = mockk(relaxed = true),
-            pasteDao =
-                mockk<PasteDao>(relaxed = true).also {
-                    coEvery { it.createPasteData(any(), any()) } returns 42L
-                },
+            pasteDao = pasteDao,
             pasteItemReader = mockk<PasteItemReader>(relaxed = true),
             pasteProcessPlugins = emptyList(),
             pastePullCursorManager = mockk(relaxed = true),
@@ -109,7 +112,45 @@ class PasteReleaseServiceRelayTest {
             val result = service.releaseRemotePasteData(filePasteData(), seen) {}
 
             assertTrue(result.isSuccess)
-            verify(exactly = 1) { taskBuilder.addPullFileTask(42L, any(), seen) }
+            verify(exactly = 1) { taskBuilder.addPullFileTask(42L, any(), seen, true, false) }
             verify(exactly = 0) { taskBuilder.addRelaySyncTask(any(), any(), any()) }
+        }
+
+    @Test
+    fun `remote file paste passes writePasteboard false to pull task`() =
+        runBlocking<Unit> {
+            val result = service.releaseRemotePasteData(filePasteData(), seen, writePasteboard = false) {}
+
+            assertTrue(result.isSuccess)
+            verify(exactly = 1) { taskBuilder.addPullFileTask(42L, any(), seen, false, false) }
+        }
+
+    @Test
+    fun `silent catchup must not broadcast old content as a live clipboard update`() =
+        runBlocking<Unit> {
+            val item = createTextPasteItem(text = "old catchup content")
+            val pasteData =
+                PasteData(
+                    appInstanceId = "source-device",
+                    pasteAppearItem = item,
+                    pasteCollection = PasteCollection(emptyList()),
+                    pasteType = PasteType.TEXT_TYPE.type,
+                    size = item.size,
+                    hash = item.hash,
+                    remote = true,
+                )
+            val result = service.releaseRemotePasteData(pasteData, writePasteboard = false, historyPull = true) {}
+            assertTrue(result.isSuccess)
+            verify(exactly = 0) { taskBuilder.addRelaySyncTask(any(), any(), any()) }
+        }
+
+    @Test
+    fun `failed file task creation discards its orphan row so catchup can retry`() =
+        runBlocking<Unit> {
+            every { taskBuilder.addPullFileTask(any(), any(), any(), any(), any()) } throws
+                IllegalStateException("disk")
+            val result = service.releaseRemotePasteData(filePasteData(), historyPull = true) { }
+            assertTrue(result.isFailure)
+            io.mockk.coVerify(exactly = 1) { pasteDao.markDeleteFailedReceive(42L) }
         }
 }

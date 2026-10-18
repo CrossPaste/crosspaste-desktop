@@ -12,6 +12,7 @@ import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.sync.PastePullCursorManager
+import com.crosspaste.task.TaskBuilder
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.getJsonUtils
 import io.mockk.coEvery
@@ -111,9 +112,9 @@ class PasteReleaseServiceRemoteDiscardTest {
             assertTrue(!wrotePasteboard)
             coVerify(exactly = 0) { taskSubmitter.submit(any()) }
             coVerify(exactly = 1) {
-                pastePullCursorManager.persistDiscardedMaxCreateTime(
+                pastePullCursorManager.settle(
                     appInstanceId = "remote-device",
-                    createTime = any(),
+                    remotePasteId = any(),
                 )
             }
             verify(exactly = 1) { notificationManager.sendNotification(any(), any(), any(), any()) }
@@ -185,7 +186,7 @@ class PasteReleaseServiceRemoteDiscardTest {
                     size = 0L,
                     hash = "",
                     remote = true,
-                ).copy(createTime = 100L)
+                ).copy(id = 100L, createTime = 5000000000000L)
             val laterTextPaste =
                 remotePasteData(createTextPasteItem(text = "after")).copy(createTime = 200L)
 
@@ -196,9 +197,9 @@ class PasteReleaseServiceRemoteDiscardTest {
 
             assertTrue(result.isSuccess)
             coVerify(exactly = 1) {
-                pastePullCursorManager.persistDiscardedMaxCreateTime(
+                pastePullCursorManager.settle(
                     appInstanceId = "remote-device",
-                    createTime = 100L,
+                    remotePasteId = 100L,
                 )
             }
             verify(exactly = 1) { notificationManager.sendNotification(any(), any(), any(), any()) }
@@ -216,7 +217,10 @@ class PasteReleaseServiceRemoteDiscardTest {
                     pastePullCursorManager = pastePullCursorManager,
                     taskSubmitter = taskSubmitter,
                 )
-            val normalPaste = remotePasteData(createTextPasteItem(text = "small")).copy(createTime = 100L)
+            val normalPaste =
+                remotePasteData(
+                    createTextPasteItem(text = "small"),
+                ).copy(id = 100L, createTime = 5000000000000L)
             val laterDiscard = remotePasteData(oversizedTextItem()).copy(createTime = 200L)
 
             val result =
@@ -225,7 +229,32 @@ class PasteReleaseServiceRemoteDiscardTest {
                 }
 
             assertTrue(result.isFailure)
-            coVerify(exactly = 0) { pastePullCursorManager.persistDiscardedMaxCreateTime(any(), any()) }
+            coVerify(exactly = 0) { pastePullCursorManager.settle(any(), any()) }
+        }
+
+    @Test
+    fun `a remote non-file paste that lands durably advances the persisted pull cursor`() =
+        runBlocking {
+            val pastePullCursorManager = mockk<PastePullCursorManager>(relaxed = true)
+            val taskSubmitter = mockk<TaskSubmitter>()
+            coEvery { taskSubmitter.submit(any()) } coAnswers {
+                firstArg<suspend TaskBuilder.() -> Unit>().invoke(mockk(relaxed = true))
+            }
+            val service =
+                newService(
+                    pastePullCursorManager = pastePullCursorManager,
+                    taskSubmitter = taskSubmitter,
+                )
+            val pasteData =
+                remotePasteData(
+                    createTextPasteItem(text = "small"),
+                ).copy(id = 100L, createTime = 5000000000000L)
+
+            val result = service.releaseRemotePasteData(pasteData) { _ -> }
+
+            assertTrue(result.isSuccess)
+            // Durable, so deleting the paste later cannot rewind the cursor and pull it back
+            coVerify(exactly = 1) { pastePullCursorManager.settle("remote-device", 100L) }
         }
 
     @Test
@@ -233,13 +262,13 @@ class PasteReleaseServiceRemoteDiscardTest {
         runBlocking {
             val pasteDao = mockk<PasteDao>(relaxed = true)
             coEvery { pasteDao.getRemoteLoadingPasteIds() } returns listOf(3L, 5L)
-            coEvery { pasteDao.markDeletePasteData(any()) } returns Result.success(Unit)
+            coEvery { pasteDao.markDeleteFailedReceive(any()) } returns Result.success(Unit)
             val service = newService(pasteDao = pasteDao)
 
             service.discardInterruptedReceives()
 
-            coVerify(exactly = 1) { pasteDao.markDeletePasteData(3L) }
-            coVerify(exactly = 1) { pasteDao.markDeletePasteData(5L) }
+            coVerify(exactly = 1) { pasteDao.markDeleteFailedReceive(3L) }
+            coVerify(exactly = 1) { pasteDao.markDeleteFailedReceive(5L) }
             // The pre-allocated files outside managed storage are looked up per row
             coVerify(exactly = 1) { pasteDao.getLoadingPasteData(3L) }
             coVerify(exactly = 1) { pasteDao.getLoadingPasteData(5L) }

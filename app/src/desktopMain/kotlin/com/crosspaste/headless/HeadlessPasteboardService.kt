@@ -72,25 +72,58 @@ class HeadlessPasteboardService(
         pasteData: PasteData,
         seenAppInstanceIds: Set<String>,
     ): Result<Unit?> =
-        pasteReleaseService.releaseRemotePasteData(pasteData, seenAppInstanceIds) {
-            remotePasteboardChannel.trySend {
-                tryWritePasteboard(pasteData = it, localOnly = true)
+        pasteReleaseService.releaseRemotePasteData(
+            pasteData,
+            seenAppInstanceIds,
+            tryWritePasteboard = ::enqueueRemotePaste,
+        )
+
+    private fun enqueueRemotePaste(it: PasteData) {
+        remotePasteboardChannel.trySend {
+            tryWritePasteboard(pasteData = it, localOnly = true)
+        }
+    }
+
+    override suspend fun tryWriteRemotePasteboardList(
+        pasteDataList: List<PasteData>,
+        writeToPasteboard: Boolean,
+    ): Result<Unit?> =
+        pasteReleaseService.releaseRemotePasteDataList(pasteDataList, historyPull = true) {
+            pasteReleaseService.releaseRemotePasteData(
+                it,
+                writePasteboard = writeToPasteboard,
+                historyPull = true,
+            ) { paste ->
+                if (writeToPasteboard) enqueueRemotePaste(paste)
             }
         }
 
-    override suspend fun tryWriteRemotePasteboardList(pasteDataList: List<PasteData>): Result<Unit?> =
-        pasteReleaseService.releaseRemotePasteDataList(pasteDataList) { tryWriteRemotePasteboard(it) }
-
     override suspend fun tryWriteRemotePasteboardWithFile(pasteId: Long): Result<Unit?> =
-        tryWriteRemotePasteboardWithFile(pasteId, emptySet())
+        tryWriteRemotePasteboardWithFile(pasteId, emptySet(), writeToPasteboard = true)
 
     override suspend fun tryWriteRemotePasteboardWithFile(
         pasteId: Long,
         seenAppInstanceIds: Set<String>,
+    ): Result<Unit?> = tryWriteRemotePasteboardWithFile(pasteId, seenAppInstanceIds, writeToPasteboard = true)
+
+    override suspend fun tryWriteRemotePasteboardWithFile(
+        pasteId: Long,
+        seenAppInstanceIds: Set<String>,
+        writeToPasteboard: Boolean,
     ): Result<Unit?> =
-        pasteReleaseService.releaseRemotePasteDataWithFile(pasteId, seenAppInstanceIds) {
-            remotePasteboardChannel.trySend {
-                tryWritePasteboard(pasteData = it, localOnly = true)
+        tryWriteRemotePasteboardWithFile(pasteId, seenAppInstanceIds, writeToPasteboard, historyPull = false)
+
+    override suspend fun tryWriteRemotePasteboardWithFile(
+        pasteId: Long,
+        seenAppInstanceIds: Set<String>,
+        writeToPasteboard: Boolean,
+        historyPull: Boolean,
+    ): Result<Unit?> =
+        pasteReleaseService.releaseRemotePasteDataWithFile(pasteId, seenAppInstanceIds, historyPull) {
+            if (writeToPasteboard) {
+                remotePasteboardChannel.trySend {
+                    tryWritePasteboard(pasteData = it, localOnly = true)
+                }
             }
         }
 }

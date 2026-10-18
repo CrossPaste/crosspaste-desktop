@@ -200,7 +200,6 @@ fun desktopNetworkModule(
                 pendingKeyExchangeStore = get(),
                 pasteboardService = get(),
                 pasteDao = get(),
-                pastePullService = get(),
                 pasteReleaseService = get(),
                 pushSessionManager = get(),
                 secureKeyPairSerializer = get(),

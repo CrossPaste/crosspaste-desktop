@@ -48,6 +48,7 @@ import com.crosspaste.plugin.BundledPluginInstaller
 import com.crosspaste.plugin.PluginRepository
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.rendering.RenderingService
+import com.crosspaste.sync.PasteAutoPullService
 import com.crosspaste.sync.PastePullService
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
@@ -122,6 +123,7 @@ class CrossPaste {
             DRIVER_FACTORY,
             GLOBAL_LISTENER,
             MCP_SERVER,
+            PASTE_AUTO_PULL,
             PASTE_CLIENT,
             PASTE_SERVER,
             PASTEBOARD,
@@ -196,6 +198,7 @@ class CrossPaste {
                     koin.get<PasteReleaseService>().discardInterruptedReceives()
                     getManagedService<SyncManager>(ManagedService.SYNC_MANAGER).start()
                     koin.get<PastePullService>().init()
+                    getManagedService<PasteAutoPullService>(ManagedService.PASTE_AUTO_PULL).start()
                     val pasteServer = getManagedService<Server>(ManagedService.PASTE_SERVER)
                     if (headless) {
                         // A daemon without its sync endpoint is not operational.
@@ -402,6 +405,14 @@ class CrossPaste {
                                     stopManagedService<McpServer>(ManagedService.MCP_SERVER, "McpServer") {
                                         it.stop()
                                     }
+                                },
+                            )
+                            add(
+                                async {
+                                    stopManagedService<PasteAutoPullService>(
+                                        ManagedService.PASTE_AUTO_PULL,
+                                        "PasteAutoPullService",
+                                    ) { it.stop() }
                                 },
                             )
                             add(
