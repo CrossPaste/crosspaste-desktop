@@ -624,7 +624,20 @@ class PasteReleaseService(
         markDeleteSameHash(id, pasteData.pasteType, pasteData.hash)
         addRenderingTask(id, pasteData.getType())
         if (!historyPull) addRelaySyncTask(id, pasteData.appInstanceId, seenAppInstanceIds)
-        tryWritePasteboard(pasteData)
+        // A received paste is persisted as-is, so unlike a local capture it never went
+        // through RemoveInvalidPlugin. Writing an invalid paste (e.g. an empty text
+        // flavor a peer captured from an empty clipboard) would put an empty value on
+        // the clipboard and wipe whatever the user had copied. The receive boundary
+        // binds the payload as LOADED, so isValid() judges its content. Keep the paste
+        // in history — the UI filters it out — but do not write it.
+        if (pasteData.isValid()) {
+            tryWritePasteboard(pasteData)
+        } else {
+            logger.warn {
+                "Skipping clipboard write of invalid remote paste ${pasteData.id} " +
+                    "from ${pasteData.appInstanceId}"
+            }
+        }
         return id
     }
 
@@ -695,7 +708,16 @@ class PasteReleaseService(
                     pastePullCursorManager.settleFile(pasteData.appInstanceId, id)
                     markDeleteSameHash(id, pasteData.pasteType, pasteData.hash)
                     if (!historyPull) addRelaySyncTask(id, pasteData.appInstanceId, seenAppInstanceIds)
-                    tryWritePasteboard(pasteData)
+                    // Same rule as the non-file path: a finalized row whose content is
+                    // not valid must not replace the user's clipboard.
+                    if (pasteData.isValid()) {
+                        tryWritePasteboard(pasteData)
+                    } else {
+                        logger.warn {
+                            "Skipping clipboard write of invalid remote paste $id " +
+                                "from ${pasteData.appInstanceId}"
+                        }
+                    }
                 }
             }.onFailure { e ->
                 logger.error(e) { "Release remote paste data with file failed" }

@@ -5,6 +5,7 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.TestAppConfig
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
+import com.crosspaste.net.routing.bindAuthenticatedRemoteIdentity
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
@@ -63,6 +64,14 @@ class PasteReleaseServiceRemoteDiscardTest {
             userDataPathProvider = mockk<UserDataPathProvider>(relaxed = true),
         )
 
+    /** Runs the submitted block so the clipboard/release side effects actually happen. */
+    private fun immediateSubmitter(): TaskSubmitter =
+        mockk<TaskSubmitter>().also { submitter ->
+            coEvery { submitter.submit(any()) } coAnswers {
+                firstArg<suspend TaskBuilder.() -> Unit>().invoke(mockk(relaxed = true))
+            }
+        }
+
     private fun remotePasteData(item: TextPasteItem): PasteData =
         PasteData(
             appInstanceId = "remote-device",
@@ -72,8 +81,7 @@ class PasteReleaseServiceRemoteDiscardTest {
             source = null,
             size = item.size,
             hash = item.hash,
-            remote = true,
-        )
+        ).bindAuthenticatedRemoteIdentity("remote-device")
 
     private fun oversizedTextItem(): TextPasteItem =
         TextPasteItem(
@@ -124,18 +132,22 @@ class PasteReleaseServiceRemoteDiscardTest {
     fun `remote paste within limit is released normally`() =
         runBlocking {
             val notificationManager = mockk<NotificationManager>(relaxed = true)
-            val taskSubmitter = mockk<TaskSubmitter>(relaxed = true)
+            val taskSubmitter = immediateSubmitter()
             val service =
                 newService(
                     notificationManager = notificationManager,
                     taskSubmitter = taskSubmitter,
                 )
 
+            var wrotePasteboard = false
             val result =
-                service.releaseRemotePasteData(remotePasteData(createTextPasteItem(text = "small"))) {}
+                service.releaseRemotePasteData(remotePasteData(createTextPasteItem(text = "small"))) {
+                    wrotePasteboard = true
+                }
 
             assertTrue(result.isSuccess)
             assertNotNull(result.getOrThrow())
+            assertTrue(wrotePasteboard)
             coVerify(exactly = 1) { taskSubmitter.submit(any()) }
             verify(exactly = 0) { notificationManager.sendNotification(any(), any(), any(), any()) }
         }
@@ -158,6 +170,26 @@ class PasteReleaseServiceRemoteDiscardTest {
             assertNotNull(result.getOrThrow())
             coVerify(exactly = 1) { taskSubmitter.submit(any()) }
             verify(exactly = 0) { notificationManager.sendNotification(any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun `invalid remote paste is stored but never written to the clipboard`() =
+        runBlocking {
+            val taskSubmitter = immediateSubmitter()
+            val service = newService(taskSubmitter = taskSubmitter)
+
+            var wrotePasteboard = false
+            val result =
+                service.releaseRemotePasteData(remotePasteData(createTextPasteItem(text = ""))) {
+                    wrotePasteboard = true
+                }
+
+            assertTrue(result.isSuccess)
+            assertNotNull(result.getOrThrow())
+            // The invalid paste is still part of history (the UI filters it out), but
+            // writing it would clear the user's clipboard.
+            assertTrue(!wrotePasteboard)
+            coVerify(exactly = 1) { taskSubmitter.submit(any()) }
         }
 
     @Test

@@ -3,6 +3,7 @@ package com.crosspaste.paste
 import com.crosspaste.db.task.PullExtraInfo
 import com.crosspaste.db.task.TaskDao
 import com.crosspaste.headless.HeadlessPasteboardService
+import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.sync.PullTestStore
 import com.crosspaste.sync.pullTestPaste
 import com.crosspaste.task.DesktopTaskBuilder
@@ -48,6 +49,32 @@ class PasteCatchupReleaseTest {
                 assertEquals(100L, c.getRemoteId("peer"))
                 verify(exactly = if (history) 0 else 1) { s.tasks.addRelaySyncTask(localId, "peer", emptySet()) }
             }
+        }
+
+    @Test fun `file finalization never writes an invalid stored paste to the clipboard`() =
+        runTest {
+            val s = PullTestStore()
+            val c = s.cursor()
+            val emptyItem = createTextPasteItem(text = "")
+            val invalidPaste =
+                pullTestPaste(100).copy(
+                    pasteAppearItem = emptyItem,
+                    pasteCollection = PasteCollection(emptyList()),
+                    size = emptyItem.size,
+                    hash = emptyItem.hash,
+                )
+            val localId = s.dao.createPasteData(invalidPaste.copy(remote = true), PasteState.LOADING)
+            c.reserve("peer", listOf(100L))
+            c.bindFile("peer", 100, localId)
+
+            var wrotePasteboard = false
+            val result =
+                s.release(c).releaseRemotePasteDataWithFile(localId, historyPull = false) {
+                    wrotePasteboard = true
+                }
+
+            assertTrue(result.isSuccess)
+            assertFalse(wrotePasteboard)
         }
 
     @Test fun `history mode survives task serialization and old tasks keep live defaults`() {

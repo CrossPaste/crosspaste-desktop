@@ -9,6 +9,7 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.plugin.isEncryptedPayloadException
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteReleaseService
+import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.sync.PushSessionManager
 import com.crosspaste.sync.RelaySeen
@@ -133,10 +134,17 @@ private suspend fun receiveRemotePasteData(
         }
     }.getOrNull()
 
+/**
+ * Binds a decoded wire paste to the authenticated peer. The payload is a paste the
+ * sender had already finished, so it is marked [PasteState.LOADED]: the receiver stores
+ * it as is, and [PasteData.isValid] must be able to judge its content (the LOADING
+ * default short-circuits to true).
+ */
 internal fun PasteData.bindAuthenticatedRemoteIdentity(appInstanceId: String): PasteData =
     copy(
         appInstanceId = appInstanceId,
         remote = true,
+        pasteState = PasteState.LOADED,
     )
 
 /**
