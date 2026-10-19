@@ -120,6 +120,7 @@ jobs:
       MAC_SIGNING_KEY_FILE_PATH: ${{ github.workspace }}/developerID_application.p12
       PRE_RELEASE: false
       RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      RPM_SIGNING_KEY: ${{ secrets.RPM_SIGNING_KEY }}
       WINDOWS_CLIENT_ID: ${{ secrets.WINDOWS_CLIENT_ID }}
       WINDOWS_CLIENT_SECRET: ${{ secrets.WINDOWS_CLIENT_SECRET }}
       WINDOWS_IDENTITY_NAME: ${{ secrets.WINDOWS_IDENTITY_NAME }}
@@ -296,10 +297,102 @@ jobs:
       - name: Stage update site for OSS mirror
         run: cp -r output update-site
 
+      # Microsoft Store package. Partner Center requires the manifest Version
+      # to be x.y.z.0 ("the app.revision number must be zero as the store
+      # uses the revision number for its own purposes"), so the site MSIX
+      # built above (Version x.y.z.<revision>) is rejected on upload. Build
+      # only the MSIX again with app.revision forced to 0: the -K override
+      # takes precedence over build.conveyor.conf's `revision = ${env.REVISION}`
+      # (checked with `conveyor -Kapp.revision=0 -f build.conveyor.conf json`),
+      # and everything else — inputs, Store identity, the cli.conveyor.conf
+      # manifest with the CLI and its execution aliases — is identical to the
+      # site package. The reused .conveyor cache makes this an incremental
+      # build. The Conveyor action restores/installs only on its first use in
+      # the job, so a second invocation is cheap.
+      - name: Conveyor build (Microsoft Store MSIX)
+        uses: hydraulic-software/conveyor/actions/build@v22.1
+        with:
+          command: make windows-msix --output-dir=output-store
+          extra_flags: --cache-limit=40 -Kapp.revision=0 -f build.conveyor.conf
+          signing_key: ${{ secrets.SIGNING_KEY }}
+          agree_to_license: 1
+
+      # Fail the release rather than ship a Store package that Partner Center
+      # would reject (wrong Version) or that lost the CLI (#5190): the
+      # manifest must carry Version x.y.z.0, app\bin\crosspaste-cli.exe and
+      # both execution aliases. The verified file is then moved into output/
+      # under an unambiguous name (the site MSIX is
+      # crosspaste-<version>-<revision>.x64.msix) so it is uploaded to the
+      # versioned OSS prefix and listed in checksum.txt for
+      # scripts/publish-msstore.sh. It is deliberately NOT part of the update
+      # site, which was snapshotted before this step.
+      - name: Verify and stage Store MSIX
+        run: |
+          shopt -s nullglob
+          files=(output-store/*.msix)
+          if [ "${#files[@]}" -ne 1 ]; then
+            echo "Expected exactly one MSIX in output-store/, found: ${files[*]:-none}"
+            exit 1
+          fi
+          # The <Identity> element spans several lines; flatten before matching.
+          unzip -p "${files[0]}" AppxManifest.xml | tr '\n' ' ' > store-manifest.xml
+          grep -o '<Identity [^>]*>' store-manifest.xml
+          grep -q '<Identity [^>]* Version="${{ env.VERSION }}.0"' store-manifest.xml || { echo "Store manifest Version is not ${{ env.VERSION }}.0"; exit 1; }
+          grep -q 'Executable="app\\bin\\crosspaste-cli.exe"' store-manifest.xml || { echo "Store manifest lacks the crosspaste-cli.exe Application"; exit 1; }
+          grep -q 'Alias="crosspaste.exe"' store-manifest.xml || { echo "Store manifest lacks the crosspaste.exe execution alias"; exit 1; }
+          grep -q 'Alias="crosspaste-cli.exe"' store-manifest.xml || { echo "Store manifest lacks the crosspaste-cli.exe execution alias"; exit 1; }
+          # No grep -q here: an early exit would SIGPIPE unzip and trip pipefail.
+          unzip -Z1 "${files[0]}" | grep -x 'app/bin/crosspaste-cli.exe' > /dev/null || { echo "Store MSIX does not contain app/bin/crosspaste-cli.exe"; exit 1; }
+          mv "${files[0]}" "output/crosspaste-${{ env.VERSION }}-store.x64.msix"
+          rm -rf output-store store-manifest.xml
+
       - name: Package AppImage
         run: |
           chmod +x ./.github/scripts/package_appimage.sh
           ./.github/scripts/package_appimage.sh
+
+      # Repackage the Linux tarballs as EL9-compatible RPMs on the same runner,
+      # after the update-site snapshot, so they land next to the other
+      # packages in output/ (checksum.txt, the versioned OSS dir and the
+      # GitHub Release). The RPMs are signed with, and embed the public half
+      # of, the RPM_SIGNING_KEY repository secret: an ASCII-armored GPG secret
+      # key without a passphrase, dedicated to this channel. Generate and
+      # store it once with
+      #   gpg --batch --pinentry-mode loopback --passphrase '' \
+      #     --quick-generate-key 'CrossPaste <support@crosspaste.com>' rsa4096 sign never
+      #   gpg --armor --export-secret-keys 'CrossPaste <support@crosspaste.com>' \
+      #     | gh secret set RPM_SIGNING_KEY
+      # and keep a backup of the secret key outside GitHub: rotating it
+      # requires every RPM user to accept a new key. The matching public key
+      # (gpg --armor --export) is written by the scripts into the packages
+      # (/etc/pki/rpm-gpg/RPM-GPG-KEY-CrossPaste) and the repository root
+      # (site/rpm/RPM-GPG-KEY-CrossPaste); nothing key-related is committed.
+      - name: Package RPM (x86_64 and aarch64)
+        run: |
+          docker build -t crosspaste-rpm-build -f .github/packaging/Dockerfile.rpm .github/packaging
+          docker run --rm -e RPM_SIGNING_KEY -v "$GITHUB_WORKSPACE:/workspace" crosspaste-rpm-build
+
+      # The dnf repository that installed RPMs subscribe to (crosspaste.repo
+      # points at https://oss.crosspaste.com/site/rpm/). It is generated into
+      # the update-site snapshot so the staging step below ships it with the
+      # rest of the site: the RPMs under packages/rpm/, repodata/ and the
+      # public key under meta/rpm/. Only the current release is listed.
+      - name: Build dnf repository
+        run: >
+          docker run --rm -e RPM_SIGNING_KEY -v "$GITHUB_WORKSPACE:/workspace" crosspaste-rpm-build
+          .github/scripts/package_rpm_repo.sh output update-site/rpm
+
+      # Installs through the freshly built repository with gpgcheck and
+      # repo_gpgcheck on, so a broken signature or repodata fails the build.
+      - name: Verify RPM on EL9 and Fedora 44 (x86_64)
+        run: |
+          for image in \
+            quay.io/rockylinux/rockylinux:9.8@sha256:8101994123cf3d0a8fee517bee7f39e555c7d92bd2d9eb3303cc988a0eeed00f \
+            registry.fedoraproject.org/fedora:44@sha256:1b8544582f974533fb8d9a5d6bf6dc2caf0d977ea54979d5e864a6ffd345c32e; do
+            docker run --rm -v "$GITHUB_WORKSPACE:/workspace:ro" \
+              -w /workspace "$image" \
+              bash -c 'bash .github/scripts/verify_rpm.sh output/*.x86_64.rpm update-site/rpm'
+          done
 
       - name: Build Chrome extension
         run: ./gradlew :web:build
@@ -364,15 +457,19 @@ jobs:
               mv update-site/$f update-site-meta/
             fi
           done
-          # Multi-arch builds nest the apt repository under debian/. Its index
-          # metadata must also revalidate quickly, while the version-named
-          # .debs inside stay immutable, so split it the same way.
-          if [ -d update-site/debian ]; then
-            (cd update-site && find debian -type f ! -name '*.deb') | while read -r f; do
-              mkdir -p "update-site-meta/$(dirname "$f")"
-              mv "update-site/$f" "update-site-meta/$f"
-            done
-          fi
+          # Multi-arch builds nest the apt repository under debian/, and the
+          # dnf repository lives under rpm/. Their index metadata (and the
+          # RPM public key) must also revalidate quickly, while the
+          # version-named .debs and .rpms inside stay immutable, so split
+          # them the same way.
+          for repo in debian rpm; do
+            if [ -d "update-site/$repo" ]; then
+              (cd update-site && find "$repo" -type f ! -name '*.deb' ! -name '*.rpm') | while read -r f; do
+                mkdir -p "update-site-meta/$(dirname "$f")"
+                mv "update-site/$f" "update-site-meta/$f"
+              done
+            fi
+          done
           # Drop any marker left by a previous run of this version first, so a
           # re-run never exposes a "complete" flag over a half-re-uploaded
           # staging prefix (|| true: the marker usually doesn't exist yet).

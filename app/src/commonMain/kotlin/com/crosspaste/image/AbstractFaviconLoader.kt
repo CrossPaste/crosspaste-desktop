@@ -6,6 +6,7 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.ConcurrentLoader
 import com.crosspaste.utils.StripedMutex
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getUrlUtils
 import io.github.oshai.kotlinlogging.KLogger
 import io.ktor.http.*
 import okio.Path
@@ -20,6 +21,8 @@ abstract class AbstractFaviconLoader(
 
     protected val fileUtils = getFileUtils()
 
+    private val urlUtils = getUrlUtils()
+
     override val mutex = StripedMutex()
 
     private fun getGoogleIconUrl(host: String): String =
@@ -31,6 +34,13 @@ abstract class AbstractFaviconLoader(
         url: String,
         path: Path,
     ): Path?
+
+    override suspend fun load(value: String): Path? {
+        if (!urlUtils.isHttpUrl(value)) {
+            return null
+        }
+        return super<ConcurrentLoader>.load(value)
+    }
 
     override fun resolve(
         key: String,

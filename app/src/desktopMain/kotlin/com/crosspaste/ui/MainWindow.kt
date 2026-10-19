@@ -2,6 +2,7 @@ package com.crosspaste.ui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -31,14 +32,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowScope
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Close
 import com.composables.icons.materialsymbols.rounded.Push_pin
@@ -60,6 +62,7 @@ import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
+import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.sun.jna.Memory
 import com.sun.jna.Native
@@ -74,26 +77,14 @@ private val CLOSE_BUTTON_WIDTH = 48.dp
 
 @Composable
 fun MainWindow(windowIcon: Painter?) {
-    val appLaunchState = koinInject<DesktopAppLaunchState>()
-    val appSize = koinInject<DesktopAppSize>()
     val appWindowManager = koinInject<DesktopAppWindowManager>()
-    val configManager = koinInject<DesktopConfigManager>()
     val platform = koinInject<Platform>()
     val screenProvider = koinInject<DesktopScreenProvider>()
 
     val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
     val mainWindowInfo by appWindowManager.mainWindowInfo.collectAsState()
 
-    val pushpinPadding by remember {
-        mutableStateOf(appSize.getPinPushEndPadding())
-    }
-
-    val appSizeValue = LocalDesktopAppSizeValueState.current
-
-    val config by configManager.config.collectAsState()
-
     val isMacos = remember { platform.isMacos() }
-    val isWindows = remember { platform.isWindows() }
 
     Window(
         onCloseRequest = {
@@ -109,132 +100,191 @@ fun MainWindow(windowIcon: Painter?) {
         // Windows/Linux paint the whole title bar themselves.
         undecorated = !isMacos,
     ) {
-        DisposableEffect(Unit) {
-            // Set window reference for manager
-            appWindowManager.mainComposeWindow = window
+        DisplayScaleContent {
+            DisposableEffect(Unit) {
+                appWindowManager.mainComposeWindow = window
+                applyPlatformWindowStyle(window, platform)
 
-            when {
-                isMacos -> {
-                    // JBR / Apple JDK client properties:
-                    // - fullWindowContent: extend Compose content into the title bar
-                    // - transparentTitleBar: make the system title bar background transparent
-                    // - windowTitleVisible: hide the system-drawn title text
-                    window.rootPane.apply {
-                        putClientProperty("apple.awt.fullWindowContent", true)
-                        putClientProperty("apple.awt.transparentTitleBar", true)
-                        putClientProperty("apple.awt.windowTitleVisible", false)
-                    }
-                }
-                isWindows -> {
-                    // Apply rounded corners on Windows (Win11 Build 22000+, silently ignored on older versions)
-                    applyWindowsRoundedCorners(window)
+                onDispose {
+                    appWindowManager.mainComposeWindow = null
                 }
             }
 
-            onDispose {
-                appWindowManager.mainComposeWindow = null
+            Box(modifier = Modifier.fillMaxSize().mainWindowOutline(platform)) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    MainWindowTitleBar(
+                        isMacos = isMacos,
+                        alwaysOnTop = alwaysOnTop,
+                        onToggleAlwaysOnTop = { appWindowManager.switchAlwaysOnTopMainWindow() },
+                        onClose = { appWindowManager.hideMainWindow() },
+                    )
+
+                    if (isMacos) {
+                        DesktopMenuBar()
+                    }
+
+                    MainWindowContext(mainWindowInfo) {
+                        CrossPasteMainWindowContent()
+                        StartupPrompts(isMacos = isMacos)
+                    }
+                }
+
+                screenProvider.DragTargetView()
             }
         }
+    }
+}
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                val titleBarOuterModifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(appSizeValue.windowDecorationHeight)
-                        .background(AppUIColors.contentBackground)
+/**
+ * Native window tweaks that have to happen on the AWT window itself, right
+ * after it is created: macOS extends Compose into the system title bar,
+ * Windows asks DWM for rounded corners. Linux needs nothing here.
+ */
+private fun applyPlatformWindowStyle(
+    window: ComposeWindow,
+    platform: Platform,
+) {
+    when {
+        platform.isMacos() -> {
+            // JBR / Apple JDK client properties:
+            // - fullWindowContent: extend Compose content into the title bar
+            // - transparentTitleBar: make the system title bar background transparent
+            // - windowTitleVisible: hide the system-drawn title text
+            window.rootPane.apply {
+                putClientProperty("apple.awt.fullWindowContent", true)
+                putClientProperty("apple.awt.transparentTitleBar", true)
+                putClientProperty("apple.awt.windowTitleVisible", false)
+            }
+        }
+        platform.isWindows() -> {
+            // Apply rounded corners on Windows (Win11 Build 22000+, silently ignored on older versions)
+            applyWindowsRoundedCorners(window)
+        }
+    }
+}
 
-                // Single Row layout for all platforms.
-                //   - macOS: pin only; padding(start) reserves space for the traffic lights.
-                //   - Windows/Linux: pin followed by a full-height close button on the right.
-                val titleBarContent: @Composable () -> Unit = {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .padding(start = if (isMacos) MAC_TRAFFIC_LIGHT_INSET else 0.dp),
-                        verticalAlignment = Alignment.Top,
-                        horizontalArrangement = Arrangement.End,
-                    ) {
-                        GeneralIconButton(
-                            modifier =
-                                Modifier.padding(
-                                    top = medium,
-                                    end = pushpinPadding,
-                                ),
-                            imageVector =
-                                if (alwaysOnTop) {
-                                    MaterialSymbols.RoundedFilled.Push_pin
-                                } else {
-                                    MaterialSymbols.Rounded.Push_pin
-                                },
-                            desc = "always_on_top",
-                            colors =
-                                IconButtonDefaults.iconButtonColors(
-                                    containerColor = Color.Transparent,
-                                    contentColor = MaterialTheme.colorScheme.onSurface,
-                                ),
-                            buttonSize = xxLarge,
-                            iconSize = large2X,
-                            shape = tiny2XRoundedCornerShape,
-                            onClick = {
-                                appWindowManager.switchAlwaysOnTopMainWindow()
-                            },
-                        )
+/**
+ * Linux: the undecorated window gets neither a compositor border nor a
+ * shadow, so a light outline keeps it from merging with other windows.
+ */
+@Composable
+private fun Modifier.mainWindowOutline(platform: Platform): Modifier =
+    if (platform.isLinux()) {
+        border(tiny5X, AppUIColors.sectionCardBorder)
+    } else {
+        this
+    }
 
-                        if (!isMacos) {
-                            // Close is handled by the system traffic lights on macOS;
-                            // Windows/Linux paint their own close button at the top-right.
-                            TitleBarCloseButton(
-                                modifier =
-                                    Modifier
-                                        .width(CLOSE_BUTTON_WIDTH)
-                                        .fillMaxHeight(),
-                                onClick = { appWindowManager.hideMainWindow() },
-                            )
-                        }
-                    }
-                }
+/**
+ * Title bar row shared by all platforms:
+ *   - macOS: pin only; padding(start) reserves space for the traffic lights and
+ *     the system frame already provides dragging.
+ *   - Windows/Linux: pin followed by a full-height close button on the right,
+ *     wrapped in a Compose drag area because the window is undecorated.
+ */
+@Composable
+private fun WindowScope.MainWindowTitleBar(
+    isMacos: Boolean,
+    alwaysOnTop: Boolean,
+    onToggleAlwaysOnTop: () -> Unit,
+    onClose: () -> Unit,
+) {
+    val appSizeValue = LocalDesktopAppSizeValueState.current
 
-                if (isMacos) {
-                    // macOS already provides title bar dragging via the system frame.
-                    Box(modifier = titleBarOuterModifier) { titleBarContent() }
-                } else {
-                    // Windows/Linux: undecorated window, drag handled by Compose.
-                    WindowDraggableArea {
-                        Box(modifier = titleBarOuterModifier) { titleBarContent() }
-                    }
-                }
+    val titleBar: @Composable () -> Unit = {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(appSizeValue.windowDecorationHeight)
+                    .background(AppUIColors.contentBackground)
+                    .padding(start = if (isMacos) MAC_TRAFFIC_LIGHT_INSET else 0.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.End,
+        ) {
+            AlwaysOnTopButton(
+                alwaysOnTop = alwaysOnTop,
+                onClick = onToggleAlwaysOnTop,
+            )
 
-                if (isMacos) {
-                    DesktopMenuBar()
-                }
+            if (!isMacos) {
+                TitleBarCloseButton(
+                    modifier =
+                        Modifier
+                            .width(CLOSE_BUTTON_WIDTH)
+                            .fillMaxHeight(),
+                    onClick = onClose,
+                )
+            }
+        }
+    }
 
-                MainWindowContext(mainWindowInfo) {
-                    CrossPasteMainWindowContent()
-                    val accessibilityDialogShowing =
-                        config.showGrantAccessibility && !appLaunchState.accessibilityPermissions
-                    if (accessibilityDialogShowing) {
-                        GrantAccessibilityDialog {
-                            configManager.updateConfig("showGrantAccessibility", false)
-                        }
-                    } else if (isMacos && config.showInstallCliPrompt) {
-                        // One-time offer to install the `crosspaste` terminal
-                        // command (D6 PATH integration; symlink state probed once
-                        // at app startup). Deferred while the accessibility
-                        // dialog is up so prompts never stack.
-                        val cliSymlinkService = koinInject<CliSymlinkService>()
-                        val cliSymlinkState by cliSymlinkService.state.collectAsState()
-                        if (cliSymlinkState == CliSymlinkState.NOT_INSTALLED) {
-                            InstallCliDialog {
-                                configManager.updateConfig("showInstallCliPrompt", false)
-                            }
-                        }
-                    }
+    if (isMacos) {
+        titleBar()
+    } else {
+        WindowDraggableArea { titleBar() }
+    }
+}
+
+@Composable
+private fun AlwaysOnTopButton(
+    alwaysOnTop: Boolean,
+    onClick: () -> Unit,
+) {
+    val appSize = koinInject<DesktopAppSize>()
+    val pushpinPadding = remember { appSize.getPinPushEndPadding() }
+
+    GeneralIconButton(
+        modifier =
+            Modifier.padding(
+                top = medium,
+                end = pushpinPadding,
+            ),
+        imageVector =
+            if (alwaysOnTop) {
+                MaterialSymbols.RoundedFilled.Push_pin
+            } else {
+                MaterialSymbols.Rounded.Push_pin
+            },
+        desc = "always_on_top",
+        colors =
+            IconButtonDefaults.iconButtonColors(
+                containerColor = Color.Transparent,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+        buttonSize = xxLarge,
+        iconSize = large2X,
+        shape = tiny2XRoundedCornerShape,
+        onClick = onClick,
+    )
+}
+
+/**
+ * One-time prompts shown over the main content. The accessibility dialog
+ * wins; the CLI install offer (macOS only, D6 PATH integration, symlink
+ * state probed once at app startup) waits until it is dismissed so the two
+ * never stack.
+ */
+@Composable
+private fun StartupPrompts(isMacos: Boolean) {
+    val appLaunchState = koinInject<DesktopAppLaunchState>()
+    val configManager = koinInject<DesktopConfigManager>()
+    val config by configManager.config.collectAsState()
+
+    when {
+        config.showGrantAccessibility && !appLaunchState.accessibilityPermissions -> {
+            GrantAccessibilityDialog {
+                configManager.updateConfig("showGrantAccessibility", false)
+            }
+        }
+        isMacos && config.showInstallCliPrompt -> {
+            val cliSymlinkService = koinInject<CliSymlinkService>()
+            val cliSymlinkState by cliSymlinkService.state.collectAsState()
+            if (cliSymlinkState == CliSymlinkState.NOT_INSTALLED) {
+                InstallCliDialog {
+                    configManager.updateConfig("showInstallCliPrompt", false)
                 }
             }
-
-            screenProvider.DragTargetView()
         }
     }
 }

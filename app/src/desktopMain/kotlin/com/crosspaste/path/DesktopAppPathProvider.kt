@@ -4,6 +4,7 @@ import com.crosspaste.app.AppFileType
 import com.crosspaste.config.DevConfig
 import com.crosspaste.path.PlatformUserDataPathProvider.Companion.CROSSPASTE_DIR_NAME
 import com.crosspaste.platform.Platform
+import com.crosspaste.utils.SystemProperty
 import com.crosspaste.utils.getAppEnvUtils
 import com.crosspaste.utils.getSystemProperty
 import com.crosspaste.utils.noOptionParent
@@ -25,6 +26,16 @@ interface AppPathProvider : PathProvider {
 
     val pasteUserPath: Path
 }
+
+/**
+ * The payload directory every packaged launcher passes as
+ * `compose.application.resources.dir`: `app` on Windows, `Contents/Resources`
+ * on macOS, `lib/app` on Linux. Normalized first so `..` segments cannot skew
+ * the parent walks that derive the install root from it.
+ */
+private fun SystemProperty.launcherResourcesDir(): Path =
+    getOption("compose.application.resources.dir")?.toPath(normalize = true)
+        ?: throw IllegalStateException("Could not find app path: compose.application.resources.dir is not set")
 
 class DesktopPathProvider(
     private val pasteAppPath: Path,
@@ -180,15 +191,7 @@ class WindowsAppPathProvider : AppPathProvider {
 
     private val pathProvider: PathProvider = DesktopPathProvider(pasteAppPath, pasteUserPath)
 
-    private fun getAppJarPath(): Path {
-        systemProperty.getOption("compose.application.resources.dir")?.let {
-            return it.toPath()
-        }
-        systemProperty.getOption("skiko.library.path")?.let {
-            return it.toPath()
-        }
-        throw IllegalStateException("Could not find app path")
-    }
+    private fun getAppJarPath(): Path = systemProperty.launcherResourcesDir()
 
     private fun getAppExePath(): Path = getAppJarPath().noOptionParent.resolve("bin").normalized()
 
@@ -226,15 +229,7 @@ class MacosAppPathProvider : AppPathProvider {
 
     private val pathProvider: PathProvider = DesktopPathProvider(pasteAppPath, pasteUserPath)
 
-    private fun getAppJarPath(): Path {
-        systemProperty.getOption("compose.application.resources.dir")?.let {
-            return it.toPath()
-        }
-        systemProperty.getOption("skiko.library.path")?.let {
-            return it.toPath()
-        }
-        throw IllegalStateException("Could not find app path")
-    }
+    private fun getAppJarPath(): Path = systemProperty.launcherResourcesDir()
 
     private fun getAppExePath(): Path =
         getAppJarPath()
@@ -287,15 +282,7 @@ class LinuxAppPathProvider : AppPathProvider {
 
     private val pathProvider: PathProvider = DesktopPathProvider(pasteAppPath, pasteUserPath)
 
-    private fun getAppJarPath(): Path {
-        systemProperty.getOption("compose.application.resources.dir")?.let {
-            return it.toPath()
-        }
-        systemProperty.getOption("skiko.library.path")?.let {
-            return it.toPath()
-        }
-        throw IllegalStateException("Could not find app path")
-    }
+    private fun getAppJarPath(): Path = systemProperty.launcherResourcesDir()
 
     private fun getAppExePath(): Path =
         getAppJarPath()

@@ -28,6 +28,7 @@ import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import dev.nucleusframework.composenativetray.menu.api.TrayMenuBuilder
 import dev.nucleusframework.composenativetray.tray.api.Tray
 import dev.nucleusframework.composenativetray.utils.isMenuBarInDarkMode
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
@@ -45,6 +46,7 @@ fun ApplicationScope.TrayView(windowIcon: Painter) {
 
     val isMacos = remember { platform.isMacos() }
     val isLinux = remember { platform.isLinux() }
+    val logger = remember { KotlinLogging.logger("TrayView") }
 
     // Windows portable-zip only: an actionable "update to vX.Y.Z" entry.
     val isPortableZip =
@@ -52,6 +54,22 @@ fun ApplicationScope.TrayView(windowIcon: Painter) {
     val hasNewVersion by remember { appUpdateService.existNewVersion() }
         .collectAsState(initial = false)
     val lastVersion by appUpdateService.lastVersion.collectAsState()
+
+    // Clicking the tray icon toggles the search window. Relying on focus loss
+    // alone is not enough: KDE Plasma's tray does not take focus away, so a
+    // second click must close the window explicitly.
+    val toggleSearchWindow: suspend () -> Unit = {
+        val shown = appWindowManager.getCurrentSearchWindowInfo().show
+        if (isMacos) {
+            logger.info { "Mac tray toggle decision: searchShow=$shown, action=${if (shown) "hide" else "show"}" }
+        }
+        if (shown) {
+            appWindowManager.dismissSearchWindow()
+        } else {
+            appWindowManager.saveCurrentActiveAppInfo()
+            appWindowManager.showSearchWindow(WindowTrigger.TRAY_ICON)
+        }
+    }
 
     val menuContent: TrayMenuBuilder.() -> Unit = {
         if (isPortableZip && hasNewVersion) {
@@ -106,13 +124,28 @@ fun ApplicationScope.TrayView(windowIcon: Painter) {
             },
             tooltip = AppName,
             primaryAction = {
+                val clickId = System.nanoTime()
+                logger.info {
+                    "Mac tray primaryAction received: click=$clickId, " +
+                        "searchShow=${appWindowManager.getCurrentSearchWindowInfo().show}, " +
+                        "mainShow=${appWindowManager.getCurrentMainWindowInfo().show}"
+                }
                 mainCoroutineDispatcher.launch {
+                    logger.info {
+                        "Mac tray primaryAction dispatched: click=$clickId, " +
+                            "queueDelayMs=${(System.nanoTime() - clickId) / 1_000_000.0}, " +
+                            "searchShow=${appWindowManager.getCurrentSearchWindowInfo().show}"
+                    }
                     appWindowManager.hideMainWindow()
-                    if (appWindowManager.getCurrentSearchWindowInfo().show) {
-                        appWindowManager.dismissSearchWindow()
-                    } else {
-                        appWindowManager.saveCurrentActiveAppInfo()
-                        appWindowManager.showSearchWindow(WindowTrigger.TRAY_ICON)
+                    logger.info {
+                        "Mac tray toggle starting: click=$clickId, " +
+                            "searchShow=${appWindowManager.getCurrentSearchWindowInfo().show}, " +
+                            "mainShow=${appWindowManager.getCurrentMainWindowInfo().show}"
+                    }
+                    toggleSearchWindow()
+                    logger.info {
+                        "Mac tray toggle completed: click=$clickId, " +
+                            "searchShow=${appWindowManager.getCurrentSearchWindowInfo().show}"
                     }
                 }
             },
@@ -124,8 +157,7 @@ fun ApplicationScope.TrayView(windowIcon: Painter) {
             tooltip = AppName,
             primaryAction = {
                 mainCoroutineDispatcher.launch {
-                    appWindowManager.saveCurrentActiveAppInfo()
-                    appWindowManager.showSearchWindow(WindowTrigger.TRAY_ICON)
+                    toggleSearchWindow()
                 }
             },
             menuContent = menuContent,

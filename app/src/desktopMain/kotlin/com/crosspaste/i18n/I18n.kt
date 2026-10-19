@@ -7,6 +7,7 @@ import com.crosspaste.db.task.TaskType
 import com.crosspaste.i18n.DesktopGlobalCopywriter.Companion.EMPTY_STRING
 import com.crosspaste.i18n.SupportedLanguages.EN
 import com.crosspaste.task.TaskExecutor
+import com.crosspaste.ui.i18n.ComposeGlobalCopywriter
 import com.crosspaste.utils.DateTimeFormatOptions
 import com.crosspaste.utils.GlobalCoroutineScope.cpuCoroutineDispatcher
 import com.crosspaste.utils.getDateUtils
@@ -22,7 +23,7 @@ class DesktopGlobalCopywriter(
     configManager: CommonConfigManager,
     private val lazyTaskExecutor: Lazy<TaskExecutor>,
     private val taskDao: TaskDao,
-) : AbstractGlobalCopywriter(configManager, { DesktopCopywriter(it) }) {
+) : ComposeGlobalCopywriter(configManager, { DesktopCopywriter(it) }) {
 
     companion object {
 
@@ -45,9 +46,11 @@ class DesktopGlobalCopywriter(
         id: String,
         vararg args: Any?,
     ): String {
-        val text = copywriter.getText(id, *args)
-        return if (text == EMPTY_STRING && copywriter.language() != EN) {
-            logger.debug { "Missing text for id: $id in language: ${copywriter.language()}" }
+        // Read once: a concurrent switchLanguage() must not mix languages within one lookup.
+        val current = copywriter
+        val text = current.getText(id, *args)
+        return if (text == EMPTY_STRING && current.language() != EN) {
+            logger.debug { "Missing text for id: $id in language: ${current.language()}" }
             val enText = enCopywriter.getText(id, *args) // Fallback to English if not found
             if (enText == EMPTY_STRING) {
                 logger.warn { "Missing text for id: $id in English" }

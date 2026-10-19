@@ -35,6 +35,7 @@ class DesktopMigration(
             AppFileType.VIDEO,
             AppFileType.TEMP,
             AppFileType.MARKETING,
+            AppFileType.PLUGIN,
         )
 
     fun migration(migrationPath: Path) {

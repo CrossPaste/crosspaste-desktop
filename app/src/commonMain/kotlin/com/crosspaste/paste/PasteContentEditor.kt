@@ -14,6 +14,7 @@ import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.paste.item.UrlPasteItem
 import com.crosspaste.utils.getUrlUtils
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.put
 
 /**
  * Edits a paste's CONTENT in place — as opposed to [item.UpdatePasteItemHelper],
@@ -115,6 +116,31 @@ class PasteContentEditor(
             mainItem = mainItem,
             newMainItem = mainItem.copy(color),
             expectedHash = pasteData.hash,
+            urlChanged = false,
+        )
+    }
+
+    /**
+     * Rewrites an HTML paste together with the background it renders on, e.g. from the
+     * mobile rich-text editor. A null [backgroundColor] keeps the stored background.
+     */
+    suspend fun updateHtml(
+        pasteData: PasteData,
+        html: String,
+        backgroundColor: Int?,
+        expectedHash: String,
+    ): EditOutcome {
+        val mainItem = pasteData.pasteAppearItem as? HtmlPasteItem ?: return EditOutcome.NotEditable
+        val withHtml = mainItem.copy(html)
+        val newMainItem =
+            backgroundColor?.let { color ->
+                withHtml.copy { put(PasteItemProperties.BACKGROUND, color) }
+            } ?: withHtml
+        return applyEdit(
+            pasteData = pasteData,
+            mainItem = mainItem,
+            newMainItem = newMainItem,
+            expectedHash = expectedHash,
             urlChanged = false,
         )
     }

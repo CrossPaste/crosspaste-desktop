@@ -120,10 +120,16 @@ class PullFileTaskExecutor(
                     pasteDao.updateFilePath(pulledPasteData)
                 }
                 pasteboardService
-                    .tryWriteRemotePasteboardWithFile(pasteData.id, pullExtraInfo.seenAppInstanceIds)
-                    .fold(
+                    .tryWriteRemotePasteboardWithFile(
+                        pasteData.id,
+                        pullExtraInfo.seenAppInstanceIds,
+                        pullExtraInfo.writePasteboard,
+                        pullExtraInfo.historyPull,
+                    ).fold(
                         onSuccess = {
-                            soundService.successSound()
+                            if (pullExtraInfo.writePasteboard) {
+                                soundService.successSound()
+                            }
                             SuccessPasteTaskResult()
                         },
                         onFailure = { e -> abandonUnfinalized(pulledPasteData, pullExtraInfo, startTime, e) },
@@ -197,7 +203,7 @@ class PullFileTaskExecutor(
         logger.error(cause) { "Finalize pulled paste failed, pasteId=${pasteData.id}" }
         pasteSyncProcessManager.cleanProcess(pasteData.id)
         cleanupPullFiles(pasteData)
-        pasteDao.markDeletePasteData(pasteData.id)
+        pasteDao.markDeleteFailedReceive(pasteData.id)
         soundService.errorSound()
         return TaskUtils.createFailurePasteTaskResult(
             logger = logger,
@@ -220,7 +226,7 @@ class PullFileTaskExecutor(
             logger.error { "exist pull chunk fail" }
             pasteSyncProcessManager.cleanProcess(pasteData.id)
             cleanupPullFiles(pasteData)
-            pasteDao.markDeletePasteData(pasteData.id)
+            pasteDao.markDeleteFailedReceive(pasteData.id)
             soundService.errorSound()
         }
 

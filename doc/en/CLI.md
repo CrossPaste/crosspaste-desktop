@@ -15,13 +15,11 @@ The CLI binary is bundled with every desktop package. What differs per platform 
 | Platform | Terminal command | PATH setup |
 |---|---|---|
 | macOS | `crosspaste` | On first launch the app offers to install the command; you can also install or repair it any time from **Extensions → Command Line** in the app. This creates a `/usr/local/bin/crosspaste` symlink. |
-| Windows (installer / Microsoft Store) | `crosspaste-cli` | Automatic. The package registers a `crosspaste-cli` execution alias (`crosspaste` is reserved for launching the GUI). |
-| Linux (deb) | `crosspaste` | Automatic. The package installs a `/usr/bin/crosspaste` symlink. |
+| Windows (installer / Microsoft Store) | `crosspaste` | Automatic. The package registers `crosspaste` and `crosspaste-cli` execution aliases; both run the CLI (`crosspaste-cli` is kept for scripts written against older versions). |
+| Linux (deb / rpm) | `crosspaste` | Automatic. The package installs a `/usr/bin/crosspaste` symlink. |
 | Linux (tarball) | `crosspaste` | Manual: link `<install-dir>/lib/app/bin/crosspaste-cli` into your `PATH`, e.g. `sudo ln -s <install-dir>/lib/app/bin/crosspaste-cli /usr/local/bin/crosspaste`. |
-| Windows (zip) | `crosspaste-cli` | Manual: add the extracted `app\bin\` directory to your `PATH`. |
-| Linux (AppImage) | — | The binary is bundled at `bin/crosspaste-cli` inside the image, but the mount path changes on every run, so a stable symlink is not possible. Prefer the deb or tarball if you want the CLI. |
-
-The examples below use `crosspaste`; on Windows substitute `crosspaste-cli`.
+| Windows (zip) | `crosspaste-cli` | Manual: add the extracted `app\bin\` directory to your `PATH` (the binary is named `crosspaste-cli.exe` there). |
+| Linux (AppImage) | — | The binary is bundled at `bin/crosspaste-cli` inside the image, but the mount path changes on every run, so a stable symlink is not possible. Prefer the deb, rpm or tarball if you want the CLI. |
 
 ## Commands
 
@@ -81,7 +79,7 @@ crosspaste paste --raw > screenshot.png
 crosspaste paste --raw | magick - -resize 50% small.png
 ```
 
-On Windows, redirect through cmd — `cmd /c "crosspaste-cli paste --raw > shot.png"` — or use PowerShell 7.4+. Windows PowerShell 5.1's `>` re-encodes native command output as UTF-16 text and corrupts binary data.
+On Windows, redirect through cmd — `cmd /c "crosspaste paste --raw > shot.png"` — or use PowerShell 7.4+. Windows PowerShell 5.1's `>` re-encodes native command output as UTF-16 text and corrupts binary data.
 
 List and bulk-process history:
 

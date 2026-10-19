@@ -15,13 +15,11 @@ CLI 二进制随所有桌面安装包一起分发，各平台的差异只在于�
 | 平台 | 终端命令 | PATH 配置 |
 |---|---|---|
 | macOS | `crosspaste` | 应用首次启动时会提示安装命令行工具；也可以随时在应用内 **扩展 → 命令行** 页安装或修复。安装即创建 `/usr/local/bin/crosspaste` 软链接。 |
-| Windows（安装包 / 微软商店） | `crosspaste-cli` | 自动。安装包注册 `crosspaste-cli` 执行别名（`crosspaste` 保留用于启动图形界面）。 |
-| Linux（deb） | `crosspaste` | 自动。安装包创建 `/usr/bin/crosspaste` 软链接。 |
+| Windows（安装包 / 微软商店） | `crosspaste` | 自动。安装包同时注册 `crosspaste` 和 `crosspaste-cli` 两个执行别名，都运行 CLI（`crosspaste-cli` 为兼容旧版脚本保留）。 |
+| Linux（deb / rpm） | `crosspaste` | 自动。安装包创建 `/usr/bin/crosspaste` 软链接。 |
 | Linux（tarball） | `crosspaste` | 手动：把 `<安装目录>/lib/app/bin/crosspaste-cli` 链接进 `PATH`，例如 `sudo ln -s <安装目录>/lib/app/bin/crosspaste-cli /usr/local/bin/crosspaste`。 |
-| Windows（zip） | `crosspaste-cli` | 手动：把解压后的 `app\bin\` 目录加入 `PATH`。 |
-| Linux（AppImage） | — | 二进制打包在镜像内 `bin/crosspaste-cli`，但挂载路径每次运行都会变化，无法建立稳定软链接。需要 CLI 请优先使用 deb 或 tarball。 |
-
-下文示例使用 `crosspaste`；Windows 上请替换为 `crosspaste-cli`。
+| Windows（zip） | `crosspaste-cli` | 手动：把解压后的 `app\bin\` 目录加入 `PATH`（其中的二进制文件名为 `crosspaste-cli.exe`）。 |
+| Linux（AppImage） | — | 二进制打包在镜像内 `bin/crosspaste-cli`，但挂载路径每次运行都会变化，无法建立稳定软链接。需要 CLI 请优先使用 deb、rpm 或 tarball。 |
 
 ## 命令
 
@@ -81,7 +79,7 @@ crosspaste paste --raw > screenshot.png
 crosspaste paste --raw | magick - -resize 50% small.png
 ```
 
-Windows 上请经 cmd 重定向——`cmd /c "crosspaste-cli paste --raw > shot.png"`——或使用 PowerShell 7.4+。Windows PowerShell 5.1 的 `>` 会把原生命令输出按 UTF-16 文本重编码,损坏二进制数据。
+Windows 上请经 cmd 重定向——`cmd /c "crosspaste paste --raw > shot.png"`——或使用 PowerShell 7.4+。Windows PowerShell 5.1 的 `>` 会把原生命令输出按 UTF-16 文本重编码,损坏二进制数据。
 
 列表与批量处理：
 

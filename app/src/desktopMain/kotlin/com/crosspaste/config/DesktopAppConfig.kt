@@ -5,6 +5,8 @@ import androidx.datastore.preferences.core.mutablePreferencesOf
 import com.crosspaste.config.AppConfigKeys.BLACKLIST
 import com.crosspaste.config.AppConfigKeys.CLEANUP_PERCENTAGE
 import com.crosspaste.config.AppConfigKeys.ENABLED_SYNC_FILE_SIZE_LIMIT
+import com.crosspaste.config.AppConfigKeys.ENABLE_AUTO_PASTE_PULL
+import com.crosspaste.config.AppConfigKeys.ENABLE_AUTO_PULL_WRITE_CLIPBOARD
 import com.crosspaste.config.AppConfigKeys.ENABLE_DISCOVERY
 import com.crosspaste.config.AppConfigKeys.ENABLE_ENCRYPT_SYNC
 import com.crosspaste.config.AppConfigKeys.ENABLE_EXPIRATION_CLEANUP
@@ -128,6 +130,8 @@ data class DesktopAppConfig(
     // "normal" or "small", see DesktopAppSize.PASTE_PANEL_BUTTON_SIZE_*
     val pastePanelButtonSize: String = "normal",
     val enableClipboardRelay: Boolean = false,
+    override val enableAutoPastePull: Boolean = true,
+    override val enableAutoPullWriteClipboard: Boolean = false,
     // Sync content type controls
     override val enableSyncText: Boolean = true,
     override val enableSyncUrl: Boolean = true,
@@ -225,6 +229,9 @@ data class DesktopAppConfig(
                 showPastePanelButton = preferences[SHOW_PASTE_PANEL_BUTTON] ?: defaults.showPastePanelButton,
                 pastePanelButtonSize = preferences[PASTE_PANEL_BUTTON_SIZE] ?: defaults.pastePanelButtonSize,
                 enableClipboardRelay = preferences[ENABLE_CLIPBOARD_RELAY] ?: defaults.enableClipboardRelay,
+                enableAutoPastePull = preferences[ENABLE_AUTO_PASTE_PULL] ?: defaults.enableAutoPastePull,
+                enableAutoPullWriteClipboard =
+                    preferences[ENABLE_AUTO_PULL_WRITE_CLIPBOARD] ?: defaults.enableAutoPullWriteClipboard,
                 enableSyncText = preferences[ENABLE_SYNC_TEXT] ?: defaults.enableSyncText,
                 enableSyncUrl = preferences[ENABLE_SYNC_URL] ?: defaults.enableSyncUrl,
                 enableSyncHtml = preferences[ENABLE_SYNC_HTML] ?: defaults.enableSyncHtml,

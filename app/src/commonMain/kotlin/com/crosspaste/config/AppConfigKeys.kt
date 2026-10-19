@@ -44,6 +44,8 @@ object AppConfigKeys {
     val ENABLE_SYNC_FILE = booleanConfigKey("enableSyncFile")
     val ENABLE_SYNC_COLOR = booleanConfigKey("enableSyncColor")
     val ENABLE_REMOTE_SHOW_PAIRING_CODE = booleanConfigKey("enableRemoteShowPairingCode")
+    val ENABLE_AUTO_PASTE_PULL = booleanConfigKey("enableAutoPastePull")
+    val ENABLE_AUTO_PULL_WRITE_CLIPBOARD = booleanConfigKey("enableAutoPullWriteClipboard")
 
     val all: List<ConfigKey<*>> =
         listOf(
@@ -83,5 +85,7 @@ object AppConfigKeys {
             ENABLE_SYNC_FILE,
             ENABLE_SYNC_COLOR,
             ENABLE_REMOTE_SHOW_PAIRING_CODE,
+            ENABLE_AUTO_PASTE_PULL,
+            ENABLE_AUTO_PULL_WRITE_CLIPBOARD,
         )
 }

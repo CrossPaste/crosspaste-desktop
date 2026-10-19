@@ -7,7 +7,6 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
-import com.crosspaste.sync.PastePullService
 import com.crosspaste.sync.PushSessionManager
 import com.crosspaste.sync.RelaySeen
 import com.crosspaste.sync.SyncHandler
@@ -76,7 +75,6 @@ class PasteRoutingTest {
             mockk(relaxed = true) {
                 coEvery { isReceiveEnabled() } returns true
             },
-        pastePullService: PastePullService = mockk(relaxed = true),
         block: suspend ApplicationTestBuilder.() -> Unit,
     ) = testApplication {
         val syncHandler =
@@ -98,7 +96,6 @@ class PasteRoutingTest {
                     localAppInfo,
                     pasteboardService,
                     mockk<PasteReleaseService>(),
-                    pastePullService,
                     mockk<PushSessionManager>(),
                     syncRoutingApi,
                 )
@@ -147,14 +144,12 @@ class PasteRoutingTest {
             mockk<AppControl>(relaxed = true) {
                 coEvery { isReceiveEnabled() } returns true
             }
-        val pastePullService = mockk<PastePullService>(relaxed = true)
         coEvery { pasteboardService.tryWriteRemotePasteboard(any(), any()) } returns Result.success(Unit)
-        withPasteRouting(pasteboardService, appControl, pastePullService) {
+        withPasteRouting(pasteboardService, appControl) {
             val response = postSyncPaste(targetAppInstanceId = "local-instance")
 
             assertEquals(HttpStatusCode.OK, response.status)
             coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboard(any(), any()) }
-            coVerify(exactly = 1) { pastePullService.updateMaxCreateTime("remote-peer", any()) }
             coVerify(exactly = 1) { appControl.completeReceiveOperation() }
         }
     }
@@ -180,16 +175,14 @@ class PasteRoutingTest {
             mockk<AppControl>(relaxed = true) {
                 coEvery { isReceiveEnabled() } returns true
             }
-        val pastePullService = mockk<PastePullService>(relaxed = true)
         coEvery { pasteboardService.tryWriteRemotePasteboard(any(), any()) } returns
             Result.failure(IllegalStateException("database unavailable"))
 
-        withPasteRouting(pasteboardService, appControl, pastePullService) {
+        withPasteRouting(pasteboardService, appControl) {
             val response = postSyncPaste(targetAppInstanceId = "local-instance")
 
             assertEquals(HttpStatusCode.BadRequest, response.status)
             coVerify(exactly = 1) { pasteboardService.tryWriteRemotePasteboard(any(), any()) }
-            coVerify(exactly = 0) { pastePullService.updateMaxCreateTime(any(), any()) }
             coVerify(exactly = 0) { appControl.completeReceiveOperation() }
         }
     }

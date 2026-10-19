@@ -12,6 +12,7 @@ import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.Platform
+import com.crosspaste.ui.DesktopDisplayScale.toWindowUnits
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
@@ -221,14 +222,15 @@ abstract class DesktopAppWindowManager(
 
     /** Applies a new button size from the appearance settings, keeping the top-left corner. */
     fun resizePastePanelButton(size: Dp) {
+        val windowSize = size.toWindowUnits()
         _pastePanelButtonInfo.update { current ->
-            if (current.state.size.width == size) return
+            if (current.state.size.width == windowSize) return
             current.copy(
                 state =
                     WindowState(
                         placement = current.state.placement,
                         position = current.state.position,
-                        size = DpSize(size, size),
+                        size = DpSize(windowSize, windowSize),
                     ),
             )
         }

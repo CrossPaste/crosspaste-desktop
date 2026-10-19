@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class PairingV3UiControllerTest {
 
@@ -309,8 +311,23 @@ class PairingV3UiControllerTest {
 
         // TRUSTED (connected) and CANCELLED (peer abandoned) close themselves.
         assertEquals(listOf("trusted", "cancelled"), selfDismissingSessionIds(sessions))
-        // Rejected stays visible so the user sees the failure.
-        assertEquals(listOf("pairing", "rejected"), pairingTokenCardSessions(sessions).map { it.sessionId })
+        // Rejected is the user's own close click: hidden, but kept in the store
+        // (not self-dismissing) so the peer still learns PAIRING_REJECTED.
+        assertEquals(listOf("pairing"), pairingTokenCardSessions(sessions).map { it.sessionId })
+    }
+
+    @Test
+    fun tokenPopupUnmountsWhenOnlyHiddenSessionsRemain() {
+        val rejected = pairingSession("rejected", PakeRole.ACCEPTOR, "1234", PairingSessionState.REJECTED)
+        val pairing = pairingSession("pairing", PakeRole.ACCEPTOR, "5678")
+        val trusted = pairingSession("trusted", PakeRole.ACCEPTOR, null, PairingSessionState.TRUSTED)
+        val cancelled = pairingSession("cancelled", PakeRole.ACCEPTOR, null, PairingSessionState.CANCELLED)
+
+        assertFalse(isTokenPopupVisible(false, emptyList()))
+        assertFalse(isTokenPopupVisible(false, pairingTokenCardSessions(listOf(rejected))))
+        assertFalse(isTokenPopupVisible(false, pairingTokenCardSessions(listOf(trusted, cancelled))))
+        assertTrue(isTokenPopupVisible(false, pairingTokenCardSessions(listOf(rejected, pairing))))
+        assertTrue(isTokenPopupVisible(true, emptyList()))
     }
 
     private fun pairingSession(

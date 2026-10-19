@@ -96,7 +96,8 @@ data class ShellAvailability(
  *   falls back to an osascript "with administrator privileges" prompt (the
  *   VS Code model) — /usr/local/bin is root-owned or absent on stock installs.
  * - Windows: MSIX installs (Store and the Conveyor site installer) get the
- *   `crosspaste-cli` execution alias at install time and their ACL-protected
+ *   `crosspaste` and `crosspaste-cli` execution aliases at install time
+ *   (cli.conveyor.conf) and their ACL-protected
  *   payload path changes on every update, so they are
  *   [CliSymlinkState.EXTERNALLY_MANAGED]. Portable-zip and dev installs live
  *   at a stable path with no installer wiring; there the app offers a
@@ -132,7 +133,11 @@ class CliSymlinkService(
 
         const val COMMAND_NAME = "crosspaste"
 
-        /** `crosspaste.exe` is Conveyor's GUI-launch alias, so the CLI keeps its own name. */
+        /**
+         * The binary's own file name, which is what a portable-zip user puts on
+         * PATH. MSIX installs additionally alias it as `crosspaste.exe`, but
+         * those are EXTERNALLY_MANAGED and never probed by name.
+         */
         const val WINDOWS_COMMAND_NAME = "crosspaste-cli"
 
         private val PROBED_UNIX_SHELLS = listOf("/bin/zsh", "/bin/bash")

@@ -144,6 +144,26 @@ jobs:
           signing_key: ${{ secrets.SIGNING_KEY }}
           agree_to_license: 1
 
+      # Same signing key as build-release.yml (see the comment there): the
+      # packages embed its public half together with the crosspaste.repo
+      # subscription. The beta does not publish a dnf repository.
+      - name: Package RPM (x86_64 and aarch64)
+        env:
+          RPM_SIGNING_KEY: ${{ secrets.RPM_SIGNING_KEY }}
+        run: |
+          docker build -t crosspaste-rpm-build -f .github/packaging/Dockerfile.rpm .github/packaging
+          docker run --rm -e RPM_SIGNING_KEY -v "$GITHUB_WORKSPACE:/workspace" crosspaste-rpm-build
+
+      - name: Verify RPM on EL9 and Fedora 44 (x86_64)
+        run: |
+          for image in \
+            quay.io/rockylinux/rockylinux:9.8@sha256:8101994123cf3d0a8fee517bee7f39e555c7d92bd2d9eb3303cc988a0eeed00f \
+            registry.fedoraproject.org/fedora:44@sha256:1b8544582f974533fb8d9a5d6bf6dc2caf0d977ea54979d5e864a6ffd345c32e; do
+            docker run --rm -v "$GITHUB_WORKSPACE:/workspace:ro" \
+              -w /workspace "$image" \
+              bash -c 'bash .github/scripts/verify_rpm.sh output/*.x86_64.rpm'
+          done
+
       - name: Package AppImage (best effort)
         continue-on-error: true
         run: |
@@ -155,6 +175,7 @@ jobs:
           mkdir -p beta-dist
           find output -maxdepth 2 -name 'crosspaste-*-linux-*.tar.gz' -exec cp {} beta-dist/ \;
           find output -maxdepth 2 -name '*.deb' -exec cp {} beta-dist/ \;
+          find output -maxdepth 1 -name '*.rpm' -exec cp {} beta-dist/ \;
           find output -maxdepth 2 -name 'crosspaste-*.AppImage' -exec cp {} beta-dist/ \;
           (cd beta-dist && sha256sum * > SHA256SUMS.txt)
           echo "Collected beta artifacts:"

@@ -1,13 +1,18 @@
 package com.crosspaste.net.routing
 
+import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppInfo
+import com.crosspaste.config.AppConfig
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.dto.pull.PullFileRequest
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.plugin.EncryptedHttpResourceLimits
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.sync.isSyncEnabledForType
 import com.crosspaste.utils.failResponse
 import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.getFileUtils
@@ -25,8 +30,10 @@ import kotlinx.serialization.encodeToString
 import okio.utf8Size
 
 fun Routing.pullRouting(
+    appControl: AppControl,
     appInfo: AppInfo,
     cacheManager: CacheManager,
+    configManager: CommonConfigManager,
     pasteDao: PasteDao,
     syncRoutingApi: SyncRoutingApi,
     userDataPathProvider: UserDataPathProvider,
@@ -127,7 +134,41 @@ fun Routing.pullRouting(
                 } else {
                     pasteDao.getRecentPasteDataByAppInstanceId(limit)
                 }
-            val batch = recentPasteData.encodeJsonArrayWithinLimit()
+            val batch =
+                recentPasteData
+                    .filterSyncAllowed(appControl, configManager.getCurrentConfig())
+                    .encodeJsonArrayWithinLimit()
+
+            logger.debug {
+                "pull pasteBatch by ($fromAppInstanceId): ${batch.count}/${recentPasteData.size} items"
+            }
+            call.respondText(batch.json, ContentType.Application.Json, HttpStatusCode.OK)
+        }
+    }
+
+    get("/pull/pasteBatchById") {
+        getAppInstanceId(call)?.let { fromAppInstanceId ->
+            if (!requireTargetAppInstance(call, appInfo)) return@let
+
+            val syncHandler = requireSyncHandler(call, syncRoutingApi, fromAppInstanceId) ?: return@let
+
+            if (!syncHandler.currentSyncRuntimeInfo.allowSend) {
+                logger.debug { "sync handler ($fromAppInstanceId) not allow send" }
+                failResponse(call, StandardErrorCode.SYNC_NOT_ALLOW_SEND_BY_USER.toErrorCode())
+                return@let
+            }
+
+            val afterId = call.request.queryParameters["afterId"]?.toLongOrNull()
+            if (afterId == null || afterId < 0) {
+                call.respondText("Invalid afterId", ContentType.Text.Plain, HttpStatusCode.BadRequest)
+                return@let
+            }
+            val limit = normalizePasteBatchLimit(call.request.queryParameters["limit"])
+            val recentPasteData = pasteDao.getRecentPasteDataAfterRemoteId(afterId, limit)
+            val batch =
+                recentPasteData
+                    .filterSyncAllowed(appControl, configManager.getCurrentConfig())
+                    .encodeJsonArrayWithinLimit()
 
             logger.debug {
                 "pull pasteBatch by ($fromAppInstanceId): ${batch.count}/${recentPasteData.size} items"
@@ -160,6 +201,24 @@ fun Routing.pullRouting(
         }
     }
 }
+
+/**
+ * Pulled pastes obey the same sender-side policy as pushed ones (per-type switches
+ * and the sync file size limit), otherwise a peer catching up would receive what
+ * this device was told not to sync.
+ */
+internal fun List<PasteData>.filterSyncAllowed(
+    appControl: AppControl,
+    config: AppConfig,
+): List<PasteData> =
+    filter { pasteData ->
+        val maxFileSize =
+            pasteData
+                .getPasteAppearItems()
+                .filterIsInstance<PasteFiles>()
+                .maxOfOrNull { it.size } ?: 0L
+        config.isSyncEnabledForType(pasteData.getType()) && appControl.isFileSizeSyncEnabled(maxFileSize)
+    }
 
 internal fun normalizePasteBatchLimit(rawLimit: String?): Long =
     (rawLimit?.toLongOrNull() ?: DEFAULT_PASTE_BATCH_LIMIT).coerceIn(1L, MAX_PASTE_BATCH_LIMIT)

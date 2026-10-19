@@ -2,19 +2,39 @@ name: Update Contributors
 
 on:
   workflow_dispatch:
+  # Refresh the README avatars whenever an outside contributor's PR is merged.
+  # pull_request_target runs in the base repo context, so the token can push;
+  # only the base branch is checked out, never PR code.
+  pull_request_target:
+    types: [closed]
+    branches: [main]
 
 permissions:
   contents: write
 
+concurrency:
+  group: update-contributors
+  cancel-in-progress: false
+
 jobs:
   contributors:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       github.event.pull_request.user.type == 'User' &&
+       github.event.pull_request.user.login != 'guiyanakuang')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
 
       - name: Update contributors in README
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The contributors API is cached and can lag a fresh merge, so make
+          # sure the PR author is listed even if the API doesn't report them yet.
+          ENSURE_LOGIN: ${{ github.event.pull_request.user.login }}
         run: bash .github/scripts/update-contributors.sh ${{ github.repository }}
 
       - name: Commit and push changes

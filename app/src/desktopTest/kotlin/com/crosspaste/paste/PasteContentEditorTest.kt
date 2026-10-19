@@ -113,6 +113,37 @@ class PasteContentEditorTest {
         }
 
     @Test
+    fun `html edit stores a new background and keeps it when none is given`() =
+        runTest {
+            val pasteData =
+                storePaste(
+                    appearItem =
+                        createHtmlPasteItem(
+                            html = "<p>old words</p>",
+                            extraInfo = buildJsonObject { put(PasteItemProperties.BACKGROUND, 0xFF112233.toInt()) },
+                        ),
+                    companions = listOf(createTextPasteItem(text = "old words")),
+                    pasteType = PasteType.HTML_TYPE,
+                )
+            val newBackground = 0xFF445566.toInt()
+
+            val recolored = editor.updateHtml(pasteData, "<p>new words</p>", newBackground, pasteData.hash)
+
+            assertIs<PasteContentEditor.EditOutcome.Updated>(recolored)
+            val afterRecolor = assertNotNull(pasteDao.getNoDeletePasteData(pasteData.id))
+            val recoloredHtml = assertIs<HtmlPasteItem>(afterRecolor.pasteAppearItem)
+            assertEquals("<p>new words</p>", recoloredHtml.html)
+            assertEquals(newBackground, recoloredHtml.getBackgroundColor())
+            assertEquals("new words", assertIs<TextPasteItem>(afterRecolor.pasteCollection.pasteItems.single()).text)
+
+            val kept = editor.updateHtml(afterRecolor, "<p>newer words</p>", null, afterRecolor.hash)
+
+            assertIs<PasteContentEditor.EditOutcome.Updated>(kept)
+            val afterKeep = assertNotNull(pasteDao.getNoDeletePasteData(pasteData.id))
+            assertEquals(newBackground, assertIs<HtmlPasteItem>(afterKeep.pasteAppearItem).getBackgroundColor())
+        }
+
+    @Test
     fun `color edit re-derives the plain-text companion`() =
         runTest {
             val red = createColorPasteItem(color = 0xFFFF0000.toInt())

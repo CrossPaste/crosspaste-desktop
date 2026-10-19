@@ -6,7 +6,6 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
-import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteContentEditor
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteDataHelper
@@ -27,7 +26,6 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.sync.NearbyDeviceManager
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskSubmitter
-import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -192,7 +190,7 @@ fun Routing.cliRouting(
         }
 
         post("/copy") {
-            handleCopy(call, appInfo, configManager, pasteDao, pasteReleaseService, pasteboardService)
+            handleCopy(call, appInfo, configManager, pasteReleaseService, pasteboardService)
         }
 
         delete("/paste/{id}") {
@@ -676,7 +674,6 @@ private suspend fun handleCopy(
     call: ApplicationCall,
     appInfo: AppInfo,
     configManager: DesktopConfigManager,
-    pasteDao: PasteDao,
     pasteReleaseService: PasteReleaseService,
     pasteboardService: PasteboardService,
 ) {
@@ -705,26 +702,14 @@ private suspend fun handleCopy(
         )
         return
     }
-    // Same lifecycle as a pasteboard capture: LOADING row, then the standard
-    // local release (process plugins, dedup, sync and rendering tasks) — a
-    // direct LOADED insert would silently skip all of that
-    val pasteData =
-        PasteData(
+    // Same lifecycle as a pasteboard capture — a direct LOADED insert would
+    // silently skip process plugins, dedup, sync and rendering
+    val id =
+        pasteReleaseService.createLocalPasteData(
             appInstanceId = appInfo.appInstanceId,
-            pasteCollection = PasteCollection(listOf(pasteItem)),
-            pasteType = PasteType.INVALID_TYPE.type,
+            pasteItem = pasteItem,
             source = "CLI",
-            size = 0L,
-            hash = "",
-            pasteState = PasteState.LOADING,
-            createTime = DateUtils.nowEpochMilliseconds(),
         )
-    val id = pasteDao.createPasteData(pasteData)
-    pasteReleaseService.releaseLocalPasteData(
-        id = id,
-        pasteItems = listOf(pasteItem),
-        targetAppInstanceIds = null,
-    )
     val written =
         pasteboardService.tryWritePasteboard(
             id = id,
@@ -1171,7 +1156,7 @@ private fun PasteData.toSummaryDto(
         remote = remote,
     )
 
-private suspend fun PasteData.toDetailDto(
+internal suspend fun PasteData.toDetailDto(
     pasteTagDao: PasteTagDao,
     pasteItemReader: PasteItemReader,
     includeRaw: Boolean,

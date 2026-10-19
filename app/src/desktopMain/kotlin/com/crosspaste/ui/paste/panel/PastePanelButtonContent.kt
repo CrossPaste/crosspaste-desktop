@@ -23,7 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEvent
@@ -37,6 +36,7 @@ import com.crosspaste.app.generated.resources.crosspaste_svg
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
+import com.crosspaste.ui.theme.CrossPasteBrand
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -48,10 +48,6 @@ import kotlin.math.hypot
 import kotlin.math.roundToInt
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-
-// The app icon's blue gradient; the white clipboard glyph is drawn straight onto it.
-private val BUTTON_GRADIENT_TOP = Color(0xFF2F7BFE)
-private val BUTTON_GRADIENT_BOTTOM = Color(0xFF0A48FC)
 
 private const val IDLE_ALPHA = 0.6f
 
@@ -102,7 +98,8 @@ fun PastePanelButtonContent(
                         Modifier.hoverable(interactionSource)
                     },
                 ).pastePanelButtonGestures(window, onClick, onSecondaryClick, onMoved)
-                .background(Brush.verticalGradient(listOf(BUTTON_GRADIENT_TOP, BUTTON_GRADIENT_BOTTOM))),
+                // The white clipboard glyph is drawn straight onto the app icon's gradient.
+                .background(CrossPasteBrand.gradient),
         contentAlignment = Alignment.Center,
     ) {
         Icon(

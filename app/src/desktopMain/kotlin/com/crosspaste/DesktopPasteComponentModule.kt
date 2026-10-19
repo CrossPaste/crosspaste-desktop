@@ -1,7 +1,9 @@
 package com.crosspaste
 
 import com.crosspaste.clean.CleanScheduler
+import com.crosspaste.cli.CliSymlinkService
 import com.crosspaste.headless.HeadlessPasteboardService
+import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ImageHandler
 import com.crosspaste.paste.CurrentPaste
@@ -34,6 +36,7 @@ import com.crosspaste.paste.getDesktopPasteboardService
 import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.UpdatePasteItemHelper
+import com.crosspaste.paste.menu.ExtractTextMenuContributor
 import com.crosspaste.paste.plugin.process.DiscardOversizedNonFilePlugin
 import com.crosspaste.paste.plugin.process.DistinctPlugin
 import com.crosspaste.paste.plugin.process.FileToUrlPlugin
@@ -52,9 +55,14 @@ import com.crosspaste.paste.plugin.type.ImageTypePlugin
 import com.crosspaste.paste.plugin.type.RtfTypePlugin
 import com.crosspaste.paste.plugin.type.TextTypePlugin
 import com.crosspaste.paste.plugin.type.UrlTypePlugin
+import com.crosspaste.plugin.PluginMenuContributor
+import com.crosspaste.plugin.ProcessPluginExecutor
+import com.crosspaste.plugin.ProcessPluginRunner
+import com.crosspaste.plugin.pluginExtraPathDirs
 import com.crosspaste.rendering.OpenGraphService
 import com.crosspaste.rendering.RenderingService
 import com.crosspaste.sync.FilePullService
+import com.crosspaste.sync.PasteAutoPullService
 import com.crosspaste.sync.PastePullCursorManager
 import com.crosspaste.sync.PastePullService
 import com.crosspaste.task.CleanPasteTaskExecutor
@@ -144,12 +152,27 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
                 get(),
                 get(),
                 get(),
-                get(),
-                get(),
+                contributors = listOf(get<ExtractTextMenuContributor>(), get<PluginMenuContributor>()),
             )
         }
         single<DesktopPasteTagMenuService> {
             DesktopPasteTagMenuService(get(), get())
+        }
+        single<ExtractTextMenuContributor> {
+            ExtractTextMenuContributor(get(), get(), get(), get())
+        }
+        single<PluginMenuContributor> { PluginMenuContributor(get(), get(), get()) }
+        single<ProcessPluginExecutor> {
+            val cliSymlinkService = get<CliSymlinkService>()
+            val copywriter = get<GlobalCopywriter>()
+            ProcessPluginExecutor(
+                cliBinaryPath = { cliSymlinkService.cliBinaryPath.value?.toString() },
+                language = { copywriter.language() },
+                extraPathDirs = pluginExtraPathDirs(get()),
+            )
+        }
+        single<ProcessPluginRunner> {
+            ProcessPluginRunner(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
         }
         // endregion
 
@@ -217,6 +240,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
 
         // region Sync pull
         single<FilePullService> { FilePullService(get(), get(), get(), get(), get()) }
+        single<PasteAutoPullService> { PasteAutoPullService(get(), get(), get()) }
         single<PastePullCursorManager> { PastePullCursorManager(get(), get()) }
         single<PastePullService> { PastePullService(get(), get(), get(), get()) }
         // endregion

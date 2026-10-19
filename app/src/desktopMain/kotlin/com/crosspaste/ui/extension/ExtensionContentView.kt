@@ -14,12 +14,14 @@ import androidx.compose.ui.Modifier
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Code
 import com.composables.icons.materialsymbols.rounded.Document_scanner
+import com.composables.icons.materialsymbols.rounded.Extension
 import com.composables.icons.materialsymbols.rounded.Terminal
 import com.crosspaste.ui.CliTool
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.MCP
 import com.crosspaste.ui.NavigationManager
 import com.crosspaste.ui.OCR
+import com.crosspaste.ui.Plugins
 import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.settings.SettingListItem
@@ -92,6 +94,19 @@ fun ExtensionContentView() {
                         ),
                     onClick = {
                         navigateManager.navigate(CliTool)
+                    },
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = xxxxLarge))
+                SettingListItem(
+                    title = "plugins",
+                    subtitle = "plugins_desc",
+                    icon =
+                        IconData(
+                            imageVector = MaterialSymbols.Rounded.Extension,
+                            iconColor = themeExt.purpleIconColor,
+                        ),
+                    onClick = {
+                        navigateManager.navigate(Plugins)
                     },
                 )
             }

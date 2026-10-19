@@ -70,6 +70,11 @@ import com.crosspaste.path.DesktopMigration
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.path.getPlatformPathProvider
 import com.crosspaste.platform.Platform
+import com.crosspaste.plugin.BundledPluginInstaller
+import com.crosspaste.plugin.PluginEnvironment
+import com.crosspaste.plugin.PluginRepository
+import com.crosspaste.plugin.findMissingExecutables
+import com.crosspaste.plugin.pluginExtraPathDirs
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.share.AppShareService
 import com.crosspaste.share.DesktopAppShareService
@@ -80,6 +85,7 @@ import com.crosspaste.ui.base.FontManager
 import com.crosspaste.utils.DesktopLocaleUtils
 import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.LocaleUtils
+import com.crosspaste.utils.getFileUtils
 import io.github.oshai.kotlinlogging.KLogger
 import org.koin.core.module.Module
 import org.koin.core.qualifier.named
@@ -203,6 +209,39 @@ fun desktopAppModule(
                 mapOf(
                     ocrModule.moduleId to ocrModule,
                 ),
+            )
+        }
+        // endregion
+
+        // region Plugin
+        single<BundledPluginInstaller> {
+            BundledPluginInstaller(
+                pluginsDirectory = { get<PluginRepository>().pluginsDirectory() },
+                fileSystem = getFileUtils().fileSystem,
+            )
+        }
+        single<PluginEnvironment> {
+            PluginEnvironment(
+                platform = get(),
+                appVersion = get<AppInfo>().appVersion,
+                runtimes = setOf(PluginEnvironment.RUNTIME_PROCESS),
+            )
+        }
+        single<PluginRepository> {
+            val platform = get<Platform>()
+            val extraDirs = pluginExtraPathDirs(platform)
+            PluginRepository(
+                environment = get(),
+                pluginStateDao = get(),
+                userDataPathProvider = get(),
+                fileSystem = getFileUtils().fileSystem,
+                findMissingRequirements = { requires ->
+                    findMissingExecutables(
+                        requires = requires,
+                        isWindows = platform.isWindows(),
+                        extraDirs = extraDirs,
+                    )
+                },
             )
         }
         // endregion

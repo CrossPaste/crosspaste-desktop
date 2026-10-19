@@ -1,9 +1,28 @@
 # Publishing CrossPaste to the Microsoft Store
 
-CrossPaste's release build already produces a Store-identity MSIX
-(`crosspaste-<version>-<revision>.x64.msix`, package family
-`ShenzhenCompileFutureTech.CrossPaste_gphsk9mrjnczc`). This document describes
-how Store publishing is automated and what has to be done by hand exactly once.
+The release build (`build-release.yml`, triggered by the version tag) produces
+two MSIX packages with the Store identity (package family
+`ShenzhenCompileFutureTech.CrossPaste_gphsk9mrjnczc`) in the versioned OSS
+prefix `https://oss.crosspaste.com/<version>/`:
+
+| File | Manifest `Version` | Purpose |
+|------|--------------------|---------|
+| `crosspaste-<x.y.z>-<revision>.x64.msix` | `x.y.z.<revision>` | Update site / GitHub Release (installed via `crosspaste.appinstaller`) |
+| `crosspaste-<x.y.z>-store.x64.msix` | `x.y.z.0` | Microsoft Store submission |
+
+Partner Center only accepts a package whose manifest `Version` ends in `.0`
+(Conveyor: "the app.revision number must be zero as the store uses the
+revision number for its own purposes"), so the site package is rejected on
+upload. The Store package is the same build with `app.revision` forced to `0`
+(`conveyor -Kapp.revision=0 -f build.conveyor.conf make windows-msix`); the
+workflow verifies its manifest (`Version`, `app\bin\crosspaste-cli.exe`, the
+`crosspaste` / `crosspaste-cli` execution aliases) before listing it in
+`checksum.txt`. Always submit the Store package built by CI from the release
+tag — a locally built one may not match the code published on GitHub, and the
+Store shows `x.y.z.0` for both, so the mismatch would be invisible.
+
+This document describes how Store publishing is automated and what has to be
+done by hand exactly once.
 
 ## What is automated
 
@@ -11,9 +30,9 @@ how Store publishing is automated and what has to be done by hand exactly once.
 [`msstore-publish.yml`](../../.github/workflows/msstore-publish.yml) workflow,
 or runnable locally on macOS/Linux) performs, per release:
 
-1. Download the MSIX for the given version from
-   `https://oss.crosspaste.com/<version>/` and verify its SHA256 against
-   `checksum.txt`.
+1. Download `crosspaste-<x.y.z>-store.x64.msix` for the given version from
+   `https://oss.crosspaste.com/<version>/`, verify its SHA256 against
+   `checksum.txt`, and check that the manifest `Version` is `x.y.z.0`.
 2. Upload the package into a fresh pending submission (`msstore publish
    --noCommit`). This runs first because, for a live app, msstore-cli deletes
    any existing pending submission and creates a new one — metadata written
@@ -71,6 +90,15 @@ by `build-release.yml` at tag time):
   `WINDOWS_STORE_ID=9N... scripts/publish-msstore.sh 2.1.7.2452`.
   Use `--dry-run` to preview the extracted release notes without touching the
   pending submission.
+- **Manual upload (fallback):** download
+  `https://oss.crosspaste.com/<version>/crosspaste-<x.y.z>-store.x64.msix`,
+  verify it against `checksum.txt`, and drag it into the submission's
+  Packages page in Partner Center. Only if CI did not produce the package,
+  build it locally from the release tag (`git checkout <tag>`) with
+  `conveyor --cache-limit=40 -Kapp.revision=0 -f build.conveyor.conf make windows-msix`
+  (or a gitignored local config that includes `cli.conveyor.conf` and the
+  Store credentials) and confirm the manifest `Version` is `x.y.z.0`:
+  `unzip -p <file>.msix AppxManifest.xml | tr '\n' ' ' | grep -o '<Identity [^>]*>'`.
 
 The release notes are taken from the `# [x.y.z]` section matching the given
 version (not simply the newest section), so re-publishing an older version

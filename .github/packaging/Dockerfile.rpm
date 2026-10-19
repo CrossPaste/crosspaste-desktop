@@ -1,0 +1,14 @@
+# EL9 is the minimum RPM compatibility baseline. The Docker Hub library image
+# (docker.io/library/rockylinux) stopped receiving updates at 9.3; Rocky now
+# publishes its images on quay.io. Pin the multi-arch manifest list so the
+# same Dockerfile builds on amd64 CI runners and arm64 developer machines.
+FROM quay.io/rockylinux/rockylinux:9.8@sha256:8101994123cf3d0a8fee517bee7f39e555c7d92bd2d9eb3303cc988a0eeed00f
+
+# rpm-sign and gnupg2 sign the packages; createrepo_c builds the dnf repository.
+RUN dnf install -y rpm-build rpm-sign binutils gnupg2 createrepo_c && dnf clean all
+
+WORKDIR /workspace
+# Default: build the RPMs. Pass another script path (e.g.
+# .github/scripts/package_rpm_repo.sh output update-site/rpm) to run it instead.
+ENTRYPOINT ["bash"]
+CMD [".github/scripts/package_rpm.sh"]

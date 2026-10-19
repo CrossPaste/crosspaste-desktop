@@ -14,6 +14,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.util.concurrent.CopyOnWriteArraySet
 
 class WindowFocusRecorder(
     private val appWindowManager: DesktopAppWindowManager,
@@ -27,6 +28,15 @@ class WindowFocusRecorder(
     private val _lastWinAppInfo: MutableStateFlow<WinAppInfo?> = MutableStateFlow(null)
 
     val lastWinAppInfo: StateFlow<WinAppInfo?> = _lastWinAppInfo
+
+    // Preserve the HWND of each event: a later foreground query can miss an entire
+    // gain/loss pair while the EDT is busy. Listeners only enqueue work on the EDT.
+    private val foregroundListeners = CopyOnWriteArraySet<(HWND?) -> Unit>()
+
+    fun subscribeForegroundChanges(listener: (HWND?) -> Unit): AutoCloseable {
+        foregroundListeners.add(listener)
+        return AutoCloseable { foregroundListeners.remove(listener) }
+    }
 
     private val scope = namedScope(ioDispatcher, "WindowFocusRecorder")
 
@@ -45,6 +55,7 @@ class WindowFocusRecorder(
                         dwEventThread: WinDef.DWORD?,
                         dwmsEventTime: WinDef.DWORD?,
                     ) {
+                        foregroundListeners.forEach { it(hwnd) }
                         if (hwnd != null && isValidWindow(hwnd)) {
                             _lastWinAppInfo.value = WinAppInfo.createWinAppInfo(hwnd)
                         }

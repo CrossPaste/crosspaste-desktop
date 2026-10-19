@@ -416,7 +416,7 @@ class PushSessionManager(
                 // observes the discard instead of a stale success.
                 try {
                     deleteUnfinishedReceiveFiles(pasteDao, userDataPathProvider, session.pasteId)
-                    pasteDao.markDeletePasteData(session.pasteId).getOrThrow()
+                    pasteDao.markDeleteFailedReceive(session.pasteId).getOrThrow()
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {

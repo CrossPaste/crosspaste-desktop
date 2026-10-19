@@ -142,27 +142,30 @@ data class PasteData(
 
     fun isValid(): Boolean =
         when (pasteState) {
-            PasteState.LOADED -> {
-                val pasteItem =
-                    when (getType()) {
-                        PasteType.TEXT_TYPE -> getPasteItem(PasteText::class)
-                        PasteType.COLOR_TYPE -> getPasteItem(PasteColor::class)
-                        PasteType.URL_TYPE -> getPasteItem(PasteUrl::class)
-                        PasteType.HTML_TYPE -> getPasteItem(PasteHtml::class)
-                        PasteType.RTF_TYPE -> getPasteItem(PasteRtf::class)
-                        PasteType.IMAGE_TYPE -> getPasteItem(PasteImages::class)
-                        PasteType.FILE_TYPE -> getPasteItem(PasteFiles::class)
-                        else -> null
-                    }
-                (pasteItem as? PasteItem)?.isValid() ?: false
-            }
-            PasteState.LOADING -> {
-                true
-            }
-            else -> {
-                false
-            }
+            PasteState.LOADED -> hasValidContent()
+            PasteState.LOADING -> true
+            else -> false
         }
+
+    /**
+     * Whether the item that represents this paste carries usable content, regardless of
+     * [pasteState]. [isValid] answers true for LOADING because a local capture is not
+     * finished yet; a received paste is complete on arrival, so the receiver judges it here.
+     */
+    fun hasValidContent(): Boolean {
+        val pasteItem =
+            when (getType()) {
+                PasteType.TEXT_TYPE -> getPasteItem(PasteText::class)
+                PasteType.COLOR_TYPE -> getPasteItem(PasteColor::class)
+                PasteType.URL_TYPE -> getPasteItem(PasteUrl::class)
+                PasteType.HTML_TYPE -> getPasteItem(PasteHtml::class)
+                PasteType.RTF_TYPE -> getPasteItem(PasteRtf::class)
+                PasteType.IMAGE_TYPE -> getPasteItem(PasteImages::class)
+                PasteType.FILE_TYPE -> getPasteItem(PasteFiles::class)
+                else -> null
+            }
+        return (pasteItem as? PasteItem)?.isValid() ?: false
+    }
 
     fun isFileType(): Boolean =
         when (getType()) {

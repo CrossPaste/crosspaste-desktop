@@ -5,6 +5,7 @@
 .idea
 .kotlin
 build_windows_misx.sh
+store.conveyor.conf
 development.properties
 generated.conveyor.conf
 local.properties

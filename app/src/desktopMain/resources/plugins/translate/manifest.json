@@ -1,0 +1,29 @@
+{
+  "id": "com.crosspaste.sample.translate",
+  "version": "1.0.0",
+  "minAppVersion": "2.2.0",
+  "name": { "en": "Translate", "zh": "翻译", "zh_hant": "翻譯", "ja": "翻訳", "ko": "번역", "de": "Übersetzen", "es": "Traducir", "fr": "Traduire", "pt": "Traduzir", "fa": "ترجمه" },
+  "pasteTypes": ["text", "html"],
+  "runtime": "process",
+  "headless": false,
+  "hosts": ["translate.googleapis.com"],
+  "platforms": {
+    "macos": { "command": ["/usr/bin/osascript", "-l", "JavaScript", "run.js"] },
+    "linux": { "command": ["python3", "run.py"], "requires": ["python3"] },
+    "windows": { "command": ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "run.ps1"] }
+  },
+  "actions": [
+    { "id": "en", "name": { "en": "English" } },
+    { "id": "zh-CN", "name": { "zh": "简体中文" } },
+    { "id": "zh-TW", "name": { "zh_hant": "繁體中文" } },
+    { "id": "ja", "name": { "ja": "日本語" } },
+    { "id": "ko", "name": { "ko": "한국어" } },
+    { "id": "de", "name": { "de": "Deutsch" } },
+    { "id": "es", "name": { "es": "Español" } },
+    { "id": "fr", "name": { "fr": "Français" } },
+    { "id": "pt", "name": { "pt": "Português" } },
+    { "id": "ru", "name": { "ru": "Русский" } },
+    { "id": "fa", "name": { "fa": "فارسی" } }
+  ],
+  "output": "replaceClipboard"
+}

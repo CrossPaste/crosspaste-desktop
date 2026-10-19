@@ -19,15 +19,11 @@ import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.paste.PasteTagDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.i18n.GlobalCopywriter
-import com.crosspaste.image.OCRModule
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
-import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
-import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteFiles
-import com.crosspaste.paste.item.PasteItem
-import com.crosspaste.paste.item.getFilePaths
-import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.paste.menu.PasteMenuAction
+import com.crosspaste.paste.menu.PasteMenuContributor
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.ui.base.UISupport
@@ -35,11 +31,11 @@ import com.crosspaste.ui.contextmenu.ContextMenuDivider
 import com.crosspaste.ui.contextmenu.ContextMenuGroup
 import com.crosspaste.ui.contextmenu.MaterialContextMenuItem
 import com.crosspaste.ui.model.PasteSearchViewModel
-import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,15 +53,15 @@ class DesktopPasteMenuService(
     private val pasteDao: PasteDao,
     private val pasteTagDao: PasteTagDao,
     private val pasteSearchViewModel: PasteSearchViewModel,
-    private val ocrModule: OCRModule,
     private val syncManager: SyncManager,
     private val taskSubmitter: TaskSubmitter,
     private val uiSupport: UISupport,
-    private val userDataPathProvider: UserDataPathProvider,
+    private val contributors: List<PasteMenuContributor>,
 ) : PasteMenuService {
 
     companion object {
         private const val CUT_UNDO_DELAY_MS = 60_000L
+        private val logger = KotlinLogging.logger {}
     }
 
     private val desktopAppWindowManager = appWindowManager as DesktopAppWindowManager
@@ -75,30 +71,6 @@ class DesktopPasteMenuService(
     private val _pendingCutPasteId = MutableStateFlow<Long?>(null)
     val pendingCutPasteId: StateFlow<Long?> = _pendingCutPasteId.asStateFlow()
     private var pendingCutJob: Job? = null
-
-    private fun copySingleFile(
-        id: Long,
-        pasteItem: PasteItem,
-    ) {
-        menuScope.launch {
-            pasteboardService
-                .tryWritePasteboard(
-                    id = id,
-                    pasteItem = pasteItem,
-                    localOnly = true,
-                ).onSuccess {
-                    notificationManager.sendNotification(
-                        title = { it.getText("copy_successful") },
-                        messageType = MessageType.Success,
-                    )
-                }.onFailure {
-                    notificationManager.sendNotification(
-                        title = { it.getText("copy_failed") },
-                        messageType = MessageType.Error,
-                    )
-                }
-        }
-    }
 
     override fun copyPasteData(pasteData: PasteData) {
         menuScope.launch {
@@ -213,25 +185,6 @@ class DesktopPasteMenuService(
         }
     }
 
-    fun fileMenuItemsProvider(
-        pasteData: PasteData,
-        pasteItem: PasteItem,
-        index: Int = 0,
-    ): () -> List<ContextMenuItem> =
-        {
-            listOf(
-                ContextMenuItem(copywriter.getText("copy")) {
-                    copySingleFile(
-                        id = pasteData.id,
-                        pasteItem = pasteItem,
-                    )
-                },
-                ContextMenuItem(copywriter.getText("open")) {
-                    openPasteData(pasteData, index)
-                },
-            )
-        }
-
     private fun createCopyContextMenuItem(pasteData: PasteData): ContextMenuItem =
         ContextMenuItem(copywriter.getText("copy")) {
             copyPasteData(pasteData)
@@ -322,26 +275,6 @@ class DesktopPasteMenuService(
             }
         }
 
-    private fun createExtractTextContextMenuItem(pasteData: PasteData): ContextMenuItem =
-        ContextMenuItem(copywriter.getText("extract_text")) {
-            menuScope.launch {
-                val extractText =
-                    pasteData
-                        .getPasteItem(ImagesPasteItem::class)
-                        ?.getFilePaths(userDataPathProvider)
-                        ?.mapNotNull { path ->
-                            ocrModule.extractText(path).getOrNull()
-                        }?.joinToString(separator = "\n")
-
-                if (!extractText.isNullOrEmpty()) {
-                    pasteboardService.tryWritePasteboard(
-                        pasteItem = createTextPasteItem(text = extractText),
-                        localOnly = false,
-                    )
-                }
-            }
-        }
-
     private fun createOpenContextMenuItem(pasteData: PasteData): ContextMenuItem =
         ContextMenuItem(copywriter.getText("open")) {
             openPasteData(pasteData)
@@ -354,89 +287,76 @@ class DesktopPasteMenuService(
             createDeleteContextMenuItem(pasteData),
         )
 
-    private fun createBaseMenuItems(pasteData: PasteData): List<ContextMenuItem> =
-        listOf(
-            createCopyContextMenuItem(pasteData),
-            createOpenContextMenuItem(pasteData),
-            createPinTagMenuItem(pasteData),
-            createSyncToMenuItem(pasteData),
-            ContextMenuDivider,
-            createDeleteContextMenuItem(pasteData),
-        )
+    private fun MutableList<ContextMenuItem>.addCutIfOwnedFiles(pasteData: PasteData) {
+        val pasteFiles = pasteData.getPasteItem(PasteFiles::class)
+        if (pasteFiles != null && !pasteFiles.isRefFiles()) {
+            add(createCutContextMenuItem(pasteData))
+        }
+    }
 
-    private fun createFileTypeMenuItems(pasteData: PasteData): List<ContextMenuItem> =
-        buildList {
-            add(createCopyContextMenuItem(pasteData))
-            val pasteFiles = pasteData.getPasteItem(PasteFiles::class)
-            if (pasteFiles != null && !pasteFiles.isRefFiles()) {
-                add(createCutContextMenuItem(pasteData))
+    private fun createPrimaryMenuItems(pasteData: PasteData): List<ContextMenuItem>? =
+        when (pasteData.getType()) {
+            PasteType.TEXT_TYPE,
+            PasteType.HTML_TYPE,
+            ->
+                listOf(createCopyContextMenuItem(pasteData), createEditContextMenuItem(pasteData))
+            PasteType.COLOR_TYPE,
+            PasteType.URL_TYPE,
+            PasteType.RTF_TYPE,
+            ->
+                listOf(createCopyContextMenuItem(pasteData), createOpenContextMenuItem(pasteData))
+            PasteType.IMAGE_TYPE ->
+                buildList {
+                    add(createCopyContextMenuItem(pasteData))
+                    addCutIfOwnedFiles(pasteData)
+                    add(createEditContextMenuItem(pasteData))
+                }
+            PasteType.FILE_TYPE ->
+                buildList {
+                    add(createCopyContextMenuItem(pasteData))
+                    addCutIfOwnedFiles(pasteData)
+                    add(createOpenContextMenuItem(pasteData))
+                }
+            else -> null
+        }
+
+    private fun createContributedMenuItems(pasteData: PasteData): List<ContextMenuItem> =
+        contributors
+            .flatMap { contributor ->
+                try {
+                    contributor.contribute(pasteData)
+                } catch (e: Exception) {
+                    logger.error(e) { "Contributor ${contributor::class.simpleName} failed to contribute menu items" }
+                    emptyList()
+                }
+            }.map(::toContextMenuItem)
+
+    private fun toContextMenuItem(action: PasteMenuAction): ContextMenuItem =
+        if (action.children.isEmpty()) {
+            ContextMenuItem(action.label) {
+                menuScope.launch { action.onClick() }
             }
-            add(createOpenContextMenuItem(pasteData))
+        } else {
+            ContextMenuGroup(action.label) { action.children.map(::toContextMenuItem) }
+        }
+
+    private fun createMenuItems(pasteData: PasteData): List<ContextMenuItem> {
+        if (pasteData.pasteState == PasteState.LOADING) {
+            return createLoadingMenuItems(pasteData)
+        }
+        val primaryItems = createPrimaryMenuItems(pasteData) ?: return createLoadingMenuItems(pasteData)
+        return buildList {
+            addAll(primaryItems)
+            addAll(createContributedMenuItems(pasteData))
             add(createPinTagMenuItem(pasteData))
             add(createSyncToMenuItem(pasteData))
             add(ContextMenuDivider)
             add(createDeleteContextMenuItem(pasteData))
         }
+    }
 
-    private fun createTextMenuItems(pasteData: PasteData): List<ContextMenuItem> =
-        listOf(
-            createCopyContextMenuItem(pasteData),
-            createEditContextMenuItem(pasteData),
-            createPinTagMenuItem(pasteData),
-            createSyncToMenuItem(pasteData),
-            ContextMenuDivider,
-            createDeleteContextMenuItem(pasteData),
-        )
-
-    private fun createImageMenuItems(pasteData: PasteData): List<ContextMenuItem> =
-        buildList {
-            add(createCopyContextMenuItem(pasteData))
-            val pasteFiles = pasteData.getPasteItem(PasteFiles::class)
-            if (pasteFiles != null && !pasteFiles.isRefFiles()) {
-                add(createCutContextMenuItem(pasteData))
-            }
-            add(createEditContextMenuItem(pasteData))
-            add(createExtractTextContextMenuItem(pasteData))
-            add(createPinTagMenuItem(pasteData))
-            add(createSyncToMenuItem(pasteData))
-            add(ContextMenuDivider)
-            add(createDeleteContextMenuItem(pasteData))
-        }
-
-    fun mainPasteMenuItemsProvider(pasteData: PasteData): () -> List<ContextMenuItem> =
+    fun pasteMenuItemsProvider(pasteData: PasteData): () -> List<ContextMenuItem> =
         {
-            if (pasteData.pasteState == PasteState.LOADING) {
-                createLoadingMenuItems(pasteData)
-            } else {
-                when (pasteData.getType()) {
-                    PasteType.TEXT_TYPE -> createTextMenuItems(pasteData)
-                    PasteType.COLOR_TYPE -> createBaseMenuItems(pasteData)
-                    PasteType.URL_TYPE -> createBaseMenuItems(pasteData)
-                    PasteType.HTML_TYPE -> createTextMenuItems(pasteData)
-                    PasteType.RTF_TYPE -> createBaseMenuItems(pasteData)
-                    PasteType.IMAGE_TYPE -> createImageMenuItems(pasteData)
-                    PasteType.FILE_TYPE -> createFileTypeMenuItems(pasteData)
-                    else -> createLoadingMenuItems(pasteData)
-                }
-            }
-        }
-
-    fun sidePasteMenuItemsProvider(pasteDataScope: PasteDataScope): () -> List<ContextMenuItem> =
-        {
-            val pasteData = pasteDataScope.pasteData
-            if (pasteData.pasteState == PasteState.LOADING) {
-                createLoadingMenuItems(pasteData)
-            } else {
-                when (pasteData.getType()) {
-                    PasteType.TEXT_TYPE -> createTextMenuItems(pasteData)
-                    PasteType.COLOR_TYPE -> createBaseMenuItems(pasteData)
-                    PasteType.URL_TYPE -> createBaseMenuItems(pasteData)
-                    PasteType.HTML_TYPE -> createTextMenuItems(pasteData)
-                    PasteType.RTF_TYPE -> createBaseMenuItems(pasteData)
-                    PasteType.IMAGE_TYPE -> createImageMenuItems(pasteData)
-                    PasteType.FILE_TYPE -> createFileTypeMenuItems(pasteData)
-                    else -> createLoadingMenuItems(pasteData)
-                }
-            }
+            createMenuItems(pasteData)
         }
 }

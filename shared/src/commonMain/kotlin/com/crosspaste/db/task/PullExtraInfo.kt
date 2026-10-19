@@ -11,6 +11,13 @@ class PullExtraInfo(
     // Carried to the relay scheduled once the files have landed
     @SerialName("seenAppInstanceIds")
     val seenAppInstanceIds: Set<String> = emptySet(),
+    // Whether the landed paste also replaces the system clipboard. False for
+    // background catch-up pulls and non-newest batch items; absent in tasks
+    // stored by older versions, which always wrote it
+    @SerialName("writePasteboard")
+    val writePasteboard: Boolean = true,
+    @SerialName("historyPull")
+    val historyPull: Boolean = false,
 ) : PasteTaskExtraInfo {
 
     @SerialName("executionHistories")

@@ -59,6 +59,30 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
     val isWindows = remember { platform.isWindows() }
     val isLinux = remember { platform.isLinux() }
 
+    // Keep the menu outside the button window: hidden window content stops recomposing.
+    var linuxMenuAnchor by remember { mutableStateOf<Rectangle?>(null) }
+    LaunchedEffect(buttonInfo.show) {
+        if (!buttonInfo.show) {
+            linuxMenuAnchor = null
+        }
+    }
+
+    // Built on every open so the labels follow the current language
+    fun menuEntries(): List<NativeMenuEntry> =
+        listOf(
+            NativeMenuEntry.Item(copywriter.getText("show_main")) {
+                appWindowManager.showMainWindow(WindowTrigger.MENU)
+            },
+            NativeMenuEntry.Item(menuHelper.settings.title(copywriter), menuHelper.settings.action),
+            NativeMenuEntry.Item(menuHelper.shortcutKeys.title(copywriter), menuHelper.shortcutKeys.action),
+            NativeMenuEntry.Separator,
+            NativeMenuEntry.Item(copywriter.getText("hide_paste_panel_button")) {
+                configManager.updateConfig("showPastePanelButton", false)
+            },
+            NativeMenuEntry.Separator,
+            NativeMenuEntry.Item(copywriter.getText("quit")) { applicationExit(ExitMode.EXIT) },
+        )
+
     NonActivatingWindow(
         visible = buttonInfo.show,
         state = buttonInfo.state,
@@ -78,29 +102,11 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
             } else {
                 null
             }
-        // Linux draws the menu in a window of its own beside the button, see PastePanelMenuWindow
-        var linuxMenuAnchor by remember { mutableStateOf<Rectangle?>(null) }
         DisposableEffect(window) {
             onDispose {
                 popupMenu?.let { window.remove(it) }
             }
         }
-
-        // Built on every open so the labels follow the current language
-        fun menuEntries(): List<NativeMenuEntry> =
-            listOf(
-                NativeMenuEntry.Item(copywriter.getText("show_main")) {
-                    appWindowManager.showMainWindow(WindowTrigger.MENU)
-                },
-                NativeMenuEntry.Item(menuHelper.settings.title(copywriter), menuHelper.settings.action),
-                NativeMenuEntry.Item(menuHelper.shortcutKeys.title(copywriter), menuHelper.shortcutKeys.action),
-                NativeMenuEntry.Separator,
-                NativeMenuEntry.Item(copywriter.getText("hide_paste_panel_button")) {
-                    configManager.updateConfig("showPastePanelButton", false)
-                },
-                NativeMenuEntry.Separator,
-                NativeMenuEntry.Item(copywriter.getText("quit")) { applicationExit(ExitMode.EXIT) },
-            )
 
         fun showMenu(
             x: Int,
@@ -130,12 +136,6 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
             menu.show(window.contentPane, x, y)
         }
 
-        LaunchedEffect(buttonInfo.show) {
-            if (!buttonInfo.show) {
-                linuxMenuAnchor = null
-            }
-        }
-
         PastePanelWindowContext {
             PastePanelButtonContent(
                 window = window,
@@ -151,13 +151,12 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
                 },
             )
         }
-
-        linuxMenuAnchor?.let { anchor ->
-            PastePanelMenuWindow(
-                anchor = anchor,
-                entries = menuEntries(),
-                onDismiss = { linuxMenuAnchor = null },
-            )
-        }
+    }
+    linuxMenuAnchor?.takeIf { buttonInfo.show }?.let { anchor ->
+        PastePanelMenuWindow(
+            anchor = anchor,
+            entries = menuEntries(),
+            onDismiss = { linuxMenuAnchor = null },
+        )
     }
 }
