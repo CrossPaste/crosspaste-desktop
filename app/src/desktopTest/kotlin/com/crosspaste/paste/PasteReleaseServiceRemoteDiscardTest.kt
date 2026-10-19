@@ -5,7 +5,6 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.config.TestAppConfig
 import com.crosspaste.db.paste.PasteDao
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
-import com.crosspaste.net.routing.bindAuthenticatedRemoteIdentity
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.item.CreatePasteItemHelper.createFilesPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
@@ -81,7 +80,8 @@ class PasteReleaseServiceRemoteDiscardTest {
             source = null,
             size = item.size,
             hash = item.hash,
-        ).bindAuthenticatedRemoteIdentity("remote-device")
+            remote = true,
+        )
 
     private fun oversizedTextItem(): TextPasteItem =
         TextPasteItem(
@@ -173,23 +173,32 @@ class PasteReleaseServiceRemoteDiscardTest {
         }
 
     @Test
-    fun `invalid remote paste is stored but never written to the clipboard`() =
+    fun `remote paste with invalid content is discarded without touching the clipboard`() =
         runBlocking {
+            val notificationManager = mockk<NotificationManager>(relaxed = true)
+            val pastePullCursorManager = mockk<PastePullCursorManager>(relaxed = true)
             val taskSubmitter = immediateSubmitter()
-            val service = newService(taskSubmitter = taskSubmitter)
+            val service =
+                newService(
+                    notificationManager = notificationManager,
+                    pastePullCursorManager = pastePullCursorManager,
+                    taskSubmitter = taskSubmitter,
+                )
 
             var wrotePasteboard = false
             val result =
-                service.releaseRemotePasteData(remotePasteData(createTextPasteItem(text = ""))) {
+                service.releaseRemotePasteData(
+                    remotePasteData(createTextPasteItem(text = "")).copy(id = 100L),
+                ) {
                     wrotePasteboard = true
                 }
 
             assertTrue(result.isSuccess)
-            assertNotNull(result.getOrThrow())
-            // The invalid paste is still part of history (the UI filters it out), but
-            // writing it would clear the user's clipboard.
+            assertNull(result.getOrThrow())
             assertTrue(!wrotePasteboard)
-            coVerify(exactly = 1) { taskSubmitter.submit(any()) }
+            coVerify(exactly = 0) { taskSubmitter.submit(any()) }
+            coVerify(exactly = 1) { pastePullCursorManager.settle("remote-device", 100L) }
+            verify(exactly = 0) { notificationManager.sendNotification(any(), any(), any(), any()) }
         }
 
     @Test

@@ -557,6 +557,27 @@ class PasteReleaseService(
     }
 
     /**
+     * Remote pastes bypass RemoveInvalidPlugin, so a paste whose content is unusable
+     * (e.g. an empty text flavor a peer captured from an empty clipboard) is dropped
+     * here. Storing it would only add a row the UI hides, relay it to other devices,
+     * and write an empty value that wipes the user's clipboard. Nothing meaningful is
+     * lost, so this is logged rather than notified; the remote ID is settled so a
+     * reconnect does not pull it again.
+     */
+    private suspend fun discardInvalidRemotePasteContent(pasteData: PasteData): Boolean {
+        if (pasteData.hasValidContent()) return false
+        logger.warn {
+            "Discard remote paste with invalid content from ${pasteData.appInstanceId}: " +
+                "type=${pasteData.getTypeName()}"
+        }
+        pastePullCursorManager.settle(
+            appInstanceId = pasteData.appInstanceId,
+            remotePasteId = pasteData.id,
+        )
+        return true
+    }
+
+    /**
      * [writePasteboard] only matters for file-type pastes, whose clipboard write
      * happens later when the download finalizes. Non-file pastes write through
      * [tryWritePasteboard] immediately, so callers that must not touch the
@@ -610,6 +631,7 @@ class PasteReleaseService(
                 return false
             }
         }
+        if (discardInvalidRemotePasteContent(pasteData)) return false
         return true
     }
 
@@ -624,20 +646,7 @@ class PasteReleaseService(
         markDeleteSameHash(id, pasteData.pasteType, pasteData.hash)
         addRenderingTask(id, pasteData.getType())
         if (!historyPull) addRelaySyncTask(id, pasteData.appInstanceId, seenAppInstanceIds)
-        // A received paste is persisted as-is, so unlike a local capture it never went
-        // through RemoveInvalidPlugin. Writing an invalid paste (e.g. an empty text
-        // flavor a peer captured from an empty clipboard) would put an empty value on
-        // the clipboard and wipe whatever the user had copied. The receive boundary
-        // binds the payload as LOADED, so isValid() judges its content. Keep the paste
-        // in history — the UI filters it out — but do not write it.
-        if (pasteData.isValid()) {
-            tryWritePasteboard(pasteData)
-        } else {
-            logger.warn {
-                "Skipping clipboard write of invalid remote paste ${pasteData.id} " +
-                    "from ${pasteData.appInstanceId}"
-            }
-        }
+        tryWritePasteboard(pasteData)
         return id
     }
 
@@ -708,16 +717,7 @@ class PasteReleaseService(
                     pastePullCursorManager.settleFile(pasteData.appInstanceId, id)
                     markDeleteSameHash(id, pasteData.pasteType, pasteData.hash)
                     if (!historyPull) addRelaySyncTask(id, pasteData.appInstanceId, seenAppInstanceIds)
-                    // Same rule as the non-file path: a finalized row whose content is
-                    // not valid must not replace the user's clipboard.
-                    if (pasteData.isValid()) {
-                        tryWritePasteboard(pasteData)
-                    } else {
-                        logger.warn {
-                            "Skipping clipboard write of invalid remote paste $id " +
-                                "from ${pasteData.appInstanceId}"
-                        }
-                    }
+                    tryWritePasteboard(pasteData)
                 }
             }.onFailure { e ->
                 logger.error(e) { "Release remote paste data with file failed" }

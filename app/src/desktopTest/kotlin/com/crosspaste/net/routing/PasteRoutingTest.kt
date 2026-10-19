@@ -5,7 +5,6 @@ import com.crosspaste.app.AppInfo
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteReleaseService
-import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.sync.PushSessionManager
@@ -46,9 +45,6 @@ class PasteRoutingTest {
         assertEquals("authenticated-peer", bound.appInstanceId)
         assertTrue(bound.remote)
         assertEquals(pasteData.hash, bound.hash)
-        // A decoded wire paste is complete content, so isValid() must judge it instead
-        // of short-circuiting on the LOADING default of PasteDataSerializer.
-        assertEquals(PasteState.LOADED, bound.pasteState)
     }
 
     @Test
