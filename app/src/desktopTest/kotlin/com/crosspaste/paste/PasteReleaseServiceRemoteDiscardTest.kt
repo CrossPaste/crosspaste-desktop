@@ -11,6 +11,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.presist.SingleFileInfoTree
 import com.crosspaste.sync.PastePullCursorManager
 import com.crosspaste.task.TaskBuilder
 import com.crosspaste.task.TaskSubmitter
@@ -199,6 +200,71 @@ class PasteReleaseServiceRemoteDiscardTest {
             coVerify(exactly = 0) { taskSubmitter.submit(any()) }
             coVerify(exactly = 1) { pastePullCursorManager.settle("remote-device", 100L) }
             verify(exactly = 0) { notificationManager.sendNotification(any(), any(), any(), any()) }
+        }
+
+    /**
+     * Passes validateFileTransferMetadata (names match the tree, sizes add up) but a
+     * zero-byte file fails PasteFiles.isValid(), so only the content check rejects it.
+     */
+    private fun contentInvalidFilePaste(): PasteData {
+        val item =
+            createFilesPasteItem(
+                relativePathList = listOf("empty.bin"),
+                fileInfoTreeMap = mapOf("empty.bin" to SingleFileInfoTree(0, "empty")),
+            )
+        return PasteData(
+            appInstanceId = "remote-device",
+            pasteAppearItem = item,
+            pasteCollection = PasteCollection(emptyList()),
+            pasteType = PasteType.FILE_TYPE.type,
+            source = null,
+            size = item.size,
+            hash = item.hash,
+            remote = true,
+        ).copy(id = 100L)
+    }
+
+    @Test
+    fun `pulled file paste with invalid content is discarded before any download`() =
+        runBlocking {
+            val pastePullCursorManager = mockk<PastePullCursorManager>(relaxed = true)
+            val taskSubmitter = immediateSubmitter()
+            val service =
+                newService(
+                    pastePullCursorManager = pastePullCursorManager,
+                    taskSubmitter = taskSubmitter,
+                )
+
+            var wrotePasteboard = false
+            val result =
+                service.releaseRemotePasteData(contentInvalidFilePaste()) {
+                    wrotePasteboard = true
+                }
+
+            assertTrue(result.isSuccess)
+            assertNull(result.getOrThrow())
+            assertTrue(!wrotePasteboard)
+            coVerify(exactly = 0) { taskSubmitter.submit(any()) }
+            coVerify(exactly = 1) { pastePullCursorManager.settle("remote-device", 100L) }
+        }
+
+    @Test
+    fun `pushed file paste with invalid content is rejected before a row is created`() =
+        runBlocking {
+            val pasteDao = mockk<PasteDao>(relaxed = true)
+            val pastePullCursorManager = mockk<PastePullCursorManager>(relaxed = true)
+            coEvery { pastePullCursorManager.hasActiveReceive(any()) } returns false
+            val service =
+                newService(
+                    pasteDao = pasteDao,
+                    pastePullCursorManager = pastePullCursorManager,
+                )
+
+            val prepared = service.releaseRemotePasteDataForPush(contentInvalidFilePaste())
+
+            assertNull(prepared)
+            coVerify(exactly = 0) { pastePullCursorManager.reserve(any(), any()) }
+            coVerify(exactly = 0) { pasteDao.createPasteData(any(), any()) }
         }
 
     @Test

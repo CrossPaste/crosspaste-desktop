@@ -147,7 +147,11 @@ data class PasteData(
             else -> false
         }
 
-    /** Whether the item that represents this paste carries usable content, regardless of [pasteState]. */
+    /**
+     * Whether the item that represents this paste carries usable content, regardless of
+     * [pasteState]. [isValid] answers true for LOADING because a local capture is not
+     * finished yet; a received paste is complete on arrival, so the receiver judges it here.
+     */
     fun hasValidContent(): Boolean {
         val pasteItem =
             when (getType()) {

@@ -743,6 +743,10 @@ class PasteReleaseService(
                     logger.warn { "releaseRemotePasteDataForPush: paste is not a file type (${pasteData.getType()})" }
                     return@withContext null
                 }
+                if (!pasteData.hasValidContent()) {
+                    logger.warn { "releaseRemotePasteDataForPush: paste content is invalid (${pasteData.getType()})" }
+                    return@withContext null
+                }
                 var createdPasteData: PasteData? = null
                 var renameMapToApply: Map<String, String>? = null
                 runCatching {
