@@ -33,7 +33,6 @@ abstract class PasteSearchViewModel : ViewModel() {
         MutableStateFlow(
             SearchBaseParams(
                 pasteTypeList = listOf(),
-                sort = true,
                 tag = null,
                 limit = QUERY_BATCH_SIZE,
             ),
@@ -67,7 +66,6 @@ abstract class PasteSearchViewModel : ViewModel() {
             SearchParams(
                 searchTerms = searchTerms,
                 pasteTypeList = searchBaseParams.pasteTypeList,
-                sort = searchBaseParams.sort,
                 tag = searchBaseParams.tag,
                 limit = searchBaseParams.limit,
             )
@@ -85,13 +83,6 @@ abstract class PasteSearchViewModel : ViewModel() {
                 limit = QUERY_BATCH_SIZE,
             )
         _loadAll.value = false
-    }
-
-    fun switchSort() {
-        _searchBaseParams.value =
-            _searchBaseParams.value.copy(
-                sort = !_searchBaseParams.value.sort,
-            )
     }
 
     fun updatePasteType(pasteTypeList: List<Int>) {
@@ -162,7 +153,6 @@ abstract class PasteSearchViewModel : ViewModel() {
         _searchBaseParams.value =
             _searchBaseParams.value.copy(
                 pasteTypeList = listOf(),
-                sort = true,
                 tag = null,
                 limit = QUERY_BATCH_SIZE,
             )

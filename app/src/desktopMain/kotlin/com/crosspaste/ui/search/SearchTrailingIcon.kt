@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.IconButtonDefaults.iconButtonColors
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -36,25 +34,18 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
-import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.rounded.Arrow_downward
-import com.composables.icons.materialsymbols.rounded.Arrow_upward
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteType.Companion.ALL_TYPES
-import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.base.MenuItemView
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.huge
-import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small3X
-import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
-import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
@@ -96,30 +87,6 @@ fun SearchTrailingIcon() {
         horizontalArrangement = Arrangement.Start,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // The arrow shows the current order, following the list-header convention:
-        // pointing down = descending (newest first), pointing up = ascending (oldest first).
-        GeneralIconButton(
-            imageVector =
-                if (searchBaseParams.sort) {
-                    MaterialSymbols.Rounded.Arrow_downward
-                } else {
-                    MaterialSymbols.Rounded.Arrow_upward
-                },
-            desc = if (searchBaseParams.sort) "sort_newest_first" else "sort_oldest_first",
-            colors =
-                iconButtonColors(
-                    containerColor = Color.Transparent,
-                    contentColor = MaterialTheme.colorScheme.primary,
-                ),
-            buttonSize = xLarge,
-            iconSize = large2X,
-            shape = tiny2XRoundedCornerShape,
-        ) {
-            pasteSearchViewModel.switchSort()
-        }
-
-        Spacer(modifier = Modifier.width(tiny2X))
-
         OutlinedButton(
             onClick = {
                 showTypes = true

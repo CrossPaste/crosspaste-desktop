@@ -49,7 +49,6 @@ class GeneralPasteSearchViewModel(
                 searchPasteData
                     .searchPasteDataFlow(
                         searchTerms = params.searchTerms,
-                        sort = params.sort,
                         pasteTypeList = params.pasteTypeList,
                         tag = params.tag,
                         limit = params.limit,
