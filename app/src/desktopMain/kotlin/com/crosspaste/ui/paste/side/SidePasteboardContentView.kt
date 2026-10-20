@@ -133,12 +133,11 @@ fun SidePasteboardContentView() {
     }
 
     // Reset selection to the first match and scroll to the top whenever the search query or any
-    // filter changes (term, sort, type, or tag). Input is debounced, so the matching results
+    // filter changes (term, type, or tag). Input is debounced, so the matching results
     // arrive a moment after the params change: re-assert once they land so the first item is
     // selected and scrolled into view. This also covers the case where nothing matches.
     LaunchedEffect(
         inputSearch,
-        searchBaseParams.sort,
         searchBaseParams.pasteTypeList,
         searchBaseParams.tag,
     ) {

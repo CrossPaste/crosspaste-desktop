@@ -56,7 +56,6 @@ class PasteSearchViewModelTest {
         val vm = TestSearchViewModel()
         val params = vm.searchBaseParams.value
         assertTrue(params.pasteTypeList.isEmpty())
-        assertTrue(params.sort)
         assertNull(params.tag)
         assertEquals(PasteSearchViewModel.QUERY_BATCH_SIZE, params.limit)
     }
@@ -67,27 +66,6 @@ class PasteSearchViewModelTest {
         vm.updateInputSearch("hello")
         assertEquals("hello", vm.inputSearch.value)
         assertEquals(PasteSearchViewModel.QUERY_BATCH_SIZE, vm.searchBaseParams.value.limit)
-    }
-
-    @Test
-    fun `switchSort toggles sort flag`() {
-        val vm = TestSearchViewModel()
-        assertTrue(vm.searchBaseParams.value.sort)
-
-        vm.switchSort()
-        assertFalse(vm.searchBaseParams.value.sort)
-
-        vm.switchSort()
-        assertTrue(vm.searchBaseParams.value.sort)
-    }
-
-    @Test
-    fun `switchSort does not reset limit`() {
-        val vm = TestSearchViewModel()
-        // switchSort should not change the limit (unlike other operations)
-        val limitBefore = vm.searchBaseParams.value.limit
-        vm.switchSort()
-        assertEquals(limitBefore, vm.searchBaseParams.value.limit)
     }
 
     @Test
@@ -155,7 +133,6 @@ class PasteSearchViewModelTest {
 
         // Change everything
         vm.updateInputSearch("test")
-        vm.switchSort()
         vm.updatePasteType(listOf(2))
         vm.updateTag(99L)
 
@@ -164,7 +141,6 @@ class PasteSearchViewModelTest {
         assertEquals("", vm.inputSearch.value)
         val params = vm.searchBaseParams.value
         assertTrue(params.pasteTypeList.isEmpty())
-        assertTrue(params.sort)
         assertEquals(PasteSearchViewModel.QUERY_BATCH_SIZE, params.limit)
     }
 
