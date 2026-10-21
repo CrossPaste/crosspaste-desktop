@@ -15,6 +15,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 import java.nio.file.Path
 import javax.imageio.ImageIO
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 interface X11Api : X11 {
@@ -51,9 +53,24 @@ interface X11Api : X11 {
 
         val INSTANCE: X11Api = Native.load("X11", X11Api::class.java)
 
-        private val ACTIVATION_TIMEOUT = 300.milliseconds
+        private val ACTIVATION_TIMEOUT = 500.milliseconds
 
         private val ACTIVATION_POLL_INTERVAL = 10.milliseconds
+
+        private val KEY_HOLD = 100.milliseconds
+
+        /**
+         * Source indication used for the `_NET_ACTIVE_WINDOW` requests CrossPaste issues
+         * on the user's behalf (pasting back into the previous app, returning focus).
+         *
+         * Window managers apply focus stealing prevention to `APPLICATION` (1) requests.
+         * KWin X11 ignores them even when the request carries the requesting window or a
+         * recent timestamp, which leaves the keystroke in CrossPaste's own window. The
+         * `PAGER` (2) indication is treated as a trusted activation, and the user did ask
+         * for it by picking an item. `focusMainWindow`/`focusSearchWindow` already use it
+         * for shortcut-triggered activation.
+         */
+        private val ACTIVATION_SOURCE: NativeLong = NativeLong(2)
 
         /**
          * True when a real X11 window holds the input focus.
@@ -126,31 +143,13 @@ interface X11Api : X11 {
 
         fun bringToBack(
             prevLinuxAppInfo: LinuxAppInfo?,
-            source: NativeLong = NativeLong(1),
+            source: NativeLong = ACTIVATION_SOURCE,
             xServerTime: NativeLong? = null,
         ) {
             val display = INSTANCE.XOpenDisplay(null) ?: return
             try {
                 prevLinuxAppInfo?.let {
                     WMCtrl.activeWindow(display, it.window, source, xServerTime ?: NativeLong(X11.CurrentTime.toLong()))
-                }
-            } finally {
-                INSTANCE.XCloseDisplay(display)
-            }
-        }
-
-        suspend fun bringToBack(
-            prevLinuxAppInfo: LinuxAppInfo?,
-            keyCodes: List<Int>,
-            source: NativeLong = NativeLong(1),
-            xServerTime: NativeLong? = null,
-        ) {
-            val display = INSTANCE.XOpenDisplay(null) ?: return
-            try {
-                prevLinuxAppInfo?.let {
-                    WMCtrl.activeWindow(display, it.window, source, xServerTime ?: NativeLong(X11.CurrentTime.toLong()))
-                    awaitActiveWindow(display, it.window)
-                    toPaste(display, keyCodes)
                 }
             } finally {
                 INSTANCE.XCloseDisplay(display)
@@ -158,24 +157,67 @@ interface X11Api : X11 {
         }
 
         /**
-         * Waits for the window manager to act on `_NET_ACTIVE_WINDOW`: XTest delivers to
-         * whatever holds the focus at that moment, which right after the request is still
-         * our own window. Window managers that never update the property only cost the
-         * timeout, after which the paste goes out as before.
+         * Requests activation of [prevLinuxAppInfo] and waits until the window manager
+         * reports it as the active window.
+         *
+         * XTest delivers the keystroke to whichever window holds the focus at that
+         * moment, which right after the request is still CrossPaste's own window. A
+         * `false` result means the window manager never confirmed the activation (it
+         * may have refused the request), so the caller must not inject blindly.
          */
-        private suspend fun awaitActiveWindow(
+        suspend fun activateAndAwait(
+            prevLinuxAppInfo: LinuxAppInfo,
+            source: NativeLong = ACTIVATION_SOURCE,
+            xServerTime: NativeLong? = null,
+            timeout: Duration = ACTIVATION_TIMEOUT,
+        ): Boolean {
+            val display = INSTANCE.XOpenDisplay(null) ?: return false
+            return try {
+                WMCtrl.activeWindow(
+                    display,
+                    prevLinuxAppInfo.window,
+                    source,
+                    xServerTime ?: NativeLong(X11.CurrentTime.toLong()),
+                )
+                awaitActiveOn(display, prevLinuxAppInfo.window, timeout)
+            } finally {
+                INSTANCE.XCloseDisplay(display)
+            }
+        }
+
+        /**
+         * Waits for [prevLinuxAppInfo] to become the active window without requesting
+         * activation. Used after hiding our own window, which is what makes the window
+         * manager hand the focus back on its own.
+         */
+        suspend fun awaitActive(
+            prevLinuxAppInfo: LinuxAppInfo,
+            timeout: Duration = ACTIVATION_TIMEOUT,
+        ): Boolean {
+            val display = INSTANCE.XOpenDisplay(null) ?: return false
+            return try {
+                awaitActiveOn(display, prevLinuxAppInfo.window, timeout)
+            } finally {
+                INSTANCE.XCloseDisplay(display)
+            }
+        }
+
+        private suspend fun awaitActiveOn(
             display: Display,
             window: Window,
-        ) {
+            timeout: Duration,
+        ): Boolean {
             val activated =
-                withTimeoutOrNull(ACTIVATION_TIMEOUT) {
-                    while (getActiveWindow(display) != window) {
-                        delay(ACTIVATION_POLL_INTERVAL)
-                    }
+                awaitWindowActive(timeout, ACTIVATION_POLL_INTERVAL) {
+                    getActiveWindow(display) == window
                 }
-            if (activated == null) {
-                logger.warn { "Window $window was not reported active within $ACTIVATION_TIMEOUT, pasting anyway" }
+            if (!activated) {
+                logger.warn {
+                    "Window $window was not reported active within $timeout " +
+                        "(current active: ${getActiveWindow(display)})"
+                }
             }
+            return activated
         }
 
         private suspend fun toPaste(
@@ -183,20 +225,26 @@ interface X11Api : X11 {
             keyCodes: List<Int>,
         ) {
             val xTest = X11.XTest.INSTANCE
-            runCatching {
+            val pressed = mutableListOf<Int>()
+            try {
                 for (keyCode in keyCodes) {
                     xTest.XTestFakeKeyEvent(display, keyCode, true, NativeLong(0))
+                    pressed.add(keyCode)
                 }
                 // Xlib buffers requests: flush so the keys are held for the delay
                 INSTANCE.XFlush(display)
-                delay(100.milliseconds)
-
-                for (keyCode in keyCodes.reversed()) {
+                delay(KEY_HOLD)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                logger.error(e) { "toPaste error" }
+            } finally {
+                // Release even when the coroutine is cancelled mid-hold: a key that was
+                // already flushed must not stay pressed on the X server.
+                for (keyCode in pressed.asReversed()) {
                     xTest.XTestFakeKeyEvent(display, keyCode, false, NativeLong(0))
                 }
                 INSTANCE.XFlush(display)
-            }.onFailure { e ->
-                logger.error(e) { "toPaste error" }
             }
         }
 
@@ -268,3 +316,21 @@ interface X11Api : X11 {
         }
     }
 }
+
+/**
+ * Polls [isActive] every [pollInterval] until it returns true or [timeout] elapses.
+ *
+ * Kept outside [X11Api] so the polling and timeout behaviour can be covered without an
+ * X server: loading the companion object would call `Native.load("X11")`.
+ */
+internal suspend fun awaitWindowActive(
+    timeout: Duration,
+    pollInterval: Duration,
+    isActive: () -> Boolean,
+): Boolean =
+    withTimeoutOrNull(timeout) {
+        while (!isActive()) {
+            delay(pollInterval)
+        }
+        true
+    } ?: false

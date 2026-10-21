@@ -15,7 +15,6 @@ import com.crosspaste.platform.linux.LinuxDesktopEntry
 import com.crosspaste.platform.linux.api.PortalHandles
 import com.crosspaste.platform.linux.api.RemoteDesktopPortalKeyboard
 import com.crosspaste.platform.linux.api.X11Api
-import com.crosspaste.platform.linux.api.X11Api.Companion.bringToBack
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11.Window
 import io.ktor.util.collections.ConcurrentSet
@@ -200,7 +199,7 @@ class LinuxAppWindowManager(
             pasteThroughPortal()
             return
         }
-        bringToBack(toPaste)
+        bringToBack(toPaste) { hideMainWindow() }
         hideMainWindow()
     }
 
@@ -219,7 +218,7 @@ class LinuxAppWindowManager(
 
     override suspend fun returnFocusToPreviousApp() {
         if (!needsPortalPaste()) {
-            prevLinuxAppInfo.value?.let { bringToBack(it) }
+            prevLinuxAppInfo.value?.let { X11Api.bringToBack(it) }
         }
     }
 
@@ -245,7 +244,7 @@ class LinuxAppWindowManager(
             }
             return
         }
-        bringToBack(toPaste)
+        bringToBack(toPaste) { hideSearchWindow() }
         for (i in 1 until size) {
             delay(1000.milliseconds)
             if (preparePaste(i)) {
@@ -261,13 +260,27 @@ class LinuxAppWindowManager(
      */
     private fun needsPortalPaste(): Boolean = isWaylandSession && prevLinuxAppInfo.value == null
 
-    private suspend fun bringToBack(toPaste: Boolean) {
+    private suspend fun bringToBack(
+        toPaste: Boolean,
+        hideOwnWindow: () -> Unit,
+    ) {
         val prevAppInfo = prevLinuxAppInfo.value ?: return
-        if (toPaste) {
-            bringToBack(prevAppInfo, pasteKeyCodes())
-        } else {
-            bringToBack(prevAppInfo)
+        if (!toPaste) {
+            X11Api.bringToBack(prevAppInfo)
+            return
         }
+        if (!X11Api.activateAndAwait(prevAppInfo)) {
+            // The window manager refused the activation request (KWin X11 ignores
+            // application-sourced `_NET_ACTIVE_WINDOW`). Hiding our own window is what
+            // makes it focus the previous app, so retry with it gone instead of
+            // injecting the keystroke into CrossPaste's own window (issue #5245).
+            hideOwnWindow()
+            if (!X11Api.awaitActive(prevAppInfo)) {
+                notifyManualPasteRequired()
+                return
+            }
+        }
+        X11Api.toPaste(pasteKeyCodes())
     }
 
     override suspend fun toPaste() {
