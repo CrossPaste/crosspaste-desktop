@@ -18,15 +18,14 @@ import com.crosspaste.ui.DesktopDisplayScale.toWindowUnits
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
+import com.crosspaste.utils.pollUntil
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import okio.Path
 import java.awt.Frame
 import kotlin.time.Duration.Companion.milliseconds
@@ -460,12 +459,7 @@ abstract class DesktopAppWindowManager(
      * in whichever app holds the focus at that moment.
      */
     protected suspend fun awaitForeground(isForeground: () -> Boolean): Boolean {
-        val foreground =
-            withTimeoutOrNull(FOREGROUND_TIMEOUT) {
-                while (!isForeground()) {
-                    delay(FOREGROUND_POLL_INTERVAL)
-                }
-            } != null
+        val foreground = pollUntil(FOREGROUND_TIMEOUT, FOREGROUND_POLL_INTERVAL, isForeground)
         if (!foreground) {
             logger.warn { "Previous app did not return to the foreground within $FOREGROUND_TIMEOUT" }
         }
