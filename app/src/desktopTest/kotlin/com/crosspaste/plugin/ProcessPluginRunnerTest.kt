@@ -1,5 +1,6 @@
 package com.crosspaste.plugin
 
+import com.crosspaste.app.AppName
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.PasteCollection
@@ -101,13 +102,15 @@ class ProcessPluginRunnerTest {
             val input = slot<String>()
             coEvery { executor.execute(any(), listOf("/bin/sh", "run.sh"), capture(input)) } returns
                 PluginProcessResult(0, "HELLO\n\n", "")
+            coEvery { pasteReleaseService.createLocalPasteData(any(), any(), any()) } returns 42L
             val written = slot<TextPasteItem>()
-            coEvery { pasteboardService.tryWritePasteboard(any(), capture(written), false, false) } returns
+            coEvery { pasteboardService.tryWritePasteboard(42L, capture(written), true, false) } returns
                 Result.success(null)
 
             runner.run(plugin("replaceClipboard"), pasteData)
 
             assertEquals("HELLO", written.captured.text)
+            coVerify { pasteReleaseService.createLocalPasteData(any(), any(), AppName) }
             assertTrue(input.captured.contains("\"id\":7"), input.captured)
             assertTrue(input.captured.contains("\"typeName\":\"text\""), input.captured)
             assertTrue(input.captured.contains("\"rawContent\":\"hello\""), input.captured)
@@ -124,13 +127,13 @@ class ProcessPluginRunnerTest {
         }
 
     @Test
-    fun `newPaste records a history entry attributed to the plugin and notifies success`() =
+    fun `newPaste records a history entry attributed to CrossPaste and notifies success`() =
         runTest {
             coEvery { executor.execute(any(), any(), any()) } returns PluginProcessResult(0, "HELLO", "")
 
             runner.run(plugin("newPaste"), pasteData)
 
-            coVerify { pasteReleaseService.createLocalPasteData(any(), any(), "com.example.upper") }
+            coVerify { pasteReleaseService.createLocalPasteData(any(), any(), AppName) }
             coVerify(exactly = 0) { pasteboardService.tryWritePasteboard(any(), any<TextPasteItem>(), any(), any()) }
             verify { notificationManager.sendNotification(any(), any(), MessageType.Success, any()) }
         }
@@ -150,7 +153,7 @@ class ProcessPluginRunnerTest {
     fun `replaceClipboard notifies failure when tryWritePasteboard fails`() =
         runTest {
             coEvery { executor.execute(any(), any(), any()) } returns PluginProcessResult(0, "HELLO", "")
-            coEvery { pasteboardService.tryWritePasteboard(any(), any<TextPasteItem>(), false, false) } returns
+            coEvery { pasteboardService.tryWritePasteboard(any(), any<TextPasteItem>(), true, false) } returns
                 Result.failure(RuntimeException("locked"))
 
             runner.run(plugin("replaceClipboard"), pasteData)

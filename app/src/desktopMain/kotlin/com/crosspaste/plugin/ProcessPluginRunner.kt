@@ -1,6 +1,7 @@
 package com.crosspaste.plugin
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.AppName
 import com.crosspaste.cli.CliPasteDetailDto
 import com.crosspaste.cli.toDetailDto
 import com.crosspaste.db.paste.PasteTagDao
@@ -11,6 +12,7 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
+import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.PasteItemReader
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
 import com.crosspaste.path.UserDataPathProvider
@@ -89,7 +91,7 @@ class ProcessPluginRunner(
                     return
                 }
                 try {
-                    applyOutput(manifest, name, output, result.stdout.trimEnd('\n'))
+                    applyOutput(name, output, result.stdout.trimEnd('\n'))
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -111,7 +113,6 @@ class ProcessPluginRunner(
     }
 
     private suspend fun applyOutput(
-        manifest: PluginManifest,
         name: String,
         output: PluginOutput,
         text: String,
@@ -121,9 +122,12 @@ class ProcessPluginRunner(
             return
         }
         when (output) {
-            PluginOutput.REPLACE_CLIPBOARD ->
+            PluginOutput.REPLACE_CLIPBOARD -> {
+                val pasteItem = textPasteItem(text)
+                // Our own pasteboard writes are not captured, so record the paste directly
+                val id = createLocalPaste(pasteItem)
                 pasteboardService
-                    .tryWritePasteboard(pasteItem = textPasteItem(text), localOnly = false)
+                    .tryWritePasteboard(id = id, pasteItem = pasteItem, localOnly = true)
                     .onSuccess {
                         notificationManager.sendNotification(
                             title = { name },
@@ -133,12 +137,9 @@ class ProcessPluginRunner(
                     }.onFailure {
                         notifyFailure(name, it.message ?: copywriter.getText("copy_failed"))
                     }
+            }
             PluginOutput.NEW_PASTE -> {
-                pasteReleaseService.createLocalPasteData(
-                    appInstanceId = appInfo.appInstanceId,
-                    pasteItem = textPasteItem(text),
-                    source = manifest.id,
-                )
+                createLocalPaste(textPasteItem(text))
                 notificationManager.sendNotification(
                     title = { name },
                     message = { it.getText("save_successful") },
@@ -155,6 +156,13 @@ class ProcessPluginRunner(
             PluginOutput.OPEN_URL -> uiSupport.openUrlInBrowser(text.trim())
         }
     }
+
+    private suspend fun createLocalPaste(pasteItem: PasteItem): Long =
+        pasteReleaseService.createLocalPasteData(
+            appInstanceId = appInfo.appInstanceId,
+            pasteItem = pasteItem,
+            source = AppName,
+        )
 
     private fun textPasteItem(text: String) =
         createTextPasteItem(

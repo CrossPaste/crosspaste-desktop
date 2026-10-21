@@ -159,7 +159,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
             DesktopPasteTagMenuService(get(), get())
         }
         single<ExtractTextMenuContributor> {
-            ExtractTextMenuContributor(get(), get(), get(), get())
+            ExtractTextMenuContributor(get(), get(), get(), get(), get(), get())
         }
         single<PluginMenuContributor> { PluginMenuContributor(get(), get(), get()) }
         single<ProcessPluginExecutor> {
