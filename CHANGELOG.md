@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-# [2.2.2] - 2026-10-12
+# [2.3.0] - 2026-10-23
 # Highlights 🌟
 
 - 🪟 **Windows MSIX installs again**
@@ -12,6 +12,19 @@ All notable changes to this project will be documented in this file.
   alias in its own Application, so the package installs and updates
   cleanly (#5188 #5189).
 
+- 🧩 **Local process plugins in the paste context menu**
+  A plugin is a folder with a `manifest.json` and a script or program;
+  CrossPaste runs it with the paste on stdin and applies stdout to the
+  clipboard, history, a notification or the browser. Plugins start
+  disabled and are managed under Extensions → Plugins. A bundled
+  Translate plugin offers a target-language submenu (#5210 #5212 #5228).
+
+- 🔄 **Catch up on missed pastes when a peer reconnects**
+  Desktop pulls a trusted peer's pastes through an incremental cursor
+  whenever the peer becomes connected, filling in what was missed while
+  it was offline; remote pastes with invalid content are discarded
+  instead of being written to the clipboard (#4897).
+
 - ⌨️ **`crosspaste` is the CLI on Windows installs**
   Installer and Microsoft Store packages register both `crosspaste` and
   `crosspaste-cli` as CLI aliases, the Store package ships the CLI, and
@@ -19,14 +32,45 @@ All notable changes to this project will be documented in this file.
   CLI commands no longer report the app as not running (#5190 #5191
   #5192 #5193 #5195).
 
-- 🐧 **Linux link/file opening and RPM packages**
+- 🐧 **Linux link/file opening, RPM packages and a dnf repository**
   Links, HTML, RTF and files open through xdg-open, "show in file
-  manager" selects the file via FileManager1, and EL9 RPM packages for
-  x86_64 and aarch64 are published alongside the deb (#5184 #5185 #5186
-  #5187).
+  manager" selects the file via FileManager1, EL9 RPM packages for
+  x86_64 and aarch64 are published alongside the deb, and RPM installs
+  subscribe to a signed dnf repository (#5184 #5185 #5186 #5187).
+
+- 📋 **Paste injection waits for the target app**
+  On macOS and Windows the paste keystroke is injected only after the
+  previous app is back in the foreground (otherwise the user is asked to
+  paste manually), shortcut-triggered pastes wait for the shortcut keys to
+  be released, X11 waits for the target window, and the keystroke itself
+  is sent in one SendInput call on Windows and as flagged events on macOS
+  (#5247).
 
 # Bug Fixes 🐛
 
+- :bug: Keep keyboard focus off search window controls so Enter still pastes after a click (#5267)
+- :bug: Exclude all CrossPaste windows from the Windows previous-app record (#5264)
+- :bug: Switch the macOS activation policy when the main window hides so the first search window show is not dismissed (#5262)
+- :bug: Post the macOS paste shortcut as flagged key events without separate modifier key events (#5252)
+- :bug: Send the Windows paste keystroke in one SendInput call with reverse release order, scan codes and extended-key flags (#5250)
+- :bug: Inject the paste only after the previous app is back in the foreground on macOS and Windows (#5248)
+- :bug: Wait for the target window to become active before injecting the X11 paste keystroke (#5246)
+- :bug: Wait for the shortcut keys to be released before injecting a shortcut-triggered paste (#5244)
+- :bug: Stop macOS search focus rechecks from blocking the EDT on AppKit (#5242)
+- :bug: Require a drag threshold before starting drag-and-drop in the search window (#5239)
+- :bug: Keep the newest paste fully in view when prepended at the list start (#5237)
+- :bug: Discard remote pastes with invalid content instead of writing them to the clipboard (#5234)
+- :bug: Fix macOS search window dismissal and tray toggle races (#5215)
+- :bug: Report Windows plugin script failures as a single line (#5229)
+- :bug: Normalize launcher resources dir on all platforms and drop skiko fallback (#5226)
+- :bug: Stabilize Windows search window activation and dismissal (#5227)
+- :bug: Unmount the token popup when no pairing card is visible (#5223)
+- :bug: Skip non-web URLs in clipboard previews (#5224)
+- :bug: Close the search window when focus is lost during the startup grace period (#5200)
+- :bug: Toggle the search window from the tray icon on Linux (#5206)
+- :bug: Hide the pairing-code card after the user rejects it (#5202)
+- :bug: Respect Plasma fractional scaling and confirm pairing with Enter (#5201)
+- :bug: Normalize Super key events on XWayland (#5199)
 - :bug: Declare the MSIX CLI execution alias in its own Application (#5188)
 - :bug: Start the CLI socket from the user data directory on Windows (#5195)
 - :bug: Show files in the file manager on Linux (#5186)
@@ -34,17 +78,43 @@ All notable changes to this project will be documented in this file.
 
 # New Features ✨
 
+- :sparkles: Make the bubble editor modal over the search window and keep it stacked on top (#5266)
+- :sparkles: Attribute OCR and plugin pastes to CrossPaste and show its logo as their source icon (#5240)
+- :sparkles: Catch up on missed pastes when a peer reconnects (#5233)
+- :sparkles: Plugin submenu actions and a target-language picker for Translate (#5221)
+- :sparkles: Run local process plugins from the paste context menu (#5214)
+- :sparkles: Scan local plugins and check their compatibility (#5213)
+- :sparkles: Draw the logo on the brand gradient with a one-stroke trace animation (#5207)
 - :sparkles: Make `crosspaste` launch the CLI on Windows MSIX packages (#5192)
+- :lipstick: Outline the main window on Linux so it stands out from other windows (#5204)
+- :fire: Remove the sort toggle from the search window (#5235)
 
 # Multiplatform · Refactor · Code Style 🔨
 
+- :hammer: Rename PasteAutoPullService to PastePullTrigger (#5263)
+- :hammer: Expose the pairing v3 dialog state as a StateFlow (#5231)
+- :hammer: Assemble the paste context menu through PasteMenuContributor (#5211)
+- :hammer: Provide static and animated CrossPasteLogo composables (#5209)
 - :hammer: Make AbstractGlobalCopywriter Compose-free and publish the language as a StateFlow (#5179)
 - :hammer: Move MessageType's Compose colour and icon helpers into ui.base (#5180)
 
 # Build & CI 👷
 
+- :construction_worker: Refresh README contributors when an outside contributor's PR is merged (#5232)
+- :construction_worker: Publish a signed dnf repository for the RPM channel (#5198)
 - :construction_worker: Build the Microsoft Store MSIX in release CI and publish from it (#5194)
 - :construction_worker: Build EL9 RPM packages for Linux x86_64 and aarch64 (#5187)
+
+# Dependencies ⬆️
+
+- :arrow_up: Upgrade Compose Multiplatform to 1.12.2 and Navigation to 2.10.0-rc01 (#5218)
+- :arrow_up: Upgrade Kotlin to 2.4.21 (#5216)
+- :arrow_up: Upgrade the Gradle wrapper to 9.8.1 (#5217)
+- :arrow_up: Upgrade SQLDelight to 2.4.1 (#5220)
+- :arrow_up: Bump source-map-js to 1.2.2 in the web lockfile (#5197)
+- :arrow_up: Bump imageio from 3.15.2 to 3.15.3 (#5256)
+- :arrow_up: Bump com.github.ben-manes.caffeine:caffeine (#5258)
+- :heavy_minus_sign: Replace ph-css with a built-in inline style parser (#5259 #5261)
 
 # [2.2.1] - 2026-10-09
 # Highlights 🌟
