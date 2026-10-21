@@ -7,6 +7,7 @@ import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HKL
 import com.sun.jna.platform.win32.WinDef.WORD
 import com.sun.jna.platform.win32.WinUser.INPUT
+import com.sun.jna.ptr.IntByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 internal class WindowsPasteKeystroke(
@@ -58,7 +59,7 @@ internal class WindowsPasteKeystroke(
         }
         val events = keyCodes.map { it to false } + keyCodes.reversed().map { it to true }
         val inputs = INPUT().toArray(events.size) as Array<INPUT>
-        val layout = user32.GetKeyboardLayout(0)
+        val layout = foregroundKeyboardLayout()
         events.forEachIndexed { index, (keyCode, keyUp) ->
             fill(inputs[index], keyCode, keyUp, layout)
         }
@@ -69,6 +70,14 @@ internal class WindowsPasteKeystroke(
                 "SendInput delivered $sent of ${inputs.size} key events, error ${Kernel32.INSTANCE.GetLastError()}"
             }
         }
+    }
+
+    private fun foregroundKeyboardLayout(): HKL? {
+        val foreground = user32.GetForegroundWindow() ?: return null
+        val threadId = user32.GetWindowThreadProcessId(foreground, IntByReference())
+        // Zero means lookup failed; passing it to GetKeyboardLayout would query our own thread.
+        if (threadId == 0) return null
+        return user32.GetKeyboardLayout(threadId)
     }
 
     private fun fill(
@@ -86,8 +95,10 @@ internal class WindowsPasteKeystroke(
             flags = flags or KEYEVENTF_EXTENDEDKEY
         }
         input.input.ki.wVk = WORD(keyCode.toLong())
-        // Apps that read the scan code (games, remote desktop and VM clients) see 0 otherwise
-        input.input.ki.wScan = WORD(user32.MapVirtualKeyEx(keyCode, MAPVK_VK_TO_VSC, layout).toLong())
+        // Match the target's layout for scan-code consumers such as remote desktop clients.
+        // If it cannot be resolved, keep VK input instead of guessing with our thread's layout.
+        val scanCode = layout?.let { user32.MapVirtualKeyEx(keyCode, MAPVK_VK_TO_VSC, it) } ?: 0
+        input.input.ki.wScan = WORD(scanCode.toLong())
         input.input.ki.dwFlags = DWORD(flags.toLong())
         input.input.ki.time = DWORD(0)
         input.input.ki.dwExtraInfo = ULONG_PTR(0)
