@@ -2,7 +2,6 @@ package com.crosspaste.ui.paste.side
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
-import androidx.compose.foundation.draganddrop.dragAndDropSource
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -38,6 +37,7 @@ import com.crosspaste.paste.TransferableProducer
 import com.crosspaste.paste.pasteWriteScope
 import com.crosspaste.ui.LocalDesktopAppSizeValueState
 import com.crosspaste.ui.base.PasteContextMenuView
+import com.crosspaste.ui.base.thresholdDragAndDropSource
 import com.crosspaste.ui.paste.PasteDataScope
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.highlightedCardElevation
@@ -72,7 +72,7 @@ fun PasteDataScope.SidePasteItemView(
     Row(
         modifier =
             Modifier
-                .dragAndDropSource(
+                .thresholdDragAndDropSource(
                     drawDragDecoration = {
                         // The graphics layer is empty until the pointer first rests
                         // on this card. If a drag starts before that, fall back
