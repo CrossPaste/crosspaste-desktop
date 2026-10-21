@@ -133,6 +133,11 @@ class ExtractTextMenuContributorTest {
             action.onClick()
 
             coVerify(exactly = 0) {
+                pasteReleaseService.createLocalPasteData(
+                    appInstanceId = any(),
+                    pasteItem = any(),
+                    source = any(),
+                )
                 pasteboardService.tryWritePasteboard(
                     id = any(),
                     pasteItem = any<PasteItem>(),
@@ -145,6 +150,39 @@ class ExtractTextMenuContributorTest {
     fun `action onClick skips writing when no ImagesPasteItem exists`() =
         runTest {
             val pasteData = imagePasteData(null)
+
+            val action = contributor.contribute(pasteData).single()
+            action.onClick()
+
+            coVerify(exactly = 0) {
+                pasteReleaseService.createLocalPasteData(
+                    appInstanceId = any(),
+                    pasteItem = any(),
+                    source = any(),
+                )
+                pasteboardService.tryWritePasteboard(
+                    id = any(),
+                    pasteItem = any<PasteItem>(),
+                    localOnly = any(),
+                )
+            }
+        }
+
+    @Test
+    fun `action onClick handles createLocalPasteData failure gracefully`() =
+        runTest {
+            val imagesItem =
+                createImagesPasteItem(
+                    basePath = "/test/dir",
+                    relativePathList = listOf("image1.png"),
+                    fileInfoTreeMap = emptyMap(),
+                )
+            val pasteData = imagePasteData(imagesItem)
+
+            coEvery { ocrModule.extractText(path1) } returns Result.success("Hello")
+            coEvery {
+                pasteReleaseService.createLocalPasteData(any(), any(), any())
+            } throws RuntimeException("Database error")
 
             val action = contributor.contribute(pasteData).single()
             action.onClick()
