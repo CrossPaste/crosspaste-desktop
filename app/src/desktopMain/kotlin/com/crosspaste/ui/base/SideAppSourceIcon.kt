@@ -15,6 +15,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.request.transformations
 import coil3.size.Precision
+import com.crosspaste.app.AppName
 import com.crosspaste.image.coil.AppSourceItem
 import com.crosspaste.image.coil.ImageLoaderQualifiers
 import com.crosspaste.image.coil.SideAppSourceIconTransformer
@@ -27,10 +28,15 @@ fun PasteDataScope.SideAppSourceIcon(
     modifier: Modifier = Modifier,
     defaultIcon: @Composable () -> Unit = {},
 ) {
+    val appSizeValue = LocalDesktopAppSizeValueState.current
+
+    if (pasteData.source == AppName) {
+        CrossPasteLogo(size = appSizeValue.sideTitleHeight, modifier = modifier)
+        return
+    }
+
     val appSourceLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.APP_SOURCE)
     val platformContext = koinInject<PlatformContext>()
-
-    val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val density = LocalDensity.current
 

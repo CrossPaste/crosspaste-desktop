@@ -1,8 +1,10 @@
 package com.crosspaste.paste.menu
 
+import com.crosspaste.app.AppName
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.OCRModule
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteReleaseService
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.CreatePasteItemHelper.createImagesPasteItem
@@ -10,6 +12,7 @@ import com.crosspaste.paste.item.ImagesPasteItem
 import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.utils.getJsonUtils
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -22,6 +25,9 @@ import kotlin.test.assertTrue
 
 class ExtractTextMenuContributorTest {
 
+    // Initialize JsonUtils before any PasteItem matcher touches PasteItem's companion
+    private val jsonUtils = getJsonUtils()
+
     private val copywriter =
         mockk<GlobalCopywriter> {
             every { getText("extract_text") } returns "Extract text"
@@ -29,6 +35,10 @@ class ExtractTextMenuContributorTest {
 
     private val ocrModule = mockk<OCRModule>()
     private val pasteboardService = mockk<PasteboardService>(relaxed = true)
+    private val pasteReleaseService =
+        mockk<PasteReleaseService> {
+            coEvery { createLocalPasteData(any(), any(), any()) } returns 42L
+        }
     private val basePath = "/test/dir".toPath()
     private val path1 = "/test/dir/image1.png".toPath()
     private val path2 = "/test/dir/image2.png".toPath()
@@ -41,9 +51,11 @@ class ExtractTextMenuContributorTest {
 
     private val contributor =
         ExtractTextMenuContributor(
+            appInfo = mockk(relaxed = true),
             copywriter = copywriter,
             ocrModule = ocrModule,
             pasteboardService = pasteboardService,
+            pasteReleaseService = pasteReleaseService,
             userDataPathProvider = userDataPathProvider,
         )
 
@@ -73,7 +85,7 @@ class ExtractTextMenuContributorTest {
     }
 
     @Test
-    fun `action onClick extracts text and writes to pasteboard`() =
+    fun `action onClick records the extracted text as a CrossPaste paste and writes it to pasteboard`() =
         runTest {
             val imagesItem =
                 createImagesPasteItem(
@@ -90,9 +102,15 @@ class ExtractTextMenuContributorTest {
             action.onClick()
 
             coVerify(exactly = 1) {
-                pasteboardService.tryWritePasteboard(
+                pasteReleaseService.createLocalPasteData(
+                    appInstanceId = any(),
                     pasteItem = match { (it as TextPasteItem).text == "Hello\nWorld" },
-                    localOnly = false,
+                    source = AppName,
+                )
+                pasteboardService.tryWritePasteboard(
+                    id = 42L,
+                    pasteItem = match { (it as TextPasteItem).text == "Hello\nWorld" },
+                    localOnly = true,
                 )
             }
         }
@@ -116,6 +134,7 @@ class ExtractTextMenuContributorTest {
 
             coVerify(exactly = 0) {
                 pasteboardService.tryWritePasteboard(
+                    id = any(),
                     pasteItem = any<PasteItem>(),
                     localOnly = any(),
                 )
@@ -132,6 +151,7 @@ class ExtractTextMenuContributorTest {
 
             coVerify(exactly = 0) {
                 pasteboardService.tryWritePasteboard(
+                    id = any(),
                     pasteItem = any<PasteItem>(),
                     localOnly = any(),
                 )
