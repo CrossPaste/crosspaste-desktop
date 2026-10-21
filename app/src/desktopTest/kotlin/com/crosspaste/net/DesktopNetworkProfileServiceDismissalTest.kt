@@ -4,7 +4,6 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.headless.HeadlessUserAttentionService
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.Platform
-import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.utils.DesktopLocaleUtils
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
@@ -36,11 +35,7 @@ class DesktopNetworkProfileServiceDismissalTest {
     private fun newConfigManager(storedFingerprint: String = ""): DesktopConfigManager {
         val configDir = Files.createTempDirectory("netProfileConfig").toOkioPath()
         configDir.toFile().deleteOnExit()
-        val configManager =
-            DesktopConfigManager(
-                OneFilePersist(configDir.resolve("appConfig.json")),
-                DesktopLocaleUtils,
-            )
+        val configManager = DesktopConfigManager(configDir, DesktopLocaleUtils)
         if (storedFingerprint.isNotEmpty()) {
             configManager.updateConfig("networkBlockingDismissedFingerprint", storedFingerprint)
         }

@@ -1,7 +1,6 @@
 package com.crosspaste.paste
 
 import com.crosspaste.config.DesktopConfigManager
-import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.utils.DesktopLocaleUtils
 import okio.Path.Companion.toOkioPath
 import java.nio.file.Files
@@ -15,7 +14,7 @@ class DesktopSourceExclusionServiceTest {
     private fun newService(): DesktopSourceExclusionService {
         val configDir = Files.createTempDirectory("source-exclusion").toOkioPath()
         configDir.toFile().deleteOnExit()
-        val manager = DesktopConfigManager(OneFilePersist(configDir.resolve("appConfig.json")), DesktopLocaleUtils)
+        val manager = DesktopConfigManager(configDir, DesktopLocaleUtils)
         return DesktopSourceExclusionService(manager)
     }
 

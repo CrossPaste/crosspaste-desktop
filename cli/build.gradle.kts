@@ -144,6 +144,7 @@ kotlin {
             implementation(libs.clikt)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.serialization.protobuf)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.cio)
             implementation(libs.okio)

@@ -5,7 +5,6 @@ import com.crosspaste.config.DesktopAppConfig
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.DriverFactory
 import com.crosspaste.notification.NotificationManager
-import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.utils.DesktopLocaleUtils
 import io.mockk.every
 import io.mockk.mockk
@@ -203,11 +202,7 @@ class DesktopMigrationTest {
         val storageDir = tempDir.resolve("storage").apply { mkdirs() }
         val migrationDir = tempDir.resolve("migration").apply { mkdirs() }
 
-        val configManager =
-            DesktopConfigManager(
-                OneFilePersist(configDir.resolve("appConfig.json").toOkioPath()),
-                DesktopLocaleUtils,
-            )
+        val configManager = DesktopConfigManager(configDir.toOkioPath(), DesktopLocaleUtils)
         val platformProvider = mockk<PlatformUserDataPathProvider>()
         every { platformProvider.getUserDefaultStoragePath() } returns storageDir.toOkioPath()
         val driverFactory = mockk<DriverFactory>()

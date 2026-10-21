@@ -82,6 +82,7 @@ kotlin {
             implementation(libs.compose.runtime)
             implementation(libs.compose.ui)
             implementation(libs.cryptography.core)
+            implementation(libs.datastore.preferences.core)
             implementation(libs.filekit)
             implementation(libs.icons.material.symbols.rounded)
             implementation(libs.icons.material.symbols.rounded.filled)
