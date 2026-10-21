@@ -244,7 +244,11 @@ class LinuxAppWindowManager(
             }
             return
         }
-        bringToBack(toPaste) { hideSearchWindow() }
+        if (!bringToBack(toPaste) { hideSearchWindow() }) {
+            // The focus never came back, so the remaining items have no target either.
+            hideSearchWindow()
+            return
+        }
         for (i in 1 until size) {
             delay(1000.milliseconds)
             if (preparePaste(i)) {
@@ -260,14 +264,18 @@ class LinuxAppWindowManager(
      */
     private fun needsPortalPaste(): Boolean = isWaylandSession && prevLinuxAppInfo.value == null
 
+    /**
+     * Returns false only when the paste was abandoned because the previous app never
+     * got the focus back, so callers must not inject any further keystrokes.
+     */
     private suspend fun bringToBack(
         toPaste: Boolean,
         hideOwnWindow: () -> Unit,
-    ) {
-        val prevAppInfo = prevLinuxAppInfo.value ?: return
+    ): Boolean {
+        val prevAppInfo = prevLinuxAppInfo.value ?: return true
         if (!toPaste) {
             X11Api.bringToBack(prevAppInfo)
-            return
+            return true
         }
         if (!X11Api.activateAndAwait(prevAppInfo)) {
             // The window manager refused the activation request (KWin X11 ignores
@@ -277,10 +285,11 @@ class LinuxAppWindowManager(
             hideOwnWindow()
             if (!X11Api.awaitActive(prevAppInfo)) {
                 notifyManualPasteRequired()
-                return
+                return false
             }
         }
         X11Api.toPaste(pasteKeyCodes())
+        return true
     }
 
     override suspend fun toPaste() {
