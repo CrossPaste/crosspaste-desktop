@@ -244,8 +244,9 @@ class LinuxAppWindowManager(
             }
             return
         }
-        if (!bringToBack(toPaste) { hideSearchWindow() }) {
-            // The focus never came back, so the remaining items have no target either.
+        val targetReady = bringToBack(toPaste) { hideSearchWindow() }
+        if (!targetReady) {
+            // No target to paste into, so the remaining items must not be injected either.
             hideSearchWindow()
             return
         }
@@ -265,14 +266,22 @@ class LinuxAppWindowManager(
     private fun needsPortalPaste(): Boolean = isWaylandSession && prevLinuxAppInfo.value == null
 
     /**
-     * Returns false only when the paste was abandoned because the previous app never
-     * got the focus back, so callers must not inject any further keystrokes.
+     * Returns false when there is no previous app to paste into, or when the focus
+     * never came back, so callers must not inject any further keystrokes.
      */
     private suspend fun bringToBack(
         toPaste: Boolean,
         hideOwnWindow: () -> Unit,
     ): Boolean {
-        val prevAppInfo = prevLinuxAppInfo.value ?: return true
+        val prevAppInfo = prevLinuxAppInfo.value
+        if (prevAppInfo == null) {
+            // No named previous window: there is no target, so stop before the
+            // multi-select loop injects the remaining items into our own search window.
+            if (toPaste) {
+                notifyManualPasteRequired()
+            }
+            return false
+        }
         if (!toPaste) {
             X11Api.bringToBack(prevAppInfo)
             return true
