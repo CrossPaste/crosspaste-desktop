@@ -12,6 +12,7 @@ import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.NativeLongByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeoutOrNull
 import java.nio.file.Path
 import javax.imageio.ImageIO
 import kotlin.time.Duration.Companion.milliseconds
@@ -49,6 +50,10 @@ interface X11Api : X11 {
         private val logger = KotlinLogging.logger {}
 
         val INSTANCE: X11Api = Native.load("X11", X11Api::class.java)
+
+        private val ACTIVATION_TIMEOUT = 300.milliseconds
+
+        private val ACTIVATION_POLL_INTERVAL = 10.milliseconds
 
         /**
          * True when a real X11 window holds the input focus.
@@ -144,10 +149,32 @@ interface X11Api : X11 {
             try {
                 prevLinuxAppInfo?.let {
                     WMCtrl.activeWindow(display, it.window, source, xServerTime ?: NativeLong(X11.CurrentTime.toLong()))
+                    awaitActiveWindow(display, it.window)
                     toPaste(display, keyCodes)
                 }
             } finally {
                 INSTANCE.XCloseDisplay(display)
+            }
+        }
+
+        /**
+         * Waits for the window manager to act on `_NET_ACTIVE_WINDOW`: XTest delivers to
+         * whatever holds the focus at that moment, which right after the request is still
+         * our own window. Window managers that never update the property only cost the
+         * timeout, after which the paste goes out as before.
+         */
+        private suspend fun awaitActiveWindow(
+            display: Display,
+            window: Window,
+        ) {
+            val activated =
+                withTimeoutOrNull(ACTIVATION_TIMEOUT) {
+                    while (getActiveWindow(display) != window) {
+                        delay(ACTIVATION_POLL_INTERVAL)
+                    }
+                }
+            if (activated == null) {
+                logger.warn { "Window $window was not reported active within $ACTIVATION_TIMEOUT, pasting anyway" }
             }
         }
 
@@ -160,11 +187,14 @@ interface X11Api : X11 {
                 for (keyCode in keyCodes) {
                     xTest.XTestFakeKeyEvent(display, keyCode, true, NativeLong(0))
                 }
+                // Xlib buffers requests: flush so the keys are held for the delay
+                INSTANCE.XFlush(display)
                 delay(100.milliseconds)
 
                 for (keyCode in keyCodes.reversed()) {
                     xTest.XTestFakeKeyEvent(display, keyCode, false, NativeLong(0))
                 }
+                INSTANCE.XFlush(display)
             }.onFailure { e ->
                 logger.error(e) { "toPaste error" }
             }
