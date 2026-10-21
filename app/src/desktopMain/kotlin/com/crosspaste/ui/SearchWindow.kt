@@ -296,6 +296,7 @@ fun SearchWindow(windowIcon: Painter?) {
                                     currentMacFocusSession === session &&
                                     window.isShowing
                             if (eligible) {
+                                val startedAt = System.nanoTime()
                                 val focus =
                                     MacSearchWindowFocusState(
                                         appActive = MacAppUtils.isApplicationActive(),
@@ -305,9 +306,10 @@ fun SearchWindow(windowIcon: Painter?) {
                                         mainFocused = appWindowManager.mainComposeWindow?.hasFocusedWindow() == true,
                                         pointerOnStatusItem = MacAppUtils.isPointerOnStatusItem(),
                                     )
+                                val elapsedMs = (System.nanoTime() - startedAt) / 1_000_000.0
                                 logger.info {
                                     "Mac search focus recheck result: source=$source, session=$sessionId, " +
-                                        "state=$focus, dismiss=${focus.shouldDismiss}, " +
+                                        "elapsedMs=$elapsedMs, state=$focus, dismiss=${focus.shouldDismiss}, " +
                                         "show=${appWindowManager.getCurrentSearchWindowInfo().show}"
                                 }
                                 focus.shouldDismiss

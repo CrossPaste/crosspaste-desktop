@@ -29,6 +29,12 @@ class MacAppWindowManager(
     private val crosspasteBundleID = getSystemProperty().get("mac.bundleID")
 
     init {
+        // Warms the native activation monitor so the search window's focus rechecks
+        // read cached state instead of blocking the EDT on AppKit. The first call
+        // waits for the main thread once (on this IO thread, never the UI thread)
+        // to register the observer; it relies on this manager being created during
+        // startup, before the search window can open.
+        ioScope.launch { MacAppUtils.isApplicationActive() }
         // Re-apply the Dock icon policy immediately when the setting is toggled
         // while the main window is open (the toggle lives in the main window).
         // setDockIconVisibility only switches the activation policy — it must not
