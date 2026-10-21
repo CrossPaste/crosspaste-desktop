@@ -12,6 +12,7 @@ import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -76,7 +78,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import java.awt.event.KeyEvent.VK_1
@@ -231,41 +232,22 @@ fun SidePasteboardContentView() {
         }
     }
 
-    LaunchedEffect(searchResult) {
-        if (searchResult.isNotEmpty()) {
-            val currentFirstItemId = searchResult.first().id
-
-            if (currentFirstItemId != previousFirstItemId) {
-                // Auto-scroll to the newest item only when the user is already viewing the top
-                // of the list. Detect that via the previously-newest item's key rather than
-                // firstVisibleItemIndex: the list is keyed by item.id, so when several items are
-                // prepended at once (e.g. clipboard changes while the search window was closed),
-                // the LazyList anchors to the old top item and its index jumps past 1. The old
-                // `firstVisibleItemIndex <= 1` guard misread that as "scrolled away" and skipped
-                // the scroll, leaving the newest items off-screen above the viewport.
-                val firstVisibleKey =
-                    searchListState.layoutInfo.visibleItemsInfo
-                        .firstOrNull()
-                        ?.key
-                val wasAtTop =
-                    firstVisibleKey == null ||
-                        previousFirstItemId == null ||
-                        firstVisibleKey == previousFirstItemId
-
-                snapshotFlow { searchListState.layoutInfo }
-                    .take(2)
-                    .collect { layoutInfo ->
-                        val visibleItems = layoutInfo.visibleItemsInfo
-                        if (searchResult.size > visibleItems.size) {
-                            showScrollbar = true
-                        }
-
-                        if (wasAtTop) {
-                            searchListState.animateScrollToItem(0)
-                        }
-                    }
+    // Keep the newest item fully in view when items are prepended while the list sits at its
+    // start. The list is keyed by item.id, so by default LazyList anchors to the previous first
+    // item and the new one lands off-screen to the left; requestScrollToItem(0) overrides that
+    // key-based anchoring for the next measure, letting animateItem() slide the old items right
+    // while the new one fades in. When the user has scrolled away, the key anchoring is exactly
+    // what we want, so the viewport stays put. SideEffect runs after composition is applied but
+    // before the new items are measured, so the scroll position read here is still the old one.
+    val newestItemId = searchResult.firstOrNull()?.id
+    SideEffect {
+        if (newestItemId != previousFirstItemId) {
+            if (searchListState.firstVisibleItemIndex == 0 &&
+                searchListState.firstVisibleItemScrollOffset == 0
+            ) {
+                searchListState.requestScrollToItem(0)
             }
-            previousFirstItemId = currentFirstItemId
+            previousFirstItemId = newestItemId
         }
     }
 
@@ -348,29 +330,31 @@ fun SidePasteboardContentView() {
                             createPasteDataScope(currentPasteData)
                         }
 
-                    scope?.let {
-                        Spacer(modifier = Modifier.width(appSizeValue.sideSearchPaddingSize))
-                        scope.SidePasteItemView(
-                            selected = currentIndex in selectedIndexes,
-                            isScrolling = searchListState.isScrollInProgress,
-                            onPress = {
-                                pasteSelectionViewModel.clickSelectedIndex(currentIndex, isShiftPressed)
-                            },
-                            onDoubleTap = {
-                                if (!isShiftPressed) {
-                                    pasteMenuService.quickPasteFromSearchWindow(currentPasteData)
-                                }
-                            },
-                        ) {
-                            scope.SidePreviewView(
-                                showTop9 = isCtrlPressed && currentIndex < 9,
-                                index = currentIndex,
-                            )
+                    Row(modifier = Modifier.animateItem()) {
+                        scope?.let {
+                            Spacer(modifier = Modifier.width(appSizeValue.sideSearchPaddingSize))
+                            scope.SidePasteItemView(
+                                selected = currentIndex in selectedIndexes,
+                                isScrolling = searchListState.isScrollInProgress,
+                                onPress = {
+                                    pasteSelectionViewModel.clickSelectedIndex(currentIndex, isShiftPressed)
+                                },
+                                onDoubleTap = {
+                                    if (!isShiftPressed) {
+                                        pasteMenuService.quickPasteFromSearchWindow(currentPasteData)
+                                    }
+                                },
+                            ) {
+                                scope.SidePreviewView(
+                                    showTop9 = isCtrlPressed && currentIndex < 9,
+                                    index = currentIndex,
+                                )
+                            }
                         }
-                    }
 
-                    if (index == searchResult.size - 1) {
-                        Spacer(modifier = Modifier.width(appSizeValue.sideSearchPaddingSize))
+                        if (index == searchResult.size - 1) {
+                            Spacer(modifier = Modifier.width(appSizeValue.sideSearchPaddingSize))
+                        }
                     }
                 }
 
