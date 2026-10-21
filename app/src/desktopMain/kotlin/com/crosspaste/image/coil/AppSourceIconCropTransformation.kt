@@ -8,10 +8,10 @@ import kotlin.math.roundToInt
 
 object AppSourceIconCropTransformation : Transformation() {
 
-    const val CROP_TOP: Float = 0.12f
-    const val CROP_BOTTOM: Float = 0.12f
-    const val CROP_LEFT: Float = 0f
-    const val CROP_RIGHT: Float = 0.12f
+    private const val CROP_TOP: Float = 0.12f
+    private const val CROP_BOTTOM: Float = 0.12f
+    private const val CROP_LEFT: Float = 0f
+    private const val CROP_RIGHT: Float = 0.12f
 
     override val cacheKey: String = "appSourceIconCrop"
 

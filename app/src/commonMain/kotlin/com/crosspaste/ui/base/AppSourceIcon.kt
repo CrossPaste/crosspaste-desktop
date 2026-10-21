@@ -22,7 +22,6 @@ import coil3.request.crossfade
 import coil3.request.transformations
 import coil3.size.Precision
 import coil3.size.Scale
-import com.crosspaste.app.AppName
 import com.crosspaste.image.coil.AppSourceIconTransformer
 import com.crosspaste.image.coil.AppSourceItem
 import com.crosspaste.image.coil.ImageLoaderQualifiers
@@ -38,12 +37,6 @@ fun AppSourceIcon(
     size: Dp = large2X,
     defaultIcon: @Composable () -> Unit = {},
 ) {
-    // Pastes CrossPaste creates itself (OCR, plugins) have no captured icon to load
-    if (source == AppName) {
-        CrossPasteLogo(size = size, modifier = modifier)
-        return
-    }
-
     val appSourceLoader = koinInject<ImageLoader>(qualifier = ImageLoaderQualifiers.APP_SOURCE)
     val transformer = koinInject<AppSourceIconTransformer>()
     val platformContext = koinInject<PlatformContext>()

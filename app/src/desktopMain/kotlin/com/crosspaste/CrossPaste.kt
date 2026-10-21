@@ -31,6 +31,7 @@ import com.crosspaste.cli.CliSymlinkService
 import com.crosspaste.config.AppMetadataRepository
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.db.DriverFactory
+import com.crosspaste.image.installCrossPasteSourceIcon
 import com.crosspaste.listener.GlobalListener
 import com.crosspaste.log.DesktopCrossPasteLogger
 import com.crosspaste.mcp.McpServer
@@ -252,6 +253,9 @@ class CrossPaste {
                         koin.get<NativeMessagingHostService>().register()
                         koin.get<GuidePasteDataService>().initData()
                         ioCoroutineDispatcher.launch { koin.get<CliSymlinkService>().refresh() }
+                        ioCoroutineDispatcher.launch {
+                            installCrossPasteSourceIcon(koin.get(), koin.get())
+                        }
                         ioCoroutineDispatcher.launch {
                             koin.get<BundledPluginInstaller>().install()
                             koin.get<PluginRepository>().reload()
