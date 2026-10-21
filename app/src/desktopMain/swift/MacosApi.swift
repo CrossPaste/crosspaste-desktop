@@ -510,15 +510,22 @@ private final class ApplicationActiveMonitor {
 
     init() {
         DispatchQueue.main.async { [self] in
+            // The notification center retains block-based observer tokens until they
+            // are removed; this monitor lives for the whole process, so the returned
+            // tokens are intentionally discarded.
             for (name, value) in [
                 (NSApplication.didBecomeActiveNotification, true),
+                // willResignActive is posted before the key window resigns, hence before
+                // AWT can queue the focus-loss event that reads this cache. Mirroring it
+                // closes the window where a recheck could still observe the old `true`.
+                (NSApplication.willResignActiveNotification, false),
                 (NSApplication.didResignActiveNotification, false),
             ] {
                 NotificationCenter.default.addObserver(forName: name, object: nil, queue: nil) { [self] _ in
                     set(value)
                 }
             }
-            set(NSApp.isActive)
+            set(NSApp?.isActive ?? false)
         }
     }
 
@@ -541,12 +548,12 @@ private let applicationActiveMonitor = ApplicationActiveMonitor()
 @_cdecl("isApplicationActive")
 public func isApplicationActive() -> Int32 {
     if Thread.isMainThread {
-        return NSApp.isActive ? 1 : 0
+        return (NSApp?.isActive ?? false) ? 1 : 0
     }
     if let active = applicationActiveMonitor.isActive {
         return active ? 1 : 0
     }
-    return DispatchQueue.main.sync { NSApp.isActive ? 1 : 0 }
+    return DispatchQueue.main.sync { (NSApp?.isActive ?? false) ? 1 : 0 }
 }
 
 @_cdecl("isPointerOnStatusItem")
@@ -554,14 +561,19 @@ public func isPointerOnStatusItem() -> Int32 {
     // macOS 27 deactivates the app before it forwards the status item mouse-down,
     // so the click event arrives too late. Hardware state is already current:
     // the button is down over the icon. Requiring the press keeps Cmd+Tab while
-    // hovering the icon a real dismissal. The press is checked first, on any
-    // thread, so keyboard-driven focus changes never wait on the main thread.
+    // hovering the icon a real dismissal.
+    //
+    // The press is sampled before hopping to the main thread, so keyboard-driven
+    // focus changes never wait on AppKit. NSEvent's class-level hardware queries
+    // read the window server's current device state and touch no AppKit objects;
+    // AppKit does not document them as main-thread-only, so this read is
+    // intentionally done off the main thread.
     guard NSEvent.pressedMouseButtons & 1 != 0 else { return 0 }
     if !Thread.isMainThread {
         return DispatchQueue.main.sync { isPointerOnStatusItem() }
     }
     let pointer = NSEvent.mouseLocation
-    let onStatusItem = NSApp.windows.contains { window in
+    let onStatusItem = (NSApp?.windows ?? []).contains { window in
         NSStringFromClass(type(of: window)) == "NSStatusBarWindow" &&
             window.isVisible &&
             window.frame.contains(pointer)
