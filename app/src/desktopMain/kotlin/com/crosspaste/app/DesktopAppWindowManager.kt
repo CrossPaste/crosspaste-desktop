@@ -114,6 +114,8 @@ abstract class DesktopAppWindowManager(
         private val FOREGROUND_TIMEOUT = 1.seconds
 
         private val FOREGROUND_POLL_INTERVAL = 10.milliseconds
+
+        private val MULTI_PASTE_INTERVAL = 500.milliseconds
     }
 
     protected val logger: KLogger = KotlinLogging.logger {}
@@ -453,6 +455,24 @@ abstract class DesktopAppWindowManager(
     )
 
     abstract fun getPrevAppName(): Flow<String?>
+
+    /**
+     * Pastes items 1 until [size] of a multi-item paste, after the first one went out.
+     * Each item replaces the clipboard, so the gap gives the target app time to read
+     * the previous one before it is overwritten.
+     */
+    protected suspend fun pasteRemaining(
+        size: Int,
+        preparePaste: suspend (Int) -> Boolean,
+        paste: suspend () -> Unit,
+    ) {
+        for (i in 1 until size) {
+            delay(MULTI_PASTE_INTERVAL)
+            if (preparePaste(i)) {
+                paste()
+            }
+        }
+    }
 
     /**
      * Waits for the app the user is pasting into to come back to the foreground:

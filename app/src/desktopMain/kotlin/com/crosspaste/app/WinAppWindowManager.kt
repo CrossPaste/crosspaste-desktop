@@ -207,12 +207,7 @@ class WinAppWindowManager(
         val toPaste = preparePaste(0)
         WindowsFocusUtils.backToBack(searchHWND, windowFocusRecorder.lastWinAppInfo.value?.hwnd)
         if (toPaste && pasteIntoPreviousApp()) {
-            for (i in 1 until size) {
-                delay(1000.milliseconds)
-                if (preparePaste(i)) {
-                    toPaste()
-                }
-            }
+            pasteRemaining(size, preparePaste) { toPaste() }
         }
         hideSearchWindow()
     }

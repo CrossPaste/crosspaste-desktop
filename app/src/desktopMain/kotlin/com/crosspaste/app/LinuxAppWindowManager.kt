@@ -236,21 +236,11 @@ class LinuxAppWindowManager(
                     return
                 }
             }
-            for (i in 1 until size) {
-                delay(1000.milliseconds)
-                if (preparePaste(i)) {
-                    pasteThroughPortal()
-                }
-            }
+            pasteRemaining(size, preparePaste) { pasteThroughPortal() }
             return
         }
         bringToBack(toPaste)
-        for (i in 1 until size) {
-            delay(1000.milliseconds)
-            if (preparePaste(i)) {
-                toPaste()
-            }
-        }
+        pasteRemaining(size, preparePaste) { toPaste() }
         hideSearchWindow()
     }
 
