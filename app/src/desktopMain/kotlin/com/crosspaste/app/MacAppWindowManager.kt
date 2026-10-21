@@ -3,6 +3,7 @@ package com.crosspaste.app
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysListener
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.macos.MacPasteUtils
@@ -16,13 +17,15 @@ import kotlinx.coroutines.launch
 import okio.Path
 import okio.Path.Companion.toPath
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
 
 class MacAppWindowManager(
     private val appInfo: AppInfo,
     appSize: DesktopAppSize,
     private val lazyConfigManager: Lazy<DesktopConfigManager>,
-    lazyShortcutKeys: Lazy<ShortcutKeys>,
+    private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val lazyShortcutKeysListener: Lazy<ShortcutKeysListener>,
+    private val lazyNotificationManager: Lazy<NotificationManager>,
     private val userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize) {
 
@@ -170,16 +173,9 @@ class MacAppWindowManager(
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
         val toPaste = preparePaste()
-        val prevAppId = prevMacAppInfo.value?.bundleIdentifier ?: ""
+        MacAppUtils.mainToBack(prevMacAppInfo.value?.bundleIdentifier ?: "")
         if (toPaste) {
-            val pair = macPasteUtils.getPasteMemory()
-            MacAppUtils.mainToBackAndPaste(
-                prevAppId,
-                pair.first,
-                pair.second,
-            )
-        } else {
-            MacAppUtils.mainToBack(prevAppId)
+            pasteIntoPreviousApp()
         }
         hideMainWindow()
     }
@@ -202,24 +198,40 @@ class MacAppWindowManager(
     ) {
         logger.info { "unActive search window" }
         val toPaste = preparePaste(0)
-        val prevAppId = prevMacAppInfo.value?.bundleIdentifier ?: ""
-        if (toPaste) {
-            val pair = macPasteUtils.getPasteMemory()
-            MacAppUtils.searchToBackAndPaste(
-                prevAppId,
-                pair.first,
-                pair.second,
-            )
+        MacAppUtils.searchToBack(prevMacAppInfo.value?.bundleIdentifier ?: "")
+        if (toPaste && pasteIntoPreviousApp()) {
             for (i in 1 until size) {
                 delay(1000.milliseconds)
                 if (preparePaste(i)) {
                     toPaste()
                 }
             }
-        } else {
-            MacAppUtils.searchToBack(prevAppId)
         }
         hideSearchWindow()
+    }
+
+    /**
+     * Sends the paste once the previous app is frontmost again, or asks the user to
+     * paste manually when it never comes back. With no previous app recorded, any app
+     * other than CrossPaste counts.
+     */
+    private suspend fun pasteIntoPreviousApp(): Boolean {
+        val activationStart = TimeSource.Monotonic.markNow()
+        val prevAppId = prevMacAppInfo.value?.bundleIdentifier
+        val foreground =
+            awaitForeground {
+                val frontmostId = MacAppUtils.getCurrentActiveAppInfo()?.let(::createMacAppInfo)?.bundleIdentifier
+                if (prevAppId != null) frontmostId == prevAppId else frontmostId != crosspasteBundleID
+            }
+        if (!foreground) {
+            notifyManualPasteRequired(lazyNotificationManager.value, lazyShortcutKeys.value)
+            return false
+        }
+        // The keystroke used to go out a fixed 200 ms after activation; keep that as a
+        // floor, since an app can report frontmost before its key window takes input.
+        delay(MIN_ACTIVATION_SETTLE - activationStart.elapsedNow())
+        toPaste()
+        return true
     }
 
     override suspend fun toPaste() {
@@ -229,6 +241,8 @@ class MacAppWindowManager(
         macPasteUtils.simulatePasteCommand()
     }
 }
+
+private val MIN_ACTIVATION_SETTLE = 200.milliseconds
 
 private data class MacAppInfo(
     val bundleIdentifier: String,

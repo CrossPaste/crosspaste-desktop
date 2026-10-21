@@ -6,7 +6,6 @@ import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
-import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.linux.LinuxActiveAppResolver
@@ -332,7 +331,7 @@ class LinuxAppWindowManager(
         )
         val delivered = portalKeyboard.pressAndRelease(keyCodes.map(PortalHandles::evdevKeycode))
         if (!delivered) {
-            notifyManualPasteRequired()
+            notifyManualPasteRequired(lazyNotificationManager.value, lazyShortcutKeys.value)
         }
         return delivered
     }
@@ -341,22 +340,6 @@ class LinuxAppWindowManager(
         lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]
             ?.map { key -> key.rawCode }
             ?: listOf()
-
-    /**
-     * Last resort when neither XTest nor the portal can deliver the paste: XTest
-     * only reaches X11 and XWayland clients, and injecting blindly would hit
-     * whichever X client held the focus last — a window the user is not even
-     * looking at. The content is already on the clipboard by this point, so say
-     * so and let the user paste it.
-     */
-    private fun notifyManualPasteRequired() {
-        logger.info { "No way to deliver the paste, asking the user to paste manually" }
-        lazyNotificationManager.value.sendNotification(
-            title = { it.getText("copy_successful") },
-            message = { it.getText("paste_manually_required") },
-            messageType = MessageType.Info,
-        )
-    }
 
     companion object {
         // Time for the compositor to hand the focus back to the user's app after one

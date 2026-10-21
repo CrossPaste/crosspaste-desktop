@@ -4,6 +4,7 @@ import androidx.compose.ui.awt.ComposeWindow
 import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysListener
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.windows.WinAppInfo
 import com.crosspaste.platform.windows.WinAppInfoCaches
@@ -26,6 +27,7 @@ class WinAppWindowManager(
     appSize: DesktopAppSize,
     private val lazyShortcutKeys: Lazy<ShortcutKeys>,
     private val lazyShortcutKeysListener: Lazy<ShortcutKeysListener>,
+    private val lazyNotificationManager: Lazy<NotificationManager>,
     userDataPathProvider: UserDataPathProvider,
 ) : DesktopAppWindowManager(appSize) {
 
@@ -171,7 +173,11 @@ class WinAppWindowManager(
 
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
-        bringToBack(preparePaste(), mainHWND)
+        val toPaste = preparePaste()
+        WindowsFocusUtils.backToBack(mainHWND, windowFocusRecorder.lastWinAppInfo.value?.hwnd)
+        if (toPaste) {
+            pasteIntoPreviousApp()
+        }
         hideMainWindow()
     }
 
@@ -198,33 +204,37 @@ class WinAppWindowManager(
         preparePaste: suspend (Int) -> Boolean,
     ) {
         logger.info { "unActive search window" }
-        bringToBack(preparePaste(0), searchHWND)
-        for (i in 1 until size) {
-            delay(1000.milliseconds)
-            if (preparePaste(i)) {
-                toPaste()
+        val toPaste = preparePaste(0)
+        WindowsFocusUtils.backToBack(searchHWND, windowFocusRecorder.lastWinAppInfo.value?.hwnd)
+        if (toPaste && pasteIntoPreviousApp()) {
+            for (i in 1 until size) {
+                delay(1000.milliseconds)
+                if (preparePaste(i)) {
+                    toPaste()
+                }
             }
         }
         hideSearchWindow()
     }
 
-    private fun bringToBack(
-        toPaste: Boolean,
-        backHWND: HWND?,
-    ) {
-        if (toPaste) {
-            val keyCodes =
-                lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]?.let {
-                    it.map { key -> key.rawCode }
-                } ?: listOf()
-            WindowsFocusUtils.bringToBackAndPaste(
-                backHWND,
-                windowFocusRecorder.lastWinAppInfo.value?.hwnd,
-                keyCodes,
-            )
-        } else {
-            WindowsFocusUtils.backToBack(backHWND, windowFocusRecorder.lastWinAppInfo.value?.hwnd)
+    /**
+     * Sends the paste once the previous app holds the foreground again, or asks the
+     * user to paste manually when SetForegroundWindow did not bring it back. With no
+     * previous window recorded, any app other than CrossPaste counts.
+     */
+    private suspend fun pasteIntoPreviousApp(): Boolean {
+        val prevHwnd = windowFocusRecorder.lastWinAppInfo.value?.hwnd
+        val foreground =
+            awaitForeground {
+                prevHwnd?.let(WindowsFocusUtils::isForegroundProcessOf)
+                    ?: WindowsFocusUtils.isOtherApplicationForeground()
+            }
+        if (!foreground) {
+            notifyManualPasteRequired(lazyNotificationManager.value, lazyShortcutKeys.value)
+            return false
         }
+        toPaste()
+        return true
     }
 
     override suspend fun toPaste() {
