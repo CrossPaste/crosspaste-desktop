@@ -25,24 +25,8 @@ object MacAppUtils {
         INSTANCE.mainToBack(appName)
     }
 
-    fun mainToBackAndPaste(
-        appName: String,
-        array: Pointer,
-        count: Int,
-    ) {
-        INSTANCE.mainToBackAndPaste(appName, array, count)
-    }
-
     fun searchToBack(appName: String) {
         INSTANCE.searchToBack(appName)
-    }
-
-    fun searchToBackAndPaste(
-        appName: String,
-        array: Pointer,
-        count: Int,
-    ) {
-        INSTANCE.searchToBackAndPaste(appName, array, count)
     }
 
     fun setWindowLevelPopUpMenu(windowPtr: Pointer?) {
