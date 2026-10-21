@@ -15,7 +15,6 @@ import com.crosspaste.platform.linux.LinuxDesktopEntry
 import com.crosspaste.platform.linux.api.PortalHandles
 import com.crosspaste.platform.linux.api.RemoteDesktopPortalKeyboard
 import com.crosspaste.platform.linux.api.X11Api
-import com.crosspaste.platform.linux.api.X11Api.Companion.bringToBack
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11.Window
 import io.ktor.util.collections.ConcurrentSet
@@ -200,7 +199,7 @@ class LinuxAppWindowManager(
             pasteThroughPortal()
             return
         }
-        bringToBack(toPaste)
+        bringToBack(toPaste) { hideMainWindow() }
         hideMainWindow()
     }
 
@@ -219,7 +218,7 @@ class LinuxAppWindowManager(
 
     override suspend fun returnFocusToPreviousApp() {
         if (!needsPortalPaste()) {
-            prevLinuxAppInfo.value?.let { bringToBack(it) }
+            prevLinuxAppInfo.value?.let { X11Api.bringToBack(it) }
         }
     }
 
@@ -245,7 +244,12 @@ class LinuxAppWindowManager(
             }
             return
         }
-        bringToBack(toPaste)
+        val targetReady = bringToBack(toPaste) { hideSearchWindow() }
+        if (!targetReady) {
+            // No target to paste into, so the remaining items must not be injected either.
+            hideSearchWindow()
+            return
+        }
         for (i in 1 until size) {
             delay(1000.milliseconds)
             if (preparePaste(i)) {
@@ -261,13 +265,40 @@ class LinuxAppWindowManager(
      */
     private fun needsPortalPaste(): Boolean = isWaylandSession && prevLinuxAppInfo.value == null
 
-    private suspend fun bringToBack(toPaste: Boolean) {
-        val prevAppInfo = prevLinuxAppInfo.value ?: return
-        if (toPaste) {
-            bringToBack(prevAppInfo, pasteKeyCodes())
-        } else {
-            bringToBack(prevAppInfo)
+    /**
+     * Returns false when there is no previous app to paste into, or when the focus
+     * never came back, so callers must not inject any further keystrokes.
+     */
+    private suspend fun bringToBack(
+        toPaste: Boolean,
+        hideOwnWindow: () -> Unit,
+    ): Boolean {
+        val prevAppInfo = prevLinuxAppInfo.value
+        if (prevAppInfo == null) {
+            // No named previous window: there is no target, so stop before the
+            // multi-select loop injects the remaining items into our own search window.
+            if (toPaste) {
+                notifyManualPasteRequired()
+            }
+            return false
         }
+        if (!toPaste) {
+            X11Api.bringToBack(prevAppInfo)
+            return true
+        }
+        if (!X11Api.activateAndAwait(prevAppInfo)) {
+            // The window manager refused the activation request (KWin X11 ignores
+            // application-sourced `_NET_ACTIVE_WINDOW`). Hiding our own window is what
+            // makes it focus the previous app, so retry with it gone instead of
+            // injecting the keystroke into CrossPaste's own window (issue #5245).
+            hideOwnWindow()
+            if (!X11Api.awaitActive(prevAppInfo)) {
+                notifyManualPasteRequired()
+                return false
+            }
+        }
+        X11Api.toPaste(pasteKeyCodes())
+        return true
     }
 
     override suspend fun toPaste() {
