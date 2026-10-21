@@ -54,12 +54,30 @@ object WindowsFocusUtils {
     fun isWindowForeground(hwnd: HWND?): Boolean = hwnd != null && user32.GetForegroundWindow() == hwnd
 
     fun isOtherApplicationForeground(): Boolean {
-        val foreground = user32.GetForegroundWindow() ?: return false
+        val processId = getForegroundProcessId() ?: return false
+        return processId != Kernel32.INSTANCE.GetCurrentProcessId()
+    }
+
+    /**
+     * Whether the foreground window belongs to the same process as [hwnd]. Compared by
+     * process rather than handle: the app may bring up another of its windows (an owner
+     * frame, a dialog) on activation, and the keystroke still reaches it.
+     */
+    fun isForegroundProcessOf(hwnd: HWND): Boolean {
         val processId = IntByReference()
-        if (user32.GetWindowThreadProcessId(foreground, processId) == 0) {
+        if (user32.GetWindowThreadProcessId(hwnd, processId) == 0) {
             return false
         }
-        return processId.value != 0 && processId.value != Kernel32.INSTANCE.GetCurrentProcessId()
+        return processId.value != 0 && processId.value == getForegroundProcessId()
+    }
+
+    private fun getForegroundProcessId(): Int? {
+        val foreground = user32.GetForegroundWindow() ?: return null
+        val processId = IntByReference()
+        if (user32.GetWindowThreadProcessId(foreground, processId) == 0) {
+            return null
+        }
+        return processId.value.takeIf { it != 0 }
     }
 
     @Synchronized
@@ -122,15 +140,6 @@ object WindowsFocusUtils {
             user32.ShowWindow(hwnd, WinUser.SW_SHOW)
             user32.SetForegroundWindow(hwnd)
         }
-    }
-
-    fun bringToBackAndPaste(
-        backWindow: HWND?,
-        previousHwnd: HWND?,
-        keyCodes: List<Int>,
-    ) {
-        backToBack(backWindow, previousHwnd)
-        paste(keyCodes)
     }
 
     @Suppress("UNCHECKED_CAST")
