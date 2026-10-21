@@ -174,9 +174,10 @@ class WinAppWindowManager(
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
         val toPaste = preparePaste()
-        WindowsFocusUtils.backToBack(mainHWND, windowFocusRecorder.lastWinAppInfo.value?.hwnd)
+        val prevHwnd = windowFocusRecorder.lastWinAppInfo.value?.hwnd
+        WindowsFocusUtils.backToBack(mainHWND, prevHwnd)
         if (toPaste) {
-            pasteIntoPreviousApp()
+            pasteIntoPreviousApp(prevHwnd)
         }
         hideMainWindow()
     }
@@ -205,8 +206,9 @@ class WinAppWindowManager(
     ) {
         logger.info { "unActive search window" }
         val toPaste = preparePaste(0)
-        WindowsFocusUtils.backToBack(searchHWND, windowFocusRecorder.lastWinAppInfo.value?.hwnd)
-        if (toPaste && pasteIntoPreviousApp()) {
+        val prevHwnd = windowFocusRecorder.lastWinAppInfo.value?.hwnd
+        WindowsFocusUtils.backToBack(searchHWND, prevHwnd)
+        if (toPaste && pasteIntoPreviousApp(prevHwnd)) {
             for (i in 1 until size) {
                 delay(1000.milliseconds)
                 if (preparePaste(i)) {
@@ -218,12 +220,13 @@ class WinAppWindowManager(
     }
 
     /**
-     * Sends the paste once the previous app holds the foreground again, or asks the
-     * user to paste manually when SetForegroundWindow did not bring it back. With no
-     * previous window recorded, any app other than CrossPaste counts.
+     * Sends the paste once [prevHwnd]'s app holds the foreground again, or asks the
+     * user to paste manually when SetForegroundWindow did not bring it back. The caller
+     * must pass the window it captured before hiding ours: hiding hands the foreground
+     * to whatever window is next, and the focus recorder may already have stored that
+     * one. With no previous window recorded, any app other than CrossPaste counts.
      */
-    private suspend fun pasteIntoPreviousApp(): Boolean {
-        val prevHwnd = windowFocusRecorder.lastWinAppInfo.value?.hwnd
+    private suspend fun pasteIntoPreviousApp(prevHwnd: HWND?): Boolean {
         val foreground =
             awaitForeground {
                 prevHwnd?.let(WindowsFocusUtils::isForegroundProcessOf)

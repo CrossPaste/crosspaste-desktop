@@ -173,9 +173,10 @@ class MacAppWindowManager(
     override suspend fun hideMainWindowAndPaste(preparePaste: suspend () -> Boolean) {
         logger.info { "unActive main window" }
         val toPaste = preparePaste()
-        MacAppUtils.mainToBack(prevMacAppInfo.value?.bundleIdentifier ?: "")
+        val prevAppId = prevMacAppInfo.value?.bundleIdentifier
+        MacAppUtils.mainToBack(prevAppId ?: "")
         if (toPaste) {
-            pasteIntoPreviousApp()
+            pasteIntoPreviousApp(prevAppId)
         }
         hideMainWindow()
     }
@@ -198,8 +199,9 @@ class MacAppWindowManager(
     ) {
         logger.info { "unActive search window" }
         val toPaste = preparePaste(0)
-        MacAppUtils.searchToBack(prevMacAppInfo.value?.bundleIdentifier ?: "")
-        if (toPaste && pasteIntoPreviousApp()) {
+        val prevAppId = prevMacAppInfo.value?.bundleIdentifier
+        MacAppUtils.searchToBack(prevAppId ?: "")
+        if (toPaste && pasteIntoPreviousApp(prevAppId)) {
             for (i in 1 until size) {
                 delay(1000.milliseconds)
                 if (preparePaste(i)) {
@@ -211,13 +213,12 @@ class MacAppWindowManager(
     }
 
     /**
-     * Sends the paste once the previous app is frontmost again, or asks the user to
-     * paste manually when it never comes back. With no previous app recorded, any app
-     * other than CrossPaste counts.
+     * Sends the paste once [prevAppId] is frontmost again, or asks the user to paste
+     * manually when it never comes back. The caller passes the same app it asked to
+     * activate. With no previous app recorded, any app other than CrossPaste counts.
      */
-    private suspend fun pasteIntoPreviousApp(): Boolean {
+    private suspend fun pasteIntoPreviousApp(prevAppId: String?): Boolean {
         val activationStart = TimeSource.Monotonic.markNow()
-        val prevAppId = prevMacAppInfo.value?.bundleIdentifier
         val foreground =
             awaitForeground {
                 val frontmostId = MacAppUtils.getCurrentActiveAppInfo()?.let(::createMacAppInfo)?.bundleIdentifier
@@ -227,9 +228,12 @@ class MacAppWindowManager(
             notifyManualPasteRequired(lazyNotificationManager.value, lazyShortcutKeys.value)
             return false
         }
-        // The keystroke used to go out a fixed 200 ms after activation; keep that as a
-        // floor, since an app can report frontmost before its key window takes input.
-        delay(MIN_ACTIVATION_SETTLE - activationStart.elapsedNow())
+        // An app can report frontmost before its key window takes input, so always settle
+        // briefly after it does. The keystroke used to go out a fixed 200 ms after
+        // activation; keep that as a floor too. activationStart is taken when activation
+        // is queued on the AppKit main thread, so on a busy main thread most of the floor
+        // may already be spent and only the settle time remains.
+        delay(maxOf(MIN_ACTIVATION_SETTLE - activationStart.elapsedNow(), FRONTMOST_SETTLE))
         toPaste()
         return true
     }
@@ -243,6 +247,8 @@ class MacAppWindowManager(
 }
 
 private val MIN_ACTIVATION_SETTLE = 200.milliseconds
+
+private val FRONTMOST_SETTLE = 50.milliseconds
 
 private data class MacAppInfo(
     val bundleIdentifier: String,

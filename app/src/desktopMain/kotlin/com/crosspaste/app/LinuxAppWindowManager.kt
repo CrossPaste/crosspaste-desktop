@@ -277,7 +277,7 @@ class LinuxAppWindowManager(
             // No named previous window: there is no target, so stop before the
             // multi-select loop injects the remaining items into our own search window.
             if (toPaste) {
-                notifyManualPasteRequired()
+                notifyManualPasteRequired(lazyNotificationManager.value, lazyShortcutKeys.value)
             }
             return false
         }
@@ -292,7 +292,7 @@ class LinuxAppWindowManager(
             // injecting the keystroke into CrossPaste's own window (issue #5245).
             hideOwnWindow()
             if (!X11Api.awaitActive(prevAppInfo)) {
-                notifyManualPasteRequired()
+                notifyManualPasteRequired(lazyNotificationManager.value, lazyShortcutKeys.value)
                 return false
             }
         }
