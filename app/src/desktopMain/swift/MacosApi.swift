@@ -319,26 +319,6 @@ public func mainToBack(
     }
 }
 
-@_cdecl("mainToBackAndPaste")
-public func mainToBack(
-    appName: UnsafePointer<CChar>,
-    keyCodesPointer: UnsafePointer<Int32>,
-    count: Int
-) {
-    let appNameString = String(cString: appName)
-    let keyCodes = Array(UnsafeBufferPointer(start: keyCodesPointer, count: count))
-    DispatchQueue.main.async {
-        hideWindowAndActivateApp(hideTitle: "CrossPaste", appName: appNameString)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            keyCodes.withUnsafeBufferPointer { buffer in
-                guard let baseAddress = buffer.baseAddress else { return }
-                simulatePasteCommand(keyCodesPointer: baseAddress, count: buffer.count)
-            }
-        }
-    }
-}
-
 @_cdecl("searchToBack")
 public func searchToBack(
     appName: UnsafePointer<CChar>
@@ -346,26 +326,6 @@ public func searchToBack(
     let appNameString = String(cString: appName)
     DispatchQueue.main.async {
         hideWindowAndActivateApp(hideTitle: "CrossPaste Search", appName: appNameString)
-    }
-}
-
-@_cdecl("searchToBackAndPaste")
-public func searchToBackAndPaste(
-    appName: UnsafePointer<CChar>,
-    keyCodesPointer: UnsafePointer<Int32>,
-    count: Int
-) {
-    let appNameString = String(cString: appName)
-    let keyCodes = Array(UnsafeBufferPointer(start: keyCodesPointer, count: count))
-    DispatchQueue.main.async {
-        hideWindowAndActivateApp(hideTitle: "CrossPaste Search", appName: appNameString)
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            keyCodes.withUnsafeBufferPointer { buffer in
-                guard let baseAddress = buffer.baseAddress else { return }
-                simulatePasteCommand(keyCodesPointer: baseAddress, count: buffer.count)
-            }
-        }
     }
 }
 

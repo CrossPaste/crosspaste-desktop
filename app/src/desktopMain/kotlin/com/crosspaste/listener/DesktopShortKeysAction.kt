@@ -213,6 +213,9 @@ class DesktopShortKeysAction(
     private suspend fun handleCopyResult(result: Result<Unit?>) {
         result
             .onSuccess {
+                // The action fires on key press; injecting while the user still holds the
+                // shortcut's modifiers would merge them into the paste (Ctrl+Shift+V).
+                awaitShortcutReleased()
                 appWindowManager.toPaste()
             }.onFailure {
                 notificationManager.sendNotification(

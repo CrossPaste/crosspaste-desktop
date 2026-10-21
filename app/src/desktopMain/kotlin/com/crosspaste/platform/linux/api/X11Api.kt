@@ -2,6 +2,7 @@ package com.crosspaste.platform.linux.api
 
 import com.crosspaste.app.LinuxAppInfo
 import com.crosspaste.platform.linux.api.WMCtrl.getActiveWindow
+import com.crosspaste.utils.pollUntil
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
 import com.sun.jna.Pointer
@@ -12,7 +13,6 @@ import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.NativeLongByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withTimeoutOrNull
 import java.nio.file.Path
 import javax.imageio.ImageIO
 import kotlin.coroutines.cancellation.CancellationException
@@ -208,7 +208,7 @@ interface X11Api : X11 {
             timeout: Duration,
         ): Boolean {
             val activated =
-                awaitWindowActive(timeout, ACTIVATION_POLL_INTERVAL) {
+                pollUntil(timeout, ACTIVATION_POLL_INTERVAL) {
                     getActiveWindow(display) == window
                 }
             if (!activated) {
@@ -316,21 +316,3 @@ interface X11Api : X11 {
         }
     }
 }
-
-/**
- * Polls [isActive] every [pollInterval] until it returns true or [timeout] elapses.
- *
- * Kept outside [X11Api] so the polling and timeout behaviour can be covered without an
- * X server: loading the companion object would call `Native.load("X11")`.
- */
-internal suspend fun awaitWindowActive(
-    timeout: Duration,
-    pollInterval: Duration,
-    isActive: () -> Boolean,
-): Boolean =
-    withTimeoutOrNull(timeout) {
-        while (!isActive()) {
-            delay(pollInterval)
-        }
-        true
-    } ?: false

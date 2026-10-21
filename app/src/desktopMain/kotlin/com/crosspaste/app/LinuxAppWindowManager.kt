@@ -6,7 +6,6 @@ import com.crosspaste.listener.DesktopShortcutKeys.Companion.PASTE
 import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
-import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.linux.LinuxActiveAppResolver
@@ -244,7 +243,12 @@ class LinuxAppWindowManager(
             }
             return
         }
-        bringToBack(toPaste) { hideSearchWindow() }
+        val targetReady = bringToBack(toPaste) { hideSearchWindow() }
+        if (!targetReady) {
+            // No target to paste into, so the remaining items must not be injected either.
+            hideSearchWindow()
+            return
+        }
         for (i in 1 until size) {
             delay(1000.milliseconds)
             if (preparePaste(i)) {
@@ -260,14 +264,26 @@ class LinuxAppWindowManager(
      */
     private fun needsPortalPaste(): Boolean = isWaylandSession && prevLinuxAppInfo.value == null
 
+    /**
+     * Returns false when there is no previous app to paste into, or when the focus
+     * never came back, so callers must not inject any further keystrokes.
+     */
     private suspend fun bringToBack(
         toPaste: Boolean,
         hideOwnWindow: () -> Unit,
-    ) {
-        val prevAppInfo = prevLinuxAppInfo.value ?: return
+    ): Boolean {
+        val prevAppInfo = prevLinuxAppInfo.value
+        if (prevAppInfo == null) {
+            // No named previous window: there is no target, so stop before the
+            // multi-select loop injects the remaining items into our own search window.
+            if (toPaste) {
+                notifyManualPasteRequired(lazyNotificationManager.value, lazyShortcutKeys.value)
+            }
+            return false
+        }
         if (!toPaste) {
             X11Api.bringToBack(prevAppInfo)
-            return
+            return true
         }
         if (!X11Api.activateAndAwait(prevAppInfo)) {
             // The window manager refused the activation request (KWin X11 ignores
@@ -276,11 +292,12 @@ class LinuxAppWindowManager(
             // injecting the keystroke into CrossPaste's own window (issue #5245).
             hideOwnWindow()
             if (!X11Api.awaitActive(prevAppInfo)) {
-                notifyManualPasteRequired()
-                return
+                notifyManualPasteRequired(lazyNotificationManager.value, lazyShortcutKeys.value)
+                return false
             }
         }
         X11Api.toPaste(pasteKeyCodes())
+        return true
     }
 
     override suspend fun toPaste() {
@@ -314,7 +331,7 @@ class LinuxAppWindowManager(
         )
         val delivered = portalKeyboard.pressAndRelease(keyCodes.map(PortalHandles::evdevKeycode))
         if (!delivered) {
-            notifyManualPasteRequired()
+            notifyManualPasteRequired(lazyNotificationManager.value, lazyShortcutKeys.value)
         }
         return delivered
     }
@@ -323,22 +340,6 @@ class LinuxAppWindowManager(
         lazyShortcutKeys.value.shortcutKeysCore.value.keys[PASTE]
             ?.map { key -> key.rawCode }
             ?: listOf()
-
-    /**
-     * Last resort when neither XTest nor the portal can deliver the paste: XTest
-     * only reaches X11 and XWayland clients, and injecting blindly would hit
-     * whichever X client held the focus last — a window the user is not even
-     * looking at. The content is already on the clipboard by this point, so say
-     * so and let the user paste it.
-     */
-    private fun notifyManualPasteRequired() {
-        logger.info { "No way to deliver the paste, asking the user to paste manually" }
-        lazyNotificationManager.value.sendNotification(
-            title = { it.getText("copy_successful") },
-            message = { it.getText("paste_manually_required") },
-            messageType = MessageType.Info,
-        )
-    }
 
     companion object {
         // Time for the compositor to hand the focus back to the user's app after one
