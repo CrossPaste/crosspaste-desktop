@@ -20,7 +20,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class PasteAutoPullServiceTest {
+class PastePullTriggerTest {
 
     private val peer = "remote-device"
 
@@ -36,7 +36,7 @@ class PasteAutoPullServiceTest {
         )
 
     private class Harness(
-        val service: PasteAutoPullService,
+        val service: PastePullTrigger,
         val infos: MutableStateFlow<List<SyncRuntimeInfo>>,
         val configManager: TestConfigManager,
         val pastePullService: PastePullService,
@@ -53,7 +53,7 @@ class PasteAutoPullServiceTest {
         val configManager = TestConfigManager(TestAppConfig(enableAutoPastePull = enabled))
         // A child of backgroundScope, so stop() can cancel it without failing the test
         val scope = CoroutineScope(backgroundScope.coroutineContext + Job(backgroundScope.coroutineContext[Job]))
-        val service = PasteAutoPullService(configManager, pastePullService, syncManager, scope)
+        val service = PastePullTrigger(configManager, pastePullService, syncManager, scope)
         return Harness(service, infos, configManager, pastePullService)
     }
 
