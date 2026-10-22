@@ -10,6 +10,8 @@ object HtmlColorUtils {
 
     private val CSS_COMMENT_PATTERN = "/\\*.*?\\*/".toRegex(RegexOption.DOT_MATCHES_ALL)
 
+    private val IMPORTANT_PATTERN = "\\s*!\\s*important\\s*$".toRegex(RegexOption.IGNORE_CASE)
+
     fun getBackgroundColor(html: String): Color? {
         val document = Ksoup.parse(html)
         val body = document.body()
@@ -79,16 +81,17 @@ object HtmlColorUtils {
     private fun parseBackgroundColorFromStyle(style: String): Color? {
         val declarations = parseDeclarations(style)
         // background-color wins over the background shorthand
-        val value =
-            declarations["background-color"]
-                ?: declarations["background"]
-                ?: return null
-        return extractColorFromValue(value)
+        declarations["background-color"]?.let { value ->
+            // A background-color is always a plain color; gradients only exist in the shorthand
+            return extractColorFromValue(value, allowGradient = false)
+        }
+        return declarations["background"]?.let { extractColorFromValue(it, allowGradient = true) }
     }
 
     /**
      * Parses an inline style into lowercase property -> value. The first declaration of a
-     * property wins; `;` inside parentheses or quotes (e.g. data: URLs) does not split.
+     * property wins; `;` inside parentheses or quotes (e.g. data: URLs) does not split, and
+     * a trailing `!important` is dropped because there is no cascade to win here.
      */
     private fun parseDeclarations(style: String): Map<String, String> =
         splitTopLevel(style.replace(CSS_COMMENT_PATTERN, " ")) { it == ';' }
@@ -96,7 +99,7 @@ object HtmlColorUtils {
                 val colon = declaration.indexOf(':')
                 if (colon <= 0) return@mapNotNull null
                 val property = declaration.take(colon).trim().lowercase()
-                val value = declaration.substring(colon + 1).trim()
+                val value = declaration.substring(colon + 1).replace(IMPORTANT_PATTERN, "").trim()
                 if (property.isEmpty() || value.isEmpty()) null else property to value
             }.distinctBy { it.first }
             .toMap()
@@ -104,21 +107,28 @@ object HtmlColorUtils {
     /**
      * Returns the first color in a background value: a plain color token, a color
      * function, or the first color stop of a gradient. `url(...)` and other tokens are skipped.
+     *
+     * Background layers are painted front to back, so the first layer that yields a color is
+     * the one the user actually sees.
      */
-    private fun extractColorFromValue(value: String): Color? =
-        // With multiple background layers, the color belongs to the last one
+    private fun extractColorFromValue(
+        value: String,
+        allowGradient: Boolean,
+    ): Color? =
         splitTopLevel(value) { it == ',' }
-            .asReversed()
-            .firstNotNullOfOrNull { extractColorFromLayer(it) }
+            .firstNotNullOfOrNull { extractColorFromLayer(it, allowGradient) }
 
-    private fun extractColorFromLayer(layer: String): Color? {
+    private fun extractColorFromLayer(
+        layer: String,
+        allowGradient: Boolean,
+    ): Color? {
         for (token in splitTopLevel(layer) { it.isWhitespace() }) {
             val name = token.substringBefore('(').lowercase()
             if (name == "url") continue
-            if (name.contains("gradient") && token.endsWith(")")) {
+            if (allowGradient && name.contains("gradient") && token.endsWith(")")) {
                 val arguments = token.substring(token.indexOf('(') + 1, token.length - 1)
                 splitTopLevel(arguments) { it == ',' }
-                    .firstNotNullOfOrNull { extractColorFromLayer(it) }
+                    .firstNotNullOfOrNull { extractColorFromLayer(it, allowGradient = false) }
                     ?.let { return it }
                 continue
             }

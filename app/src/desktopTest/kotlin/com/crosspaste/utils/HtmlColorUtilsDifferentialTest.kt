@@ -10,8 +10,10 @@ import kotlin.test.fail
  * Checks that the hand-written HtmlColorUtils matches the former ph-css based
  * implementation ([PhCssHtmlColorReference]) on a corpus of clipboard HTML.
  *
- * Intentional difference: ph-css does not recognize #RGBA / #RRGGBBAA, the new
- * implementation does (covered in [HtmlColorUtilsTest]).
+ * Intentional differences (each covered in [HtmlColorUtilsTest]): #RGBA / #RRGGBBAA are
+ * recognized where ph-css returns no color; an unparseable `bgcolor` no longer short-circuits
+ * the search for an ancestor background; and CSS 2.1 system colors (`Canvas`, `ButtonFace`,
+ * ...) count as unrecognized instead of resolving to transparent.
  */
 class HtmlColorUtilsDifferentialTest {
 
@@ -42,6 +44,17 @@ class HtmlColorUtilsDifferentialTest {
             "background: linear-gradient(90deg, rgb(1, 2, 3) 0%, white 100%)",
             "background: radial-gradient(circle, #123456, #654321)",
             "background: none",
+            // multiple layers: the top-most layer wins
+            "background: linear-gradient(red, blue), #fff",
+            "background: linear-gradient(red, blue), linear-gradient(white, black)",
+            "background: #fff, linear-gradient(red, blue)",
+            "background: url(a.png), #fff",
+            // !important, with and without a separating space
+            "background-color:red!important",
+            "background:red!important",
+            "background: url(a.png) red!important",
+            "background: linear-gradient(red, blue)!important",
+            "background-color: linear-gradient(red, blue)",
             // properties around and precedence
             "color: black; font-size: 14px",
             "color: rgb(31, 35, 40); font-size: 32px; background-color: rgb(240, 240, 240)",
