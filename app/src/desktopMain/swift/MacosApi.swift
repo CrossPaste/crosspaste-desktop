@@ -630,37 +630,46 @@ public func simulatePasteCommand(keyCodesPointer: UnsafePointer<Int32>, count: I
         return
     }
 
-    let source = CGEventSource(stateID: .combinedSessionState)
     let keyCodes = UnsafeBufferPointer(start: keyCodesPointer, count: count)
 
+    // Modifiers travel only as flags on the key events, never as key events of their
+    // own: posting Command down/up would rewrite the session's modifier state under a
+    // user still holding Command. The device bits mark the left-hand key, as hardware does.
     var flags = CGEventFlags()
-
-    // Identify and set modifier flags
+    var keys: [CGKeyCode] = []
     for keyCode in keyCodes {
         switch keyCode {
         case 55:  // Command key
-            flags.insert(.maskCommand)
+            flags.insert([.maskCommand, CGEventFlags(rawValue: 0x08)])
         case 56:  // Shift key
-            flags.insert(.maskShift)
+            flags.insert([.maskShift, CGEventFlags(rawValue: 0x02)])
         case 58:  // Option key
-            flags.insert(.maskAlternate)
+            flags.insert([.maskAlternate, CGEventFlags(rawValue: 0x20)])
         case 59:  // Control key
-            flags.insert(.maskControl)
+            flags.insert([.maskControl, CGEventFlags(rawValue: 0x01)])
         default:
-            break
+            keys.append(CGKeyCode(UInt16(keyCode)))
         }
     }
 
-    for keyCode in keyCodes {
-        if let keyDown = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(UInt16(keyCode)), keyDown: true) {
+    let source = CGEventSource(stateID: .combinedSessionState)
+    // Hold back the user's own key presses while the shortcut goes out, so they
+    // cannot slip in between and change it
+    source?.setLocalEventsFilterDuringSuppressionState(
+        [.permitLocalMouseEvents, .permitSystemDefinedEvents],
+        state: .eventSuppressionStateSuppressionInterval
+    )
+
+    for keyCode in keys {
+        if let keyDown = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: true) {
             keyDown.flags = flags
             keyDown.post(tap: .cghidEventTap)
         }
     }
 
-    for keyCode in keyCodes.reversed() {
-        if let keyUp = CGEvent(keyboardEventSource: source, virtualKey: CGKeyCode(UInt16(keyCode)), keyDown: false) {
-            keyUp.flags = []
+    for keyCode in keys.reversed() {
+        if let keyUp = CGEvent(keyboardEventSource: source, virtualKey: keyCode, keyDown: false) {
+            keyUp.flags = flags
             keyUp.post(tap: .cghidEventTap)
         }
     }
