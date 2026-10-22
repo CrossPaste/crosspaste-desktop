@@ -225,4 +225,44 @@ class HtmlColorUtilsTest {
             )
         }
     }
+
+    @Test
+    fun `test background shorthand edge cases`() {
+        val testCases =
+            listOf(
+                "background: url(a.png) no-repeat #00FF00" to Color.Green,
+                "background: url('data:image/png;base64,AAAA') red" to Color.Red,
+                "background: linear-gradient(to right, rgb(0, 0, 255) 0%, red 100%)" to Color.Blue,
+                "background: url(a.png), linear-gradient(white, black)" to Color.White,
+                "background-color: black !important" to Color.Black,
+                "background-color: #11223344" to Color(0x11, 0x22, 0x33, 0x44),
+                "background-color: #1234" to Color(0x11, 0x22, 0x33, 0x44),
+                "/* background: red; */ background: blue" to Color.Blue,
+                "background: red; background-color: white" to Color.White,
+            )
+
+        testCases.forEach { (style, expectedColor) ->
+            val html = """<div style="$style">Test</div>"""
+            val backgroundColor = HtmlColorUtils.getBackgroundColor(html)
+
+            assertEquals(
+                "Style [$style]: expected ${expectedColor.toRGBString()}, but got ${backgroundColor?.toRGBString()}",
+                expectedColor,
+                backgroundColor,
+            )
+        }
+    }
+
+    @Test
+    fun `test bgcolor attribute`() {
+        val html = """<table bgcolor="#000000"><tr><td>Test</td></tr></table>"""
+
+        val backgroundColor = HtmlColorUtils.getBackgroundColor(html)
+
+        assertEquals(
+            "Expected black from bgcolor, but got ${backgroundColor?.toRGBString()}",
+            Color.Black,
+            backgroundColor,
+        )
+    }
 }
