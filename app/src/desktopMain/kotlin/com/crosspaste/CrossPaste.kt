@@ -49,8 +49,8 @@ import com.crosspaste.plugin.BundledPluginInstaller
 import com.crosspaste.plugin.PluginRepository
 import com.crosspaste.presist.FilePersist
 import com.crosspaste.rendering.RenderingService
-import com.crosspaste.sync.PasteAutoPullService
 import com.crosspaste.sync.PastePullService
+import com.crosspaste.sync.PastePullTrigger
 import com.crosspaste.sync.QRCodeGenerator
 import com.crosspaste.sync.SyncManager
 import com.crosspaste.task.TaskExecutor
@@ -124,7 +124,7 @@ class CrossPaste {
             DRIVER_FACTORY,
             GLOBAL_LISTENER,
             MCP_SERVER,
-            PASTE_AUTO_PULL,
+            PASTE_PULL_TRIGGER,
             PASTE_CLIENT,
             PASTE_SERVER,
             PASTEBOARD,
@@ -199,7 +199,7 @@ class CrossPaste {
                     koin.get<PasteReleaseService>().discardInterruptedReceives()
                     getManagedService<SyncManager>(ManagedService.SYNC_MANAGER).start()
                     koin.get<PastePullService>().init()
-                    getManagedService<PasteAutoPullService>(ManagedService.PASTE_AUTO_PULL).start()
+                    getManagedService<PastePullTrigger>(ManagedService.PASTE_PULL_TRIGGER).start()
                     val pasteServer = getManagedService<Server>(ManagedService.PASTE_SERVER)
                     if (headless) {
                         // A daemon without its sync endpoint is not operational.
@@ -413,9 +413,9 @@ class CrossPaste {
                             )
                             add(
                                 async {
-                                    stopManagedService<PasteAutoPullService>(
-                                        ManagedService.PASTE_AUTO_PULL,
-                                        "PasteAutoPullService",
+                                    stopManagedService<PastePullTrigger>(
+                                        ManagedService.PASTE_PULL_TRIGGER,
+                                        "PastePullTrigger",
                                     ) { it.stop() }
                                 },
                             )

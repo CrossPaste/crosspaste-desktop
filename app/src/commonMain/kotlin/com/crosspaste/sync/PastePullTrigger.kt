@@ -26,11 +26,11 @@ import kotlinx.coroutines.launch
  * Each peer has one worker fed by a conflated trigger: triggers arriving while a
  * pull runs collapse into a single follow-up pull, never an overlapping one.
  */
-class PasteAutoPullService(
+class PastePullTrigger(
     private val configManager: CommonConfigManager,
     private val pastePullService: PastePullService,
     private val syncManager: SyncManager,
-    private val scope: CoroutineScope = namedScope(ioDispatcher, "PasteAutoPullService"),
+    private val scope: CoroutineScope = namedScope(ioDispatcher, "PastePullTrigger"),
 ) {
 
     private val logger = KotlinLogging.logger {}
