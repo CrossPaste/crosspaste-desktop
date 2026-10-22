@@ -142,7 +142,6 @@ kotlin {
             implementation(libs.mcp.server)
             implementation(libs.metadata.extractor)
             implementation(libs.native.tray)
-            implementation(libs.ph.css)
             implementation(libs.sqlite.driver)
             implementation(libs.tesseract.platform)
             implementation(libs.webp.imageio)
@@ -157,6 +156,13 @@ kotlin {
             implementation(libs.ktor.client.mock)
             implementation(libs.ktor.server.test.host)
             implementation(libs.turbine)
+        }
+
+        // ph-css is only the reference oracle for HtmlColorUtilsDifferentialTest
+        val desktopTest by getting {
+            dependencies {
+                implementation(libs.ph.css)
+            }
         }
 
         configurations.configureEach {

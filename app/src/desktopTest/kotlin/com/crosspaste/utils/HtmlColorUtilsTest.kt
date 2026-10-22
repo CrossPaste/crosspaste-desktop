@@ -225,4 +225,119 @@ class HtmlColorUtilsTest {
             )
         }
     }
+
+    @Test
+    fun `test background shorthand edge cases`() {
+        val testCases =
+            listOf(
+                "background: url(a.png) no-repeat #00FF00" to Color.Green,
+                "background: url('data:image/png;base64,AAAA') red" to Color.Red,
+                "background: linear-gradient(to right, rgb(0, 0, 255) 0%, red 100%)" to Color.Blue,
+                "background: url(a.png), linear-gradient(white, black)" to Color.White,
+                "background-color: black !important" to Color.Black,
+                "background-color: #11223344" to Color(0x11, 0x22, 0x33, 0x44),
+                "background-color: #1234" to Color(0x11, 0x22, 0x33, 0x44),
+                "background: #FFF8" to Color(0xFF, 0xFF, 0xFF, 0x88),
+                "/* background: red; */ background: blue" to Color.Blue,
+                "background: red; background-color: white" to Color.White,
+                // `!important` without a leading space is still valid CSS
+                "background-color:red!important" to Color.Red,
+                "background:red!important" to Color.Red,
+                "background: url(a.png) red!important" to Color.Red,
+                "background: linear-gradient(red, blue)!important" to Color.Red,
+                // the top-most layer decides what is visible
+                "background: linear-gradient(to right, red, blue), #fff" to Color.Red,
+                "background: linear-gradient(red, blue), linear-gradient(white, black)" to Color.Red,
+                "background: url(a.png), #fff" to Color.White,
+                // unquoted URLs may contain balanced parentheses
+                "background: url(a(b).png) red" to Color.Red,
+            )
+
+        testCases.forEach { (style, expectedColor) ->
+            val html = """<div style="$style">Test</div>"""
+            val backgroundColor = HtmlColorUtils.getBackgroundColor(html)
+
+            assertEquals(
+                "Style [$style]: expected ${expectedColor.toRGBString()}, but got ${backgroundColor?.toRGBString()}",
+                expectedColor,
+                backgroundColor,
+            )
+        }
+    }
+
+    @Test
+    fun `test gradient in background-color is ignored`() {
+        // A background-color can never be a gradient, so the declaration is invalid CSS and
+        // must not be turned into a solid preview color.
+        val html = """<div style="background-color: linear-gradient(red, blue)">Test</div>"""
+        val backgroundColor = HtmlColorUtils.getBackgroundColor(html)
+
+        assertNull(
+            "Expected null for a gradient in background-color, but got ${backgroundColor?.toRGBString()}",
+            backgroundColor,
+        )
+    }
+
+    @Test
+    fun `test bgcolor attribute`() {
+        val html = """<table bgcolor="#000000"><tr><td>Test</td></tr></table>"""
+
+        val backgroundColor = HtmlColorUtils.getBackgroundColor(html)
+
+        assertEquals(
+            "Expected black from bgcolor, but got ${backgroundColor?.toRGBString()}",
+            Color.Black,
+            backgroundColor,
+        )
+    }
+
+    @Test
+    fun `test unparseable bgcolor still finds the ancestor background`() {
+        // A malformed bgcolor must not stop the search: it used to return White (or Transparent)
+        // even though the element itself only inherits its background.
+        val html =
+            """
+            <html style="background-color: #123456">
+                <body>
+                    <table bgcolor="#zzz"><tr><td>Test</td></tr></table>
+                </body>
+            </html>
+            """.trimIndent()
+
+        assertEquals(
+            "Expected the html background color",
+            Color(0x12, 0x34, 0x56),
+            HtmlColorUtils.getBackgroundColor(html),
+        )
+    }
+
+    @Test
+    fun `test unparseable bgcolor yields no color`() {
+        val html = """<table bgcolor="notacolor"><tr><td>Test</td></tr></table>"""
+
+        assertNull(
+            "Expected null for an unparseable bgcolor",
+            HtmlColorUtils.getBackgroundColor(html),
+        )
+    }
+
+    @Test
+    fun `test css system color still finds the ancestor background`() {
+        // System colors have no fixed RGB value, so they must not be reported as transparent
+        // and hide a real background set on an ancestor.
+        val html =
+            """
+            <html style="background-color: #123456">
+                <body>
+                    <div style="background: ButtonFace">Test</div>
+                </body>
+            </html>
+            """.trimIndent()
+
+        assertEquals(
+            "Expected the html background color",
+            Color(0x12, 0x34, 0x56),
+            HtmlColorUtils.getBackgroundColor(html),
+        )
+    }
 }

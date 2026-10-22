@@ -18,7 +18,11 @@ import com.helger.css.utils.CSSColorHelper.getParsedRGBColorValue
 import com.helger.css.utils.CSSColorHelper.isColorValue
 import com.helger.css.utils.ECSSColor
 
-object HtmlColorUtils {
+/**
+ * Frozen copy of the ph-css based HtmlColorUtils, kept only as the reference oracle for
+ * [HtmlColorUtilsDifferentialTest]. Do not modify it.
+ */
+object PhCssHtmlColorReference {
 
     private val cssReaderSettings = CSSReaderSettings()
 
