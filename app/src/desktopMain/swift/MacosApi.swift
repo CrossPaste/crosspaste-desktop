@@ -572,14 +572,14 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>, showDockIcon: Int32)
     let title = String(cString: windowTitle)
     DispatchQueue.main.async {
         let app = NSApplication.shared
+        // Switch the policy before activating: demoting to .accessory deactivates the
+        // app, and doing it after the window became key would dismiss that window.
+        _ = applyActivationPolicy(showDockIcon: showDockIcon != 0)
         app.activate(ignoringOtherApps: true)
         let windows = app.windows
         for window in windows {
             if window.title == title {
                 window.makeKeyAndOrderFront(nil)
-                if applyActivationPolicy(showDockIcon: showDockIcon != 0) {
-                    app.activate(ignoringOtherApps: true)
-                }
                 window.orderFrontRegardless()
                 window.makeKey()
                 break

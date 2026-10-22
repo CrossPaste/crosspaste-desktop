@@ -12,7 +12,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import okio.Path
@@ -45,16 +44,17 @@ class MacAppWindowManager(
         // there the deactivation races the new key window and dismisses it.
         // setDockIconVisibility only switches the activation policy — it must not
         // touch window visibility, so a toggle racing a window hide can never
-        // re-show the window. Activation is only restored while the main window is
-        // open (a settings toggle); after a hide the previous app keeps the focus.
+        // re-show the window. No dedup here: bringToFront also writes the policy, so
+        // the last value sent is not the native state; re-applying is a no-op.
         ioScope.launch {
             combine(
                 mainWindowInfo.map { it.show },
                 lazyConfigManager.value.config.map { it.showDockIcon },
             ) { mainShow, showDockIcon -> mainShow to (mainShow && showDockIcon) }
-                .distinctUntilChangedBy { (_, showDockIcon) -> showDockIcon }
-                .collect { (mainShow, showDockIcon) ->
-                    MacAppUtils.setDockIconVisibility(showDockIcon, restoreActivation = mainShow)
+                .collect { (mainShow, dockIconPolicy) ->
+                    // Only a demotion from the settings toggle (main window open) must
+                    // restore focus; after a hide the previous app keeps it.
+                    MacAppUtils.setDockIconVisibility(dockIconPolicy, restoreActivation = mainShow)
                 }
         }
     }
