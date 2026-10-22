@@ -51,8 +51,11 @@ object MacAppUtils {
         INSTANCE.bringToFront(appName, if (showDockIcon) 1 else 0)
     }
 
-    fun setDockIconVisibility(showDockIcon: Boolean) {
-        INSTANCE.setDockIconVisibility(if (showDockIcon) 1 else 0)
+    fun setDockIconVisibility(
+        showDockIcon: Boolean,
+        restoreActivation: Boolean,
+    ) {
+        INSTANCE.setDockIconVisibility(if (showDockIcon) 1 else 0, if (restoreActivation) 1 else 0)
     }
 
     /** Retitles the "About <app>" item in the macOS application menu. */

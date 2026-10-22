@@ -90,7 +90,10 @@ interface MacosApi : Library {
         showDockIcon: Int,
     )
 
-    fun setDockIconVisibility(showDockIcon: Int)
+    fun setDockIconVisibility(
+        showDockIcon: Int,
+        restoreActivation: Int,
+    )
 
     fun setAboutMenuItemTitle(title: String)
 

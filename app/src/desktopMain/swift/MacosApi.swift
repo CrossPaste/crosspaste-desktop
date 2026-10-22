@@ -572,14 +572,14 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>, showDockIcon: Int32)
     let title = String(cString: windowTitle)
     DispatchQueue.main.async {
         let app = NSApplication.shared
+        // Switch the policy before activating: demoting to .accessory deactivates the
+        // app, and doing it after the window became key would dismiss that window.
+        _ = applyActivationPolicy(showDockIcon: showDockIcon != 0)
         app.activate(ignoringOtherApps: true)
         let windows = app.windows
         for window in windows {
             if window.title == title {
                 window.makeKeyAndOrderFront(nil)
-                if applyActivationPolicy(showDockIcon: showDockIcon != 0) {
-                    app.activate(ignoringOtherApps: true)
-                }
                 window.orderFrontRegardless()
                 window.makeKey()
                 break
@@ -589,14 +589,16 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>, showDockIcon: Int32)
 }
 
 @_cdecl("setDockIconVisibility")
-public func setDockIconVisibility(showDockIcon: Int32) {
+public func setDockIconVisibility(showDockIcon: Int32, restoreActivation: Int32) {
     DispatchQueue.main.async {
         // Only restore the activation the policy switch itself took away (demoting to
         // .accessory deactivates an active app, dropping the settings window focus
         // mid-toggle). If the app is already inactive — e.g. the user closed the
         // window and switched away before this async block ran — never steal focus.
+        // Callers demoting because the main window hid pass restoreActivation = 0:
+        // focus belongs to the previous app then (it may be a paste target).
         let wasActive = NSApp.isActive
-        if applyActivationPolicy(showDockIcon: showDockIcon != 0) && wasActive {
+        if applyActivationPolicy(showDockIcon: showDockIcon != 0) && wasActive && restoreActivation != 0 {
             NSApplication.shared.activate(ignoringOtherApps: true)
         }
     }
