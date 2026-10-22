@@ -589,14 +589,16 @@ public func bringToFront(windowTitle: UnsafePointer<CChar>, showDockIcon: Int32)
 }
 
 @_cdecl("setDockIconVisibility")
-public func setDockIconVisibility(showDockIcon: Int32) {
+public func setDockIconVisibility(showDockIcon: Int32, restoreActivation: Int32) {
     DispatchQueue.main.async {
         // Only restore the activation the policy switch itself took away (demoting to
         // .accessory deactivates an active app, dropping the settings window focus
         // mid-toggle). If the app is already inactive — e.g. the user closed the
         // window and switched away before this async block ran — never steal focus.
+        // Callers demoting because the main window hid pass restoreActivation = 0:
+        // focus belongs to the previous app then (it may be a paste target).
         let wasActive = NSApp.isActive
-        if applyActivationPolicy(showDockIcon: showDockIcon != 0) && wasActive {
+        if applyActivationPolicy(showDockIcon: showDockIcon != 0) && wasActive && restoreActivation != 0 {
             NSApplication.shared.activate(ignoringOtherApps: true)
         }
     }

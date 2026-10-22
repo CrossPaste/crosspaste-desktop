@@ -11,7 +11,8 @@ import com.crosspaste.utils.getSystemProperty
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import okio.Path
@@ -38,19 +39,22 @@ class MacAppWindowManager(
         // to register the observer; it relies on this manager being created during
         // startup, before the search window can open.
         ioScope.launch { MacAppUtils.isApplicationActive() }
-        // Re-apply the Dock icon policy immediately when the setting is toggled
-        // while the main window is open (the toggle lives in the main window).
+        // Keep the activation policy in step with the main window and the setting.
+        // Demoting to .accessory deactivates the app, so it must happen when the main
+        // window hides rather than when the search window is next brought to front:
+        // there the deactivation races the new key window and dismisses it.
         // setDockIconVisibility only switches the activation policy — it must not
-        // touch window visibility or focus, so a toggle racing a window hide can
-        // never re-show the window.
+        // touch window visibility, so a toggle racing a window hide can never
+        // re-show the window. Activation is only restored while the main window is
+        // open (a settings toggle); after a hide the previous app keeps the focus.
         ioScope.launch {
-            lazyConfigManager.value.config
-                .map { it.showDockIcon }
-                .distinctUntilChanged()
-                .collect { showDockIcon ->
-                    if (getCurrentMainWindowInfo().show) {
-                        MacAppUtils.setDockIconVisibility(showDockIcon)
-                    }
+            combine(
+                mainWindowInfo.map { it.show },
+                lazyConfigManager.value.config.map { it.showDockIcon },
+            ) { mainShow, showDockIcon -> mainShow to (mainShow && showDockIcon) }
+                .distinctUntilChangedBy { (_, showDockIcon) -> showDockIcon }
+                .collect { (mainShow, showDockIcon) ->
+                    MacAppUtils.setDockIconVisibility(showDockIcon, restoreActivation = mainShow)
                 }
         }
     }
