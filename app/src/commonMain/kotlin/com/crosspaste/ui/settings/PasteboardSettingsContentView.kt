@@ -1,6 +1,7 @@
 package com.crosspaste.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +18,7 @@ import com.composables.icons.materialsymbols.rounded.Skip_next
 import com.composables.icons.materialsymbols.rounded.Stacks
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.paste.PasteboardService
+import com.crosspaste.ui.LocalScrollContentBottomPadding
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.IconData
 import com.crosspaste.ui.base.SectionHeader
@@ -46,6 +48,7 @@ fun PasteboardSettingsContentView(
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(bottom = LocalScrollContentBottomPadding.current),
         verticalArrangement = Arrangement.spacedBy(tiny),
     ) {
         item {

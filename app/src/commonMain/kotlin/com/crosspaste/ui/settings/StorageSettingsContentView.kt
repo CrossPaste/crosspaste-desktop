@@ -41,6 +41,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.ui.LocalScrollContentBottomPadding
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.Counter
 import com.crosspaste.ui.base.FilledDropdown
@@ -67,6 +68,7 @@ fun StorageSettingsContentView(storagePathManager: StoragePathManager? = null) {
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(bottom = LocalScrollContentBottomPadding.current),
         verticalArrangement = Arrangement.spacedBy(tiny),
     ) {
         item {
