@@ -1,13 +1,19 @@
-# [2.2.2] - 2026-10-12
+# [2.3.0] - 2026-10-23
+
+## 🧩 Plugins for the right-click menu
+The right-click menu of your clipboard history can now be extended with plugins: a plugin hands the item to your script and puts the result back on the clipboard or in the history. A built-in **Translate** plugin translates into the language you pick from its submenu. Enable plugins under Extensions → Plugins; to write your own, see https://github.com/CrossPaste/crosspaste-desktop/blob/main/doc/plugins/README.md
+
+## 🔄 Catch up after reconnecting
+Items copied on a peer while your device was offline are fetched automatically when it reconnects. You can turn this off under Settings → Sync.
+
+## 📋 More reliable pasting, snappier search window
+CrossPaste now waits until the previous app is really back in front and the shortcut keys are released before sending the paste keystroke, so content no longer lands in the wrong place; if the app does not come back in time, you are asked to paste manually. Clicking outside the search window closes it right away, the tray icon toggles it, and the bubble editor always stays on top of it.
+
+## 🐧 Linux
+Links and files open through xdg-open; windows are no longer too small with fractional scaling on KDE Plasma; Super-key shortcuts work again under XWayland; and RPM packages with a signed dnf repository are now available.
 
 ## 🪟 Windows installer works again
-The Windows installer (MSIX) packages of 2.2.0 and 2.2.1 failed to install or update on current Windows builds with error 0x80080204, because the package declared the terminal command twice. The package manifest is restructured so it installs and updates cleanly again. If you are stuck on an older version, install this one from the download page; after that, updates arrive through the installer channel as before.
-
-## ⌨️ **crosspaste** in the Windows terminal
-On Windows installer and Microsoft Store installs the terminal command is now **crosspaste**, the same as on macOS and Linux; **crosspaste-cli** keeps working for existing scripts. The CLI also actually works on these installs now: the app used to place its control socket in a sandboxed temp folder whose path was too long, so every CLI command reported the app as not running. The Microsoft Store package now ships the CLI as well. The portable zip is unaffected and still uses **crosspaste-cli**.
-
-## 🐧 Linux fixes and RPM packages
-Opening a copied link, or HTML, RTF and files from the history, now goes through xdg-open, so it works on desktops where the bundled runtime did not detect a browser (for example Fedora KDE on Wayland); "Show in file manager" now opens the containing folder with the file selected, instead of always failing. RPM packages for x86_64 and aarch64 (Enterprise Linux 9 and compatible distributions) are now published alongside the deb.
+The Windows installer (MSIX) packages of 2.2.0 and 2.2.1 failed to install or update with error 0x80080204; this is fixed. The terminal command is now **crosspaste**, and the CLI works again on installer and Microsoft Store installs.
 
 # [2.2.1] - 2026-10-09
 
