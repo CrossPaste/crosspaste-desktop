@@ -36,10 +36,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Set up Swift environment
-        if: needs.check-dylib-cache.outputs.cache-hit-x86 != 'true' || needs.check-dylib-cache.outputs.cache-hit-aarch64 != 'true'
-        run: brew install swift
-
       - name: Build dylib for x86_64
         if: needs.check-dylib-cache.outputs.cache-hit-x86 != 'true'
         run: |
