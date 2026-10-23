@@ -91,7 +91,7 @@ fun SearchTrailingIcon() {
             onClick = {
                 showTypes = true
             },
-            modifier = Modifier.height(28.dp),
+            modifier = Modifier.height(28.dp).skipKeyboardFocus(),
             shape = tiny2XRoundedCornerShape,
             border =
                 BorderStroke(

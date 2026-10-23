@@ -24,6 +24,7 @@ import com.composables.icons.materialsymbols.rounded.Arrow_left_alt
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.PasteIconButton
 import com.crosspaste.ui.base.PasteTooltipAreaView
+import com.crosspaste.ui.search.skipKeyboardFocus
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import com.crosspaste.ui.theme.AppUISize.xxLarge
@@ -56,6 +57,7 @@ fun ToStartView(toStartAction: () -> Unit) {
                 },
                 modifier =
                     Modifier
+                        .skipKeyboardFocus()
                         .background(AppUIColors.appBackground.copy(alpha = transparency), CircleShape)
                         .onPointerEvent(
                             eventType = PointerEventType.Enter,

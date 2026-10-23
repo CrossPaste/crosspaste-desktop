@@ -36,6 +36,7 @@ fun QuickPasteView() {
                 Modifier
                     .wrapContentSize()
                     .clip(tinyRoundedCornerShape)
+                    .skipKeyboardFocus()
                     .clickable {
                         mainCoroutineDispatcher.launch {
                             pasteSelectionViewModel.toPaste()
@@ -52,6 +53,7 @@ fun QuickPasteView() {
                 Modifier
                     .wrapContentSize()
                     .clip(tinyRoundedCornerShape)
+                    .skipKeyboardFocus()
                     .clickable {
                         mainCoroutineDispatcher.launch {
                             pasteSelectionViewModel.toPaste()
