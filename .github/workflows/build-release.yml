@@ -374,9 +374,12 @@ jobs:
       # rest of the site: the RPMs under packages/rpm/, repodata/ and the
       # public key under meta/rpm/. Only the current release is listed.
       - name: Build dnf repository
-        run: >
-          docker run --rm -e RPM_SIGNING_KEY -v "$GITHUB_WORKSPACE:/workspace" crosspaste-rpm-build
-          .github/scripts/package_rpm_repo.sh output update-site/rpm
+        run: |
+          docker run --rm -e RPM_SIGNING_KEY -v "$GITHUB_WORKSPACE:/workspace" crosspaste-rpm-build \
+            .github/scripts/package_rpm_repo.sh output update-site/rpm
+          # The container runs as root; hand the repository back to the
+          # runner user so the staging step can split it into packages/meta.
+          sudo chown -R "$(id -u):$(id -g)" update-site/rpm
 
       # Installs through the freshly built repository with gpgcheck and
       # repo_gpgcheck on, so a broken signature or repodata fails the build.
