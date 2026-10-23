@@ -190,10 +190,23 @@ class WinAppWindowManager(
 
     override suspend fun focusBubbleWindow() {
         delay(500.milliseconds)
+        raiseBubbleWindow()
+    }
+
+    override suspend fun raiseBubbleWindow() {
+        val bubble = bubbleHWND
+        // Both windows are topmost, so a click on the search window would otherwise
+        // stack it over the bubble. Owned only while the bubble shows: Windows destroys
+        // owned windows with their owner, and the search window can be recreated.
+        bubble?.let { WindowsFocusUtils.setOwner(it, searchHWND) }
         WindowsFocusUtils.bringToFront(
             windowFocusRecorder.lastWinAppInfo.value?.getThreadId(winAppInfoCaches),
-            bubbleHWND,
+            bubble,
         )
+    }
+
+    override fun onBubbleWindowHidden() {
+        bubbleHWND?.let { WindowsFocusUtils.setOwner(it, null) }
     }
 
     override suspend fun returnFocusToPreviousApp() {

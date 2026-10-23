@@ -3,6 +3,8 @@ package com.crosspaste.ui
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -12,9 +14,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.awt.SwingWindow
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.window.WindowDecoration
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
@@ -68,6 +74,7 @@ fun SearchWindow(windowIcon: Painter?) {
     val appSizeValue = LocalDesktopAppSizeValueState.current
 
     val searchWindowInfo by appWindowManager.searchWindowInfo.collectAsState()
+    val bubbleWindowInfo by appWindowManager.bubbleWindowInfo.collectAsState()
 
     val themeConfig by themeDetector.themeConfig.collectAsState()
     val isDarkTheme = themeConfig.resolveIsDark(isSystemInDarkTheme())
@@ -533,10 +540,39 @@ fun SearchWindow(windowIcon: Painter?) {
             }
 
             SearchWindowContext(searchWindowInfo) {
-                SideSearchWindowContent()
+                Box {
+                    SideSearchWindowContent()
+                    if (bubbleWindowInfo.show) {
+                        BubbleModalBarrier(onPress = appWindowManager::requestBubbleAttention)
+                    }
+                }
             }
         }
     }
+}
+
+/**
+ * Swallows every pointer event over the search window while the bubble is open, so
+ * the search window cannot be used until the bubble is handled or closed.
+ */
+@Composable
+private fun BubbleModalBarrier(onPress: () -> Unit) {
+    Box(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            if (event.type == PointerEventType.Press) {
+                                onPress()
+                            }
+                            event.changes.forEach { it.consume() }
+                        }
+                    }
+                },
+    )
 }
 
 /** Owned popup windows can take AWT focus while interaction stays within the search UI. */
@@ -546,8 +582,9 @@ internal fun Window.hasFocusedWindow(): Boolean = isFocused || ownedWindows.any 
 fun MacAcrylicEffect(
     window: ComposeWindow,
     isDark: Boolean? = null,
+    levelOffset: Int = 0,
 ) {
-    LaunchedEffect(window, isDark) {
+    LaunchedEffect(window, isDark, levelOffset) {
         snapshotFlow { window.isDisplayable }
             .first { it }
 
@@ -558,7 +595,7 @@ fun MacAcrylicEffect(
         withContext(cpuDispatcher) {
             runCatching {
                 val pointer = Pointer(window.windowHandle)
-                MacAppUtils.setWindowLevelPopUpMenu(pointer)
+                MacAppUtils.setWindowLevelPopUpMenu(pointer, levelOffset)
                 if (isDark != null) {
                     MacAppUtils.applyAcrylicBackground(pointer, isDark)
                 }

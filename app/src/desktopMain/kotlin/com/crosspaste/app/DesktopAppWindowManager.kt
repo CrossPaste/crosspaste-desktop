@@ -22,7 +22,9 @@ import com.crosspaste.utils.pollUntil
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -192,11 +194,32 @@ abstract class DesktopAppWindowManager(
 
     fun hideBubbleWindow() {
         _bubbleWindowInfo.value = BubbleWindowInfo(show = false)
+        onBubbleWindowHidden()
     }
 
     fun isBubbleWindowVisible(): Boolean = _bubbleWindowInfo.value.show
 
     abstract suspend fun focusBubbleWindow()
+
+    /** Brings the already visible bubble back to the front with the keyboard focus. */
+    open suspend fun raiseBubbleWindow() {
+        focusBubbleWindow()
+    }
+
+    protected open fun onBubbleWindowHidden() {}
+
+    private val _bubbleAttentionRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /**
+     * Emits when the user tries to use the search window while the bubble is open: the
+     * bubble is modal, so it comes back to the front and flashes to show it must be
+     * handled or closed first.
+     */
+    val bubbleAttentionRequests: SharedFlow<Unit> = _bubbleAttentionRequests
+
+    fun requestBubbleAttention() {
+        _bubbleAttentionRequests.tryEmit(Unit)
+    }
 
     // The paste panel and its floating button are non-activating windows: they never
     // take focus away from the app the user is pasting into, so unlike the search

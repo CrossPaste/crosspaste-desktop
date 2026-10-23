@@ -49,6 +49,8 @@ object WindowsFocusUtils {
 
     private const val WS_EX_TOOLWINDOW = 0x00000080
 
+    private const val GWLP_HWNDPARENT = -8
+
     private const val WS_EX_NOACTIVATE = 0x08000000
 
     fun isWindowForeground(hwnd: HWND?): Boolean = hwnd != null && user32.GetForegroundWindow() == hwnd
@@ -145,6 +147,17 @@ object WindowsFocusUtils {
             WinUser.GWL_EXSTYLE,
             style or WS_EX_TOOLWINDOW or WS_EX_NOACTIVATE,
         )
+    }
+
+    /**
+     * Makes [owner] the owner of [hwnd], or clears it with null. Windows always stacks
+     * an owned window above its owner.
+     */
+    fun setOwner(
+        hwnd: HWND,
+        owner: HWND?,
+    ) {
+        user32.SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, owner?.pointer)
     }
 
     fun findPasteWindow(windowTitle: String): HWND? =

@@ -74,7 +74,10 @@ interface MacosApi : Library {
 
     fun searchToBack(appName: String)
 
-    fun setWindowLevelPopUpMenu(windowPtr: Pointer?)
+    fun setWindowLevelPopUpMenu(
+        windowPtr: Pointer?,
+        levelOffset: Int,
+    )
 
     fun makeWindowNonActivating(windowPtr: Pointer?)
 

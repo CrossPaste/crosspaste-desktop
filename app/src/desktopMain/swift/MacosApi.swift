@@ -347,8 +347,10 @@ private func hideWindowAndActivateApp(hideTitle: String, appName: String) {
     }
 }
 
+// A positive levelOffset keeps the window above the other pop-up-menu-level windows,
+// whatever order they are brought to the front in.
 @_cdecl("setWindowLevelPopUpMenu")
-public func setWindowLevelPopUpMenu(_ rawPtr: UnsafeRawPointer?) {
+public func setWindowLevelPopUpMenu(_ rawPtr: UnsafeRawPointer?, levelOffset: Int32) {
     guard let rawPtr = rawPtr else { return }
 
     let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
@@ -359,7 +361,7 @@ public func setWindowLevelPopUpMenu(_ rawPtr: UnsafeRawPointer?) {
         }
 
         let popUpMenuLevel = CGWindowLevelForKey(.popUpMenuWindow)
-        window.level = NSWindow.Level(rawValue: Int(popUpMenuLevel))
+        window.level = NSWindow.Level(rawValue: Int(popUpMenuLevel) + Int(levelOffset))
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
     }
 }

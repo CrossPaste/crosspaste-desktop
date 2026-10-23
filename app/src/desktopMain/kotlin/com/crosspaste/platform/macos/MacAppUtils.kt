@@ -29,8 +29,11 @@ object MacAppUtils {
         INSTANCE.searchToBack(appName)
     }
 
-    fun setWindowLevelPopUpMenu(windowPtr: Pointer?) {
-        INSTANCE.setWindowLevelPopUpMenu(windowPtr)
+    fun setWindowLevelPopUpMenu(
+        windowPtr: Pointer?,
+        levelOffset: Int = 0,
+    ) {
+        INSTANCE.setWindowLevelPopUpMenu(windowPtr, levelOffset)
     }
 
     fun makeWindowNonActivating(windowPtr: Pointer?) {
