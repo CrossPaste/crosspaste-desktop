@@ -10,8 +10,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -208,8 +210,10 @@ fun SearchWindow(windowIcon: Painter?) {
         transparent = isMac || isWindowsAndSupportBlurEffect,
         resizable = false,
         // During an appearance preview the window must not steal focus from the
-        // settings window (AWT setVisible would otherwise auto-request focus)
-        focusable = searchWindowInfo.trigger != WindowTrigger.PREVIEW,
+        // settings window (AWT setVisible would otherwise auto-request focus).
+        // While the modal bubble is open, a click must not activate the search window
+        // either: it would flash as it takes focus and hands it straight back.
+        focusable = searchWindowInfo.trigger != WindowTrigger.PREVIEW && !bubbleWindowInfo.show,
         init = { window ->
             if (isWindows) {
                 // Configure the native peer before the shell can create a taskbar button.
@@ -536,6 +540,20 @@ fun SearchWindow(windowIcon: Painter?) {
                     pasteSelectionViewModel.resetToTop()
                     awaitWindowShowing(window)
                     appWindowManager.focusSearchWindow(searchWindowInfo.trigger)
+                }
+            }
+
+            // The search window cannot take focus while the bubble is open, so the OS may
+            // not hand focus back to it when the bubble closes: take it back explicitly.
+            var bubbleWasShown by remember { mutableStateOf(false) }
+            LaunchedEffect(bubbleWindowInfo.show) {
+                if (bubbleWindowInfo.show) {
+                    bubbleWasShown = true
+                } else if (bubbleWasShown) {
+                    bubbleWasShown = false
+                    if (appWindowManager.getCurrentSearchWindowInfo().show && !window.isFocused) {
+                        appWindowManager.focusSearchWindow(WindowTrigger.SYSTEM)
+                    }
                 }
             }
 

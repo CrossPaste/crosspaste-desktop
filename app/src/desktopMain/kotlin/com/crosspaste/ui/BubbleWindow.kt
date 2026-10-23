@@ -61,6 +61,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import java.awt.Toolkit
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.util.concurrent.atomic.AtomicBoolean
@@ -249,11 +250,12 @@ fun BubbleWindow(windowIcon: Painter?) {
     }
 
     // The bubble is modal over the search window: when the user reaches for the search
-    // window, bring the bubble back and flash its outline.
+    // window, alert, bring the bubble back and flash its outline.
     val attentionFlash = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         appWindowManager.bubbleAttentionRequests.collectLatest {
             if (!appWindowManager.isBubbleWindowVisible()) return@collectLatest
+            Toolkit.getDefaultToolkit().beep()
             launch { appWindowManager.raiseBubbleWindow() }
             repeat(2) {
                 attentionFlash.animateTo(1f, tween(ATTENTION_FLASH_MS))
