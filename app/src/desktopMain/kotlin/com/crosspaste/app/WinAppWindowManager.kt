@@ -13,6 +13,7 @@ import com.crosspaste.platform.windows.WindowsFocusUtils
 import com.crosspaste.platform.windows.api.User32.Companion.INSTANCE
 import com.crosspaste.platform.windows.api.WndEnumProc
 import com.crosspaste.ui.awaitWindowShowing
+import com.crosspaste.utils.pollUntil
 import com.sun.jna.Native
 import com.sun.jna.platform.win32.WinDef
 import com.sun.jna.platform.win32.WinDef.HWND
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import okio.Path
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class WinAppWindowManager(
     appInfo: AppInfo,
@@ -189,11 +191,31 @@ class WinAppWindowManager(
     }
 
     override suspend fun focusBubbleWindow() {
+        // Take ownership as soon as the bubble shows, not after the activation delay:
+        // it is what keeps the bubble above the search window.
+        pollUntil(BUBBLE_SHOW_TIMEOUT, BUBBLE_SHOW_POLL_INTERVAL) { bubbleComposeWindow?.isShowing == true }
+        keepBubbleAboveSearch()
         delay(500.milliseconds)
+        raiseBubbleWindow()
+    }
+
+    override suspend fun raiseBubbleWindow() {
+        keepBubbleAboveSearch()
         WindowsFocusUtils.bringToFront(
             windowFocusRecorder.lastWinAppInfo.value?.getThreadId(winAppInfoCaches),
             bubbleHWND,
         )
+    }
+
+    /**
+     * Both windows are topmost, so a click on the search window would otherwise stack it
+     * over the bubble. The bubble window is destroyed when it hides, which ends the
+     * ownership with it.
+     */
+    private fun keepBubbleAboveSearch() {
+        val bubble = bubbleHWND ?: return
+        val search = searchHWND ?: return
+        WindowsFocusUtils.setOwner(bubble, search)
     }
 
     override suspend fun returnFocusToPreviousApp() {
@@ -267,3 +289,7 @@ class WinAppWindowManager(
         _cachedBubbleHWND = null
     }
 }
+
+private val BUBBLE_SHOW_TIMEOUT = 1.seconds
+
+private val BUBBLE_SHOW_POLL_INTERVAL = 10.milliseconds

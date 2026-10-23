@@ -4,6 +4,7 @@ import com.crosspaste.platform.windows.api.Imm32
 import com.crosspaste.platform.windows.api.Shell32
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.platform.windows.api.windowProcessId
+import com.sun.jna.Native
 import com.sun.jna.platform.win32.Kernel32
 import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HWND
@@ -48,6 +49,8 @@ object WindowsFocusUtils {
     fun activateSearchWindow(hwnd: HWND?): Boolean = searchActivation.activate(hwnd)
 
     private const val WS_EX_TOOLWINDOW = 0x00000080
+
+    private const val GWLP_HWNDPARENT = -8
 
     private const val WS_EX_NOACTIVATE = 0x08000000
 
@@ -145,6 +148,22 @@ object WindowsFocusUtils {
             WinUser.GWL_EXSTYLE,
             style or WS_EX_TOOLWINDOW or WS_EX_NOACTIVATE,
         )
+    }
+
+    /** Makes [owner] the owner of [hwnd]: Windows always stacks an owned window above its owner. */
+    fun setOwner(
+        hwnd: HWND,
+        owner: HWND,
+    ) {
+        // The previous owner comes back, which is null both for an unowned window and on
+        // failure: only the last error tells them apart.
+        Native.setLastError(0)
+        if (user32.SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, owner.pointer) == null) {
+            val error = Native.getLastError()
+            if (error != 0) {
+                logger.warn { "Failed to set the owner window: error $error" }
+            }
+        }
     }
 
     fun findPasteWindow(windowTitle: String): HWND? =
