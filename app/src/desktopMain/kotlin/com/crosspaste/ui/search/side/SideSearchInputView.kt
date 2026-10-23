@@ -68,6 +68,7 @@ import com.crosspaste.ui.base.CustomTextField
 import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.ui.base.TutorialButton
+import com.crosspaste.ui.base.nonFocusable
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
@@ -322,6 +323,7 @@ fun SideSearchInputView() {
                             .height(large2X)
                             .clip(tiny3XRoundedCornerShape)
                             .background(MaterialTheme.colorScheme.primary)
+                            .nonFocusable()
                             .clickable { pasteMenuService.cancelCut() },
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,

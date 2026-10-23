@@ -48,11 +48,11 @@ import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.PasteTag.Companion.createDefaultPasteTag
 import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.base.PasteContextMenuView
+import com.crosspaste.ui.base.nonFocusable
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.paste.PasteTagScope
 import com.crosspaste.ui.paste.createPasteTagScope
-import com.crosspaste.ui.search.skipKeyboardFocus
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -232,7 +232,7 @@ private fun AddTagChip(onClick: () -> Unit) {
                 tint = MaterialTheme.colorScheme.primary,
             )
         },
-        modifier = Modifier.height(xxLarge).skipKeyboardFocus(),
+        modifier = Modifier.height(xxLarge).nonFocusable(),
         border = null,
         shape = CircleShape,
     )

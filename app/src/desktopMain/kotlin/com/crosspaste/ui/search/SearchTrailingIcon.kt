@@ -38,6 +38,7 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteType.Companion.ALL_TYPES
 import com.crosspaste.ui.base.MenuItemView
+import com.crosspaste.ui.base.nonFocusable
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.huge
@@ -91,7 +92,7 @@ fun SearchTrailingIcon() {
             onClick = {
                 showTypes = true
             },
-            modifier = Modifier.height(28.dp).skipKeyboardFocus(),
+            modifier = Modifier.height(28.dp).nonFocusable(),
             shape = tiny2XRoundedCornerShape,
             border =
                 BorderStroke(

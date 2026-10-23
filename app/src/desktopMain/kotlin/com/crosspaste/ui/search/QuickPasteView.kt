@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.clip
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.ui.base.KeyboardView
 import com.crosspaste.ui.base.enter
+import com.crosspaste.ui.base.nonFocusable
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
@@ -36,7 +37,7 @@ fun QuickPasteView() {
                 Modifier
                     .wrapContentSize()
                     .clip(tinyRoundedCornerShape)
-                    .skipKeyboardFocus()
+                    .nonFocusable()
                     .clickable {
                         mainCoroutineDispatcher.launch {
                             pasteSelectionViewModel.toPaste()
@@ -53,7 +54,7 @@ fun QuickPasteView() {
                 Modifier
                     .wrapContentSize()
                     .clip(tinyRoundedCornerShape)
-                    .skipKeyboardFocus()
+                    .nonFocusable()
                     .clickable {
                         mainCoroutineDispatcher.launch {
                             pasteSelectionViewModel.toPaste()
