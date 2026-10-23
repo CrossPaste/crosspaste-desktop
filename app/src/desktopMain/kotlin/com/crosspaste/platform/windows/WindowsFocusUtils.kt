@@ -57,6 +57,14 @@ object WindowsFocusUtils {
         return processId != Kernel32.INSTANCE.GetCurrentProcessId()
     }
 
+    fun isCurrentProcessWindow(hwnd: HWND): Boolean {
+        val processId = IntByReference()
+        if (user32.GetWindowThreadProcessId(hwnd, processId) == 0) {
+            return false
+        }
+        return processId.value == Kernel32.INSTANCE.GetCurrentProcessId()
+    }
+
     /**
      * Whether the foreground window belongs to the same process as [hwnd]. Compared by
      * process rather than handle: the app may bring up another of its windows (an owner

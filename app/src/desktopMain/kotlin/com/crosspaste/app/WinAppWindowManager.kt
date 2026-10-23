@@ -86,7 +86,7 @@ class WinAppWindowManager(
 
     private val winAppInfoCaches = WinAppInfoCaches(appInfo, userDataPathProvider, ioScope)
 
-    private val windowFocusRecorder = WindowFocusRecorder(this)
+    private val windowFocusRecorder = WindowFocusRecorder()
 
     fun subscribeForegroundChanges(listener: (HWND?) -> Unit): AutoCloseable =
         windowFocusRecorder.subscribeForegroundChanges(listener)

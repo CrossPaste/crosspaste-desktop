@@ -1,6 +1,5 @@
 package com.crosspaste.platform.windows
 
-import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.platform.windows.api.User32.Companion.INSTANCE
 import com.crosspaste.utils.ioDispatcher
@@ -16,9 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArraySet
 
-class WindowFocusRecorder(
-    private val appWindowManager: DesktopAppWindowManager,
-) {
+class WindowFocusRecorder {
     private val logger = KotlinLogging.logger {}
 
     private var hookHandle: WinNT.HANDLE? = null
@@ -91,6 +88,9 @@ class WindowFocusRecorder(
     private fun isValidWindow(hwnd: HWND): Boolean {
         if (!INSTANCE.IsWindowVisible(hwnd)) return false
 
+        // None of our own windows (main, search, bubble editor, ...) is a paste target
+        if (WindowsFocusUtils.isCurrentProcessWindow(hwnd)) return false
+
         val titleLength = INSTANCE.GetWindowTextLengthW(hwnd)
 
         var title: String? = null
@@ -99,12 +99,6 @@ class WindowFocusRecorder(
             val buffer = CharArray(titleLength + 1)
             INSTANCE.GetWindowTextW(hwnd, buffer, titleLength + 1)
             title = Native.toString(buffer).trim()
-
-            if (title == appWindowManager.mainWindowTitle ||
-                title == appWindowManager.searchWindowTitle
-            ) {
-                return false
-            }
         }
 
         val buffer = CharArray(512)
