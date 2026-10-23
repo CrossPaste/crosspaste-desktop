@@ -3,6 +3,7 @@ package com.crosspaste.ui.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,6 +37,7 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.dto.sync.SyncInfo
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.net.NetworkInterfaceService
+import com.crosspaste.ui.LocalScrollContentBottomPadding
 import com.crosspaste.ui.LocalSmallSettingItemState
 import com.crosspaste.ui.LocalThemeExtState
 import com.crosspaste.ui.base.Counter
@@ -94,6 +96,7 @@ fun NetworkSettingsContentView(syncExtContent: @Composable () -> Unit = {}) {
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(bottom = LocalScrollContentBottomPadding.current),
         verticalArrangement = Arrangement.spacedBy(tiny),
     ) {
         item {
