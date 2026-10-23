@@ -545,13 +545,19 @@ fun SearchWindow(windowIcon: Painter?) {
 
             // The search window cannot take focus while the bubble is open, so the OS may
             // not hand focus back to it when the bubble closes: take it back explicitly.
+            // When focus moves to another app, hideSearchWindow() closes the bubble and
+            // then the search window in one go, so show is already false here and nothing
+            // is reactivated. A preview never takes focus. SYSTEM rather than the opening
+            // trigger: on X11 a SHORTCUT trigger would resend that shortcut's old
+            // timestamp, which the window manager is more likely to refuse by now.
             var bubbleWasShown by remember { mutableStateOf(false) }
             LaunchedEffect(bubbleWindowInfo.show) {
                 if (bubbleWindowInfo.show) {
                     bubbleWasShown = true
                 } else if (bubbleWasShown) {
                     bubbleWasShown = false
-                    if (appWindowManager.getCurrentSearchWindowInfo().show && !window.isFocused) {
+                    val current = appWindowManager.getCurrentSearchWindowInfo()
+                    if (current.show && current.trigger != WindowTrigger.PREVIEW && !window.isFocused) {
                         appWindowManager.focusSearchWindow(WindowTrigger.SYSTEM)
                     }
                 }

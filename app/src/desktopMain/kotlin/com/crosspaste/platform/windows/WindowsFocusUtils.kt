@@ -4,6 +4,7 @@ import com.crosspaste.platform.windows.api.Imm32
 import com.crosspaste.platform.windows.api.Shell32
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.platform.windows.api.windowProcessId
+import com.sun.jna.Native
 import com.sun.jna.platform.win32.Kernel32
 import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HWND
@@ -149,15 +150,20 @@ object WindowsFocusUtils {
         )
     }
 
-    /**
-     * Makes [owner] the owner of [hwnd], or clears it with null. Windows always stacks
-     * an owned window above its owner.
-     */
+    /** Makes [owner] the owner of [hwnd]: Windows always stacks an owned window above its owner. */
     fun setOwner(
         hwnd: HWND,
-        owner: HWND?,
+        owner: HWND,
     ) {
-        user32.SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, owner?.pointer)
+        // The previous owner comes back, which is null both for an unowned window and on
+        // failure: only the last error tells them apart.
+        Native.setLastError(0)
+        if (user32.SetWindowLongPtr(hwnd, GWLP_HWNDPARENT, owner.pointer) == null) {
+            val error = Native.getLastError()
+            if (error != 0) {
+                logger.warn { "Failed to set the owner window: error $error" }
+            }
+        }
     }
 
     fun findPasteWindow(windowTitle: String): HWND? =

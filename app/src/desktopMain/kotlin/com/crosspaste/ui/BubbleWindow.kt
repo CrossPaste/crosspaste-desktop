@@ -59,7 +59,6 @@ import com.crosspaste.utils.getPlatformUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import java.awt.Toolkit
 import java.awt.event.WindowAdapter
@@ -256,7 +255,9 @@ fun BubbleWindow(windowIcon: Painter?) {
         appWindowManager.bubbleAttentionRequests.collectLatest {
             if (!appWindowManager.isBubbleWindowVisible()) return@collectLatest
             Toolkit.getDefaultToolkit().beep()
-            launch { appWindowManager.raiseBubbleWindow() }
+            // Raise right after the visibility check, not from a launched coroutine: one
+            // queued behind an Esc would reopen the bubble that Esc just closed.
+            appWindowManager.raiseBubbleWindow()
             repeat(2) {
                 attentionFlash.animateTo(1f, tween(ATTENTION_FLASH_MS))
                 attentionFlash.animateTo(0f, tween(ATTENTION_FLASH_MS))

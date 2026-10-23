@@ -194,7 +194,6 @@ abstract class DesktopAppWindowManager(
 
     fun hideBubbleWindow() {
         _bubbleWindowInfo.value = BubbleWindowInfo(show = false)
-        onBubbleWindowHidden()
     }
 
     fun isBubbleWindowVisible(): Boolean = _bubbleWindowInfo.value.show
@@ -205,8 +204,6 @@ abstract class DesktopAppWindowManager(
     open suspend fun raiseBubbleWindow() {
         focusBubbleWindow()
     }
-
-    protected open fun onBubbleWindowHidden() {}
 
     private val _bubbleAttentionRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
