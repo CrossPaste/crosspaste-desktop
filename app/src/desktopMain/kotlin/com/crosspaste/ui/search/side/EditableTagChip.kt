@@ -34,6 +34,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Close
+import com.crosspaste.ui.base.nonFocusable
 import com.crosspaste.ui.paste.PasteTagScope
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small
@@ -109,7 +110,7 @@ fun PasteTagScope.TagChip(
                 selectedLabelColor = MaterialTheme.colorScheme.primary,
             ),
         shape = CircleShape,
-        modifier = modifier.height(xxLarge),
+        modifier = modifier.height(xxLarge).nonFocusable(),
     )
 }
 
@@ -189,6 +190,7 @@ fun PasteTagScope.EditableTagChip(onEditDone: suspend (String) -> Unit) {
                 selectedLabelColor = MaterialTheme.colorScheme.primary,
             ),
         shape = CircleShape,
-        modifier = Modifier.height(xxLarge),
+        // Clicking the chip outside the name field must not pull focus off it
+        modifier = Modifier.height(xxLarge).nonFocusable(),
     )
 }

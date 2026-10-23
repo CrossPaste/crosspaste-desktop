@@ -48,7 +48,9 @@ import com.crosspaste.paste.PasteTag
 import com.crosspaste.paste.PasteTag.Companion.createDefaultPasteTag
 import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.base.PasteContextMenuView
+import com.crosspaste.ui.base.nonFocusable
 import com.crosspaste.ui.model.PasteSearchViewModel
+import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.paste.PasteTagScope
 import com.crosspaste.ui.paste.createPasteTagScope
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -67,6 +69,7 @@ fun SearchTagsView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val pasteTagDao = koinInject<PasteTagDao>()
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
+    val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
     val tagMenuService = koinInject<DesktopPasteTagMenuService>()
 
     val searchWindowInfo = LocalSearchWindowInfoState.current
@@ -105,6 +108,8 @@ fun SearchTagsView() {
                     } else {
                         pasteTagDao.updatePasteTagName(tag.id, name)
                     }
+                    // The name field held focus and is about to leave the composition
+                    pasteSelectionViewModel.requestPasteListFocus()
                 },
                 onDragStart = { initialDrift -> dragState.startDrag(tag.id, initialDrift.x) },
                 onDragMove = { deltaX -> dragState.handleDragMove(deltaX, lazyListState.layoutInfo) },
@@ -127,6 +132,7 @@ fun SearchTagsView() {
                             pasteTagDao.createPasteTag(name, it.color)
                         }
                         PasteTagScope.resetEditing()
+                        pasteSelectionViewModel.requestPasteListFocus()
                     },
                 )
             }
@@ -226,7 +232,7 @@ private fun AddTagChip(onClick: () -> Unit) {
                 tint = MaterialTheme.colorScheme.primary,
             )
         },
-        modifier = Modifier.height(xxLarge),
+        modifier = Modifier.height(xxLarge).nonFocusable(),
         border = null,
         shape = CircleShape,
     )
