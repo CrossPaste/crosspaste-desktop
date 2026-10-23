@@ -3,6 +3,7 @@ package com.crosspaste.platform.windows
 import com.crosspaste.platform.windows.api.Imm32
 import com.crosspaste.platform.windows.api.Shell32
 import com.crosspaste.platform.windows.api.User32
+import com.crosspaste.platform.windows.api.windowProcessId
 import com.sun.jna.platform.win32.Kernel32
 import com.sun.jna.platform.win32.WinDef.DWORD
 import com.sun.jna.platform.win32.WinDef.HWND
@@ -63,21 +64,11 @@ object WindowsFocusUtils {
      * frame, a dialog) on activation, and the keystroke still reaches it.
      */
     fun isForegroundProcessOf(hwnd: HWND): Boolean {
-        val processId = IntByReference()
-        if (user32.GetWindowThreadProcessId(hwnd, processId) == 0) {
-            return false
-        }
-        return processId.value != 0 && processId.value == getForegroundProcessId()
+        val processId = user32.windowProcessId(hwnd) ?: return false
+        return processId == getForegroundProcessId()
     }
 
-    private fun getForegroundProcessId(): Int? {
-        val foreground = user32.GetForegroundWindow() ?: return null
-        val processId = IntByReference()
-        if (user32.GetWindowThreadProcessId(foreground, processId) == 0) {
-            return null
-        }
-        return processId.value.takeIf { it != 0 }
-    }
+    private fun getForegroundProcessId(): Int? = user32.GetForegroundWindow()?.let(user32::windowProcessId)
 
     @Synchronized
     fun bringToFront(

@@ -7,6 +7,7 @@ import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.LPARAM
 import com.sun.jna.platform.win32.WinDef.WPARAM
 import com.sun.jna.platform.win32.WinNT.HANDLE
+import com.sun.jna.ptr.IntByReference
 import com.sun.jna.win32.StdCallLibrary.StdCallCallback
 import com.sun.jna.win32.W32APIOptions.DEFAULT_OPTIONS
 
@@ -198,3 +199,9 @@ internal fun User32.windowFromPoint(
     x: Int,
     y: Int,
 ): HWND? = WindowFromPoint((x.toLong() and 0xffff_ffffL) or (y.toLong() shl 32))
+
+internal fun User32.windowProcessId(hwnd: HWND): Int? {
+    val processId = IntByReference()
+    if (GetWindowThreadProcessId(hwnd, processId) == 0) return null
+    return processId.value.takeIf { it != 0 }
+}
