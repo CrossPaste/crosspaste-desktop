@@ -5,6 +5,7 @@ import com.crosspaste.platform.windows.api.User32.Companion.INSTANCE
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.namedScope
 import com.sun.jna.Native
+import com.sun.jna.platform.win32.Kernel32
 import com.sun.jna.platform.win32.WinDef
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinNT
@@ -34,6 +35,8 @@ class WindowFocusRecorder {
         foregroundListeners.add(listener)
         return AutoCloseable { foregroundListeners.remove(listener) }
     }
+
+    private val previousAppFilter = WindowsPreviousAppFilter(INSTANCE, Kernel32.INSTANCE.GetCurrentProcessId())
 
     private val scope = namedScope(ioDispatcher, "WindowFocusRecorder")
 
@@ -86,37 +89,22 @@ class WindowFocusRecorder {
     }
 
     private fun isValidWindow(hwnd: HWND): Boolean {
-        if (!INSTANCE.IsWindowVisible(hwnd)) return false
-
-        // None of our own windows (main, search, bubble editor, ...) is a paste target
-        if (WindowsFocusUtils.isCurrentProcessWindow(hwnd)) return false
-
-        val titleLength = INSTANCE.GetWindowTextLengthW(hwnd)
-
-        var title: String? = null
-
-        if (titleLength != 0) {
-            val buffer = CharArray(titleLength + 1)
-            INSTANCE.GetWindowTextW(hwnd, buffer, titleLength + 1)
-            title = Native.toString(buffer).trim()
-        }
-
-        val buffer = CharArray(512)
-        INSTANCE.GetClassNameW(hwnd, buffer, 512)
-        val className = Native.toString(buffer).trim()
-
-        val ignoredClasses =
-            setOf(
-                "Shell_TrayWnd",
-                "Shell_SecondaryTrayWnd",
-            )
-
-        val isValidWindow = className !in ignoredClasses
-
+        val isValidWindow = previousAppFilter.accepts(hwnd)
         if (isValidWindow) {
-            logger.debug { "Active window changed: title=${title ?: ""}, className=$className" }
+            logger.debug {
+                "Active window changed: title=${windowTitle(
+                    hwnd,
+                )}, className=${previousAppFilter.className(hwnd)}"
+            }
         }
-
         return isValidWindow
+    }
+
+    private fun windowTitle(hwnd: HWND): String {
+        val titleLength = INSTANCE.GetWindowTextLengthW(hwnd)
+        if (titleLength == 0) return ""
+        val buffer = CharArray(titleLength + 1)
+        INSTANCE.GetWindowTextW(hwnd, buffer, titleLength + 1)
+        return Native.toString(buffer).trim()
     }
 }
