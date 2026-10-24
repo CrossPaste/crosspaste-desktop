@@ -46,18 +46,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import com.composables.icons.materialsymbols.MaterialSymbols
-import com.composables.icons.materialsymbols.rounded.Check
 import com.composables.icons.materialsymbols.rounded.Close
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.nonFocusable
 import com.crosspaste.ui.paste.PasteTagScope
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small
-import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.tiny6X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -99,13 +98,7 @@ fun PasteTagScope.TagChip(
             }
         },
         label = {
-            TagLabel(
-                accent = palette.accent,
-                content = palette.content,
-                // Selected chips swap the dot for a check, so the active filter is also
-                // identifiable by shape and stays visible for the pale swatches.
-                selected = isSelected,
-            ) { textModifier ->
+            TagLabel(palette.accent) { textModifier ->
                 Text(
                     text = tag.name,
                     modifier = textModifier,
@@ -115,7 +108,14 @@ fun PasteTagScope.TagChip(
                 )
             }
         },
-        border = palette.animatedBorder(emphasized = isHovered || isSelected),
+        border =
+            palette.animatedBorder(
+                when {
+                    isSelected -> TagChipEdge.SELECTED
+                    isHovered -> TagChipEdge.HOVERED
+                    else -> TagChipEdge.REST
+                },
+            ),
         elevation = null,
         colors = palette.chipColors(),
         shape = CircleShape,
@@ -143,7 +143,7 @@ fun PasteTagScope.EditableTagChip(onEditDone: suspend (String) -> Unit) {
         onClick = {
         },
         label = {
-            TagLabel(accent = palette.accent, content = palette.content, selected = false) { textModifier ->
+            TagLabel(palette.accent) { textModifier ->
                 BasicTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -184,7 +184,7 @@ fun PasteTagScope.EditableTagChip(onEditDone: suspend (String) -> Unit) {
             )
         },
         // The name field has focus while editing, so keep the edge emphasized
-        border = palette.animatedBorder(emphasized = true),
+        border = palette.animatedBorder(TagChipEdge.SELECTED),
         elevation = null,
         colors = palette.chipColors(),
         shape = CircleShape,
@@ -195,12 +195,12 @@ fun PasteTagScope.EditableTagChip(onEditDone: suspend (String) -> Unit) {
 
 /**
  * Colors derived from a tag's swatch: a tint of the swatch as the fill (flattened onto the
- * app surface, see [tagChipPalette]), and a darker (light theme) or lighter (dark theme)
+ * app surface, see [rememberTagChipPalette]), and a darker (light theme) or lighter (dark theme)
  * shade of it for the label, so the text stays readable on the tint while still reading as
  * the tag's color.
  */
 @Immutable
-internal data class TagChipPalette(
+private data class TagChipPalette(
     val accent: Color,
     val content: Color,
     val container: Color,
@@ -221,40 +221,42 @@ internal data class TagChipPalette(
         )
 
     @Composable
-    fun animatedBorder(emphasized: Boolean): BorderStroke {
-        val color by animateColorAsState(if (emphasized) accent else restBorder)
-        val width by animateDpAsState(if (emphasized) tiny4X else tiny5X)
+    fun animatedBorder(edge: TagChipEdge): BorderStroke {
+        val color by animateColorAsState(if (edge == TagChipEdge.REST) restBorder else accent)
+        val width by animateDpAsState(
+            when (edge) {
+                TagChipEdge.REST -> tiny5X
+                TagChipEdge.HOVERED -> tiny5X + tiny6X
+                TagChipEdge.SELECTED -> tiny4X
+            },
+        )
         return BorderStroke(width, color)
     }
 }
 
-internal fun tagChipPalette(
-    accent: Color,
-    isDark: Boolean,
-    surface: Color,
-): TagChipPalette {
-    // Fills are flattened onto the app surface instead of being left translucent: the search
-    // window sits on an acrylic/blur material (macOS/Windows) or a plain container ground
-    // (Linux), so a see-through tint would pick up the desktop behind the window and turn
-    // muddy. Flattening keeps each chip a self-contained opaque pill, like the opaque cards
-    // used elsewhere in the search window.
-    val content = if (isDark) lerp(accent, Color.White, 0.35f) else lerp(accent, Color.Black, 0.5f)
-    return TagChipPalette(
-        accent = accent,
-        content = content,
-        container = accent.copy(alpha = if (isDark) 0.22f else 0.16f).compositeOver(surface),
-        selectedContainer = accent.copy(alpha = if (isDark) 0.36f else 0.28f).compositeOver(surface),
-        restBorder = accent.copy(alpha = if (isDark) 0.45f else 0.4f),
-        closeIcon = content.copy(alpha = CLOSE_ICON_ALPHA),
-    )
-}
+// Hover sits one step below selection so the active filter stays distinguishable
+private enum class TagChipEdge { REST, HOVERED, SELECTED }
 
 @Composable
 private fun rememberTagChipPalette(tagColor: Long): TagChipPalette {
     val isDark = LocalThemeState.current.isCurrentThemeDark
     val surface = MaterialTheme.colorScheme.surface
     return remember(tagColor, isDark, surface) {
-        tagChipPalette(Color(tagColor.toInt()), isDark, surface)
+        val accent = Color(tagColor.toInt())
+        val content = if (isDark) lerp(accent, Color.White, 0.35f) else lerp(accent, Color.Black, 0.5f)
+        // Fills are flattened onto the app surface instead of being left translucent: the search
+        // window sits on an acrylic/blur material (macOS/Windows) or a plain container ground
+        // (Linux), so a see-through tint would pick up the desktop behind the window and turn
+        // muddy. Flattening keeps each chip a self-contained opaque pill, like the opaque cards
+        // used elsewhere in the search window.
+        TagChipPalette(
+            accent = accent,
+            content = content,
+            container = accent.copy(alpha = if (isDark) 0.22f else 0.16f).compositeOver(surface),
+            selectedContainer = accent.copy(alpha = if (isDark) 0.36f else 0.28f).compositeOver(surface),
+            restBorder = accent.copy(alpha = if (isDark) 0.45f else 0.4f),
+            closeIcon = content.copy(alpha = CLOSE_ICON_ALPHA),
+        )
     }
 }
 
@@ -262,47 +264,30 @@ private fun rememberTagChipPalette(tagColor: Long): TagChipPalette {
 private fun tagTextStyle(): TextStyle = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold)
 
 /**
- * Leading marker followed by the tag name. The marker is aligned to the text baseline rather
- * than centered in the line box, which sits visibly too high next to lowercase Latin text.
- *
- * Unselected chips show the tag color dot; selected chips swap it for a check, so the active
- * filter is identifiable by shape as well as by the stronger fill — on the pale swatches
- * (e.g. yellow) the dot almost disappears against the selected fill.
+ * Color dot followed by the tag name. The dot is aligned to the text baseline rather than
+ * centered in the line box, which sits visibly too high next to lowercase Latin text.
  */
 @Composable
 private fun TagLabel(
     accent: Color,
-    content: Color,
-    selected: Boolean,
     text: @Composable (Modifier) -> Unit,
 ) {
-    val markerCenterAboveBaseline =
-        with(LocalDensity.current) { tagTextStyle().fontSize.toPx() * MARKER_CENTER_ABOVE_BASELINE_EM }
+    val dotCenterAboveBaseline =
+        with(LocalDensity.current) { tagTextStyle().fontSize.toPx() * DOT_CENTER_ABOVE_BASELINE_EM }
     Row(horizontalArrangement = Arrangement.spacedBy(tiny2X)) {
-        val markerModifier =
-            Modifier.alignBy { it.measuredHeight / 2 + markerCenterAboveBaseline.roundToInt() }
-        if (selected) {
-            Icon(
-                imageVector = MaterialSymbols.Rounded.Check,
-                contentDescription = null,
-                tint = content,
-                modifier = markerModifier.size(small2X),
-            )
-        } else {
-            Box(
-                modifier =
-                    markerModifier
-                        .size(tiny)
-                        .background(color = accent, shape = CircleShape),
-            )
-        }
+        Box(
+            modifier =
+                Modifier
+                    .alignBy { it.measuredHeight / 2 + dotCenterAboveBaseline.roundToInt() }
+                    .size(tiny)
+                    .background(color = accent, shape = CircleShape),
+        )
         text(Modifier.alignBy(FirstBaseline))
     }
 }
 
 // Between the x-height center of Latin lowercase (~0.26em) and the center of CJK glyphs (~0.38em)
-private const val MARKER_CENTER_ABOVE_BASELINE_EM = 0.31f
+private const val DOT_CENTER_ABOVE_BASELINE_EM = 0.31f
 
-// Keeps the edit chip's delete affordance above the 3:1 non-text contrast minimum for every
-// swatch (0.6 left the light theme yellow swatch at ~2.9:1).
+// Keeps the edit chip's delete icon readable on the pale swatches (0.6 was too faint on yellow)
 private const val CLOSE_ICON_ALPHA = 0.75f
