@@ -2,6 +2,7 @@ package com.crosspaste.plugin
 
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppName
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.cli.CliPasteDetailDto
 import com.crosspaste.cli.toDetailDto
 import com.crosspaste.db.paste.PasteTagDao
@@ -19,6 +20,8 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.ui.base.UISupport
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 
 /**
@@ -28,6 +31,7 @@ import kotlinx.serialization.json.Json
  */
 class ProcessPluginRunner(
     private val appInfo: AppInfo,
+    private val appWindowManager: DesktopAppWindowManager,
     private val copywriter: GlobalCopywriter,
     private val environment: PluginEnvironment,
     private val executor: ProcessPluginExecutor,
@@ -54,10 +58,55 @@ class ProcessPluginRunner(
         action: String? = null,
     ) {
         val manifest = plugin.manifest ?: return
-        val command = plugin.platform(environment)?.command ?: return
-        if (command.isEmpty()) return
         val output = PluginOutput.fromWireName(manifest.output) ?: return
         val name = manifest.displayName(copywriter.language())
+        val text = execute(plugin, manifest, name, pasteData, action) ?: return
+        applyResult(manifest, name) { applyOutput(name, output, text) }
+    }
+
+    /**
+     * For the search window: a plugin that replaces the clipboard also pastes its
+     * result into the app the window was opened over. Other outputs behave as
+     * [run], and a failure leaves the window open so its notification is seen.
+     */
+    suspend fun runAndPaste(
+        plugin: LocalPlugin,
+        pasteData: PasteData,
+        action: String? = null,
+    ) {
+        val manifest = plugin.manifest ?: return
+        if (PluginOutput.fromWireName(manifest.output) != PluginOutput.REPLACE_CLIPBOARD) {
+            run(plugin, pasteData, action)
+            return
+        }
+        val name = manifest.displayName(copywriter.language())
+        val text = execute(plugin, manifest, name, pasteData, action) ?: return
+        val pasteItem = textPasteItem(text)
+        // Hiding the window cancels the caller; once the result exists the paste must still land
+        withContext(NonCancellable) {
+            applyResult(manifest, name) {
+                appWindowManager.hideSearchWindowAndPaste(1) {
+                    // Our own pasteboard writes are not captured, so record the paste directly
+                    val id = createLocalPaste(pasteItem)
+                    pasteboardService
+                        .tryWritePasteboard(id = id, pasteItem = pasteItem, localOnly = true)
+                        .onFailure { notifyFailure(name, it.message ?: copywriter.getText("copy_failed")) }
+                        .isSuccess
+                }
+            }
+        }
+    }
+
+    /** The plugin's stdout without trailing newlines, or null once the user has been told why there is none. */
+    private suspend fun execute(
+        plugin: LocalPlugin,
+        manifest: PluginManifest,
+        name: String,
+        pasteData: PasteData,
+        action: String?,
+    ): String? {
+        val command = plugin.platform(environment)?.command ?: return null
+        if (command.isEmpty()) return null
 
         val result =
             try {
@@ -73,30 +122,31 @@ class ProcessPluginRunner(
             } catch (e: Exception) {
                 logger.warn(e) { "Plugin ${manifest.id} failed to start" }
                 notifyFailure(name, e.message ?: e::class.simpleName.orEmpty())
-                return
+                return null
             }
 
         if (result.stderr.isNotBlank()) {
             logger.info { "Plugin ${manifest.id} stderr:\n${result.stderr}" }
         }
-        when (result.exitCode) {
+        return when (result.exitCode) {
             null -> {
                 logger.warn { "Plugin ${manifest.id} timed out" }
                 notifyFailure(name, copywriter.getText("plugin_timed_out"))
+                null
             }
             0 -> {
-                if (result.stdoutTruncated) {
-                    logger.warn { "Plugin ${manifest.id} output exceeded the size limit" }
-                    notifyFailure(name, copywriter.getText("plugin_output_too_large"))
-                    return
-                }
-                try {
-                    applyOutput(name, output, result.stdout.trimEnd('\n'))
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    logger.warn(e) { "Plugin ${manifest.id} failed to apply output" }
-                    notifyFailure(name, e.message ?: e::class.simpleName.orEmpty())
+                val text = result.stdout.trimEnd('\n')
+                when {
+                    result.stdoutTruncated -> {
+                        logger.warn { "Plugin ${manifest.id} output exceeded the size limit" }
+                        notifyFailure(name, copywriter.getText("plugin_output_too_large"))
+                        null
+                    }
+                    text.isEmpty() -> {
+                        notifyFailure(name, copywriter.getText("plugin_no_output"))
+                        null
+                    }
+                    else -> text
                 }
             }
             else -> {
@@ -108,7 +158,23 @@ class ProcessPluginRunner(
                         .takeLast(MAX_ERROR_DETAIL_LENGTH)
                         .ifEmpty { "exit ${result.exitCode}" },
                 )
+                null
             }
+        }
+    }
+
+    private suspend fun applyResult(
+        manifest: PluginManifest,
+        name: String,
+        apply: suspend () -> Unit,
+    ) {
+        try {
+            apply()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.warn(e) { "Plugin ${manifest.id} failed to apply output" }
+            notifyFailure(name, e.message ?: e::class.simpleName.orEmpty())
         }
     }
 
@@ -117,10 +183,6 @@ class ProcessPluginRunner(
         output: PluginOutput,
         text: String,
     ) {
-        if (text.isEmpty()) {
-            notifyFailure(name, copywriter.getText("plugin_no_output"))
-            return
-        }
         when (output) {
             PluginOutput.REPLACE_CLIPBOARD -> {
                 val pasteItem = textPasteItem(text)

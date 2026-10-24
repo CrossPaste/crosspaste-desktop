@@ -1,6 +1,7 @@
 package com.crosspaste.listener
 
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.WindowInfo
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteboardService
@@ -8,12 +9,15 @@ import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.platform.Platform
 import com.crosspaste.test.IntegrationTest
+import com.crosspaste.ui.model.PluginActionsPanel
+import com.crosspaste.ui.model.PluginActionsViewModel
 import com.crosspaste.utils.getJsonUtils
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
@@ -64,6 +68,8 @@ class DesktopShortKeysActionTest {
 
         val appWindowManager = mockk<DesktopAppWindowManager>(relaxed = true)
 
+        val pluginActionsViewModel = mockk<PluginActionsViewModel>(relaxed = true)
+
         /** Wall-clock time of the paste keystroke injection, 0 until it happens. */
         val pasteAt = AtomicLong(0L)
 
@@ -97,8 +103,22 @@ class DesktopShortKeysActionTest {
                     notificationManager = mockk(relaxed = true),
                     pasteboardService = pasteboardService,
                     pasteDao = mockk(relaxed = true),
+                    pluginActionsViewModel = pluginActionsViewModel,
                 )
         }
+    }
+
+    @Test
+    fun `hide window closes an open plugin panel and keeps the search window`() {
+        val fixture = Fixture()
+        every { fixture.appWindowManager.getCurrentSearchWindowInfo() } returns
+            mockk<WindowInfo> { every { show } returns true }
+        every { fixture.pluginActionsViewModel.panel } returns MutableStateFlow(mockk<PluginActionsPanel>())
+
+        fixture.action.action(DesktopShortcutKeys.HIDE_WINDOW, keyEvent(NativeKeyEvent.NATIVE_KEY_PRESSED, 0))
+
+        verify(timeout = VERIFY_TIMEOUT_MS) { fixture.pluginActionsViewModel.close() }
+        coVerify(exactly = 0) { fixture.appWindowManager.dismissSearchWindow(any()) }
     }
 
     @Test

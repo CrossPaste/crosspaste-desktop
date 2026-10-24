@@ -1,6 +1,7 @@
 package com.crosspaste.plugin
 
 import com.crosspaste.app.AppName
+import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.paste.PasteCollection
@@ -24,6 +25,7 @@ import kotlinx.coroutines.test.runTest
 import okio.Path.Companion.toPath
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ProcessPluginRunnerTest {
@@ -34,6 +36,7 @@ class ProcessPluginRunnerTest {
     private val environment =
         PluginEnvironment(Platform(Platform.MACOS, "aarch64", 64, "15"), "2.3.0", setOf("process"))
 
+    private val appWindowManager = mockk<DesktopAppWindowManager>(relaxed = true)
     private val executor = mockk<ProcessPluginExecutor>()
     private val notificationManager = mockk<NotificationManager>(relaxed = true)
     private val pasteboardService = mockk<PasteboardService>(relaxed = true)
@@ -42,6 +45,7 @@ class ProcessPluginRunnerTest {
     private val runner =
         ProcessPluginRunner(
             appInfo = mockk(relaxed = true),
+            appWindowManager = appWindowManager,
             copywriter =
                 mockk(relaxed = true) {
                     every { language() } returns "en"
@@ -182,6 +186,60 @@ class ProcessPluginRunnerTest {
             runner.run(plugin("replaceClipboard"), pasteData)
 
             coVerify(exactly = 0) { pasteboardService.tryWritePasteboard(any(), any<TextPasteItem>(), any(), any()) }
+            verify { notificationManager.sendNotification(any(), any(), MessageType.Error, any()) }
+        }
+
+    @Test
+    fun `runAndPaste writes a replaceClipboard result inside the search window paste`() =
+        runTest {
+            coEvery { executor.execute(any(), any(), any(), "en") } returns PluginProcessResult(0, "Hello\n", "")
+            coEvery { pasteReleaseService.createLocalPasteData(any(), any(), any()) } returns 42L
+            val written = slot<TextPasteItem>()
+            coEvery { pasteboardService.tryWritePasteboard(42L, capture(written), true, false) } returns
+                Result.success(null)
+            val preparePaste = slot<suspend (Int) -> Boolean>()
+            coEvery { appWindowManager.hideSearchWindowAndPaste(1, capture(preparePaste)) } returns Unit
+
+            runner.runAndPaste(plugin("replaceClipboard"), pasteData, "en")
+
+            assertTrue(preparePaste.captured(0))
+            assertEquals("Hello", written.captured.text)
+        }
+
+    @Test
+    fun `runAndPaste leaves the search window open when the plugin fails`() =
+        runTest {
+            coEvery { executor.execute(any(), any(), any()) } returns PluginProcessResult(1, "", "boom")
+
+            runner.runAndPaste(plugin("replaceClipboard"), pasteData)
+
+            coVerify(exactly = 0) { appWindowManager.hideSearchWindowAndPaste(any(), any()) }
+            verify { notificationManager.sendNotification(any(), any(), MessageType.Error, any()) }
+        }
+
+    @Test
+    fun `runAndPaste applies other outputs without pasting`() =
+        runTest {
+            coEvery { executor.execute(any(), any(), any()) } returns PluginProcessResult(0, "42 words", "")
+
+            runner.runAndPaste(plugin("notification"), pasteData)
+
+            coVerify(exactly = 0) { appWindowManager.hideSearchWindowAndPaste(any(), any()) }
+            verify { notificationManager.sendNotification(any(), any(), MessageType.Info, null) }
+        }
+
+    @Test
+    fun `runAndPaste reports a failed clipboard write instead of pasting`() =
+        runTest {
+            coEvery { executor.execute(any(), any(), any()) } returns PluginProcessResult(0, "Hello", "")
+            coEvery { pasteboardService.tryWritePasteboard(any(), any<TextPasteItem>(), true, false) } returns
+                Result.failure(RuntimeException("locked"))
+            val preparePaste = slot<suspend (Int) -> Boolean>()
+            coEvery { appWindowManager.hideSearchWindowAndPaste(1, capture(preparePaste)) } returns Unit
+
+            runner.runAndPaste(plugin("replaceClipboard"), pasteData)
+
+            assertFalse(preparePaste.captured(0))
             verify { notificationManager.sendNotification(any(), any(), MessageType.Error, any()) }
         }
 }
