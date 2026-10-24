@@ -16,9 +16,8 @@ class PluginMenuContributor(
 ) : PasteMenuContributor {
 
     override fun contribute(pasteData: PasteData): List<PasteMenuAction> {
-        val pasteType = pasteData.getType()
-        return pluginRepository.plugins.value
-            .filter { plugin -> plugin.runnable && pasteType in (plugin.manifest?.supportedPasteTypes() ?: emptySet()) }
+        return pluginRepository
+            .runnablePlugins(pasteData.getType())
             .mapNotNull { plugin ->
                 val manifest = plugin.manifest ?: return@mapNotNull null
                 val language = copywriter.language()

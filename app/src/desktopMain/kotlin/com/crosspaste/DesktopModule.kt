@@ -55,6 +55,7 @@ import com.crosspaste.ui.model.MarketingPasteSearchViewModel
 import com.crosspaste.ui.model.PastePanelViewModel
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.model.PluginActionsViewModel
 import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.getAppEnvUtils
 import io.github.oshai.kotlinlogging.KLogger
@@ -171,6 +172,7 @@ class DesktopModule(
             }
             single<PastePanelViewModel> { PastePanelViewModel(get(), get(), get()) }
             single<PasteSelectionViewModel> { PasteSelectionViewModel(get(), get(), get()) }
+            single<PluginActionsViewModel> { PluginActionsViewModel(get(), get(), get(), get(), get()) }
         }
 
     fun modules(): List<Module> =

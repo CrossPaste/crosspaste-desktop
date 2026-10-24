@@ -41,6 +41,7 @@ class PluginMenuContributorTest {
     fun `offers runnable plugins matching the paste type in the current language`() {
         val repository =
             mockk<PluginRepository> {
+                every { runnablePlugins(any()) } answers { callOriginal() }
                 every { plugins } returns
                     MutableStateFlow(
                         listOf(
@@ -76,7 +77,10 @@ class PluginMenuContributorTest {
                 )
             val simple = plugin("simple", listOf("text"))
             val repository =
-                mockk<PluginRepository> { every { plugins } returns MutableStateFlow(listOf(translate, simple)) }
+                mockk<PluginRepository> {
+                    every { runnablePlugins(any()) } answers { callOriginal() }
+                    every { plugins } returns MutableStateFlow(listOf(translate, simple))
+                }
             val copywriter = mockk<GlobalCopywriter> { every { language() } returns "en" }
             val runner = mockk<ProcessPluginRunner>(relaxed = true)
             val contributor = PluginMenuContributor(copywriter, repository, runner)

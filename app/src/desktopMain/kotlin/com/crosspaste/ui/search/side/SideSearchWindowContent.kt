@@ -13,6 +13,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.platform.windows.WindowsVersionHelper
 import com.crosspaste.ui.NotificationHost
 import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.model.PluginActionsViewModel
 import com.crosspaste.ui.paste.side.SidePasteboardContentView
 import com.crosspaste.ui.theme.AppUIColors
 import kotlinx.coroutines.launch
@@ -21,6 +22,7 @@ import org.koin.compose.koinInject
 @Composable
 fun SideSearchWindowContent() {
     val viewModel = koinInject<PasteSelectionViewModel>()
+    val pluginActionsViewModel = koinInject<PluginActionsViewModel>()
     val platform = koinInject<Platform>()
 
     val isMac = remember { platform.isMacos() }
@@ -45,17 +47,46 @@ fun SideSearchWindowContent() {
             Modifier
                 .fillMaxSize()
                 .then(backgroundModifier)
+                .handlePluginPanelKeys(pluginActionsViewModel, isMac)
                 .handleSideWindowKeys(viewModel, scope),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             SideSearchInputView()
             SidePasteboardContentView()
         }
+        PluginActionsPanelView()
         // Mount NotificationHost without window decoration offset so any notifications
         // sent while the search window is open are properly displayed.
         NotificationHost(subtractWindowDecoration = false)
     }
 }
+
+/**
+ * Cmd+K (Ctrl+K elsewhere) toggles the plugin panel. While it is open it takes
+ * every key before the search input or the list can, so typing never edits the
+ * search behind it. Esc is the global hide-window shortcut, which closes the
+ * panel before the window.
+ */
+private fun Modifier.handlePluginPanelKeys(
+    pluginActionsViewModel: PluginActionsViewModel,
+    isMac: Boolean,
+): Modifier =
+    onPreviewKeyEvent { event ->
+        val isKeyDown = event.type == KeyEventType.KeyDown
+        if (isKeyDown && event.key == Key.K && (if (isMac) event.isMetaPressed else event.isCtrlPressed)) {
+            pluginActionsViewModel.toggle()
+            return@onPreviewKeyEvent true
+        }
+        if (pluginActionsViewModel.panel.value == null) return@onPreviewKeyEvent false
+        if (isKeyDown) {
+            when (event.key) {
+                Key.DirectionUp -> pluginActionsViewModel.selectPrev()
+                Key.DirectionDown -> pluginActionsViewModel.selectNext()
+                Key.Enter, Key.NumPadEnter -> pluginActionsViewModel.runSelected()
+            }
+        }
+        true
+    }
 
 /**
  * Extracts key event logic.

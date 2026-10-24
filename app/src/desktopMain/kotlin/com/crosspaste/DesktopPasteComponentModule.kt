@@ -172,7 +172,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
             )
         }
         single<ProcessPluginRunner> {
-            ProcessPluginRunner(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
+            ProcessPluginRunner(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
         }
         // endregion
 

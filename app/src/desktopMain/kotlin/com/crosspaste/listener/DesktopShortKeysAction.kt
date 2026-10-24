@@ -21,6 +21,7 @@ import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.PasteWriteScope
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteText
+import com.crosspaste.ui.model.PluginActionsViewModel
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.ioDispatcher
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
@@ -37,6 +38,7 @@ class DesktopShortKeysAction(
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
     private val pasteDao: PasteDao,
+    private val pluginActionsViewModel: PluginActionsViewModel,
 ) : ShortcutKeysAction {
 
     private val logger = KotlinLogging.logger {}
@@ -127,6 +129,12 @@ class DesktopShortKeysAction(
             actionName = "HideWindow",
             actionLogMessage = "Hide window",
         ) {
+            // Like any popup, the plugin panel goes first and the search window stays
+            if (appWindowManager.getCurrentSearchWindowInfo().show && pluginActionsViewModel.panel.value != null) {
+                pluginActionsViewModel.close()
+                return@mainRunAction
+            }
+
             if (appWindowManager.getCurrentMainWindowInfo().show &&
                 !appFileChooser.showFileDialog.value
             ) {

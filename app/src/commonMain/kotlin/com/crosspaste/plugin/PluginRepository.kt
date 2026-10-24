@@ -3,6 +3,7 @@ package com.crosspaste.plugin
 import com.crosspaste.app.AppFileType
 import com.crosspaste.db.plugin.PluginState
 import com.crosspaste.db.plugin.PluginStateDao
+import com.crosspaste.paste.PasteType
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.ioDispatcher
@@ -61,6 +62,12 @@ class PluginRepository(
 
     private val _plugins = MutableStateFlow<List<LocalPlugin>>(emptyList())
     val plugins: StateFlow<List<LocalPlugin>> = _plugins.asStateFlow()
+
+    /** Enabled, runnable plugins that declare [pasteType], from the cached list. */
+    fun runnablePlugins(pasteType: PasteType): List<LocalPlugin> =
+        plugins.value.filter { plugin ->
+            plugin.runnable && pasteType in (plugin.manifest?.supportedPasteTypes() ?: emptySet())
+        }
 
     fun pluginsDirectory(): Path = userDataPathProvider.resolve(appFileType = AppFileType.PLUGIN)
 

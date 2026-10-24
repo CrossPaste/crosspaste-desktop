@@ -73,6 +73,7 @@ import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.model.RequestSearchInputFocus
+import com.crosspaste.ui.search.PluginActionsHintView
 import com.crosspaste.ui.search.QuickPasteView
 import com.crosspaste.ui.search.SearchTrailingIcon
 import com.crosspaste.ui.theme.AppUIColors
@@ -176,6 +177,7 @@ fun SideSearchInputView() {
                 )
                 Spacer(modifier = Modifier.width(tiny))
                 QuickPasteView()
+                PluginActionsHintView()
             }
 
             // Keep QuickPasteView on the left; push the tutorial / update

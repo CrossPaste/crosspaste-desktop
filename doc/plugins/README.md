@@ -21,6 +21,13 @@ PowerShell on Windows. It is copied only once, so deleting or editing it sticks.
 
 [`uppercase/`](uppercase) is a minimal sample with `run.sh` (macOS/Linux) and `run.ps1` (Windows).
 
+## Running from the search window
+
+In the search window, press **⌘K** (macOS) or **Ctrl+K** (Windows/Linux) to list the plugins and actions that handle
+the selected item. Use the arrow keys and **Enter** to run one, **Esc** to close the list. A plugin whose `output` is
+`replaceClipboard` then pastes its result straight into the app the search window was opened over (e.g. translate,
+then paste); every other output behaves as it does from the context menu.
+
 ## manifest.json
 
 ```json
