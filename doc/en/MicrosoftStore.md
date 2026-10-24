@@ -94,10 +94,18 @@ by `build-release.yml` at tag time):
   `https://oss.crosspaste.com/<version>/crosspaste-<x.y.z>-store.x64.msix`,
   verify it against `checksum.txt`, and drag it into the submission's
   Packages page in Partner Center. Only if CI did not produce the package,
-  build it locally from the release tag (`git checkout <tag>`) with
-  `conveyor --cache-limit=40 -Kapp.revision=0 -f build.conveyor.conf make windows-msix`
-  (or a gitignored local config that includes `cli.conveyor.conf` and the
-  Store credentials) and confirm the manifest `Version` is `x.y.z.0`:
+  build it locally from the release tag (`git checkout <tag>`) — rebuild the
+  app jar with `-PappEnv=PRODUCTION` first, otherwise it ships the developer's
+  local `development.properties` into the package:
+
+  ```bash
+  ./gradlew app:build -PappEnv=PRODUCTION
+  conveyor --cache-limit=40 -Kapp.revision=0 -f build.conveyor.conf make windows-msix
+  ```
+
+  Use a gitignored local config that includes `cli.conveyor.conf` and the Store
+  credentials instead of `build.conveyor.conf` if needed, and confirm the
+  manifest `Version` is `x.y.z.0`:
   `unzip -p <file>.msix AppxManifest.xml | tr '\n' ' ' | grep -o '<Identity [^>]*>'`.
 
 The release notes are taken from the `# [x.y.z]` section matching the given

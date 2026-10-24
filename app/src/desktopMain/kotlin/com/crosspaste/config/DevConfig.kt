@@ -1,11 +1,24 @@
 package com.crosspaste.config
 
 import com.crosspaste.utils.DesktopResourceUtils
+import com.crosspaste.utils.getAppEnvUtils
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 object DevConfig {
 
+    private val logger = KotlinLogging.logger {}
+
     // Release jars exclude development.properties, so a missing file means no overrides.
     private val development = DesktopResourceUtils.loadOptionalProperties("development.properties")
+
+    init {
+        if (development.isEmpty && getAppEnvUtils().isDevelopment()) {
+            logger.warn {
+                "development.properties is missing; DevConfig overrides are disabled. " +
+                    "A development build normally restores it from development.properties.template."
+            }
+        }
+    }
 
     val pasteAppPath: String? = development.getProperty("pasteAppPath")
 

@@ -63,10 +63,13 @@ build_zip() {
     local stage="$1"
     local bake_url="${2:-}"
     # Conveyor consumes app/build/libs/app-desktop-<version>.jar, whose name is the
-    # current version. CI builds it via `app:build`; rebuild it here so a bumped
-    # version produces a matching jar instead of reusing a stale one.
-    echo "==> [$stage] :app:desktopJar (rebuild app-desktop-<version>.jar)" >&2
-    ./gradlew -q :app:desktopJar >&2
+    # current version. CI builds it via `app:build`; rebuild it here with the same
+    # appEnv the package uses, so a bumped version produces a matching jar (and a
+    # DEVELOPMENT jar with development.properties is never packaged).
+    local app_version
+    app_version="$(sed -n 's/^version=//p' "$VERSION_FILE" | head -1)"
+    echo "==> [$stage] :app:desktopJar (rebuild app-desktop-${app_version}.jar, appEnv=BETA)" >&2
+    ./gradlew -q :app:desktopJar -PappEnv=BETA >&2
     echo "==> [$stage] writeConveyorConfig (appEnv=BETA)" >&2
     ./gradlew -q writeConveyorConfig -PappEnv=BETA >&2
     mv app/generated.conveyor.conf generated.conveyor.conf

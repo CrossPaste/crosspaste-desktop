@@ -1,7 +1,9 @@
 package com.crosspaste.utils
 
 import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class DesktopResourceUtilsTest {
@@ -17,6 +19,14 @@ class DesktopResourceUtilsTest {
     fun loadOptionalPropertiesReadsExistingResource() {
         val properties = DesktopResourceUtils.loadOptionalProperties("crosspaste-version.properties")
 
-        assertEquals(DesktopResourceUtils.loadProperties("crosspaste-version.properties"), properties)
+        assertFalse(properties.isEmpty)
+        assertNotNull(properties.getProperty("version"))
+    }
+
+    @Test
+    fun loadPropertiesFailsWhenResourceIsMissing() {
+        assertFailsWith<IllegalArgumentException> {
+            DesktopResourceUtils.loadProperties("missing-for-test.properties")
+        }
     }
 }

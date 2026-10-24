@@ -7,35 +7,40 @@ import java.util.Properties
 
 object DesktopResourceUtils {
 
-    fun loadProperties(fileName: String): Properties {
-        val properties = Properties()
-        val inputStream = ClassLoaderResourceLoader.load(fileName)
-        InputStreamReader(inputStream, StandardCharsets.UTF_8).use { inputStreamReader ->
-            properties.load(inputStreamReader)
-        }
-        return properties
-    }
+    fun loadProperties(fileName: String): Properties =
+        requireNotNull(loadPropertiesOrNull(fileName)) { "Resource $fileName not found" }
 
-    fun loadOptionalProperties(fileName: String): Properties =
-        if (ClassLoaderResourceLoader.exists(fileName)) loadProperties(fileName) else Properties()
+    /**
+     * Like [loadProperties], but returns empty properties when the resource is
+     * absent. Release jars exclude development.properties, so DevConfig must be
+     * able to start without it.
+     */
+    fun loadOptionalProperties(fileName: String): Properties = loadPropertiesOrNull(fileName) ?: Properties()
 
-    fun readResourceBytes(fileName: String): ByteArray {
+    fun readResourceBytes(fileName: String): ByteArray =
         ClassLoaderResourceLoader.load(fileName).use { stream ->
-            return stream.readBytes()
+            stream.readBytes()
         }
-    }
+
+    private fun loadPropertiesOrNull(fileName: String): Properties? =
+        ClassLoaderResourceLoader.openOrNull(fileName)?.use { inputStream ->
+            Properties().apply {
+                InputStreamReader(inputStream, StandardCharsets.UTF_8).use { reader ->
+                    load(reader)
+                }
+            }
+        }
 }
 
 private object ClassLoaderResourceLoader {
-    fun exists(resourcePath: String): Boolean =
-        Thread.currentThread().contextClassLoader?.getResource(resourcePath) != null ||
-            this::class.java.getResource(resourcePath) != null
 
-    fun load(resourcePath: String): InputStream {
-        val contextClassLoader = Thread.currentThread().contextClassLoader!!
-        val resource =
-            contextClassLoader.getResourceAsStream(resourcePath)
-                ?: this::class.java.getResourceAsStream(resourcePath)
-        return requireNotNull(resource) { "Resource $resourcePath not found" }
-    }
+    // Conveyor/JNI, Gradle tests and IDEs all set the context class loader; the
+    // class's own loader keeps resource loading working on threads that do not.
+    private fun classLoader(): ClassLoader =
+        Thread.currentThread().contextClassLoader ?: DesktopResourceUtils::class.java.classLoader
+
+    fun openOrNull(resourcePath: String): InputStream? = classLoader().getResourceAsStream(resourcePath)
+
+    fun load(resourcePath: String): InputStream =
+        requireNotNull(openOrNull(resourcePath)) { "Resource $resourcePath not found" }
 }
