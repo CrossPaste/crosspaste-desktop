@@ -297,7 +297,7 @@ class WindowsZipUpdater(
         // user's privileges. Integrity therefore rests entirely on HTTPS + the GitHub /
         // Aliyun OSS repository ACLs. Proper hardening is to verify a detached signature
         // (e.g. minisign / GPG) over the zip or checksum against a public key baked into
-        // the app, before extracting. See doc/en/WindowsZipSelfUpdateTest.md.
+        // the app, before extracting. See ai/docs/WindowsZipSelfUpdateTest.md.
         val candidateBases = mirrorBases(release)
         val savedSource = readSavedSource(release)
         val hasPartialDownload = hasPartialDownload(release)

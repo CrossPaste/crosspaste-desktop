@@ -22,7 +22,7 @@
 #   appEnv     default BETA  (use BETA; see the TEST warning above)
 #   outputDir  default output-test
 #
-# See doc/en/WindowsZipSelfUpdateTest.md for the full test runbook.
+# See ai/docs/WindowsZipSelfUpdateTest.md for the full test runbook.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

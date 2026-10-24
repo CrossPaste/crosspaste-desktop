@@ -19,7 +19,7 @@
 # "<NEW>", so the changelog update banner appears on launch.
 #
 # Requirements: Conveyor CLI, Node, the project's Gradle/JDK (same as
-# build-test-windows-zip.sh). See doc/en/WindowsZipSelfUpdateTest.md.
+# build-test-windows-zip.sh). See ai/docs/WindowsZipSelfUpdateTest.md.
 #
 # Usage: scripts/build-oss-test-update.sh [newVersion] [revision] [outputDir]
 #   newVersion  the "new" version to advertise & build; default 2.1.5

@@ -39,7 +39,7 @@ import kotlin.time.Duration.Companion.seconds
  * Exercises the portable-zip update pipeline (metadata -> checksum race -> download
  * -> SHA-256 verify -> unzip to staging) end-to-end against an in-memory mirror,
  * without publishing a release. The Windows apply/restart step is covered manually
- * (see doc/en/WindowsZipSelfUpdateTest.md).
+ * (see ai/docs/WindowsZipSelfUpdateTest.md).
  */
 class WindowsZipUpdaterDownloadTest {
 
