@@ -33,8 +33,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.compositeOver
@@ -58,6 +61,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny4X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
 import com.crosspaste.ui.theme.AppUISize.tiny6X
 import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -79,6 +83,12 @@ fun PasteTagScope.TagChip(
     val palette = rememberTagChipPalette(tag.color)
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
+    val edge =
+        when {
+            isSelected -> TagChipEdge.SELECTED
+            isHovered -> TagChipEdge.HOVERED
+            else -> TagChipEdge.REST
+        }
 
     FilterChip(
         selected = isSelected,
@@ -108,19 +118,12 @@ fun PasteTagScope.TagChip(
                 )
             }
         },
-        border =
-            palette.animatedBorder(
-                when {
-                    isSelected -> TagChipEdge.SELECTED
-                    isHovered -> TagChipEdge.HOVERED
-                    else -> TagChipEdge.REST
-                },
-            ),
+        border = palette.animatedBorder(edge),
         elevation = null,
         colors = palette.chipColors(),
         shape = CircleShape,
         interactionSource = interactionSource,
-        modifier = modifier.height(xxLarge).nonFocusable(),
+        modifier = modifier.then(palette.animatedLip(edge)).height(xxLarge).nonFocusable(),
     )
 }
 
@@ -189,7 +192,7 @@ fun PasteTagScope.EditableTagChip(onEditDone: suspend (String) -> Unit) {
         colors = palette.chipColors(),
         shape = CircleShape,
         // Clicking the chip outside the name field must not pull focus off it
-        modifier = Modifier.height(xxLarge).nonFocusable(),
+        modifier = palette.animatedLip(TagChipEdge.SELECTED).height(xxLarge).nonFocusable(),
     )
 }
 
@@ -231,6 +234,26 @@ private data class TagChipPalette(
             },
         )
         return BorderStroke(width, color)
+    }
+
+    /**
+     * A crescent of the accent color peeking out under the chip's bottom edge, so an
+     * emphasized edge reads heavier at the bottom (like a key's lip) instead of uniform.
+     */
+    @Composable
+    fun animatedLip(edge: TagChipEdge): Modifier {
+        val depth by animateDpAsState(if (edge == TagChipEdge.REST) zero else tiny5X)
+        return Modifier.drawBehind {
+            val depthPx = depth.toPx()
+            if (depthPx > 0f) {
+                drawRoundRect(
+                    color = accent,
+                    topLeft = Offset(0f, depthPx),
+                    size = size,
+                    cornerRadius = CornerRadius(size.height / 2),
+                )
+            }
+        }
     }
 }
 
