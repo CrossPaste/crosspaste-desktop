@@ -514,10 +514,19 @@ compose.desktop {
 
             initJvmArgs(jvmArgsLambda, buildFullPlatform)
 
+            // app:run runs from this jar, so development builds keep the local
+            // development.properties; release builds pass -PappEnv=PRODUCTION
+            // to app:build so a developer's machine-specific file never ships.
             if (appEnv != "DEVELOPMENT") {
                 tasks.withType<Jar> {
                     exclude("development.properties**")
                 }
+            }
+
+            // Tool state such as a stray .claude/ folder under composeResources
+            // is not app content; keep it out of every jar.
+            tasks.withType<Jar> {
+                exclude("**/.claude/**")
             }
 
             // Add download info of jbr on all platforms

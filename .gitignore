@@ -39,6 +39,9 @@ output*/
 /code-review/
 /ai/
 /.claude/skills/ui-ux-pro-max/
+# A stray .claude/ under compose resources is tool state, not app content; it
+# would otherwise be packaged into the app jar (which also excludes it).
+**/composeResources/**/.claude/
 /docs/superpowers/
 web/dist/
 scheduled_tasks.lock

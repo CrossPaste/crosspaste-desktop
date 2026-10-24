@@ -6,7 +6,7 @@ name: "Publish to Microsoft Store"
 # pipeline and cadence, so it is deliberately not chained to the GitHub
 # Release. The app must already be live in the Store — the first submission
 # (listing, screenshots, age rating, markets) is manual in Partner Center.
-# One-time credential setup: see doc/en/MicrosoftStore.md.
+# One-time credential setup: see ai/docs/MicrosoftStore.md.
 
 on:
   workflow_dispatch:

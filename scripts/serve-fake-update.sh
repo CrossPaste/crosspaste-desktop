@@ -15,7 +15,7 @@
 #   revision   the "new" revision (any number, e.g. 9999)
 #   port       default 8077
 #
-# See doc/en/WindowsZipSelfUpdateTest.md for the full test runbook.
+# See ai/docs/WindowsZipSelfUpdateTest.md for the full test runbook.
 set -euo pipefail
 
 ZIP_SRC="${1:?usage: serve-fake-update.sh <built-zip> <version> <revision> [port]}"

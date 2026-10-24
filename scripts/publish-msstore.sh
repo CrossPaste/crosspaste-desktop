@@ -26,7 +26,7 @@
 #     --clientId ... --clientSecret ...
 #   - The app must already be live in the Store; the first submission (listing,
 #     screenshots, age rating, markets) is manual in Partner Center. See
-#     doc/en/MicrosoftStore.md.
+#     ai/docs/MicrosoftStore.md.
 #   - jq, curl, shasum or sha256sum.
 #
 # Usage:
