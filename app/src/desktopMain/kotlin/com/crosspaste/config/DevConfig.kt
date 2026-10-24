@@ -4,7 +4,8 @@ import com.crosspaste.utils.DesktopResourceUtils
 
 object DevConfig {
 
-    private val development = DesktopResourceUtils.loadProperties("development.properties")
+    // Release jars exclude development.properties, so a missing file means no overrides.
+    private val development = DesktopResourceUtils.loadOptionalProperties("development.properties")
 
     val pasteAppPath: String? = development.getProperty("pasteAppPath")
 

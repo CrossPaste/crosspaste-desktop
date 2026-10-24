@@ -215,7 +215,7 @@ jobs:
           enableCrossOsArchive: true
 
       - name: Build with Gradle
-        run: ./gradlew app:build -PintegrationTests
+        run: ./gradlew app:build -PintegrationTests -PappEnv=PRODUCTION
 
       - name: Cache Kotlin/Native toolchain
         uses: actions/cache@v5

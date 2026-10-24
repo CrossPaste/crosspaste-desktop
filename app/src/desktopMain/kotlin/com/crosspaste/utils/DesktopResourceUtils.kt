@@ -16,6 +16,9 @@ object DesktopResourceUtils {
         return properties
     }
 
+    fun loadOptionalProperties(fileName: String): Properties =
+        if (ClassLoaderResourceLoader.exists(fileName)) loadProperties(fileName) else Properties()
+
     fun readResourceBytes(fileName: String): ByteArray {
         ClassLoaderResourceLoader.load(fileName).use { stream ->
             return stream.readBytes()
@@ -24,6 +27,10 @@ object DesktopResourceUtils {
 }
 
 private object ClassLoaderResourceLoader {
+    fun exists(resourcePath: String): Boolean =
+        Thread.currentThread().contextClassLoader?.getResource(resourcePath) != null ||
+            this::class.java.getResource(resourcePath) != null
+
     fun load(resourcePath: String): InputStream {
         val contextClassLoader = Thread.currentThread().contextClassLoader!!
         val resource =
