@@ -85,7 +85,7 @@ fun FrameWindowScope.PastePanelContent(surface: PastePanelSurface) {
     val viewModel = koinInject<PastePanelViewModel>()
 
     val items by viewModel.items.collectAsState()
-    val nextIndex by viewModel.nextIndex.collectAsState()
+    val highlightedIndex by viewModel.highlightedIndex.collectAsState()
     val loadAll by viewModel.loadAll.collectAsState()
 
     val listState = rememberLazyListState()
@@ -153,7 +153,7 @@ fun FrameWindowScope.PastePanelContent(surface: PastePanelSurface) {
                 ) { index, pasteData ->
                     PastePanelRow(
                         pasteData = pasteData,
-                        highlighted = index == nextIndex,
+                        highlighted = index == highlightedIndex,
                         onClick = {
                             mainCoroutineDispatcher.launch {
                                 viewModel.paste(pasteData)

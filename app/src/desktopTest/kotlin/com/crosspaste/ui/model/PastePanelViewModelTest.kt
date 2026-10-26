@@ -100,16 +100,16 @@ class PastePanelViewModelTest {
     }
 
     @Test
-    fun `pasting a row writes it, simulates paste and advances to the row copied after it`() =
+    fun `pasting a row writes it, simulates paste and highlights that row`() =
         runTest {
             val vm = createViewModel()
             val jobs =
                 listOf(
                     launch { vm.items.collect {} },
-                    launch { vm.nextIndex.collect {} },
+                    launch { vm.highlightedIndex.collect {} },
                 )
             advanceUntilIdle()
-            assertEquals(0, vm.nextIndex.value)
+            assertEquals(-1, vm.highlightedIndex.value)
 
             vm.paste(pasteData(1))
             advanceUntilIdle()
@@ -123,30 +123,30 @@ class PastePanelViewModelTest {
                 )
             }
             coVerify(exactly = 1) { windowManager.toPaste() }
-            assertEquals(1, vm.nextIndex.value)
+            assertEquals(2, vm.highlightedIndex.value)
 
             vm.paste(pasteData(2))
             advanceUntilIdle()
-            assertEquals(0, vm.nextIndex.value)
+            assertEquals(1, vm.highlightedIndex.value)
 
             jobs.forEach { it.cancel() }
         }
 
     @Test
-    fun `pasting the newest row keeps the marker on it`() =
+    fun `pasting the newest row highlights it`() =
         runTest {
             val vm = createViewModel()
             val jobs =
                 listOf(
                     launch { vm.items.collect {} },
-                    launch { vm.nextIndex.collect {} },
+                    launch { vm.highlightedIndex.collect {} },
                 )
             advanceUntilIdle()
 
             vm.paste(pasteData(3))
             advanceUntilIdle()
 
-            assertEquals(0, vm.nextIndex.value)
+            assertEquals(0, vm.highlightedIndex.value)
 
             jobs.forEach { it.cancel() }
         }
@@ -158,7 +158,7 @@ class PastePanelViewModelTest {
             val jobs =
                 listOf(
                     launch { vm.items.collect {} },
-                    launch { vm.nextIndex.collect {} },
+                    launch { vm.highlightedIndex.collect {} },
                 )
             advanceUntilIdle()
 
@@ -169,35 +169,35 @@ class PastePanelViewModelTest {
                 pasteboardService.tryWritePasteboard(any<PasteData>(), any(), any(), any())
             }
             coVerify(exactly = 1) { windowManager.toPaste() }
-            assertEquals(1, vm.nextIndex.value)
+            assertEquals(2, vm.highlightedIndex.value)
 
             jobs.forEach { it.cancel() }
         }
 
     @Test
-    fun `marker follows the row by id when a new copy arrives on top`() =
+    fun `highlight follows the row by id when a new copy arrives on top`() =
         runTest {
             val vm = createViewModel()
             val jobs =
                 listOf(
                     launch { vm.items.collect {} },
-                    launch { vm.nextIndex.collect {} },
+                    launch { vm.highlightedIndex.collect {} },
                 )
             advanceUntilIdle()
 
             vm.paste(pasteData(1))
             advanceUntilIdle()
-            assertEquals(1, vm.nextIndex.value)
+            assertEquals(2, vm.highlightedIndex.value)
 
             history.value = listOf(pasteData(4)) + history.value
             advanceUntilIdle()
-            assertEquals(2, vm.nextIndex.value)
+            assertEquals(3, vm.highlightedIndex.value)
 
             jobs.forEach { it.cancel() }
         }
 
     @Test
-    fun `a failed clipboard write neither pastes nor advances`() =
+    fun `a failed clipboard write neither pastes nor highlights`() =
         runTest {
             coEvery {
                 pasteboardService.tryWritePasteboard(any<PasteData>(), any(), any(), any())
@@ -206,7 +206,7 @@ class PastePanelViewModelTest {
             val jobs =
                 listOf(
                     launch { vm.items.collect {} },
-                    launch { vm.nextIndex.collect {} },
+                    launch { vm.highlightedIndex.collect {} },
                 )
             advanceUntilIdle()
 
@@ -214,29 +214,29 @@ class PastePanelViewModelTest {
             advanceUntilIdle()
 
             coVerify(exactly = 0) { windowManager.toPaste() }
-            assertEquals(0, vm.nextIndex.value)
+            assertEquals(-1, vm.highlightedIndex.value)
 
             jobs.forEach { it.cancel() }
         }
 
     @Test
-    fun `reopening resets the marker and the page size`() =
+    fun `reopening clears the highlight and resets the page size`() =
         runTest {
             val vm = createViewModel()
             val jobs =
                 listOf(
                     launch { vm.items.collect {} },
-                    launch { vm.nextIndex.collect {} },
+                    launch { vm.highlightedIndex.collect {} },
                 )
             advanceUntilIdle()
 
             vm.paste(pasteData(1))
             advanceUntilIdle()
-            assertEquals(1, vm.nextIndex.value)
+            assertEquals(2, vm.highlightedIndex.value)
 
             vm.onShown()
             advanceUntilIdle()
-            assertEquals(0, vm.nextIndex.value)
+            assertEquals(-1, vm.highlightedIndex.value)
             assertEquals(PastePanelViewModel.PAGE_SIZE, searchPasteData.lastLimit)
 
             jobs.forEach { it.cancel() }
