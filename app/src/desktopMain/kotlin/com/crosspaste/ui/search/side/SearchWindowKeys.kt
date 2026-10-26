@@ -88,7 +88,13 @@ private fun resolveTabKey(
     val index = TAB_ORDER.indexOfFirst { it.first == zone }
     if (index == -1) return null
     val step = if (stroke.isShiftPressed) TAB_ORDER.size - 1 else 1
-    return TAB_ORDER[(index + step) % TAB_ORDER.size].second
+    val target = TAB_ORDER[(index + step) % TAB_ORDER.size].second
+    // Coming back from settings enters the tag bar at its right end, like Left does
+    return if (stroke.isShiftPressed && target == SearchWindowKeyAction.FOCUS_TAG_BAR) {
+        SearchWindowKeyAction.FOCUS_TAG_BAR_END
+    } else {
+        target
+    }
 }
 
 private fun resolvePreviewKey(
@@ -128,7 +134,7 @@ private fun resolvePreviewKey(
 private fun resolveTypeFilterKey(stroke: SearchKeyStroke): SearchWindowKeyAction =
     when (stroke.key) {
         Key.Enter, Key.NumPadEnter, Key.Spacebar -> SearchWindowKeyAction.OPEN_TYPE_MENU
-        Key.DirectionLeft -> SearchWindowKeyAction.FOCUS_SEARCH_INPUT
+        Key.DirectionLeft, Key.DirectionUp -> SearchWindowKeyAction.FOCUS_SEARCH_INPUT
         Key.DirectionRight -> SearchWindowKeyAction.FOCUS_TAG_BAR
         Key.DirectionDown -> SearchWindowKeyAction.FOCUS_PASTE_LIST
         else -> SearchWindowKeyAction.CONSUME

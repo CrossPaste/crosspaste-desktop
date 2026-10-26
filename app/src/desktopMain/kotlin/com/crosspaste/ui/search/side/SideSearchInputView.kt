@@ -125,10 +125,11 @@ fun SideSearchInputView() {
     // Set synchronously (not in an effect) so a key pressed right after typing sees the new caret
     fun setSearchFieldValue(value: TextFieldValue) {
         searchFieldValue = value
-        pasteSelectionViewModel.isSearchCaretAtEnd =
+        pasteSelectionViewModel.updateSearchCaret(
             value.selection.collapsed &&
-            value.selection.end == value.text.length &&
-            value.composition == null
+                value.selection.end == value.text.length &&
+                value.composition == null,
+        )
     }
 
     val prevAppName by appWindowManager.getPrevAppName().collectAsState(null)

@@ -71,8 +71,16 @@ class PasteSelectionViewModel(
     private val _highlightedTagIndex = MutableStateFlow(0)
     val highlightedTagIndex: StateFlow<Int> = _highlightedTagIndex
 
-    /** Kept current by the search input so Right only leaves it once the caret has nowhere to go. */
+    /**
+     * Kept current by the search input (main thread only) so Right only leaves it once the caret
+     * has nowhere to go.
+     */
     var isSearchCaretAtEnd: Boolean = true
+        private set
+
+    fun updateSearchCaret(atEnd: Boolean) {
+        isSearchCaretAtEnd = atEnd
+    }
 
     private val _uiEvent = MutableSharedFlow<UIEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
@@ -165,10 +173,14 @@ class PasteSelectionViewModel(
         _typeMenuIndex.value?.let { selectPasteType(pasteTypeChoices[it]) }
     }
 
-    /** Applies [pasteType] as the filter (null = all types) and closes the menu. */
+    /**
+     * Applies [pasteType] as the filter (null = all types), closes the menu and hands focus back to
+     * the search input, so typing carries on right after picking a type (as on mobile).
+     */
     fun selectPasteType(pasteType: PasteType?) {
         searchViewModel.updatePasteType(listOfNotNull(pasteType?.type))
         closeTypeMenu()
+        requestSearchInputFocus()
     }
 
     // Tags can be deleted while highlighted; the add chip then takes the highlight
@@ -219,6 +231,9 @@ class PasteSelectionViewModel(
      */
     suspend fun resetToTop() {
         _selectedIds.value = listOf()
+        // Don't rely on the type filter losing focus while hidden to close its menu
+        closeTypeMenu()
+        _highlightedTagIndex.value = 0
         searchListState?.scrollToItem(0)
     }
 

@@ -129,7 +129,10 @@ class DesktopShortKeysAction(
             actionName = "HideWindow",
             actionLogMessage = "Hide window",
         ) {
-            // Like any popup, the open type menu goes first and the search window stays
+            // Like any popup, the open type menu goes first and the search window stays. This
+            // shortcut is the menu's only Esc owner: its popup takes no focus, and handling Esc in
+            // Compose as well would close the menu and then, seeing it closed, hide the window.
+            // Returning early also skips hiding the main window, on purpose: one Esc, one layer.
             if (appWindowManager.getCurrentSearchWindowInfo().show &&
                 pasteSelectionViewModel.typeMenuIndex.value != null
             ) {

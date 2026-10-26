@@ -99,6 +99,8 @@ fun SearchTagsView() {
     val isTagBarFocused = focusedElement == FocusedElement.TAG_BAR
     // The add chip sits right after the tags; a deleted tag hands the highlight to it
     val highlightIndex = highlightedTagIndex.coerceAtMost(tagList.size)
+    // Matched by id: during a drag the row shows its own order, not the tag list's
+    val highlightedTagId = tagList.getOrNull(highlightIndex)?.id
 
     fun startNewTag() {
         if (appControl.isCreateTagEnabled()) {
@@ -145,11 +147,11 @@ fun SearchTagsView() {
         horizontalArrangement = Arrangement.spacedBy(tiny),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        itemsIndexed(dragState.displayList, key = { _, item -> item.id }) { index, tag ->
+        itemsIndexed(dragState.displayList, key = { _, item -> item.id }) { _, tag ->
             SearchTagItem(
                 tag = tag,
                 isSelected = tag.id == searchBaseParams.tag,
-                isHighlighted = isTagBarFocused && index == highlightIndex,
+                isHighlighted = isTagBarFocused && tag.id == highlightedTagId,
                 isDragging = dragState.isDragging(tag.id),
                 isEditing = editingMap[tag.id] == true,
                 dragOffsetX = { dragState.dragOffsetX },

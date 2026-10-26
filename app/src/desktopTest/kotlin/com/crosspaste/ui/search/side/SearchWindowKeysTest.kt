@@ -61,7 +61,8 @@ class SearchWindowKeysTest {
         assertEquals(SearchWindowKeyAction.FOCUS_PASTE_LIST, preview(FocusedElement.SEARCH_INPUT, shiftTab))
         assertEquals(SearchWindowKeyAction.FOCUS_SEARCH_INPUT, preview(FocusedElement.TYPE_FILTER, shiftTab))
         assertEquals(SearchWindowKeyAction.FOCUS_TYPE_FILTER, preview(FocusedElement.TAG_BAR, shiftTab))
-        assertEquals(SearchWindowKeyAction.FOCUS_TAG_BAR, preview(FocusedElement.SETTINGS, shiftTab))
+        // Back from settings lands on the add chip, the same as Left
+        assertEquals(SearchWindowKeyAction.FOCUS_TAG_BAR_END, preview(FocusedElement.SETTINGS, shiftTab))
         assertEquals(SearchWindowKeyAction.FOCUS_SETTINGS, preview(FocusedElement.PASTE_LIST, shiftTab))
     }
 
@@ -78,6 +79,7 @@ class SearchWindowKeysTest {
         assertEquals(SearchWindowKeyAction.FOCUS_SEARCH_INPUT, preview(FocusedElement.TYPE_FILTER, Key.DirectionLeft))
         assertEquals(SearchWindowKeyAction.FOCUS_TAG_BAR, preview(FocusedElement.TYPE_FILTER, Key.DirectionRight))
         assertEquals(SearchWindowKeyAction.FOCUS_PASTE_LIST, preview(FocusedElement.TYPE_FILTER, Key.DirectionDown))
+        assertEquals(SearchWindowKeyAction.FOCUS_SEARCH_INPUT, preview(FocusedElement.TYPE_FILTER, Key.DirectionUp))
     }
 
     @Test

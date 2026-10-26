@@ -122,7 +122,8 @@ fun SearchTrailingIcon() {
                 modifier = Modifier.nonFocusable(),
                 shape = tiny2XRoundedCornerShape,
             ) {
-                pasteSelectionViewModel.requestFocus(FocusedElement.TYPE_FILTER)
+                // Focus first, so the menu opens under the zone whose keys drive it
+                typeFilterFocusRequester.requestFocus()
                 pasteSelectionViewModel.openTypeMenu()
             }
         }

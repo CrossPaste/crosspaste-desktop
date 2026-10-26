@@ -208,6 +208,33 @@ class PasteSelectionViewModelTest {
     }
 
     @Test
+    fun `picking a type hands focus back to the search input`() =
+        runTest {
+            val vm = createVm()
+            vm.openTypeMenu()
+            val events = collectEvents(vm)
+
+            vm.selectPasteType(PasteType.URL_TYPE)
+
+            assertEquals(listOf(PasteType.URL_TYPE.type), searchViewModel.searchBaseParams.value.pasteTypeList)
+            assertEquals(listOf<UIEvent>(RequestFocus(FocusedElement.SEARCH_INPUT)), events)
+        }
+
+    @Test
+    fun `reopening the window closes the type menu and resets the tag highlight`() =
+        runTest {
+            tagsFlow.value = tags(10, 20)
+            val vm = createVm()
+            vm.requestTagBarFocus(atAddChip = true)
+            vm.openTypeMenu()
+
+            vm.resetToTop()
+
+            assertEquals(null, vm.typeMenuIndex.value)
+            assertEquals(0, vm.highlightedTagIndex.value)
+        }
+
+    @Test
     fun `moving the highlight does nothing while the menu is closed`() {
         val vm = createVm()
         vm.highlightNextPasteType()

@@ -99,7 +99,13 @@ fun CustomTextField(
     )
 }
 
-/** Same field, for callers that need the caret/selection (e.g. to tell whether the caret sits at the end). */
+/**
+ * Same field, for callers that need the caret/selection (e.g. to tell whether the caret sits at the end).
+ *
+ * Deliberately a second BasicTextField call rather than delegating to the String overload (or the
+ * other way round): bridging the two through a rebuilt TextFieldValue would reset the caret and
+ * selection on every keystroke. The shared parts live in the private helpers below.
+ */
 @Composable
 fun CustomTextField(
     value: TextFieldValue,
