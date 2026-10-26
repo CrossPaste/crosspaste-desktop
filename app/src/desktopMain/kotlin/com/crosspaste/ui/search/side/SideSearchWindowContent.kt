@@ -12,6 +12,7 @@ import androidx.compose.ui.input.key.*
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.windows.WindowsVersionHelper
 import com.crosspaste.ui.NotificationHost
+import com.crosspaste.ui.base.ProvideSystemDoubleClickInterval
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.paste.side.SidePasteboardContentView
 import com.crosspaste.ui.theme.AppUIColors
@@ -40,20 +41,22 @@ fun SideSearchWindowContent() {
             Modifier.background(AppUIColors.generalBackground)
         }
 
-    Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .then(backgroundModifier)
-                .handleSideWindowKeys(viewModel, scope),
-    ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            SideSearchInputView()
-            SidePasteboardContentView()
+    ProvideSystemDoubleClickInterval {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .then(backgroundModifier)
+                    .handleSideWindowKeys(viewModel, scope),
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                SideSearchInputView()
+                SidePasteboardContentView()
+            }
+            // Mount NotificationHost without window decoration offset so any notifications
+            // sent while the search window is open are properly displayed.
+            NotificationHost(subtractWindowDecoration = false)
         }
-        // Mount NotificationHost without window decoration offset so any notifications
-        // sent while the search window is open are properly displayed.
-        NotificationHost(subtractWindowDecoration = false)
     }
 }
 
