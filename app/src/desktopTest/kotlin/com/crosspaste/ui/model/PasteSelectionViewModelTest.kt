@@ -3,6 +3,7 @@ package com.crosspaste.ui.model
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteTag
+import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
 import io.mockk.every
 import io.mockk.mockk
@@ -11,6 +12,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -28,10 +31,12 @@ class PasteSelectionViewModelTest {
 
     private val resultsFlow = MutableStateFlow<List<PasteData>>(listOf())
 
+    private val tagsFlow = MutableStateFlow<List<PasteTag>>(listOf())
+
     private val searchViewModel =
         object : PasteSearchViewModel() {
             override val convertTerm: (String) -> List<String> = { listOf() }
-            override val tagList: StateFlow<List<PasteTag>> = MutableStateFlow(listOf())
+            override val tagList: StateFlow<List<PasteTag>> = tagsFlow
             override val searchResults: StateFlow<List<PasteData>> = resultsFlow
         }
 
@@ -91,6 +96,234 @@ class PasteSelectionViewModelTest {
         vm.updateFocus(FocusedElement.SEARCH_INPUT, focused = false)
         assertEquals(FocusedElement.PASTE_LIST, vm.focusedElement.value)
     }
+
+    private fun tags(vararg ids: Long) =
+        ids.map { PasteTag(id = it, name = "tag$it", color = 0xFF0000, sortOrder = it) }
+
+    private fun TestScope.collectEvents(vm: PasteSelectionViewModel): List<UIEvent> {
+        val events = mutableListOf<UIEvent>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiEvent.collect { events += it } }
+        return events
+    }
+
+    @Test
+    fun `entering the tag bar highlights the active filter tag`() =
+        runTest {
+            tagsFlow.value = tags(10, 20, 30)
+            searchViewModel.updateTag(20)
+            val vm = createVm()
+            val events = collectEvents(vm)
+
+            vm.requestTagBarFocus()
+
+            assertEquals(1, vm.highlightedTagIndex.value)
+            assertEquals(listOf<UIEvent>(RequestFocus(FocusedElement.TAG_BAR)), events)
+        }
+
+    @Test
+    fun `entering the tag bar without a filter highlights the first chip`() {
+        tagsFlow.value = tags(10, 20)
+        val vm = createVm()
+        vm.requestTagBarFocus()
+        assertEquals(0, vm.highlightedTagIndex.value)
+    }
+
+    @Test
+    fun `entering the tag bar from its right end highlights the add chip`() {
+        tagsFlow.value = tags(10, 20)
+        searchViewModel.updateTag(10)
+        val vm = createVm()
+        vm.requestTagBarFocus(atAddChip = true)
+        assertEquals(2, vm.highlightedTagIndex.value)
+    }
+
+    @Test
+    fun `right on the add chip moves on to the settings button`() =
+        runTest {
+            tagsFlow.value = tags(10, 20)
+            val vm = createVm()
+            vm.requestTagBarFocus()
+            repeat(2) { vm.highlightNextTag() }
+            assertEquals(2, vm.highlightedTagIndex.value)
+            val events = collectEvents(vm)
+
+            vm.highlightNextTag()
+
+            assertEquals(2, vm.highlightedTagIndex.value)
+            assertEquals(listOf<UIEvent>(RequestFocus(FocusedElement.SETTINGS)), events)
+        }
+
+    @Test
+    fun `left on the first chip moves back to the type filter`() =
+        runTest {
+            tagsFlow.value = tags(10, 20)
+            val vm = createVm()
+            vm.requestTagBarFocus()
+            vm.highlightNextTag()
+            val events = collectEvents(vm)
+
+            vm.highlightPrevTag()
+            assertEquals(0, vm.highlightedTagIndex.value)
+            assertEquals(listOf<UIEvent>(), events)
+
+            vm.highlightPrevTag()
+            assertEquals(listOf<UIEvent>(RequestFocus(FocusedElement.TYPE_FILTER)), events)
+        }
+
+    @Test
+    fun `the type menu opens on the active type`() {
+        val vm = createVm()
+        vm.openTypeMenu()
+        assertEquals(0, vm.typeMenuIndex.value)
+
+        searchViewModel.updatePasteType(listOf(PasteType.IMAGE_TYPE.type))
+        vm.openTypeMenu()
+        assertEquals(vm.pasteTypeChoices.indexOf(PasteType.IMAGE_TYPE), vm.typeMenuIndex.value)
+    }
+
+    @Test
+    fun `the type menu highlight stops at both ends`() {
+        val vm = createVm()
+        vm.openTypeMenu()
+        vm.highlightPrevPasteType()
+        assertEquals(0, vm.typeMenuIndex.value)
+        repeat(vm.pasteTypeChoices.size + 2) { vm.highlightNextPasteType() }
+        assertEquals(vm.pasteTypeChoices.lastIndex, vm.typeMenuIndex.value)
+    }
+
+    @Test
+    fun `confirming applies the highlighted type and closes the menu`() {
+        val vm = createVm()
+        vm.openTypeMenu()
+        vm.highlightNextPasteType()
+        vm.confirmPasteType()
+        assertEquals(listOf(PasteType.TYPES.first().type), searchViewModel.searchBaseParams.value.pasteTypeList)
+        assertEquals(null, vm.typeMenuIndex.value)
+
+        // Back to all types
+        vm.openTypeMenu()
+        vm.highlightPrevPasteType()
+        vm.confirmPasteType()
+        assertEquals(listOf(), searchViewModel.searchBaseParams.value.pasteTypeList)
+    }
+
+    @Test
+    fun `picking a type hands focus back to the search input`() =
+        runTest {
+            val vm = createVm()
+            vm.openTypeMenu()
+            val events = collectEvents(vm)
+
+            vm.selectPasteType(PasteType.URL_TYPE)
+
+            assertEquals(listOf(PasteType.URL_TYPE.type), searchViewModel.searchBaseParams.value.pasteTypeList)
+            assertEquals(listOf<UIEvent>(RequestFocus(FocusedElement.SEARCH_INPUT)), events)
+        }
+
+    @Test
+    fun `cancelling the type menu returns to the search input but closing on focus loss does not`() =
+        runTest {
+            val vm = createVm()
+            vm.updateFocus(FocusedElement.TYPE_FILTER, focused = true)
+            vm.openTypeMenu()
+            val events = collectEvents(vm)
+
+            vm.cancelTypeMenu()
+            assertEquals(null, vm.typeMenuIndex.value)
+            assertEquals(listOf<UIEvent>(RequestFocus(FocusedElement.SEARCH_INPUT)), events)
+
+            vm.openTypeMenu()
+            vm.updateFocus(FocusedElement.TYPE_FILTER, focused = false)
+            assertEquals(null, vm.typeMenuIndex.value)
+            assertEquals(1, events.size)
+        }
+
+    @Test
+    fun `reopening the window closes the type menu and resets the tag highlight`() =
+        runTest {
+            tagsFlow.value = tags(10, 20)
+            val vm = createVm()
+            vm.requestTagBarFocus(atAddChip = true)
+            vm.openTypeMenu()
+
+            vm.resetToTop()
+
+            assertEquals(null, vm.typeMenuIndex.value)
+            assertEquals(0, vm.highlightedTagIndex.value)
+        }
+
+    @Test
+    fun `moving the highlight does nothing while the menu is closed`() {
+        val vm = createVm()
+        vm.highlightNextPasteType()
+        vm.confirmPasteType()
+        assertEquals(null, vm.typeMenuIndex.value)
+        assertEquals(listOf(), searchViewModel.searchBaseParams.value.pasteTypeList)
+    }
+
+    @Test
+    fun `the type menu closes when the type filter loses focus`() {
+        val vm = createVm()
+        vm.updateFocus(FocusedElement.TYPE_FILTER, focused = true)
+        vm.openTypeMenu()
+        vm.updateFocus(FocusedElement.TAG_BAR, focused = true)
+        vm.updateFocus(FocusedElement.TYPE_FILTER, focused = false)
+        assertEquals(null, vm.typeMenuIndex.value)
+    }
+
+    @Test
+    fun `open settings is handed to the view`() =
+        runTest {
+            val vm = createVm()
+            val events = collectEvents(vm)
+            vm.openSettings()
+            assertEquals(listOf<UIEvent>(RequestOpenSettings), events)
+        }
+
+    @Test
+    fun `activating a tag toggles its filter`() {
+        tagsFlow.value = tags(10, 20)
+        val vm = createVm()
+        vm.requestTagBarFocus()
+        vm.highlightNextTag()
+
+        vm.activateHighlightedTag()
+        assertEquals(20, searchViewModel.searchBaseParams.value.tag)
+
+        vm.activateHighlightedTag()
+        assertEquals(null, searchViewModel.searchBaseParams.value.tag)
+    }
+
+    @Test
+    fun `activating the add chip asks for a new tag`() =
+        runTest {
+            tagsFlow.value = tags(10)
+            val vm = createVm()
+            vm.requestTagBarFocus()
+            vm.highlightNextTag()
+            val events = collectEvents(vm)
+
+            vm.activateHighlightedTag()
+
+            assertEquals(listOf<UIEvent>(RequestCreateTag), events)
+        }
+
+    @Test
+    fun `a highlight past the end after tags were deleted falls back to the add chip`() =
+        runTest {
+            tagsFlow.value = tags(10, 20, 30)
+            val vm = createVm()
+            vm.requestTagBarFocus()
+            repeat(2) { vm.highlightNextTag() }
+            tagsFlow.value = tags(10)
+            val events = collectEvents(vm)
+
+            vm.activateHighlightedTag()
+            assertEquals(listOf<UIEvent>(RequestCreateTag), events)
+
+            vm.highlightPrevTag()
+            assertEquals(0, vm.highlightedTagIndex.value)
+        }
 
     @Test
     fun `initial selected indexes is list of 0`() =

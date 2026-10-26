@@ -21,6 +21,7 @@ import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.PasteWriteScope
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.item.PasteText
+import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
 import com.crosspaste.utils.ioDispatcher
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
@@ -37,6 +38,7 @@ class DesktopShortKeysAction(
     private val notificationManager: NotificationManager,
     private val pasteboardService: PasteboardService,
     private val pasteDao: PasteDao,
+    private val pasteSelectionViewModel: PasteSelectionViewModel,
 ) : ShortcutKeysAction {
 
     private val logger = KotlinLogging.logger {}
@@ -127,6 +129,17 @@ class DesktopShortKeysAction(
             actionName = "HideWindow",
             actionLogMessage = "Hide window",
         ) {
+            // Like any popup, the open type menu goes first and the search window stays. This
+            // shortcut is the menu's only Esc owner: its popup takes no focus, and handling Esc in
+            // Compose as well would close the menu and then, seeing it closed, hide the window.
+            // Returning early also skips hiding the main window, on purpose: one Esc, one layer.
+            if (appWindowManager.getCurrentSearchWindowInfo().show &&
+                pasteSelectionViewModel.typeMenuIndex.value != null
+            ) {
+                pasteSelectionViewModel.cancelTypeMenu()
+                return@mainRunAction
+            }
+
             if (appWindowManager.getCurrentMainWindowInfo().show &&
                 !appFileChooser.showFileDialog.value
             ) {

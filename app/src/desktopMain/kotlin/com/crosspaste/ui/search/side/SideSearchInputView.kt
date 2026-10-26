@@ -2,6 +2,7 @@ package com.crosspaste.ui.search.side
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,15 +29,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
@@ -67,9 +73,11 @@ import com.crosspaste.ui.base.nonFocusable
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
-import com.crosspaste.ui.model.RequestSearchInputFocus
+import com.crosspaste.ui.model.RequestFocus
+import com.crosspaste.ui.model.RequestOpenSettings
 import com.crosspaste.ui.search.QuickPasteView
 import com.crosspaste.ui.search.SearchTrailingIcon
+import com.crosspaste.ui.search.keyboardHighlightRing
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUISize.large
@@ -82,6 +90,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -110,6 +119,19 @@ fun SideSearchInputView() {
 
     val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
 
+    // Local field state so the caret position is known; the view model still owns the text
+    var searchFieldValue by remember { mutableStateOf(TextFieldValue(inputSearch)) }
+
+    // Set synchronously (not in an effect) so a key pressed right after typing sees the new caret
+    fun setSearchFieldValue(value: TextFieldValue) {
+        searchFieldValue = value
+        pasteSelectionViewModel.updateSearchCaret(
+            value.selection.collapsed &&
+                value.selection.end == value.text.length &&
+                value.composition == null,
+        )
+    }
+
     val prevAppName by appWindowManager.getPrevAppName().collectAsState(null)
 
     val config by configManager.config.collectAsState()
@@ -119,8 +141,18 @@ fun SideSearchInputView() {
     val pendingCutPasteId by pasteMenuService.pendingCutPasteId.collectAsState()
 
     val searchFocusRequester = remember { FocusRequester() }
+    val settingsFocusRequester = remember { FocusRequester() }
+    val focusedElement by pasteSelectionViewModel.focusedElement.collectAsState()
 
     val scope = rememberCoroutineScope()
+
+    fun openSettings() {
+        scope.launch {
+            navigationManager.navigateAndClearStack(Settings)
+            appWindowManager.showMainWindow(WindowTrigger.MENU)
+            appWindowManager.hideSearchWindow()
+        }
+    }
 
     LaunchedEffect(searchWindowInfo.show) {
         if (searchWindowInfo.show) {
@@ -128,12 +160,20 @@ fun SideSearchInputView() {
         }
     }
 
+    // Follow text set from outside the field (e.g. the reset above), parking the caret at the end
+    LaunchedEffect(inputSearch) {
+        val text = pasteSearchViewModel.inputSearch.value
+        if (searchFieldValue.text != text) {
+            setSearchFieldValue(TextFieldValue(text, TextRange(text.length)))
+        }
+    }
+
     LaunchedEffect(Unit) {
         pasteSelectionViewModel.uiEvent.collect { event ->
             when (event) {
-                RequestSearchInputFocus -> {
-                    searchFocusRequester.requestFocus()
-                }
+                RequestFocus(FocusedElement.SEARCH_INPUT) -> searchFocusRequester.requestFocus()
+                RequestFocus(FocusedElement.SETTINGS) -> settingsFocusRequester.requestFocus()
+                RequestOpenSettings -> openSettings()
             }
         }
     }
@@ -222,7 +262,7 @@ fun SideSearchInputView() {
                     .onFocusEvent {
                         pasteSelectionViewModel.updateFocus(FocusedElement.SEARCH_INPUT, it.isFocused)
                     },
-            value = inputSearch,
+            value = searchFieldValue,
             leadingIcon = {
                 Icon(
                     imageVector = MaterialSymbols.Rounded.Search,
@@ -233,7 +273,10 @@ fun SideSearchInputView() {
             trailingIcon = {
                 SearchTrailingIcon()
             },
-            onValueChange = { pasteSearchViewModel.updateInputSearch(it) },
+            onValueChange = {
+                setSearchFieldValue(it)
+                pasteSearchViewModel.updateInputSearch(it.text)
+            },
             keyboardOptions = KeyboardOptions.Default.copy(autoCorrectEnabled = true),
             visualTransformation = VisualTransformation.None,
             placeholder = {
@@ -327,21 +370,32 @@ fun SideSearchInputView() {
                 Spacer(modifier = Modifier.width(large))
             }
 
-            GeneralIconButton(
-                imageVector = MaterialSymbols.Rounded.Settings,
-                desc = "settings",
-                colors =
-                    iconButtonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = MaterialTheme.colorScheme.primary,
-                    ),
-                shape = tiny2XRoundedCornerShape,
+            // A focus target of its own so the keyboard can reach it; the button stays unfocusable
+            Box(
+                modifier =
+                    Modifier
+                        .focusRequester(settingsFocusRequester)
+                        .onFocusChanged {
+                            pasteSelectionViewModel.updateFocus(FocusedElement.SETTINGS, it.isFocused)
+                        }.focusable()
+                        .keyboardHighlightRing(
+                            visible = focusedElement == FocusedElement.SETTINGS,
+                            outset = zero,
+                            cornerRadius = tiny2X,
+                        ),
             ) {
-                scope.launch {
-                    navigationManager.navigateAndClearStack(Settings)
-                    appWindowManager.showMainWindow(WindowTrigger.MENU)
-                    appWindowManager.hideSearchWindow()
-                }
+                GeneralIconButton(
+                    imageVector = MaterialSymbols.Rounded.Settings,
+                    desc = "settings",
+                    colors =
+                        iconButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = MaterialTheme.colorScheme.primary,
+                        ),
+                    modifier = Modifier.nonFocusable(),
+                    shape = tiny2XRoundedCornerShape,
+                    onClick = ::openSettings,
+                )
             }
         }
     }

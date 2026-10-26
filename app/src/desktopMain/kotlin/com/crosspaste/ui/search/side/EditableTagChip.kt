@@ -53,6 +53,7 @@ import com.composables.icons.materialsymbols.rounded.Close
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.nonFocusable
 import com.crosspaste.ui.paste.PasteTagScope
+import com.crosspaste.ui.search.keyboardHighlightRing
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -74,6 +75,7 @@ private val DOUBLE_CLICK_TIMEOUT_MS = 300L.milliseconds
 fun PasteTagScope.TagChip(
     modifier: Modifier = Modifier,
     isSelected: Boolean,
+    isHighlighted: Boolean = false,
     onEdit: () -> Unit,
     onSelect: () -> Unit,
 ) {
@@ -123,7 +125,12 @@ fun PasteTagScope.TagChip(
         colors = palette.chipColors(),
         shape = CircleShape,
         interactionSource = interactionSource,
-        modifier = modifier.then(palette.animatedLip(edge)).height(xxLarge).nonFocusable(),
+        modifier =
+            modifier
+                .keyboardHighlightRing(isHighlighted)
+                .then(palette.animatedLip(edge))
+                .height(xxLarge)
+                .nonFocusable(),
     )
 }
 

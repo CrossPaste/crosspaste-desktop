@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -63,16 +64,137 @@ class PasteSelectionViewModel(
             initialValue = listOf(),
         )
 
+    /**
+     * Keyboard highlight in the tag bar: an index into the tag list, where `tags.size` is the
+     * add-tag chip. Only shown while the tag bar holds focus.
+     */
+    private val _highlightedTagIndex = MutableStateFlow(0)
+    val highlightedTagIndex: StateFlow<Int> = _highlightedTagIndex
+
+    /**
+     * Kept current by the search input (main thread only) so Right only leaves it once the caret
+     * has nowhere to go.
+     */
+    var isSearchCaretAtEnd: Boolean = true
+        private set
+
+    fun updateSearchCaret(atEnd: Boolean) {
+        isSearchCaretAtEnd = atEnd
+    }
+
     private val _uiEvent = MutableSharedFlow<UIEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
-    fun requestPasteListFocus() {
-        viewModelScope.launch { _uiEvent.emit(RequestPasteListFocus) }
+    fun requestFocus(zone: FocusedElement) {
+        viewModelScope.launch { _uiEvent.emit(RequestFocus(zone)) }
     }
 
-    fun requestSearchInputFocus() {
-        viewModelScope.launch { _uiEvent.emit(RequestSearchInputFocus) }
+    fun requestPasteListFocus() = requestFocus(FocusedElement.PASTE_LIST)
+
+    fun requestSearchInputFocus() = requestFocus(FocusedElement.SEARCH_INPUT)
+
+    /**
+     * Enters the tag bar on the active filter tag, or the first chip when no tag filters the list.
+     * Coming back from its right end ([atAddChip]) lands on the add chip instead.
+     */
+    fun requestTagBarFocus(atAddChip: Boolean = false) {
+        val tags = searchViewModel.tagList.value
+        val selectedTag = searchViewModel.searchBaseParams.value.tag
+        _highlightedTagIndex.value =
+            if (atAddChip) {
+                tags.size
+            } else {
+                tags.indexOfFirst { it.id == selectedTag }.coerceAtLeast(0)
+            }
+        requestFocus(FocusedElement.TAG_BAR)
     }
+
+    /** Left of the first chip is the type filter, right of the add chip is the settings button. */
+    fun highlightPrevTag() {
+        val index = clampedTagIndex()
+        if (index == 0) {
+            requestFocus(FocusedElement.TYPE_FILTER)
+        } else {
+            _highlightedTagIndex.value = index - 1
+        }
+    }
+
+    fun highlightNextTag() {
+        val index = clampedTagIndex()
+        if (index == searchViewModel.tagList.value.size) {
+            requestFocus(FocusedElement.SETTINGS)
+        } else {
+            _highlightedTagIndex.value = index + 1
+        }
+    }
+
+    /** Toggles the highlighted tag's filter, or starts a new tag when the add chip is highlighted. */
+    fun activateHighlightedTag() {
+        val tag = searchViewModel.tagList.value.getOrNull(clampedTagIndex())
+        if (tag != null) {
+            searchViewModel.updateTag(tag.id)
+        } else {
+            viewModelScope.launch { _uiEvent.emit(RequestCreateTag) }
+        }
+    }
+
+    fun openSettings() {
+        viewModelScope.launch { _uiEvent.emit(RequestOpenSettings) }
+    }
+
+    /** Rows of the type filter menu: all types first, then each single type. */
+    val pasteTypeChoices: List<PasteType?> = listOf<PasteType?>(null) + PasteType.TYPES
+
+    /** Keyboard highlight in the open type filter menu, an index into [pasteTypeChoices]; null while it is closed. */
+    private val _typeMenuIndex = MutableStateFlow<Int?>(null)
+    val typeMenuIndex: StateFlow<Int?> = _typeMenuIndex
+
+    /** Opens the type menu on the active type, so Enter right away keeps the current filter. */
+    fun openTypeMenu() {
+        val current =
+            searchViewModel.searchBaseParams.value.pasteTypeList
+                .singleOrNull()
+        _typeMenuIndex.value = pasteTypeChoices.indexOfFirst { it?.type == current }.coerceAtLeast(0)
+    }
+
+    fun closeTypeMenu() {
+        _typeMenuIndex.value = null
+    }
+
+    /**
+     * Dismissing the menu without a pick (Esc, a click outside) returns to the search input, like
+     * picking does, so typing carries on. Kept apart from [closeTypeMenu], which also runs when the
+     * user moves focus away and must not pull it back.
+     */
+    fun cancelTypeMenu() {
+        closeTypeMenu()
+        requestSearchInputFocus()
+    }
+
+    fun highlightPrevPasteType() = moveTypeMenu(-1)
+
+    fun highlightNextPasteType() = moveTypeMenu(1)
+
+    private fun moveTypeMenu(step: Int) {
+        _typeMenuIndex.value = _typeMenuIndex.value?.let { (it + step).coerceIn(0, pasteTypeChoices.lastIndex) }
+    }
+
+    fun confirmPasteType() {
+        _typeMenuIndex.value?.let { selectPasteType(pasteTypeChoices[it]) }
+    }
+
+    /**
+     * Applies [pasteType] as the filter (null = all types), closes the menu and hands focus back to
+     * the search input, so typing carries on right after picking a type (as on mobile).
+     */
+    fun selectPasteType(pasteType: PasteType?) {
+        searchViewModel.updatePasteType(listOfNotNull(pasteType?.type))
+        closeTypeMenu()
+        requestSearchInputFocus()
+    }
+
+    // Tags can be deleted while highlighted; the add chip then takes the highlight
+    private fun clampedTagIndex(): Int = _highlightedTagIndex.value.coerceAtMost(searchViewModel.tagList.value.size)
 
     fun selectPrev() {
         val results = searchViewModel.searchResults.value
@@ -100,6 +222,8 @@ class PasteSelectionViewModel(
             _focusedElement.value = element
         } else {
             _focusedElement.compareAndSet(element, FocusedElement.NONE)
+            // The type menu is driven by the type filter's keys, so it cannot outlive its focus
+            if (element == FocusedElement.TYPE_FILTER) closeTypeMenu()
         }
     }
 
@@ -117,6 +241,9 @@ class PasteSelectionViewModel(
      */
     suspend fun resetToTop() {
         _selectedIds.value = listOf()
+        // Don't rely on the type filter losing focus while hidden to close its menu
+        closeTypeMenu()
+        _highlightedTagIndex.value = 0
         searchListState?.scrollToItem(0)
     }
 
