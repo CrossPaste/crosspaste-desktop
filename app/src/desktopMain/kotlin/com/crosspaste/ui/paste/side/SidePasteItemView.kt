@@ -14,8 +14,10 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draganddrop.DragAndDropTransferAction
@@ -26,6 +28,9 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isShiftPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -51,8 +56,8 @@ import org.koin.compose.koinInject
 fun PasteDataScope.SidePasteItemView(
     selected: Boolean,
     isScrolling: Boolean,
-    onPress: () -> Unit,
-    onDoubleTap: () -> Unit,
+    onPress: (isShiftPressed: Boolean) -> Unit,
+    onDoubleTap: (isShiftPressed: Boolean) -> Unit,
     pasteContent: @Composable PasteData.() -> Unit,
 ) {
     val configManager = koinInject<CommonConfigManager>()
@@ -63,6 +68,7 @@ fun PasteDataScope.SidePasteItemView(
 
     val currentOnPress by rememberUpdatedState(onPress)
     val currentOnDoubleTap by rememberUpdatedState(onDoubleTap)
+    var isShiftPressed by remember { mutableStateOf(false) }
 
     val graphicsLayer = rememberGraphicsLayer()
     val hoverInteraction = remember { MutableInteractionSource() }
@@ -110,13 +116,25 @@ fun PasteDataScope.SidePasteItemView(
                 }.size(appSizeValue.sidePasteSize)
                 .clip(small3XRoundedCornerShape)
                 .pointerInput(Unit) {
+                    // Read Shift off the press itself: tap callbacks carry no modifiers, and
+                    // modifier state tracked from key events goes stale whenever a key-up is
+                    // delivered elsewhere (e.g. while the window is hidden or not yet focused).
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent(PointerEventPass.Initial)
+                            if (event.type == PointerEventType.Press) {
+                                isShiftPressed = event.keyboardModifiers.isShiftPressed
+                            }
+                        }
+                    }
+                }.pointerInput(Unit) {
                     detectTapGestures(
                         onPress = {
-                            currentOnPress()
+                            currentOnPress(isShiftPressed)
                             tryAwaitRelease()
                         },
                         onDoubleTap = {
-                            currentOnDoubleTap()
+                            currentOnDoubleTap(isShiftPressed)
                         },
                     )
                 }.border(

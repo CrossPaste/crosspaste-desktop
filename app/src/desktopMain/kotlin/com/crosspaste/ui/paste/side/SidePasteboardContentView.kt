@@ -49,7 +49,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.nativeKeyCode
 import androidx.compose.ui.input.key.onKeyEvent
@@ -112,7 +111,6 @@ fun SidePasteboardContentView() {
     val latestSearchResult = rememberUpdatedState(searchResult)
     val pasteListFocusRequester = remember { FocusRequester() }
     var previousFirstItemId by remember { mutableStateOf<Long?>(null) }
-    var isShiftPressed by remember { mutableStateOf(false) }
     var isCtrlPressed by remember { mutableStateOf(false) }
 
     val showToStart by remember(searchListState) {
@@ -123,12 +121,12 @@ fun SidePasteboardContentView() {
         }
     }
 
-    // Reset key modifier state and selection when the window opens, so it matches
-    // the freshly recreated scroll state above.
+    // Best-effort reset of the Ctrl+1..9 badge state and the selection when the window opens.
+    // Like the scroll reset above, this may miss a reopen because the composition is paused
+    // while the window is hidden; nothing here may depend on it for correctness.
     LaunchedEffect(searchWindowInfo.show) {
         if (searchWindowInfo.show) {
             isCtrlPressed = false
-            isShiftPressed = false
             pasteSelectionViewModel.initSelectIndex()
         }
     }
@@ -278,7 +276,6 @@ fun SidePasteboardContentView() {
                     .focusRequester(pasteListFocusRequester)
                     .focusable()
                     .onKeyEvent { keyEvent ->
-                        isShiftPressed = keyEvent.isShiftPressed
                         isCtrlPressed = keyEvent.isCtrlPressed
 
                         if (keyEvent.type == KeyEventType.KeyDown) {
@@ -336,10 +333,10 @@ fun SidePasteboardContentView() {
                             scope.SidePasteItemView(
                                 selected = currentIndex in selectedIndexes,
                                 isScrolling = searchListState.isScrollInProgress,
-                                onPress = {
+                                onPress = { isShiftPressed ->
                                     pasteSelectionViewModel.clickSelectedIndex(currentIndex, isShiftPressed)
                                 },
-                                onDoubleTap = {
+                                onDoubleTap = { isShiftPressed ->
                                     if (!isShiftPressed) {
                                         pasteMenuService.quickPasteFromSearchWindow(currentPasteData)
                                     }
