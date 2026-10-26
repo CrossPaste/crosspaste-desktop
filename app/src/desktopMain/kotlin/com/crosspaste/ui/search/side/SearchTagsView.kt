@@ -59,9 +59,10 @@ import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.model.RequestCreateTag
-import com.crosspaste.ui.model.RequestTagBarFocus
+import com.crosspaste.ui.model.RequestFocus
 import com.crosspaste.ui.paste.PasteTagScope
 import com.crosspaste.ui.paste.createPasteTagScope
+import com.crosspaste.ui.search.keyboardHighlightRing
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -120,7 +121,7 @@ fun SearchTagsView() {
     LaunchedEffect(Unit) {
         pasteSelectionViewModel.uiEvent.collect { event ->
             when (event) {
-                RequestTagBarFocus -> tagBarFocusRequester.requestFocus()
+                RequestFocus(FocusedElement.TAG_BAR) -> tagBarFocusRequester.requestFocus()
                 RequestCreateTag -> startNewTag()
             }
         }

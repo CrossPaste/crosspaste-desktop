@@ -31,9 +31,9 @@ class SearchWindowKeysTest {
     }
 
     @Test
-    fun `right leaves the search input for the tag bar only with the caret at the end`() {
+    fun `right leaves the search input for the type filter only with the caret at the end`() {
         val right = SearchKeyStroke(Key.DirectionRight)
-        assertEquals(SearchWindowKeyAction.FOCUS_TAG_BAR, preview(FocusedElement.SEARCH_INPUT, right))
+        assertEquals(SearchWindowKeyAction.FOCUS_TYPE_FILTER, preview(FocusedElement.SEARCH_INPUT, right))
         assertNull(preview(FocusedElement.SEARCH_INPUT, right, isSearchCaretAtEnd = false))
         // Shift+Right extends a selection, it must stay with the text field
         assertNull(preview(FocusedElement.SEARCH_INPUT, right.copy(isShiftPressed = true)))
@@ -41,25 +41,44 @@ class SearchWindowKeysTest {
     }
 
     @Test
-    fun `tab cycles search input, tag bar and paste list`() {
+    fun `tab walks the top bar left to right, then the list`() {
         val tab = SearchKeyStroke(Key.Tab)
-        assertEquals(SearchWindowKeyAction.FOCUS_TAG_BAR, preview(FocusedElement.SEARCH_INPUT, tab))
-        assertEquals(SearchWindowKeyAction.FOCUS_PASTE_LIST, preview(FocusedElement.TAG_BAR, tab))
+        assertEquals(SearchWindowKeyAction.FOCUS_TYPE_FILTER, preview(FocusedElement.SEARCH_INPUT, tab))
+        assertEquals(SearchWindowKeyAction.FOCUS_TAG_BAR, preview(FocusedElement.TYPE_FILTER, tab))
+        assertEquals(SearchWindowKeyAction.FOCUS_SETTINGS, preview(FocusedElement.TAG_BAR, tab))
+        assertEquals(SearchWindowKeyAction.FOCUS_PASTE_LIST, preview(FocusedElement.SETTINGS, tab))
         assertEquals(SearchWindowKeyAction.FOCUS_SEARCH_INPUT, preview(FocusedElement.PASTE_LIST, tab))
     }
 
     @Test
-    fun `shift tab cycles backwards`() {
+    fun `shift tab walks backwards`() {
         val shiftTab = SearchKeyStroke(Key.Tab, isShiftPressed = true)
         assertEquals(SearchWindowKeyAction.FOCUS_PASTE_LIST, preview(FocusedElement.SEARCH_INPUT, shiftTab))
-        assertEquals(SearchWindowKeyAction.FOCUS_SEARCH_INPUT, preview(FocusedElement.TAG_BAR, shiftTab))
-        assertEquals(SearchWindowKeyAction.FOCUS_TAG_BAR, preview(FocusedElement.PASTE_LIST, shiftTab))
+        assertEquals(SearchWindowKeyAction.FOCUS_SEARCH_INPUT, preview(FocusedElement.TYPE_FILTER, shiftTab))
+        assertEquals(SearchWindowKeyAction.FOCUS_TYPE_FILTER, preview(FocusedElement.TAG_BAR, shiftTab))
+        assertEquals(SearchWindowKeyAction.FOCUS_TAG_BAR, preview(FocusedElement.SETTINGS, shiftTab))
+        assertEquals(SearchWindowKeyAction.FOCUS_SETTINGS, preview(FocusedElement.PASTE_LIST, shiftTab))
     }
 
     @Test
     fun `tab is left alone outside the zones and with other modifiers`() {
         assertNull(preview(FocusedElement.NONE, Key.Tab))
         assertNull(preview(FocusedElement.SEARCH_INPUT, SearchKeyStroke(Key.Tab, isCtrlPressed = true)))
+    }
+
+    @Test
+    fun `the type filter cycles types with up and down and sits between search and tags`() {
+        assertEquals(SearchWindowKeyAction.PREV_PASTE_TYPE, preview(FocusedElement.TYPE_FILTER, Key.DirectionUp))
+        assertEquals(SearchWindowKeyAction.NEXT_PASTE_TYPE, preview(FocusedElement.TYPE_FILTER, Key.DirectionDown))
+        assertEquals(SearchWindowKeyAction.FOCUS_SEARCH_INPUT, preview(FocusedElement.TYPE_FILTER, Key.DirectionLeft))
+        assertEquals(SearchWindowKeyAction.FOCUS_TAG_BAR, preview(FocusedElement.TYPE_FILTER, Key.DirectionRight))
+        assertEquals(SearchWindowKeyAction.PASTE, preview(FocusedElement.TYPE_FILTER, Key.Enter))
+    }
+
+    @Test
+    fun `the type filter swallows typing so the search text field around it never edits the query`() {
+        assertEquals(SearchWindowKeyAction.CONSUME, preview(FocusedElement.TYPE_FILTER, Key.A))
+        assertEquals(SearchWindowKeyAction.CONSUME, preview(FocusedElement.TYPE_FILTER, Key.Backspace))
     }
 
     @Test
@@ -72,10 +91,22 @@ class SearchWindowKeysTest {
     }
 
     @Test
-    fun `keys the tag bar declines never reach the paste list shortcuts`() {
-        assertNull(bubble(Key.Enter, zone = FocusedElement.TAG_BAR))
-        assertNull(bubble(Key.DirectionUp, zone = FocusedElement.TAG_BAR))
-        assertNull(bubble(Key.N, isCtrlPressed = true, zone = FocusedElement.TAG_BAR))
+    fun `the settings button opens settings and steps back onto the add chip`() {
+        assertEquals(SearchWindowKeyAction.FOCUS_TAG_BAR_END, preview(FocusedElement.SETTINGS, Key.DirectionLeft))
+        assertEquals(SearchWindowKeyAction.OPEN_SETTINGS, preview(FocusedElement.SETTINGS, Key.Enter))
+        assertEquals(SearchWindowKeyAction.OPEN_SETTINGS, preview(FocusedElement.SETTINGS, Key.Spacebar))
+        assertEquals(SearchWindowKeyAction.FOCUS_PASTE_LIST, preview(FocusedElement.SETTINGS, Key.DirectionDown))
+        assertNull(preview(FocusedElement.SETTINGS, Key.DirectionRight))
+    }
+
+    @Test
+    fun `keys the tag bar and settings decline never reach the paste list shortcuts`() {
+        for (zone in listOf(FocusedElement.TAG_BAR, FocusedElement.SETTINGS)) {
+            assertNull(bubble(Key.Enter, zone = zone))
+            assertNull(bubble(Key.DirectionUp, zone = zone))
+            assertNull(bubble(Key.DirectionRight, zone = zone))
+            assertNull(bubble(Key.N, isCtrlPressed = true, zone = zone))
+        }
     }
 
     @Test

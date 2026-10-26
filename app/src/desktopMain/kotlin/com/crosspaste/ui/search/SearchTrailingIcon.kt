@@ -2,6 +2,7 @@ package com.crosspaste.ui.search
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +29,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
@@ -39,11 +44,15 @@ import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteType.Companion.ALL_TYPES
 import com.crosspaste.ui.base.MenuItemView
 import com.crosspaste.ui.base.nonFocusable
+import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
+import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.model.RequestFocus
 import com.crosspaste.ui.theme.AppUIFont.getFontWidth
 import com.crosspaste.ui.theme.AppUISize.huge
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.small3X
+import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.ui.theme.AppUISize.tiny5X
@@ -56,6 +65,18 @@ fun SearchTrailingIcon() {
     val copywriter = koinInject<GlobalCopywriter>()
 
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
+    val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
+
+    val focusedElement by pasteSelectionViewModel.focusedElement.collectAsState()
+    val typeFilterFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(Unit) {
+        pasteSelectionViewModel.uiEvent.collect { event ->
+            if (event == RequestFocus(FocusedElement.TYPE_FILTER)) {
+                typeFilterFocusRequester.requestFocus()
+            }
+        }
+    }
 
     val searchBaseParams by pasteSearchViewModel.searchBaseParams.collectAsState()
 
@@ -92,7 +113,19 @@ fun SearchTrailingIcon() {
             onClick = {
                 showTypes = true
             },
-            modifier = Modifier.height(28.dp).nonFocusable(),
+            // Taking focus here moves it off the search text field around it; Up/Down then cycle the type
+            modifier =
+                Modifier
+                    .height(28.dp)
+                    .focusRequester(typeFilterFocusRequester)
+                    .onFocusChanged {
+                        pasteSelectionViewModel.updateFocus(FocusedElement.TYPE_FILTER, it.isFocused)
+                    }.focusable()
+                    .keyboardHighlightRing(
+                        visible = focusedElement == FocusedElement.TYPE_FILTER,
+                        outset = zero,
+                        cornerRadius = tiny2X,
+                    ).nonFocusable(),
             shape = tiny2XRoundedCornerShape,
             border =
                 BorderStroke(

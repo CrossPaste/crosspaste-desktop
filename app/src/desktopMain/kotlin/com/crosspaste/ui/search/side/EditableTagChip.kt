@@ -38,11 +38,9 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.platform.LocalDensity
@@ -55,6 +53,7 @@ import com.composables.icons.materialsymbols.rounded.Close
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.nonFocusable
 import com.crosspaste.ui.paste.PasteTagScope
+import com.crosspaste.ui.search.keyboardHighlightRing
 import com.crosspaste.ui.theme.AppUISize.large2X
 import com.crosspaste.ui.theme.AppUISize.small
 import com.crosspaste.ui.theme.AppUISize.tiny
@@ -71,28 +70,6 @@ import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
 private val DOUBLE_CLICK_TIMEOUT_MS = 300L.milliseconds
-
-/**
- * Keyboard focus ring drawn just outside a pill-shaped chip. Drawn outside the bounds so it never
- * covers the chip's own selected/hover edge, which stays the only filter indicator.
- */
-@Composable
-fun Modifier.keyboardHighlightRing(visible: Boolean): Modifier {
-    if (!visible) return this
-    val color = MaterialTheme.colorScheme.primary
-    return drawBehind {
-        val gap = tiny4X.toPx()
-        val stroke = (tiny5X + tiny6X).toPx()
-        val inset = gap + stroke / 2
-        drawRoundRect(
-            color = color,
-            topLeft = Offset(-inset, -inset),
-            size = Size(size.width + inset * 2, size.height + inset * 2),
-            cornerRadius = CornerRadius(size.height / 2 + inset),
-            style = Stroke(width = stroke),
-        )
-    }
-}
 
 @Composable
 fun PasteTagScope.TagChip(

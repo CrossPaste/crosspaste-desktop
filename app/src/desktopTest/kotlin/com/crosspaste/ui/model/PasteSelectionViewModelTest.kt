@@ -3,6 +3,7 @@ package com.crosspaste.ui.model
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteTag
+import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
 import io.mockk.every
 import io.mockk.mockk
@@ -116,7 +117,7 @@ class PasteSelectionViewModelTest {
             vm.requestTagBarFocus()
 
             assertEquals(1, vm.highlightedTagIndex.value)
-            assertEquals(listOf<UIEvent>(RequestTagBarFocus), events)
+            assertEquals(listOf<UIEvent>(RequestFocus(FocusedElement.TAG_BAR)), events)
         }
 
     @Test
@@ -128,16 +129,32 @@ class PasteSelectionViewModelTest {
     }
 
     @Test
-    fun `highlight steps right up to the add chip and stops there`() {
+    fun `entering the tag bar from its right end highlights the add chip`() {
         tagsFlow.value = tags(10, 20)
+        searchViewModel.updateTag(10)
         val vm = createVm()
-        vm.requestTagBarFocus()
-        repeat(5) { vm.highlightNextTag() }
+        vm.requestTagBarFocus(atAddChip = true)
         assertEquals(2, vm.highlightedTagIndex.value)
     }
 
     @Test
-    fun `left on the first chip returns to the search input`() =
+    fun `right on the add chip moves on to the settings button`() =
+        runTest {
+            tagsFlow.value = tags(10, 20)
+            val vm = createVm()
+            vm.requestTagBarFocus()
+            repeat(2) { vm.highlightNextTag() }
+            assertEquals(2, vm.highlightedTagIndex.value)
+            val events = collectEvents(vm)
+
+            vm.highlightNextTag()
+
+            assertEquals(2, vm.highlightedTagIndex.value)
+            assertEquals(listOf<UIEvent>(RequestFocus(FocusedElement.SETTINGS)), events)
+        }
+
+    @Test
+    fun `left on the first chip moves back to the type filter`() =
         runTest {
             tagsFlow.value = tags(10, 20)
             val vm = createVm()
@@ -150,7 +167,39 @@ class PasteSelectionViewModelTest {
             assertEquals(listOf<UIEvent>(), events)
 
             vm.highlightPrevTag()
-            assertEquals(listOf<UIEvent>(RequestSearchInputFocus), events)
+            assertEquals(listOf<UIEvent>(RequestFocus(FocusedElement.TYPE_FILTER)), events)
+        }
+
+    @Test
+    fun `down steps from all types through each type and wraps back`() {
+        val vm = createVm()
+        val seen =
+            (0..PasteType.TYPES.size).map {
+                vm.selectNextPasteType()
+                searchViewModel.searchBaseParams.value.pasteTypeList
+            }
+        assertEquals(PasteType.TYPES.map { listOf(it.type) } + listOf(listOf()), seen)
+    }
+
+    @Test
+    fun `up from all types wraps to the last type`() {
+        val vm = createVm()
+        vm.selectPrevPasteType()
+        assertEquals(listOf(PasteType.TYPES.last().type), searchViewModel.searchBaseParams.value.pasteTypeList)
+        vm.selectPrevPasteType()
+        assertEquals(
+            listOf(PasteType.TYPES[PasteType.TYPES.size - 2].type),
+            searchViewModel.searchBaseParams.value.pasteTypeList,
+        )
+    }
+
+    @Test
+    fun `open settings is handed to the view`() =
+        runTest {
+            val vm = createVm()
+            val events = collectEvents(vm)
+            vm.openSettings()
+            assertEquals(listOf<UIEvent>(RequestOpenSettings), events)
         }
 
     @Test

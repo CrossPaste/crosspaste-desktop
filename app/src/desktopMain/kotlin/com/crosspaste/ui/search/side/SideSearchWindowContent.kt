@@ -13,6 +13,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.platform.windows.WindowsVersionHelper
 import com.crosspaste.ui.NotificationHost
 import com.crosspaste.ui.base.ProvideSystemDoubleClickInterval
+import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.paste.side.SidePasteboardContentView
 import com.crosspaste.ui.theme.AppUIColors
@@ -93,12 +94,19 @@ private fun PasteSelectionViewModel.dispatchKey(
         SearchWindowKeyAction.PASTE -> scope.launch { toPaste() }
         SearchWindowKeyAction.SELECT_PREV -> selectPrev()
         SearchWindowKeyAction.SELECT_NEXT -> selectNext()
+        SearchWindowKeyAction.PREV_PASTE_TYPE -> selectPrevPasteType()
+        SearchWindowKeyAction.NEXT_PASTE_TYPE -> selectNextPasteType()
         SearchWindowKeyAction.HIGHLIGHT_PREV_TAG -> highlightPrevTag()
         SearchWindowKeyAction.HIGHLIGHT_NEXT_TAG -> highlightNextTag()
         SearchWindowKeyAction.ACTIVATE_TAG -> activateHighlightedTag()
+        SearchWindowKeyAction.OPEN_SETTINGS -> openSettings()
         SearchWindowKeyAction.FOCUS_SEARCH_INPUT -> requestSearchInputFocus()
+        SearchWindowKeyAction.FOCUS_TYPE_FILTER -> requestFocus(FocusedElement.TYPE_FILTER)
         SearchWindowKeyAction.FOCUS_TAG_BAR -> requestTagBarFocus()
+        SearchWindowKeyAction.FOCUS_TAG_BAR_END -> requestTagBarFocus(atAddChip = true)
+        SearchWindowKeyAction.FOCUS_SETTINGS -> requestFocus(FocusedElement.SETTINGS)
         SearchWindowKeyAction.FOCUS_PASTE_LIST -> requestPasteListFocus()
+        SearchWindowKeyAction.CONSUME -> Unit
     }
     return true
 }

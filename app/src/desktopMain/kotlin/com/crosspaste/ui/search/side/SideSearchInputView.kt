@@ -2,6 +2,7 @@ package com.crosspaste.ui.search.side
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -37,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
@@ -71,9 +73,11 @@ import com.crosspaste.ui.base.nonFocusable
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
-import com.crosspaste.ui.model.RequestSearchInputFocus
+import com.crosspaste.ui.model.RequestFocus
+import com.crosspaste.ui.model.RequestOpenSettings
 import com.crosspaste.ui.search.QuickPasteView
 import com.crosspaste.ui.search.SearchTrailingIcon
+import com.crosspaste.ui.search.keyboardHighlightRing
 import com.crosspaste.ui.theme.AppUIColors
 import com.crosspaste.ui.theme.AppUIFont
 import com.crosspaste.ui.theme.AppUISize.large
@@ -86,6 +90,7 @@ import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tinyRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.xxLarge
+import com.crosspaste.ui.theme.AppUISize.zero
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -135,8 +140,18 @@ fun SideSearchInputView() {
     val pendingCutPasteId by pasteMenuService.pendingCutPasteId.collectAsState()
 
     val searchFocusRequester = remember { FocusRequester() }
+    val settingsFocusRequester = remember { FocusRequester() }
+    val focusedElement by pasteSelectionViewModel.focusedElement.collectAsState()
 
     val scope = rememberCoroutineScope()
+
+    fun openSettings() {
+        scope.launch {
+            navigationManager.navigateAndClearStack(Settings)
+            appWindowManager.showMainWindow(WindowTrigger.MENU)
+            appWindowManager.hideSearchWindow()
+        }
+    }
 
     LaunchedEffect(searchWindowInfo.show) {
         if (searchWindowInfo.show) {
@@ -155,9 +170,9 @@ fun SideSearchInputView() {
     LaunchedEffect(Unit) {
         pasteSelectionViewModel.uiEvent.collect { event ->
             when (event) {
-                RequestSearchInputFocus -> {
-                    searchFocusRequester.requestFocus()
-                }
+                RequestFocus(FocusedElement.SEARCH_INPUT) -> searchFocusRequester.requestFocus()
+                RequestFocus(FocusedElement.SETTINGS) -> settingsFocusRequester.requestFocus()
+                RequestOpenSettings -> openSettings()
             }
         }
     }
@@ -354,21 +369,32 @@ fun SideSearchInputView() {
                 Spacer(modifier = Modifier.width(large))
             }
 
-            GeneralIconButton(
-                imageVector = MaterialSymbols.Rounded.Settings,
-                desc = "settings",
-                colors =
-                    iconButtonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = MaterialTheme.colorScheme.primary,
-                    ),
-                shape = tiny2XRoundedCornerShape,
+            // A focus target of its own so the keyboard can reach it; the button stays unfocusable
+            Box(
+                modifier =
+                    Modifier
+                        .focusRequester(settingsFocusRequester)
+                        .onFocusChanged {
+                            pasteSelectionViewModel.updateFocus(FocusedElement.SETTINGS, it.isFocused)
+                        }.focusable()
+                        .keyboardHighlightRing(
+                            visible = focusedElement == FocusedElement.SETTINGS,
+                            outset = zero,
+                            cornerRadius = tiny2X,
+                        ),
             ) {
-                scope.launch {
-                    navigationManager.navigateAndClearStack(Settings)
-                    appWindowManager.showMainWindow(WindowTrigger.MENU)
-                    appWindowManager.hideSearchWindow()
-                }
+                GeneralIconButton(
+                    imageVector = MaterialSymbols.Rounded.Settings,
+                    desc = "settings",
+                    colors =
+                        iconButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = MaterialTheme.colorScheme.primary,
+                        ),
+                    modifier = Modifier.nonFocusable(),
+                    shape = tiny2XRoundedCornerShape,
+                    onClick = ::openSettings,
+                )
             }
         }
     }

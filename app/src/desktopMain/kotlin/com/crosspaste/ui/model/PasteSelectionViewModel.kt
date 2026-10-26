@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.paste.PasteData
+import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteboardService
 import com.crosspaste.utils.ioDispatcher
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -76,35 +77,47 @@ class PasteSelectionViewModel(
     private val _uiEvent = MutableSharedFlow<UIEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
-    fun requestPasteListFocus() {
-        viewModelScope.launch { _uiEvent.emit(RequestPasteListFocus) }
+    fun requestFocus(zone: FocusedElement) {
+        viewModelScope.launch { _uiEvent.emit(RequestFocus(zone)) }
     }
 
-    fun requestSearchInputFocus() {
-        viewModelScope.launch { _uiEvent.emit(RequestSearchInputFocus) }
-    }
+    fun requestPasteListFocus() = requestFocus(FocusedElement.PASTE_LIST)
 
-    /** Enters the tag bar on the active filter tag, or the first chip when no tag filters the list. */
-    fun requestTagBarFocus() {
+    fun requestSearchInputFocus() = requestFocus(FocusedElement.SEARCH_INPUT)
+
+    /**
+     * Enters the tag bar on the active filter tag, or the first chip when no tag filters the list.
+     * Coming back from its right end ([atAddChip]) lands on the add chip instead.
+     */
+    fun requestTagBarFocus(atAddChip: Boolean = false) {
+        val tags = searchViewModel.tagList.value
         val selectedTag = searchViewModel.searchBaseParams.value.tag
         _highlightedTagIndex.value =
-            searchViewModel.tagList.value
-                .indexOfFirst { it.id == selectedTag }
-                .coerceAtLeast(0)
-        viewModelScope.launch { _uiEvent.emit(RequestTagBarFocus) }
+            if (atAddChip) {
+                tags.size
+            } else {
+                tags.indexOfFirst { it.id == selectedTag }.coerceAtLeast(0)
+            }
+        requestFocus(FocusedElement.TAG_BAR)
     }
 
+    /** Left of the first chip is the type filter, right of the add chip is the settings button. */
     fun highlightPrevTag() {
         val index = clampedTagIndex()
         if (index == 0) {
-            requestSearchInputFocus()
+            requestFocus(FocusedElement.TYPE_FILTER)
         } else {
             _highlightedTagIndex.value = index - 1
         }
     }
 
     fun highlightNextTag() {
-        _highlightedTagIndex.value = (clampedTagIndex() + 1).coerceAtMost(searchViewModel.tagList.value.size)
+        val index = clampedTagIndex()
+        if (index == searchViewModel.tagList.value.size) {
+            requestFocus(FocusedElement.SETTINGS)
+        } else {
+            _highlightedTagIndex.value = index + 1
+        }
     }
 
     /** Toggles the highlighted tag's filter, or starts a new tag when the add chip is highlighted. */
@@ -115,6 +128,25 @@ class PasteSelectionViewModel(
         } else {
             viewModelScope.launch { _uiEvent.emit(RequestCreateTag) }
         }
+    }
+
+    fun openSettings() {
+        viewModelScope.launch { _uiEvent.emit(RequestOpenSettings) }
+    }
+
+    fun selectPrevPasteType() = stepPasteType(-1)
+
+    fun selectNextPasteType() = stepPasteType(1)
+
+    // Cycles all types -> each single type -> back to all types, applying the filter right away
+    private fun stepPasteType(step: Int) {
+        val choices = listOf<Int?>(null) + PasteType.TYPES.map { it.type }
+        val current =
+            searchViewModel.searchBaseParams.value.pasteTypeList
+                .singleOrNull()
+        val index = choices.indexOf(current).coerceAtLeast(0)
+        val next = choices[(index + step).mod(choices.size)]
+        searchViewModel.updatePasteType(listOfNotNull(next))
     }
 
     // Tags can be deleted while highlighted; the add chip then takes the highlight
