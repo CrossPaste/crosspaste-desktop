@@ -28,8 +28,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +39,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
@@ -110,6 +114,18 @@ fun SideSearchInputView() {
 
     val inputSearch by pasteSearchViewModel.inputSearch.collectAsState()
 
+    // Local field state so the caret position is known; the view model still owns the text
+    var searchFieldValue by remember { mutableStateOf(TextFieldValue(inputSearch)) }
+
+    // Set synchronously (not in an effect) so a key pressed right after typing sees the new caret
+    fun setSearchFieldValue(value: TextFieldValue) {
+        searchFieldValue = value
+        pasteSelectionViewModel.isSearchCaretAtEnd =
+            value.selection.collapsed &&
+            value.selection.end == value.text.length &&
+            value.composition == null
+    }
+
     val prevAppName by appWindowManager.getPrevAppName().collectAsState(null)
 
     val config by configManager.config.collectAsState()
@@ -125,6 +141,14 @@ fun SideSearchInputView() {
     LaunchedEffect(searchWindowInfo.show) {
         if (searchWindowInfo.show) {
             pasteSearchViewModel.resetSearch()
+        }
+    }
+
+    // Follow text set from outside the field (e.g. the reset above), parking the caret at the end
+    LaunchedEffect(inputSearch) {
+        val text = pasteSearchViewModel.inputSearch.value
+        if (searchFieldValue.text != text) {
+            setSearchFieldValue(TextFieldValue(text, TextRange(text.length)))
         }
     }
 
@@ -222,7 +246,7 @@ fun SideSearchInputView() {
                     .onFocusEvent {
                         pasteSelectionViewModel.updateFocus(FocusedElement.SEARCH_INPUT, it.isFocused)
                     },
-            value = inputSearch,
+            value = searchFieldValue,
             leadingIcon = {
                 Icon(
                     imageVector = MaterialSymbols.Rounded.Search,
@@ -233,7 +257,10 @@ fun SideSearchInputView() {
             trailingIcon = {
                 SearchTrailingIcon()
             },
-            onValueChange = { pasteSearchViewModel.updateInputSearch(it) },
+            onValueChange = {
+                setSearchFieldValue(it)
+                pasteSearchViewModel.updateInputSearch(it.text)
+            },
             keyboardOptions = KeyboardOptions.Default.copy(autoCorrectEnabled = true),
             visualTransformation = VisualTransformation.None,
             placeholder = {

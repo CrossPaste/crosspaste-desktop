@@ -38,9 +38,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.FirstBaseline
 import androidx.compose.ui.platform.LocalDensity
@@ -70,10 +72,33 @@ import kotlin.time.Duration.Companion.milliseconds
 
 private val DOUBLE_CLICK_TIMEOUT_MS = 300L.milliseconds
 
+/**
+ * Keyboard focus ring drawn just outside a pill-shaped chip. Drawn outside the bounds so it never
+ * covers the chip's own selected/hover edge, which stays the only filter indicator.
+ */
+@Composable
+fun Modifier.keyboardHighlightRing(visible: Boolean): Modifier {
+    if (!visible) return this
+    val color = MaterialTheme.colorScheme.primary
+    return drawBehind {
+        val gap = tiny4X.toPx()
+        val stroke = (tiny5X + tiny6X).toPx()
+        val inset = gap + stroke / 2
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(-inset, -inset),
+            size = Size(size.width + inset * 2, size.height + inset * 2),
+            cornerRadius = CornerRadius(size.height / 2 + inset),
+            style = Stroke(width = stroke),
+        )
+    }
+}
+
 @Composable
 fun PasteTagScope.TagChip(
     modifier: Modifier = Modifier,
     isSelected: Boolean,
+    isHighlighted: Boolean = false,
     onEdit: () -> Unit,
     onSelect: () -> Unit,
 ) {
@@ -123,7 +148,12 @@ fun PasteTagScope.TagChip(
         colors = palette.chipColors(),
         shape = CircleShape,
         interactionSource = interactionSource,
-        modifier = modifier.then(palette.animatedLip(edge)).height(xxLarge).nonFocusable(),
+        modifier =
+            modifier
+                .keyboardHighlightRing(isHighlighted)
+                .then(palette.animatedLip(edge))
+                .height(xxLarge)
+                .nonFocusable(),
     )
 }
 

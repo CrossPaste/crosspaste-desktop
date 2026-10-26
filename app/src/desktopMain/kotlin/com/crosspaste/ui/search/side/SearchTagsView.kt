@@ -2,15 +2,18 @@ package com.crosspaste.ui.search.side
 
 import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListLayoutInfo
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -31,6 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerInputChange
@@ -49,8 +55,11 @@ import com.crosspaste.paste.PasteTag.Companion.createDefaultPasteTag
 import com.crosspaste.ui.LocalSearchWindowInfoState
 import com.crosspaste.ui.base.PasteContextMenuView
 import com.crosspaste.ui.base.nonFocusable
+import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
+import com.crosspaste.ui.model.RequestCreateTag
+import com.crosspaste.ui.model.RequestTagBarFocus
 import com.crosspaste.ui.paste.PasteTagScope
 import com.crosspaste.ui.paste.createPasteTagScope
 import com.crosspaste.ui.theme.AppUISize.medium
@@ -77,26 +86,69 @@ fun SearchTagsView() {
     val tagList by pasteSearchViewModel.tagList.collectAsState()
     val editingMap by PasteTagScope.isEditingMap
 
+    val focusedElement by pasteSelectionViewModel.focusedElement.collectAsState()
+    val highlightedTagIndex by pasteSelectionViewModel.highlightedTagIndex.collectAsState()
+
     var newTag by remember { mutableStateOf<PasteTag?>(null) }
     val scope = rememberCoroutineScope()
     val lazyListState = rememberLazyListState()
     val dragState = rememberTagDragState(tagList)
+    val tagBarFocusRequester = remember { FocusRequester() }
+
+    val isTagBarFocused = focusedElement == FocusedElement.TAG_BAR
+    // The add chip sits right after the tags; a deleted tag hands the highlight to it
+    val highlightIndex = highlightedTagIndex.coerceAtMost(tagList.size)
+
+    fun startNewTag() {
+        if (appControl.isCreateTagEnabled()) {
+            scope.launch {
+                newTag =
+                    createDefaultPasteTag(
+                        name = copywriter.getText("unnamed"),
+                        maxSortOrder = pasteTagDao.getMaxSortOrder(),
+                    )
+                PasteTagScope.resetEditing()
+            }
+        }
+    }
 
     LaunchedEffect(searchWindowInfo.show) {
         newTag = null
         PasteTagScope.resetEditing()
     }
 
+    LaunchedEffect(Unit) {
+        pasteSelectionViewModel.uiEvent.collect { event ->
+            when (event) {
+                RequestTagBarFocus -> tagBarFocusRequester.requestFocus()
+                RequestCreateTag -> startNewTag()
+            }
+        }
+    }
+
+    LaunchedEffect(isTagBarFocused, highlightIndex) {
+        if (isTagBarFocused) lazyListState.scrollIntoView(highlightIndex)
+    }
+
     LazyRow(
         state = lazyListState,
-        modifier = Modifier.fillMaxWidth(),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .focusRequester(tagBarFocusRequester)
+                .onFocusChanged {
+                    pasteSelectionViewModel.updateFocus(FocusedElement.TAG_BAR, it.isFocused)
+                }.focusable(),
+        // Room for the keyboard highlight ring, which the row clips along its scroll axis
+        contentPadding = PaddingValues(horizontal = tiny3X),
         horizontalArrangement = Arrangement.spacedBy(tiny),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        itemsIndexed(dragState.displayList, key = { _, item -> item.id }) { _, tag ->
+        itemsIndexed(dragState.displayList, key = { _, item -> item.id }) { index, tag ->
             SearchTagItem(
                 tag = tag,
                 isSelected = tag.id == searchBaseParams.tag,
+                isHighlighted = isTagBarFocused && index == highlightIndex,
                 isDragging = dragState.isDragging(tag.id),
                 isEditing = editingMap[tag.id] == true,
                 dragOffsetX = { dragState.dragOffsetX },
@@ -140,27 +192,29 @@ fun SearchTagsView() {
 
         item {
             AddTagChip(
-                onClick = {
-                    if (appControl.isCreateTagEnabled()) {
-                        scope.launch {
-                            newTag =
-                                createDefaultPasteTag(
-                                    name = copywriter.getText("unnamed"),
-                                    maxSortOrder = pasteTagDao.getMaxSortOrder(),
-                                )
-                            PasteTagScope.resetEditing()
-                        }
-                    }
-                },
+                isHighlighted = isTagBarFocused && highlightIndex == tagList.size,
+                onClick = ::startNewTag,
             )
         }
     }
+}
+
+/** Scrolls only when the item is not already fully in view, so stepping through visible chips keeps the row still. */
+private suspend fun LazyListState.scrollIntoView(index: Int) {
+    val info = layoutInfo
+    val item = info.visibleItemsInfo.firstOrNull { it.index == index }
+    val fullyVisible =
+        item != null &&
+            item.offset >= info.viewportStartOffset &&
+            item.offset + item.size <= info.viewportEndOffset
+    if (!fullyVisible) animateScrollToItem(index)
 }
 
 @Composable
 private fun SearchTagItem(
     tag: PasteTag,
     isSelected: Boolean,
+    isHighlighted: Boolean,
     isDragging: Boolean,
     isEditing: Boolean,
     dragOffsetX: () -> Float,
@@ -202,6 +256,7 @@ private fun SearchTagItem(
                             )
                         },
                     isSelected = isSelected,
+                    isHighlighted = isHighlighted,
                     onEdit = onTagClick,
                 ) {
                     tagScope.startEditing()
@@ -221,7 +276,10 @@ private fun NewTagChip(
 }
 
 @Composable
-private fun AddTagChip(onClick: () -> Unit) {
+private fun AddTagChip(
+    isHighlighted: Boolean,
+    onClick: () -> Unit,
+) {
     AssistChip(
         onClick = onClick,
         label = {
@@ -232,7 +290,7 @@ private fun AddTagChip(onClick: () -> Unit) {
                 tint = MaterialTheme.colorScheme.primary,
             )
         },
-        modifier = Modifier.height(xxLarge).nonFocusable(),
+        modifier = Modifier.keyboardHighlightRing(isHighlighted).height(xxLarge).nonFocusable(),
         border = null,
         shape = CircleShape,
     )

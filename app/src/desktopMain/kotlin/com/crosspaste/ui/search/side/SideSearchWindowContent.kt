@@ -78,14 +78,26 @@ private fun PasteSelectionViewModel.dispatchKey(
     scope: CoroutineScope,
 ): Boolean {
     if (event.type != KeyEventType.KeyDown) return false
+    val stroke =
+        SearchKeyStroke(
+            key = event.key,
+            isCtrlPressed = event.isCtrlPressed,
+            isShiftPressed = event.isShiftPressed,
+            isAltPressed = event.isAltPressed,
+            isMetaPressed = event.isMetaPressed,
+        )
     val action =
-        resolveSearchWindowKey(phase, focusedElement.value, event.key, event.isCtrlPressed)
+        resolveSearchWindowKey(phase, focusedElement.value, stroke, isSearchCaretAtEnd)
             ?: return false
     when (action) {
         SearchWindowKeyAction.PASTE -> scope.launch { toPaste() }
         SearchWindowKeyAction.SELECT_PREV -> selectPrev()
         SearchWindowKeyAction.SELECT_NEXT -> selectNext()
+        SearchWindowKeyAction.HIGHLIGHT_PREV_TAG -> highlightPrevTag()
+        SearchWindowKeyAction.HIGHLIGHT_NEXT_TAG -> highlightNextTag()
+        SearchWindowKeyAction.ACTIVATE_TAG -> activateHighlightedTag()
         SearchWindowKeyAction.FOCUS_SEARCH_INPUT -> requestSearchInputFocus()
+        SearchWindowKeyAction.FOCUS_TAG_BAR -> requestTagBarFocus()
         SearchWindowKeyAction.FOCUS_PASTE_LIST -> requestPasteListFocus()
     }
     return true

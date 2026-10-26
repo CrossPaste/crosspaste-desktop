@@ -63,6 +63,16 @@ class PasteSelectionViewModel(
             initialValue = listOf(),
         )
 
+    /**
+     * Keyboard highlight in the tag bar: an index into the tag list, where `tags.size` is the
+     * add-tag chip. Only shown while the tag bar holds focus.
+     */
+    private val _highlightedTagIndex = MutableStateFlow(0)
+    val highlightedTagIndex: StateFlow<Int> = _highlightedTagIndex
+
+    /** Kept current by the search input so Right only leaves it once the caret has nowhere to go. */
+    var isSearchCaretAtEnd: Boolean = true
+
     private val _uiEvent = MutableSharedFlow<UIEvent>()
     val uiEvent = _uiEvent.asSharedFlow()
 
@@ -73,6 +83,42 @@ class PasteSelectionViewModel(
     fun requestSearchInputFocus() {
         viewModelScope.launch { _uiEvent.emit(RequestSearchInputFocus) }
     }
+
+    /** Enters the tag bar on the active filter tag, or the first chip when no tag filters the list. */
+    fun requestTagBarFocus() {
+        val selectedTag = searchViewModel.searchBaseParams.value.tag
+        _highlightedTagIndex.value =
+            searchViewModel.tagList.value
+                .indexOfFirst { it.id == selectedTag }
+                .coerceAtLeast(0)
+        viewModelScope.launch { _uiEvent.emit(RequestTagBarFocus) }
+    }
+
+    fun highlightPrevTag() {
+        val index = clampedTagIndex()
+        if (index == 0) {
+            requestSearchInputFocus()
+        } else {
+            _highlightedTagIndex.value = index - 1
+        }
+    }
+
+    fun highlightNextTag() {
+        _highlightedTagIndex.value = (clampedTagIndex() + 1).coerceAtMost(searchViewModel.tagList.value.size)
+    }
+
+    /** Toggles the highlighted tag's filter, or starts a new tag when the add chip is highlighted. */
+    fun activateHighlightedTag() {
+        val tag = searchViewModel.tagList.value.getOrNull(clampedTagIndex())
+        if (tag != null) {
+            searchViewModel.updateTag(tag.id)
+        } else {
+            viewModelScope.launch { _uiEvent.emit(RequestCreateTag) }
+        }
+    }
+
+    // Tags can be deleted while highlighted; the add chip then takes the highlight
+    private fun clampedTagIndex(): Int = _highlightedTagIndex.value.coerceAtMost(searchViewModel.tagList.value.size)
 
     fun selectPrev() {
         val results = searchViewModel.searchResults.value

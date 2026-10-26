@@ -11,6 +11,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -28,10 +30,12 @@ class PasteSelectionViewModelTest {
 
     private val resultsFlow = MutableStateFlow<List<PasteData>>(listOf())
 
+    private val tagsFlow = MutableStateFlow<List<PasteTag>>(listOf())
+
     private val searchViewModel =
         object : PasteSearchViewModel() {
             override val convertTerm: (String) -> List<String> = { listOf() }
-            override val tagList: StateFlow<List<PasteTag>> = MutableStateFlow(listOf())
+            override val tagList: StateFlow<List<PasteTag>> = tagsFlow
             override val searchResults: StateFlow<List<PasteData>> = resultsFlow
         }
 
@@ -91,6 +95,108 @@ class PasteSelectionViewModelTest {
         vm.updateFocus(FocusedElement.SEARCH_INPUT, focused = false)
         assertEquals(FocusedElement.PASTE_LIST, vm.focusedElement.value)
     }
+
+    private fun tags(vararg ids: Long) =
+        ids.map { PasteTag(id = it, name = "tag$it", color = 0xFF0000, sortOrder = it) }
+
+    private fun TestScope.collectEvents(vm: PasteSelectionViewModel): List<UIEvent> {
+        val events = mutableListOf<UIEvent>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { vm.uiEvent.collect { events += it } }
+        return events
+    }
+
+    @Test
+    fun `entering the tag bar highlights the active filter tag`() =
+        runTest {
+            tagsFlow.value = tags(10, 20, 30)
+            searchViewModel.updateTag(20)
+            val vm = createVm()
+            val events = collectEvents(vm)
+
+            vm.requestTagBarFocus()
+
+            assertEquals(1, vm.highlightedTagIndex.value)
+            assertEquals(listOf<UIEvent>(RequestTagBarFocus), events)
+        }
+
+    @Test
+    fun `entering the tag bar without a filter highlights the first chip`() {
+        tagsFlow.value = tags(10, 20)
+        val vm = createVm()
+        vm.requestTagBarFocus()
+        assertEquals(0, vm.highlightedTagIndex.value)
+    }
+
+    @Test
+    fun `highlight steps right up to the add chip and stops there`() {
+        tagsFlow.value = tags(10, 20)
+        val vm = createVm()
+        vm.requestTagBarFocus()
+        repeat(5) { vm.highlightNextTag() }
+        assertEquals(2, vm.highlightedTagIndex.value)
+    }
+
+    @Test
+    fun `left on the first chip returns to the search input`() =
+        runTest {
+            tagsFlow.value = tags(10, 20)
+            val vm = createVm()
+            vm.requestTagBarFocus()
+            vm.highlightNextTag()
+            val events = collectEvents(vm)
+
+            vm.highlightPrevTag()
+            assertEquals(0, vm.highlightedTagIndex.value)
+            assertEquals(listOf<UIEvent>(), events)
+
+            vm.highlightPrevTag()
+            assertEquals(listOf<UIEvent>(RequestSearchInputFocus), events)
+        }
+
+    @Test
+    fun `activating a tag toggles its filter`() {
+        tagsFlow.value = tags(10, 20)
+        val vm = createVm()
+        vm.requestTagBarFocus()
+        vm.highlightNextTag()
+
+        vm.activateHighlightedTag()
+        assertEquals(20, searchViewModel.searchBaseParams.value.tag)
+
+        vm.activateHighlightedTag()
+        assertEquals(null, searchViewModel.searchBaseParams.value.tag)
+    }
+
+    @Test
+    fun `activating the add chip asks for a new tag`() =
+        runTest {
+            tagsFlow.value = tags(10)
+            val vm = createVm()
+            vm.requestTagBarFocus()
+            vm.highlightNextTag()
+            val events = collectEvents(vm)
+
+            vm.activateHighlightedTag()
+
+            assertEquals(listOf<UIEvent>(RequestCreateTag), events)
+        }
+
+    @Test
+    fun `a highlight past the end after tags were deleted falls back to the add chip`() =
+        runTest {
+            tagsFlow.value = tags(10, 20, 30)
+            val vm = createVm()
+            vm.requestTagBarFocus()
+            repeat(2) { vm.highlightNextTag() }
+            tagsFlow.value = tags(10)
+            val events = collectEvents(vm)
+
+            vm.activateHighlightedTag()
+            assertEquals(listOf<UIEvent>(RequestCreateTag), events)
+
+            vm.highlightPrevTag()
+            assertEquals(0, vm.highlightedTagIndex.value)
+        }
 
     @Test
     fun `initial selected indexes is list of 0`() =
