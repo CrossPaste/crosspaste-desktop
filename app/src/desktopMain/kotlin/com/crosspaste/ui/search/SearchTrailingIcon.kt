@@ -132,7 +132,7 @@ fun SearchTrailingIcon() {
             Popup(
                 alignment = Alignment.TopEnd,
                 offset = IntOffset(0, with(density) { xxxxLarge.roundToPx() }),
-                onDismissRequest = { pasteSelectionViewModel.closeTypeMenu() },
+                onDismissRequest = { pasteSelectionViewModel.cancelTypeMenu() },
                 properties =
                     PopupProperties(
                         focusable = false,

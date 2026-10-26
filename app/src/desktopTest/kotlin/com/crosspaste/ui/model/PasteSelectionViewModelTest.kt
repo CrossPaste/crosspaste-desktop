@@ -221,6 +221,24 @@ class PasteSelectionViewModelTest {
         }
 
     @Test
+    fun `cancelling the type menu returns to the search input but closing on focus loss does not`() =
+        runTest {
+            val vm = createVm()
+            vm.updateFocus(FocusedElement.TYPE_FILTER, focused = true)
+            vm.openTypeMenu()
+            val events = collectEvents(vm)
+
+            vm.cancelTypeMenu()
+            assertEquals(null, vm.typeMenuIndex.value)
+            assertEquals(listOf<UIEvent>(RequestFocus(FocusedElement.SEARCH_INPUT)), events)
+
+            vm.openTypeMenu()
+            vm.updateFocus(FocusedElement.TYPE_FILTER, focused = false)
+            assertEquals(null, vm.typeMenuIndex.value)
+            assertEquals(1, events.size)
+        }
+
+    @Test
     fun `reopening the window closes the type menu and resets the tag highlight`() =
         runTest {
             tagsFlow.value = tags(10, 20)

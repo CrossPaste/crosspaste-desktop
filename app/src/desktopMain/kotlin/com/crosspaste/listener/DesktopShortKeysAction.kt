@@ -136,7 +136,7 @@ class DesktopShortKeysAction(
             if (appWindowManager.getCurrentSearchWindowInfo().show &&
                 pasteSelectionViewModel.typeMenuIndex.value != null
             ) {
-                pasteSelectionViewModel.closeTypeMenu()
+                pasteSelectionViewModel.cancelTypeMenu()
                 return@mainRunAction
             }
 

@@ -171,7 +171,7 @@ class DesktopShortKeysActionTest {
 
         fixture.action.action(DesktopShortcutKeys.HIDE_WINDOW, keyEvent(NativeKeyEvent.NATIVE_KEY_PRESSED, 0))
 
-        verify(timeout = VERIFY_TIMEOUT_MS) { fixture.pasteSelectionViewModel.closeTypeMenu() }
+        verify(timeout = VERIFY_TIMEOUT_MS) { fixture.pasteSelectionViewModel.cancelTypeMenu() }
         coVerify(exactly = 0) { fixture.appWindowManager.dismissSearchWindow(any()) }
     }
 }

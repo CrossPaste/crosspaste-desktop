@@ -161,6 +161,16 @@ class PasteSelectionViewModel(
         _typeMenuIndex.value = null
     }
 
+    /**
+     * Dismissing the menu without a pick (Esc, a click outside) returns to the search input, like
+     * picking does, so typing carries on. Kept apart from [closeTypeMenu], which also runs when the
+     * user moves focus away and must not pull it back.
+     */
+    fun cancelTypeMenu() {
+        closeTypeMenu()
+        requestSearchInputFocus()
+    }
+
     fun highlightPrevPasteType() = moveTypeMenu(-1)
 
     fun highlightNextPasteType() = moveTypeMenu(1)
