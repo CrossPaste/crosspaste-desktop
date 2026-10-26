@@ -378,6 +378,14 @@ public func makeWindowNonActivating(_ rawPtr: UnsafeRawPointer?) {
         // panel is clicked while the app is inactive and must stay on screen then.
         guard window is NSPanel else { return }
         window.styleMask.insert(.nonactivatingPanel)
+        // The style bit only reaches the window server when the panel is created with it;
+        // set after creation (all AWT allows) a click still activates the app on macOS 27,
+        // sending the paste keystroke to CrossPaste instead of the target app.
+        let preventsActivation = NSSelectorFromString("_setPreventsActivation:")
+        if window.responds(to: preventsActivation), let imp = window.method(for: preventsActivation) {
+            typealias SetPreventsActivation = @convention(c) (AnyObject, Selector, Bool) -> Void
+            unsafeBitCast(imp, to: SetPreventsActivation.self)(window, preventsActivation, true)
+        }
         window.hidesOnDeactivate = false
         // Stays on screen when the app hides itself, e.g. NSApp.hide in searchToBack
         window.canHide = false
