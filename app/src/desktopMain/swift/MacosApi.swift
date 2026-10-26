@@ -367,7 +367,7 @@ public func setWindowLevelPopUpMenu(_ rawPtr: UnsafeRawPointer?, levelOffset: In
 }
 
 @_cdecl("makeWindowNonActivating")
-public func makeWindowNonActivating(_ rawPtr: UnsafeRawPointer?) {
+public func makeWindowNonActivating(_ rawPtr: UnsafeRawPointer?, _ shown: Int32) {
     guard let rawPtr = rawPtr else { return }
 
     let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
@@ -379,6 +379,11 @@ public func makeWindowNonActivating(_ rawPtr: UnsafeRawPointer?) {
         guard window is NSPanel else { return }
         window.styleMask.insert(.nonactivatingPanel)
         window.hidesOnDeactivate = false
+        // A first show that happened while the app was inactive was hidden by the old
+        // flag, and resetting it does not bring the panel back until the app activates.
+        if shown != 0 && !window.isVisible {
+            window.orderFrontRegardless()
+        }
     }
 }
 
