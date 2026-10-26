@@ -378,7 +378,21 @@ public func makeWindowNonActivating(_ rawPtr: UnsafeRawPointer?) {
         // panel is clicked while the app is inactive and must stay on screen then.
         guard window is NSPanel else { return }
         window.styleMask.insert(.nonactivatingPanel)
+        // AppKit derives its private preventsActivation flag from the style mask only at
+        // init. Setting the bit afterwards (all AWT allows) leaves the flag off on macOS 27,
+        // so a click still activates CrossPaste and the simulated Cmd+V lands in CrossPaste
+        // instead of the target app. The private setter is used deliberately (#5283).
+        let preventsActivation = NSSelectorFromString("_setPreventsActivation:")
+        if window.responds(to: preventsActivation), let imp = window.method(for: preventsActivation) {
+            typealias SetPreventsActivation = @convention(c) (AnyObject, Selector, Bool) -> Void
+            unsafeBitCast(imp, to: SetPreventsActivation.self)(window, preventsActivation, true)
+        } else {
+            NSLog("CrossPaste: _setPreventsActivation: unavailable, clicks on the panel will activate the app")
+        }
         window.hidesOnDeactivate = false
+        // Must follow the line above, which flips canHide back to true on NSPanel. Without
+        // it NSApp.hide in searchToBack/mainToBack hides the panel until the next activation.
+        window.canHide = false
     }
 }
 
