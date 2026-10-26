@@ -72,10 +72,24 @@ class PasteSelectionViewModelTest {
     }
 
     @Test
-    fun `setFocusedElement changes focused element`() {
+    fun `updateFocus moves focus to the zone that gained it`() {
         val vm = createVm()
-        vm.setFocusedElement(FocusedElement.SEARCH_INPUT)
+        vm.updateFocus(FocusedElement.SEARCH_INPUT, focused = true)
         assertEquals(FocusedElement.SEARCH_INPUT, vm.focusedElement.value)
+    }
+
+    @Test
+    fun `losing focus clears the zone only while it still holds focus`() {
+        val vm = createVm()
+        vm.updateFocus(FocusedElement.SEARCH_INPUT, focused = true)
+        vm.updateFocus(FocusedElement.SEARCH_INPUT, focused = false)
+        assertEquals(FocusedElement.NONE, vm.focusedElement.value)
+
+        // The new zone reports before the old one lets go
+        vm.updateFocus(FocusedElement.SEARCH_INPUT, focused = true)
+        vm.updateFocus(FocusedElement.PASTE_LIST, focused = true)
+        vm.updateFocus(FocusedElement.SEARCH_INPUT, focused = false)
+        assertEquals(FocusedElement.PASTE_LIST, vm.focusedElement.value)
     }
 
     @Test

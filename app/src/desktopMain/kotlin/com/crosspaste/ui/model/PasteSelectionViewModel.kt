@@ -88,8 +88,19 @@ class PasteSelectionViewModel(
         selectIndexes(results, listOf((indexes.max() + 1).coerceAtMost(results.size - 1)))
     }
 
-    fun setFocusedElement(focusedElement: FocusedElement) {
-        _focusedElement.value = focusedElement
+    /**
+     * Driven by each zone's focus events. Losing focus only clears the zone it still names, so the
+     * order in which the old and new zone report a focus move does not matter.
+     */
+    fun updateFocus(
+        element: FocusedElement,
+        focused: Boolean,
+    ) {
+        if (focused) {
+            _focusedElement.value = element
+        } else {
+            _focusedElement.compareAndSet(element, FocusedElement.NONE)
+        }
     }
 
     fun initSelectIndex() {
