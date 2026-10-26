@@ -33,7 +33,9 @@ import kotlin.math.roundToInt
  * without activating the app is an NSPanel carrying NSWindowStyleMaskNonactivatingPanel.
  * JBR does not expose that flag (Window.Type.POPUP is an ordinary NSWindow there), but it
  * does allocate an NSPanel for a root pane marked `Window.hidesOnDeactivate`; the flag is
- * then switched on natively once the peer exists, see [MacNonActivatingEffect].
+ * then switched on natively once the peer exists, see [MacNonActivatingEffect]. Set that
+ * late, the style bit alone no longer stops a click from activating the app, so the
+ * native side also sets AppKit's private preventsActivation flag.
  * Non-focusable state plus WS_EX_NOACTIVATE cover Windows. On Linux the window is an
  * override-redirect X window (that is what XAWT makes of Window.Type.POPUP): the window
  * manager never sees it, so a click cannot go through its click-to-focus path. A managed
