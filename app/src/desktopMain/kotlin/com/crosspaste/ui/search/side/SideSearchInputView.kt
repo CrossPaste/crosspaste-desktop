@@ -37,11 +37,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
@@ -137,11 +132,7 @@ fun SideSearchInputView() {
         pasteSelectionViewModel.uiEvent.collect { event ->
             when (event) {
                 RequestSearchInputFocus -> {
-                    if (searchFocusRequester.requestFocus()) {
-                        pasteSelectionViewModel.setFocusedElement(
-                            FocusedElement.SEARCH_INPUT,
-                        )
-                    }
+                    searchFocusRequester.requestFocus()
                 }
             }
         }
@@ -229,18 +220,7 @@ fun SideSearchInputView() {
                     .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                     .focusRequester(searchFocusRequester)
                     .onFocusEvent {
-                        if (it.isFocused) {
-                            pasteSelectionViewModel.setFocusedElement(
-                                FocusedElement.SEARCH_INPUT,
-                            )
-                        }
-                    }.onPreviewKeyEvent { e ->
-                        if (e.type == KeyEventType.KeyDown && e.key == Key.DirectionDown) {
-                            pasteSelectionViewModel.requestPasteListFocus()
-                            true
-                        } else {
-                            false
-                        }
+                        pasteSelectionViewModel.updateFocus(FocusedElement.SEARCH_INPUT, it.isFocused)
                     },
             value = inputSearch,
             leadingIcon = {

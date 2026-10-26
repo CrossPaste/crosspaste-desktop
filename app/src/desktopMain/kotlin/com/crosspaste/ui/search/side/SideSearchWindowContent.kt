@@ -16,6 +16,7 @@ import com.crosspaste.ui.base.ProvideSystemDoubleClickInterval
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.paste.side.SidePasteboardContentView
 import com.crosspaste.ui.theme.AppUIColors
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -61,51 +62,31 @@ fun SideSearchWindowContent() {
 }
 
 /**
- * Extracts key event logic.
- * Note: 'onKeyEvent' is used here. If you need to intercept keys before the child
- * TextField consumes them, consider using 'onPreviewKeyEvent' instead.
+ * Routes every search window shortcut through [resolveSearchWindowKey]: the preview pass runs
+ * before the focused child, the bubble pass after it declined the key.
  */
 private fun Modifier.handleSideWindowKeys(
     viewModel: PasteSelectionViewModel,
-    scope: kotlinx.coroutines.CoroutineScope,
+    scope: CoroutineScope,
 ): Modifier =
-    onKeyEvent { event ->
-        // Only handle KeyDown events
-        if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
+    onPreviewKeyEvent { viewModel.dispatchKey(KeyPhase.PREVIEW, it, scope) }
+        .onKeyEvent { viewModel.dispatchKey(KeyPhase.BUBBLE, it, scope) }
 
-        when (event.key) {
-            Key.Enter -> {
-                scope.launch { viewModel.toPaste() }
-                true
-            }
-            Key.DirectionUp -> {
-                viewModel.requestSearchInputFocus()
-                true
-            }
-            Key.DirectionLeft -> {
-                viewModel.selectPrev()
-                true
-            }
-            Key.DirectionRight -> {
-                viewModel.selectNext()
-                true
-            }
-            Key.N -> {
-                if (event.isCtrlPressed) {
-                    viewModel.selectNext()
-                    true
-                } else {
-                    false
-                }
-            }
-            Key.P -> {
-                if (event.isCtrlPressed) {
-                    viewModel.selectPrev()
-                    true
-                } else {
-                    false
-                }
-            }
-            else -> false
-        }
+private fun PasteSelectionViewModel.dispatchKey(
+    phase: KeyPhase,
+    event: KeyEvent,
+    scope: CoroutineScope,
+): Boolean {
+    if (event.type != KeyEventType.KeyDown) return false
+    val action =
+        resolveSearchWindowKey(phase, focusedElement.value, event.key, event.isCtrlPressed)
+            ?: return false
+    when (action) {
+        SearchWindowKeyAction.PASTE -> scope.launch { toPaste() }
+        SearchWindowKeyAction.SELECT_PREV -> selectPrev()
+        SearchWindowKeyAction.SELECT_NEXT -> selectNext()
+        SearchWindowKeyAction.FOCUS_SEARCH_INPUT -> requestSearchInputFocus()
+        SearchWindowKeyAction.FOCUS_PASTE_LIST -> requestPasteListFocus()
     }
+    return true
+}
