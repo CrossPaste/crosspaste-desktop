@@ -26,12 +26,10 @@ import kotlin.time.Duration.Companion.milliseconds
  * State for the floating paste panel (#4995).
  *
  * The panel lists the clipboard history newest-first. Clicking a row pastes it into
- * whatever app currently has focus (the panel never takes focus itself) and moves the
- * "next" marker to the row copied right after it, so a batch copied as A, B, C is
- * pasted back in the same order with one click per field. The marker is tracked by
- * paste id rather than index so that new copies arriving while the panel is open do
- * not shift it. A double click pastes once: presses that land while a paste is still
- * running, or shortly after it, are dropped.
+ * whatever app currently has focus (the panel never takes focus itself) and highlights
+ * that row. The highlight is tracked by paste id rather than index so that new copies
+ * arriving while the panel is open do not shift it. A double click pastes once: presses
+ * that land while a paste is still running, or shortly after it, are dropped.
  */
 class PastePanelViewModel(
     private val appWindowManager: DesktopAppWindowManager,
@@ -53,8 +51,8 @@ class PastePanelViewModel(
     private val _loadAll = MutableStateFlow(false)
     val loadAll: StateFlow<Boolean> = _loadAll.asStateFlow()
 
-    /** Id of the row to paste next; null means the newest row. */
-    private val _nextId = MutableStateFlow<Long?>(null)
+    /** Id of the row pasted last; null until a row is clicked. */
+    private val _highlightedId = MutableStateFlow<Long?>(null)
 
     private val pasteInFlight = Mutex()
 
@@ -74,21 +72,19 @@ class PastePanelViewModel(
                 initialValue = emptyList(),
             )
 
-    val nextIndex: StateFlow<Int> =
-        combine(items, _nextId) { list, nextId ->
-            nextId
-                ?.let { id -> list.indexOfFirst { it.id == id } }
-                ?.takeIf { it >= 0 }
-                ?: 0
+    /** Index of the highlighted row, -1 when none is. */
+    val highlightedIndex: StateFlow<Int> =
+        combine(items, _highlightedId) { list, highlightedId ->
+            highlightedId?.let { id -> list.indexOfFirst { it.id == id } } ?: -1
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 0,
+            initialValue = -1,
         )
 
-    /** Every open starts fresh: newest row is next, first page only. */
+    /** Every open starts fresh: nothing highlighted, first page only. */
     fun onShown() {
-        _nextId.value = null
+        _highlightedId.value = null
         _limit.value = PAGE_SIZE
     }
 
@@ -111,10 +107,6 @@ class PastePanelViewModel(
     }
 
     private suspend fun pasteOnce(pasteData: PasteData) {
-        val list = items.value
-        val index = list.indexOfFirst { it.id == pasteData.id }
-        // The row copied right after this one; stays put when there is nothing newer.
-        val next = if (index > 0) list[index - 1] else pasteData
         val written =
             withContext(ioDispatcher) {
                 pasteboardService
@@ -130,6 +122,6 @@ class PastePanelViewModel(
             return
         }
         appWindowManager.toPaste()
-        _nextId.value = next.id
+        _highlightedId.value = pasteData.id
     }
 }
