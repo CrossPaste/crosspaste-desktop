@@ -134,19 +134,41 @@ class PasteSelectionViewModel(
         viewModelScope.launch { _uiEvent.emit(RequestOpenSettings) }
     }
 
-    fun selectPrevPasteType() = stepPasteType(-1)
+    /** Rows of the type filter menu: all types first, then each single type. */
+    val pasteTypeChoices: List<PasteType?> = listOf<PasteType?>(null) + PasteType.TYPES
 
-    fun selectNextPasteType() = stepPasteType(1)
+    /** Keyboard highlight in the open type filter menu, an index into [pasteTypeChoices]; null while it is closed. */
+    private val _typeMenuIndex = MutableStateFlow<Int?>(null)
+    val typeMenuIndex: StateFlow<Int?> = _typeMenuIndex
 
-    // Cycles all types -> each single type -> back to all types, applying the filter right away
-    private fun stepPasteType(step: Int) {
-        val choices = listOf<Int?>(null) + PasteType.TYPES.map { it.type }
+    /** Opens the type menu on the active type, so Enter right away keeps the current filter. */
+    fun openTypeMenu() {
         val current =
             searchViewModel.searchBaseParams.value.pasteTypeList
                 .singleOrNull()
-        val index = choices.indexOf(current).coerceAtLeast(0)
-        val next = choices[(index + step).mod(choices.size)]
-        searchViewModel.updatePasteType(listOfNotNull(next))
+        _typeMenuIndex.value = pasteTypeChoices.indexOfFirst { it?.type == current }.coerceAtLeast(0)
+    }
+
+    fun closeTypeMenu() {
+        _typeMenuIndex.value = null
+    }
+
+    fun highlightPrevPasteType() = moveTypeMenu(-1)
+
+    fun highlightNextPasteType() = moveTypeMenu(1)
+
+    private fun moveTypeMenu(step: Int) {
+        _typeMenuIndex.value = _typeMenuIndex.value?.let { (it + step).coerceIn(0, pasteTypeChoices.lastIndex) }
+    }
+
+    fun confirmPasteType() {
+        _typeMenuIndex.value?.let { selectPasteType(pasteTypeChoices[it]) }
+    }
+
+    /** Applies [pasteType] as the filter (null = all types) and closes the menu. */
+    fun selectPasteType(pasteType: PasteType?) {
+        searchViewModel.updatePasteType(listOfNotNull(pasteType?.type))
+        closeTypeMenu()
     }
 
     // Tags can be deleted while highlighted; the add chip then takes the highlight
@@ -178,6 +200,8 @@ class PasteSelectionViewModel(
             _focusedElement.value = element
         } else {
             _focusedElement.compareAndSet(element, FocusedElement.NONE)
+            // The type menu is driven by the type filter's keys, so it cannot outlive its focus
+            if (element == FocusedElement.TYPE_FILTER) closeTypeMenu()
         }
     }
 

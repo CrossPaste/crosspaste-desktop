@@ -1,30 +1,28 @@
 package com.crosspaste.ui.search
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults.iconButtonColors
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,42 +31,58 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.composables.icons.materialsymbols.MaterialSymbols
+import com.composables.icons.materialsymbols.rounded.Category
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.PasteType.Companion.ALL_TYPES
-import com.crosspaste.ui.base.MenuItemView
+import com.crosspaste.paste.getIconData
+import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.base.nonFocusable
 import com.crosspaste.ui.model.FocusedElement
 import com.crosspaste.ui.model.PasteSearchViewModel
 import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.ui.model.RequestFocus
-import com.crosspaste.ui.theme.AppUIFont.getFontWidth
-import com.crosspaste.ui.theme.AppUISize.huge
+import com.crosspaste.ui.theme.AppUISize.large
 import com.crosspaste.ui.theme.AppUISize.small
+import com.crosspaste.ui.theme.AppUISize.small2X
 import com.crosspaste.ui.theme.AppUISize.small3X
 import com.crosspaste.ui.theme.AppUISize.tiny2X
 import com.crosspaste.ui.theme.AppUISize.tiny2XRoundedCornerShape
 import com.crosspaste.ui.theme.AppUISize.tiny3X
-import com.crosspaste.ui.theme.AppUISize.tiny5X
+import com.crosspaste.ui.theme.AppUISize.tiny4X
+import com.crosspaste.ui.theme.AppUISize.xxLarge
 import com.crosspaste.ui.theme.AppUISize.xxxxLarge
 import com.crosspaste.ui.theme.AppUISize.zero
 import org.koin.compose.koinInject
 
+/**
+ * Type filter at the end of the search field, an icon-only trigger like on mobile: the glyph of
+ * the active type, or the all-types glyph when no type is filtered.
+ *
+ * The menu is driven from [PasteSelectionViewModel] (Enter opens it, Up/Down move, Enter picks)
+ * and its popup never takes focus, so the search window's key router keeps handling the keys.
+ */
 @Composable
 fun SearchTrailingIcon() {
     val copywriter = koinInject<GlobalCopywriter>()
-
     val pasteSearchViewModel = koinInject<PasteSearchViewModel>()
     val pasteSelectionViewModel = koinInject<PasteSelectionViewModel>()
 
+    val searchBaseParams by pasteSearchViewModel.searchBaseParams.collectAsState()
     val focusedElement by pasteSelectionViewModel.focusedElement.collectAsState()
+    val typeMenuIndex by pasteSelectionViewModel.typeMenuIndex.collectAsState()
+
+    val density = LocalDensity.current
     val typeFilterFocusRequester = remember { FocusRequester() }
+
+    val currentType = searchBaseParams.pasteTypeList.singleOrNull()?.let { PasteType.fromType(it) }
 
     LaunchedEffect(Unit) {
         pasteSelectionViewModel.uiEvent.collect { event ->
@@ -78,45 +92,15 @@ fun SearchTrailingIcon() {
         }
     }
 
-    val searchBaseParams by pasteSearchViewModel.searchBaseParams.collectAsState()
-
-    val density = LocalDensity.current
-
-    var showTypes by remember { mutableStateOf(false) }
-
-    var currentType = searchBaseParams.pasteTypeList.singleOrNull()?.let { PasteType.fromType(it) }
-
-    val textStyle =
-        MaterialTheme.typography.labelLarge.copy(
-            lineHeight = TextUnit.Unspecified,
-        )
-
-    val menuTexts =
-        PasteType.TYPES
-            .map { copywriter.getText(it.name) }
-            .plus(copywriter.getText(ALL_TYPES))
-
-    val paddingValues = PaddingValues(horizontal = small3X, vertical = tiny3X)
-
-    val maxWidth = getFontWidth(menuTexts, textStyle, paddingValues)
-
-    Row(
-        modifier =
-            Modifier
-                .padding(horizontal = small3X)
-                .wrapContentWidth()
-                .height(huge),
-        horizontalArrangement = Arrangement.Start,
-        verticalAlignment = Alignment.CenterVertically,
+    Box(
+        modifier = Modifier.padding(horizontal = small3X),
+        contentAlignment = Alignment.Center,
     ) {
-        OutlinedButton(
-            onClick = {
-                showTypes = true
-            },
-            // Taking focus here moves it off the search text field around it; Up/Down then cycle the type
+        // A focus target of its own, like the settings button; taking focus here moves it off
+        // the search text field around it
+        Box(
             modifier =
                 Modifier
-                    .height(28.dp)
                     .focusRequester(typeFilterFocusRequester)
                     .onFocusChanged {
                         pasteSelectionViewModel.updateFocus(FocusedElement.TYPE_FILTER, it.isFocused)
@@ -125,86 +109,106 @@ fun SearchTrailingIcon() {
                         visible = focusedElement == FocusedElement.TYPE_FILTER,
                         outset = zero,
                         cornerRadius = tiny2X,
-                    ).nonFocusable(),
-            shape = tiny2XRoundedCornerShape,
-            border =
-                BorderStroke(
-                    tiny5X,
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                ),
-            contentPadding = PaddingValues(horizontal = small3X, vertical = small3X / 2),
+                    ),
         ) {
-            Text(
-                text = currentType?.let { copywriter.getText(it.name) } ?: copywriter.getText(ALL_TYPES),
-                color = MaterialTheme.colorScheme.primary,
-            )
+            GeneralIconButton(
+                imageVector = typeIcon(currentType),
+                desc = currentType?.name ?: ALL_TYPES,
+                colors =
+                    iconButtonColors(
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                    ),
+                modifier = Modifier.nonFocusable(),
+                shape = tiny2XRoundedCornerShape,
+            ) {
+                pasteSelectionViewModel.requestFocus(FocusedElement.TYPE_FILTER)
+                pasteSelectionViewModel.openTypeMenu()
+            }
         }
 
-        if (showTypes) {
+        typeMenuIndex?.let { highlightedIndex ->
             Popup(
                 alignment = Alignment.TopEnd,
-                offset =
-                    IntOffset(
-                        with(density) { zero.roundToPx() },
-                        with(density) { xxxxLarge.roundToPx() },
-                    ),
-                onDismissRequest = {
-                    if (showTypes) {
-                        showTypes = false
-                    }
-                },
+                offset = IntOffset(0, with(density) { xxxxLarge.roundToPx() }),
+                onDismissRequest = { pasteSelectionViewModel.closeTypeMenu() },
                 properties =
                     PopupProperties(
-                        focusable = true,
-                        dismissOnBackPress = true,
+                        focusable = false,
                         dismissOnClickOutside = true,
                     ),
             ) {
-                Box(
+                Column(
                     modifier =
                         Modifier
-                            .wrapContentSize()
-                            .background(Color.Transparent)
-                            .shadow(small),
+                            .width(IntrinsicSize.Max)
+                            .shadow(small, tiny2XRoundedCornerShape)
+                            .clip(tiny2XRoundedCornerShape)
+                            .background(MaterialTheme.colorScheme.surfaceBright)
+                            .padding(vertical = tiny3X),
                 ) {
-                    Column(
-                        modifier =
-                            Modifier
-                                .width(maxWidth)
-                                .wrapContentHeight()
-                                .clip(tiny2XRoundedCornerShape)
-                                .background(MaterialTheme.colorScheme.surfaceBright),
-                    ) {
-                        if (searchBaseParams.pasteTypeList.isNotEmpty()) {
-                            MenuItemView(
-                                text = copywriter.getText("all_types"),
-                                textStyle = textStyle,
-                                paddingValues = paddingValues,
-                            ) {
-                                pasteSearchViewModel.updatePasteType(listOf())
-                                currentType = null
-                                showTypes = false
-                            }
-                            HorizontalDivider()
-                        }
-
-                        PasteType.TYPES.forEach { pasteType ->
-                            if (currentType != pasteType) {
-                                MenuItemView(
-                                    text = copywriter.getText(pasteType.name),
-                                    textStyle = textStyle,
-                                    paddingValues = paddingValues,
-                                    background = MaterialTheme.colorScheme.surfaceBright,
-                                ) {
-                                    pasteSearchViewModel.updatePasteType(listOf(pasteType.type))
-                                    currentType = pasteType
-                                    showTypes = false
-                                }
-                            }
+                    pasteSelectionViewModel.pasteTypeChoices.forEachIndexed { index, pasteType ->
+                        TypeMenuItem(
+                            label = copywriter.getText(pasteType?.name ?: ALL_TYPES),
+                            icon = typeIcon(pasteType),
+                            iconTint = pasteType?.getIconData()?.color ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                            selected = pasteType == currentType,
+                            highlighted = index == highlightedIndex,
+                        ) {
+                            pasteSelectionViewModel.selectPasteType(pasteType)
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun typeIcon(pasteType: PasteType?): ImageVector =
+    pasteType?.getIconData()?.imageVector ?: MaterialSymbols.Rounded.Category
+
+/** The active filter gets the container fill (as on mobile); the keyboard highlight gets the ring. */
+@Composable
+private fun TypeMenuItem(
+    label: String,
+    icon: ImageVector,
+    iconTint: Color,
+    selected: Boolean,
+    highlighted: Boolean,
+    onClick: () -> Unit,
+) {
+    val background =
+        if (selected) {
+            MaterialTheme.colorScheme.secondaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceBright
+        }
+
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(xxLarge)
+                .padding(horizontal = tiny3X, vertical = tiny4X)
+                .keyboardHighlightRing(visible = highlighted, outset = zero, cornerRadius = tiny2X)
+                .clip(tiny2XRoundedCornerShape)
+                .background(background)
+                .clickable(onClick = onClick)
+                .padding(horizontal = small3X),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(small2X),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = iconTint,
+            modifier = Modifier.size(large),
+        )
+        Text(
+            text = label,
+            color = MaterialTheme.colorScheme.contentColorFor(background),
+            style = MaterialTheme.typography.labelLarge.copy(lineHeight = TextUnit.Unspecified),
+        )
     }
 }

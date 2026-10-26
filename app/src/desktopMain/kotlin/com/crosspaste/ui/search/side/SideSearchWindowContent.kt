@@ -87,15 +87,21 @@ private fun PasteSelectionViewModel.dispatchKey(
             isAltPressed = event.isAltPressed,
             isMetaPressed = event.isMetaPressed,
         )
-    val action =
-        resolveSearchWindowKey(phase, focusedElement.value, stroke, isSearchCaretAtEnd)
-            ?: return false
+    val state =
+        SearchKeyState(
+            zone = focusedElement.value,
+            isSearchCaretAtEnd = isSearchCaretAtEnd,
+            isTypeMenuOpen = typeMenuIndex.value != null,
+        )
+    val action = resolveSearchWindowKey(phase, state, stroke) ?: return false
     when (action) {
         SearchWindowKeyAction.PASTE -> scope.launch { toPaste() }
         SearchWindowKeyAction.SELECT_PREV -> selectPrev()
         SearchWindowKeyAction.SELECT_NEXT -> selectNext()
-        SearchWindowKeyAction.PREV_PASTE_TYPE -> selectPrevPasteType()
-        SearchWindowKeyAction.NEXT_PASTE_TYPE -> selectNextPasteType()
+        SearchWindowKeyAction.OPEN_TYPE_MENU -> openTypeMenu()
+        SearchWindowKeyAction.HIGHLIGHT_PREV_TYPE -> highlightPrevPasteType()
+        SearchWindowKeyAction.HIGHLIGHT_NEXT_TYPE -> highlightNextPasteType()
+        SearchWindowKeyAction.CONFIRM_TYPE -> confirmPasteType()
         SearchWindowKeyAction.HIGHLIGHT_PREV_TAG -> highlightPrevTag()
         SearchWindowKeyAction.HIGHLIGHT_NEXT_TAG -> highlightNextTag()
         SearchWindowKeyAction.ACTIVATE_TAG -> activateHighlightedTag()

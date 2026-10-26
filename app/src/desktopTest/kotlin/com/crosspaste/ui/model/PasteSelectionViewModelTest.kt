@@ -171,26 +171,59 @@ class PasteSelectionViewModelTest {
         }
 
     @Test
-    fun `down steps from all types through each type and wraps back`() {
+    fun `the type menu opens on the active type`() {
         val vm = createVm()
-        val seen =
-            (0..PasteType.TYPES.size).map {
-                vm.selectNextPasteType()
-                searchViewModel.searchBaseParams.value.pasteTypeList
-            }
-        assertEquals(PasteType.TYPES.map { listOf(it.type) } + listOf(listOf()), seen)
+        vm.openTypeMenu()
+        assertEquals(0, vm.typeMenuIndex.value)
+
+        searchViewModel.updatePasteType(listOf(PasteType.IMAGE_TYPE.type))
+        vm.openTypeMenu()
+        assertEquals(vm.pasteTypeChoices.indexOf(PasteType.IMAGE_TYPE), vm.typeMenuIndex.value)
     }
 
     @Test
-    fun `up from all types wraps to the last type`() {
+    fun `the type menu highlight stops at both ends`() {
         val vm = createVm()
-        vm.selectPrevPasteType()
-        assertEquals(listOf(PasteType.TYPES.last().type), searchViewModel.searchBaseParams.value.pasteTypeList)
-        vm.selectPrevPasteType()
-        assertEquals(
-            listOf(PasteType.TYPES[PasteType.TYPES.size - 2].type),
-            searchViewModel.searchBaseParams.value.pasteTypeList,
-        )
+        vm.openTypeMenu()
+        vm.highlightPrevPasteType()
+        assertEquals(0, vm.typeMenuIndex.value)
+        repeat(vm.pasteTypeChoices.size + 2) { vm.highlightNextPasteType() }
+        assertEquals(vm.pasteTypeChoices.lastIndex, vm.typeMenuIndex.value)
+    }
+
+    @Test
+    fun `confirming applies the highlighted type and closes the menu`() {
+        val vm = createVm()
+        vm.openTypeMenu()
+        vm.highlightNextPasteType()
+        vm.confirmPasteType()
+        assertEquals(listOf(PasteType.TYPES.first().type), searchViewModel.searchBaseParams.value.pasteTypeList)
+        assertEquals(null, vm.typeMenuIndex.value)
+
+        // Back to all types
+        vm.openTypeMenu()
+        vm.highlightPrevPasteType()
+        vm.confirmPasteType()
+        assertEquals(listOf(), searchViewModel.searchBaseParams.value.pasteTypeList)
+    }
+
+    @Test
+    fun `moving the highlight does nothing while the menu is closed`() {
+        val vm = createVm()
+        vm.highlightNextPasteType()
+        vm.confirmPasteType()
+        assertEquals(null, vm.typeMenuIndex.value)
+        assertEquals(listOf(), searchViewModel.searchBaseParams.value.pasteTypeList)
+    }
+
+    @Test
+    fun `the type menu closes when the type filter loses focus`() {
+        val vm = createVm()
+        vm.updateFocus(FocusedElement.TYPE_FILTER, focused = true)
+        vm.openTypeMenu()
+        vm.updateFocus(FocusedElement.TAG_BAR, focused = true)
+        vm.updateFocus(FocusedElement.TYPE_FILTER, focused = false)
+        assertEquals(null, vm.typeMenuIndex.value)
     }
 
     @Test

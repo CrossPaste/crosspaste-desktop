@@ -1,6 +1,8 @@
 package com.crosspaste.listener
 
 import com.crosspaste.app.DesktopAppWindowManager
+import com.crosspaste.app.WindowInfo
+import com.crosspaste.app.WindowTrigger
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.PasteboardService
@@ -8,12 +10,14 @@ import com.crosspaste.paste.item.PasteItem
 import com.crosspaste.paste.item.TextPasteItem
 import com.crosspaste.platform.Platform
 import com.crosspaste.test.IntegrationTest
+import com.crosspaste.ui.model.PasteSelectionViewModel
 import com.crosspaste.utils.getJsonUtils
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
@@ -64,6 +68,13 @@ class DesktopShortKeysActionTest {
 
         val appWindowManager = mockk<DesktopAppWindowManager>(relaxed = true)
 
+        val typeMenuIndex = MutableStateFlow<Int?>(null)
+
+        val pasteSelectionViewModel =
+            mockk<PasteSelectionViewModel>(relaxed = true) {
+                every { typeMenuIndex } returns this@Fixture.typeMenuIndex
+            }
+
         /** Wall-clock time of the paste keystroke injection, 0 until it happens. */
         val pasteAt = AtomicLong(0L)
 
@@ -97,6 +108,7 @@ class DesktopShortKeysActionTest {
                     notificationManager = mockk(relaxed = true),
                     pasteboardService = pasteboardService,
                     pasteDao = mockk(relaxed = true),
+                    pasteSelectionViewModel = pasteSelectionViewModel,
                 )
         }
     }
@@ -148,5 +160,18 @@ class DesktopShortKeysActionTest {
             // through instead of dropping it.
             coVerify(timeout = VERIFY_TIMEOUT_MS, exactly = 1) { fixture.appWindowManager.toPaste() }
         }
+    }
+
+    @Test
+    fun `hide window closes an open type menu and keeps the search window`() {
+        val fixture = Fixture()
+        fixture.typeMenuIndex.value = 0
+        every { fixture.appWindowManager.getCurrentSearchWindowInfo() } returns
+            WindowInfo(show = true, state = mockk(relaxed = true), trigger = WindowTrigger.SHORTCUT)
+
+        fixture.action.action(DesktopShortcutKeys.HIDE_WINDOW, keyEvent(NativeKeyEvent.NATIVE_KEY_PRESSED, 0))
+
+        verify(timeout = VERIFY_TIMEOUT_MS) { fixture.pasteSelectionViewModel.closeTypeMenu() }
+        coVerify(exactly = 0) { fixture.appWindowManager.dismissSearchWindow(any()) }
     }
 }

@@ -17,8 +17,10 @@ enum class SearchWindowKeyAction {
     PASTE,
     SELECT_PREV,
     SELECT_NEXT,
-    PREV_PASTE_TYPE,
-    NEXT_PASTE_TYPE,
+    OPEN_TYPE_MENU,
+    HIGHLIGHT_PREV_TYPE,
+    HIGHLIGHT_NEXT_TYPE,
+    CONFIRM_TYPE,
     HIGHLIGHT_PREV_TAG,
     HIGHLIGHT_NEXT_TAG,
     ACTIVATE_TAG,
@@ -48,18 +50,24 @@ data class SearchKeyStroke(
 }
 
 /**
- * Every search window shortcut, keyed by phase and the zone that holds focus.
+ * What the key map needs to know about the window besides the key itself.
  * [isSearchCaretAtEnd] lets Right leave the search input only once there is nothing left to move past.
  */
+data class SearchKeyState(
+    val zone: FocusedElement,
+    val isSearchCaretAtEnd: Boolean = true,
+    val isTypeMenuOpen: Boolean = false,
+)
+
+/** Every search window shortcut, keyed by phase and the zone that holds focus. */
 fun resolveSearchWindowKey(
     phase: KeyPhase,
-    zone: FocusedElement,
+    state: SearchKeyState,
     stroke: SearchKeyStroke,
-    isSearchCaretAtEnd: Boolean = true,
 ): SearchWindowKeyAction? =
     when (phase) {
-        KeyPhase.PREVIEW -> resolveTabKey(zone, stroke) ?: resolvePreviewKey(zone, stroke, isSearchCaretAtEnd)
-        KeyPhase.BUBBLE -> resolveBubbleKey(zone, stroke)
+        KeyPhase.PREVIEW -> resolveTabKey(state.zone, stroke) ?: resolvePreviewKey(state, stroke)
+        KeyPhase.BUBBLE -> resolveBubbleKey(state.zone, stroke)
     }
 
 // Tab walks the top bar left to right, then the list; Shift+Tab goes back
@@ -84,29 +92,21 @@ private fun resolveTabKey(
 }
 
 private fun resolvePreviewKey(
-    zone: FocusedElement,
+    state: SearchKeyState,
     stroke: SearchKeyStroke,
-    isSearchCaretAtEnd: Boolean,
 ): SearchWindowKeyAction? =
-    when (zone) {
+    when (state.zone) {
         FocusedElement.SEARCH_INPUT ->
             when {
                 stroke.key == Key.DirectionDown -> SearchWindowKeyAction.FOCUS_PASTE_LIST
-                stroke.key == Key.DirectionRight && stroke.hasNoModifier && isSearchCaretAtEnd ->
+                stroke.key == Key.DirectionRight && stroke.hasNoModifier && state.isSearchCaretAtEnd ->
                     SearchWindowKeyAction.FOCUS_TYPE_FILTER
                 else -> null
             }
         // The type filter sits inside the search text field, whose key handler would otherwise
         // edit the query with keys bubbling up from it, so this zone keeps every key to itself
         FocusedElement.TYPE_FILTER ->
-            when (stroke.key) {
-                Key.DirectionUp -> SearchWindowKeyAction.PREV_PASTE_TYPE
-                Key.DirectionDown -> SearchWindowKeyAction.NEXT_PASTE_TYPE
-                Key.DirectionLeft -> SearchWindowKeyAction.FOCUS_SEARCH_INPUT
-                Key.DirectionRight -> SearchWindowKeyAction.FOCUS_TAG_BAR
-                Key.Enter, Key.NumPadEnter -> SearchWindowKeyAction.PASTE
-                else -> SearchWindowKeyAction.CONSUME
-            }
+            if (state.isTypeMenuOpen) resolveTypeMenuKey(stroke) else resolveTypeFilterKey(stroke)
         FocusedElement.TAG_BAR ->
             when (stroke.key) {
                 Key.DirectionLeft -> SearchWindowKeyAction.HIGHLIGHT_PREV_TAG
@@ -125,8 +125,25 @@ private fun resolvePreviewKey(
         else -> null
     }
 
+private fun resolveTypeFilterKey(stroke: SearchKeyStroke): SearchWindowKeyAction =
+    when (stroke.key) {
+        Key.Enter, Key.NumPadEnter, Key.Spacebar -> SearchWindowKeyAction.OPEN_TYPE_MENU
+        Key.DirectionLeft -> SearchWindowKeyAction.FOCUS_SEARCH_INPUT
+        Key.DirectionRight -> SearchWindowKeyAction.FOCUS_TAG_BAR
+        Key.DirectionDown -> SearchWindowKeyAction.FOCUS_PASTE_LIST
+        else -> SearchWindowKeyAction.CONSUME
+    }
+
+private fun resolveTypeMenuKey(stroke: SearchKeyStroke): SearchWindowKeyAction =
+    when (stroke.key) {
+        Key.DirectionUp -> SearchWindowKeyAction.HIGHLIGHT_PREV_TYPE
+        Key.DirectionDown -> SearchWindowKeyAction.HIGHLIGHT_NEXT_TYPE
+        Key.Enter, Key.NumPadEnter, Key.Spacebar -> SearchWindowKeyAction.CONFIRM_TYPE
+        else -> SearchWindowKeyAction.CONSUME
+    }
+
 // Zones that own Enter themselves; nothing they decline should reach the list shortcuts
-private val SELF_CONTAINED_ZONES = setOf(FocusedElement.TAG_BAR, FocusedElement.SETTINGS)
+private val SELF_CONTAINED_ZONES = setOf(FocusedElement.TYPE_FILTER, FocusedElement.TAG_BAR, FocusedElement.SETTINGS)
 
 private fun resolveBubbleKey(
     zone: FocusedElement,
