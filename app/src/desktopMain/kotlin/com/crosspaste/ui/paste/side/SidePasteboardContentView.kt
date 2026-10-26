@@ -121,8 +121,9 @@ fun SidePasteboardContentView() {
         }
     }
 
-    // Reset key modifier state and selection when the window opens, so it matches
-    // the freshly recreated scroll state above.
+    // Best-effort reset of the Ctrl+1..9 badge state and the selection when the window opens.
+    // Like the scroll reset above, this may miss a reopen because the composition is paused
+    // while the window is hidden; nothing here may depend on it for correctness.
     LaunchedEffect(searchWindowInfo.show) {
         if (searchWindowInfo.show) {
             isCtrlPressed = false
