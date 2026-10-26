@@ -111,7 +111,7 @@ private fun MacNonActivatingEffect(window: ComposeWindow) {
         snapshotFlow { window.isDisplayable }.first { it }
         withContext(cpuDispatcher) {
             runCatching {
-                MacAppUtils.makeWindowNonActivating(Pointer(window.windowHandle), window.isVisible)
+                MacAppUtils.makeWindowNonActivating(Pointer(window.windowHandle))
             }
         }
     }

@@ -79,11 +79,7 @@ interface MacosApi : Library {
         levelOffset: Int,
     )
 
-    // shown is an Int (0/1) for the same Bool ABI reason as showDockIcon below
-    fun makeWindowNonActivating(
-        windowPtr: Pointer?,
-        shown: Int,
-    )
+    fun makeWindowNonActivating(windowPtr: Pointer?)
 
     fun applyAcrylicBackground(
         windowPtr: Pointer?,
