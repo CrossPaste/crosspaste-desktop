@@ -2,6 +2,51 @@
 
 All notable changes to this project will be documented in this file.
 
+# [2.3.1] - 2026-10-28
+# Highlights 🌟
+
+- 📋 **Floating paste button fixes**
+  Fixed interaction issues with the floating paste button and its panel
+  (#5283 #5284 #5285 #5286).
+
+- 🪟 **MSIX packages declare their firewall rules**
+  Inbound TCP/UDP for `bin\CrossPaste.exe` on domain and private networks
+  is declared in the package, so Windows stops re-prompting after every
+  versioned-path update and no longer accumulates dead prompt rules. The
+  CLI execution aliases moved into the main Application, because the
+  Store rejects a hidden second Application as headless; release CI now
+  asserts both (#5287 #5288 #5289 #5290).
+
+- 🔍 **Search window double-click paste and keyboard-driven top bar**
+  Double-click paste honors the system double-click interval and reads
+  Shift from the click itself; every search window shortcut goes through
+  one resolver keyed by the focused zone, which adds keyboard navigation
+  across the type filter, tags and settings (#5277 #5278 #5279 #5280
+  #5281 #5282).
+
+# Bug Fixes 🐛
+
+- :bug: Fold the MSIX CLI aliases into the main Application so the Store accepts it (#5290)
+- :bug: Declare MSIX firewall rules so Store updates stop re-prompting (#5288)
+- :bug: Highlight the clicked row in the paste panel (#5286)
+- :bug: Make the macOS paste panel stay on screen and paste into the focused app (#5284)
+- :bug: Read Shift from the click itself in the search window list (#5280)
+- :bug: Honor the system double-click interval in the search window (#5278)
+- :bug: Keep development.properties and stray .claude folders out of release jars (#5273)
+
+# New Features ✨
+
+- :sparkles: Drive the search window top bar from the keyboard (#5282)
+- :sparkles: Tint tag chips with their color and give emphasized chips a heavier edge (#5274)
+
+# Multiplatform · Refactor · Code Style 🔨
+
+- :hammer: Route search window shortcuts through one key resolver keyed by focused zone (#5281)
+
+# Build & CI 👷
+
+- :construction_worker: Assert the Store MSIX keeps its firewall rules (#5289)
+
 # [2.3.0] - 2026-10-23
 # Highlights 🌟
 

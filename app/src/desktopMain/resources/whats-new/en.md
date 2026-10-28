@@ -1,3 +1,14 @@
+# [2.3.1] - 2026-10-28
+
+## 📋 Floating paste button fixes
+Fixed issues when using the floating paste button.
+
+## 🔍 Search window
+Double-click paste now follows your system's double-click speed and no longer stops working after reopening the window. The top bar can be driven entirely from the keyboard: press Right at the end of the query to move on to the type filter, the tags and settings, toggle a tag with Enter or Space, and use Tab to cycle through them. Tag chips are now tinted with their color.
+
+## 🪟 No more repeated firewall prompts on Windows
+The Microsoft Store and installer packages now declare their firewall rules, so Windows no longer asks for network access again after every update and old rules no longer pile up. On networks Windows marks as Public it still asks, by design.
+
 # [2.3.0] - 2026-10-23
 
 ## 🧩 Plugins for the right-click menu
