@@ -36,7 +36,7 @@ class WaylandClipboardMonitorIntegrationTest {
     @BeforeTest
     fun startCompositor() {
         assumeTrue(System.getProperty("os.name").lowercase().contains("linux"), "Linux only")
-        assumeTrue(onPath("sway") && onPath("wl-copy"), "needs sway and wl-clipboard on PATH")
+        assumeTrue(onPath("sway") && onPath("wl-copy") && onPath("wl-paste"), "needs sway and wl-clipboard on PATH")
 
         // Unix socket paths are limited to 107 bytes, so stay in /tmp rather than the
         // build dir. createTempDirectory makes it 0700, as XDG_RUNTIME_DIR must be.
@@ -107,6 +107,20 @@ class WaylandClipboardMonitorIntegrationTest {
         assertEquals(0, process.exitValue(), log.readText())
     }
 
+    /** What a native Wayland client gets when it pastes [mimeType]. */
+    private fun wlPaste(mimeType: String): ByteArray {
+        val process =
+            ProcessBuilder("wl-paste", "--no-newline", "-t", mimeType)
+                .apply {
+                    environment()["XDG_RUNTIME_DIR"] = runtimeDir.absolutePath
+                    environment()["WAYLAND_DISPLAY"] = displayName
+                }.start()
+        val bytes = process.inputStream.use { it.readBytes() }
+        assertTrue(process.waitFor(10, TimeUnit.SECONDS), "wl-paste did not return")
+        assertEquals(0, process.exitValue(), process.errorStream.bufferedReader().readText())
+        return bytes
+    }
+
     private fun startMonitor(): WaylandClipboardMonitor {
         val monitor = WaylandClipboardMonitor(displayName = socketPath) { selections.add(it) }
         assertTrue(monitor.start(), "monitor should start against sway")
@@ -148,6 +162,42 @@ class WaylandClipboardMonitorIntegrationTest {
         val selection = nextSelection()
         assertEquals(listOf("image/png"), selection.mimeTypes)
         assertContentEquals(png, monitor.read(selection, "image/png"))
+    }
+
+    @Test
+    fun `a selection we set is served to native clients and echoed with our types`() {
+        val monitor = startMonitor()
+        selections.poll(5, TimeUnit.SECONDS)
+
+        val png = ByteArray(300_000) { (it * 7).toByte() }
+        assertTrue(
+            monitor.setSelection(
+                linkedMapOf(
+                    "text/plain;charset=utf-8" to { "from crosspaste".encodeToByteArray() },
+                    "image/png" to { png },
+                    "application/x-crosspaste-origin" to { "crosspaste".encodeToByteArray() },
+                ),
+            ),
+        )
+
+        val echo = nextSelection()
+        assertFalse(echo.initial)
+        assertTrue("application/x-crosspaste-origin" in echo.mimeTypes, echo.toString())
+        assertContentEquals("from crosspaste".encodeToByteArray(), wlPaste("text/plain;charset=utf-8"))
+        // Larger than a pipe buffer: the writer thread must stream it out in full.
+        assertContentEquals(png, wlPaste("image/png"))
+
+        // A later copy by another client replaces ours.
+        wlCopy("text/plain;charset=utf-8", "replaced".encodeToByteArray())
+        val next = nextSelection()
+        assertContentEquals("replaced".encodeToByteArray(), monitor.read(next, "text/plain;charset=utf-8"))
+    }
+
+    @Test
+    fun `setting a selection after stop is refused`() {
+        val monitor = startMonitor()
+        monitor.stop()
+        assertFalse(monitor.setSelection(mapOf("text/plain" to { "x".encodeToByteArray() })))
     }
 
     @Test

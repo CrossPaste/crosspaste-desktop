@@ -3,10 +3,14 @@ package com.crosspaste.platform.linux.api
 import com.crosspaste.platform.linux.api.WaylandClientLib.Companion.arguments
 import com.crosspaste.platform.linux.api.WaylandDataControlProtocol.Companion.BIND_VERSION
 import com.crosspaste.platform.linux.api.WaylandDataControlProtocol.Companion.DEVICE_DESTROY
+import com.crosspaste.platform.linux.api.WaylandDataControlProtocol.Companion.DEVICE_SET_SELECTION
+import com.crosspaste.platform.linux.api.WaylandDataControlProtocol.Companion.MANAGER_CREATE_DATA_SOURCE
 import com.crosspaste.platform.linux.api.WaylandDataControlProtocol.Companion.MANAGER_DESTROY
 import com.crosspaste.platform.linux.api.WaylandDataControlProtocol.Companion.MANAGER_GET_DATA_DEVICE
 import com.crosspaste.platform.linux.api.WaylandDataControlProtocol.Companion.OFFER_DESTROY
 import com.crosspaste.platform.linux.api.WaylandDataControlProtocol.Companion.OFFER_RECEIVE
+import com.crosspaste.platform.linux.api.WaylandDataControlProtocol.Companion.SOURCE_DESTROY
+import com.crosspaste.platform.linux.api.WaylandDataControlProtocol.Companion.SOURCE_OFFER
 import com.sun.jna.Callback
 import com.sun.jna.CallbackReference
 import com.sun.jna.Memory
@@ -55,10 +59,20 @@ class WaylandSelection internal constructor(
  * each new selection; the callback must return quickly and read the data
  * elsewhere via [read]. [stop] wakes the thread and tears everything down.
  *
- * Threading: [read] marshals its request from the caller's thread while the
- * event thread sleeps in `poll`, which libwayland supports (it serialises on
- * the display mutex). [lock] guards our own proxy bookkeeping so a selection
- * that arrives mid-read cannot destroy the offer being read.
+ * Writing: [setSelection] makes the clipboard ours through the same
+ * connection. KWin mirrors an XWayland client's selection into the Wayland
+ * clipboard only while one of that client's windows has the keyboard focus,
+ * so an AWT write from the background (the non-activating paste panel, a
+ * synced paste) never reaches native Wayland apps (#5292); data-control has
+ * no such condition. The compositor bridges the selection to XWayland clients
+ * in turn, so X11 apps paste it too.
+ *
+ * Threading: [read] and [setSelection] marshal their requests from the
+ * caller's thread while the event thread sleeps in `poll`, which libwayland
+ * supports (it serialises on the display mutex). [lock] guards our own proxy
+ * bookkeeping so a selection that arrives mid-read cannot destroy the offer
+ * being read. Data for a `send` request is produced and written on a thread
+ * of its own, so a slow reader or a large payload never stalls the event loop.
  */
 class WaylandClipboardMonitor(
     /**
@@ -85,6 +99,9 @@ class WaylandClipboardMonitor(
 
     /** Offers announced by `data_offer`, with the MIME types collected so far, keyed by proxy address. */
     private val pendingOffers = LinkedHashMap<Long, MutableList<String>>()
+
+    /** Sources we set as the selection and have not been cancelled yet, keyed by proxy address. */
+    private val sources = HashMap<Long, Map<String, () -> ByteArray?>>()
 
     /** The offer backing the current selection, or null when the clipboard is empty. */
     private var currentOffer: Pointer? = null
@@ -207,6 +224,40 @@ class WaylandClipboardMonitor(
             return if (sent) readToEnd(readFd, timeout, mimeType, selection) else null
         } finally {
             libc.close(readFd)
+        }
+    }
+
+    /**
+     * Makes the clipboard hold [contents]: MIME type to a producer of its bytes,
+     * called only when a client asks for that type (possibly more than once).
+     * Returns false when the monitor is not running, so the caller can write
+     * another way.
+     */
+    fun setSelection(contents: Map<String, () -> ByteArray?>): Boolean {
+        if (contents.isEmpty()) return false
+        return lock.withLock {
+            val manager = manager
+            val device = device
+            val protocol = protocol
+            if (closed || !running || manager == null || device == null || protocol == null) {
+                return@withLock false
+            }
+            val source =
+                lib.wl_proxy_marshal_array_constructor_versioned(
+                    manager,
+                    MANAGER_CREATE_DATA_SOURCE,
+                    arguments(null).pointer,
+                    protocol.source.pointer,
+                    BIND_VERSION,
+                ) ?: return@withLock false
+            sources[Pointer.nativeValue(source)] = contents
+            addListener(source, sourceListenerTable)
+            contents.keys.forEach { mimeType ->
+                lib.wl_proxy_marshal_array(source, SOURCE_OFFER, arguments(mimeType).pointer)
+            }
+            lib.wl_proxy_marshal_array(device, DEVICE_SET_SELECTION, arguments(source).pointer)
+            flush()
+            true
         }
     }
 
@@ -479,6 +530,73 @@ class WaylandClipboardMonitor(
         )
     }
 
+    private val sourceListenerTable: Pointer by lazy {
+        listenerTable(
+            listOf(
+                // send: a client pastes; write the bytes of mimeType into fd and close it.
+                WlSendCallback { _, source, mimeType, fd -> handleSend(source, mimeType, fd) },
+                // cancelled: another selection replaced ours; the source is dead.
+                WlNoArgCallback { _, source ->
+                    if (source != null) {
+                        lock.withLock {
+                            if (sources.remove(Pointer.nativeValue(source)) != null) destroySource(source)
+                        }
+                    }
+                },
+            ),
+        )
+    }
+
+    private fun handleSend(
+        source: Pointer?,
+        mimeType: String?,
+        fd: Int,
+    ) {
+        val produce =
+            lock.withLock {
+                source?.let { sources[Pointer.nativeValue(it)] }?.let { contents -> mimeType?.let(contents::get) }
+            }
+        if (produce == null) {
+            libc.close(fd)
+            return
+        }
+        Thread({
+            try {
+                val bytes = runCatching(produce).getOrNull()
+                if (bytes == null) {
+                    logger.warn { "send $mimeType: no data to serve" }
+                } else {
+                    writeAll(fd, bytes, mimeType)
+                }
+            } finally {
+                libc.close(fd)
+            }
+        }, "WaylandClipboardSend").apply {
+            isDaemon = true
+            start()
+        }
+    }
+
+    private fun writeAll(
+        fd: Int,
+        bytes: ByteArray,
+        mimeType: String?,
+    ) {
+        var offset = 0
+        while (offset < bytes.size) {
+            val chunk = bytes.copyOfRange(offset, minOf(bytes.size, offset + WRITE_CHUNK))
+            val written = libc.write(fd, chunk, chunk.size.toLong())
+            if (written < 0) {
+                val errno = Native.getLastError()
+                if (errno == WaylandLibC.EINTR || errno == WaylandLibC.EAGAIN) continue
+                // EPIPE: the reader went away (it got what it wanted, or gave up).
+                logger.debug { "send $mimeType: write failed after $offset bytes, errno=$errno" }
+                return
+            }
+            offset += written.toInt()
+        }
+    }
+
     private fun handleSelection(offer: Pointer?) {
         val selection =
             lock.withLock {
@@ -505,6 +623,11 @@ class WaylandClipboardMonitor(
         lib.wl_proxy_destroy(offer)
     }
 
+    private fun destroySource(source: Pointer) {
+        lib.wl_proxy_marshal_array(source, SOURCE_DESTROY, null)
+        lib.wl_proxy_destroy(source)
+    }
+
     private fun teardown() {
         if (closed) return
         closed = true
@@ -513,6 +636,8 @@ class WaylandClipboardMonitor(
             currentOffer = null
             pendingOffers.keys.toList().forEach { address -> destroyOffer(Pointer(address)) }
             pendingOffers.clear()
+            sources.keys.toList().forEach { address -> destroySource(Pointer(address)) }
+            sources.clear()
             device?.let {
                 lib.wl_proxy_marshal_array(it, DEVICE_DESTROY, null)
                 lib.wl_proxy_destroy(it)
@@ -544,6 +669,7 @@ class WaylandClipboardMonitor(
     companion object {
         private const val POINTER_SIZE = 8L
         private const val READ_CHUNK = 64 * 1024
+        private const val WRITE_CHUNK = 64 * 1024
 
         /** Upper bound for one MIME payload; anything larger is not plausible clipboard content. */
         const val MAX_BYTES = 256L * 1024 * 1024
@@ -590,6 +716,15 @@ internal fun interface WlNoArgCallback : Callback {
     fun invoke(
         data: Pointer?,
         proxy: Pointer?,
+    )
+}
+
+internal fun interface WlSendCallback : Callback {
+    fun invoke(
+        data: Pointer?,
+        proxy: Pointer?,
+        mimeType: String?,
+        fd: Int,
     )
 }
 

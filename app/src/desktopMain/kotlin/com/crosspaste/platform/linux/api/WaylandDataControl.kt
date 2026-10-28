@@ -139,6 +139,12 @@ class WaylandDataControlProtocol private constructor(
         const val DEVICE_EVENT_FINISHED = 2
         const val DEVICE_EVENT_PRIMARY_SELECTION = 3
 
+        const val SOURCE_OFFER = 0
+        const val SOURCE_DESTROY = 1
+
+        const val SOURCE_EVENT_SEND = 0
+        const val SOURCE_EVENT_CANCELLED = 1
+
         const val OFFER_RECEIVE = 0
         const val OFFER_DESTROY = 1
 
