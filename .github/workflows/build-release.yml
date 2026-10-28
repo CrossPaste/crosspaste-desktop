@@ -314,10 +314,12 @@ jobs:
           agree_to_license: 1
 
       # Fail the release rather than ship a Store package that Partner Center
-      # would reject (wrong Version) or that lost the CLI (#5190): the
-      # manifest must carry Version x.y.z.0, app\bin\crosspaste-cli.exe and
-      # both execution aliases. The verified file is then moved into output/
-      # under an unambiguous name (the site MSIX is
+      # would reject (wrong Version), that lost the CLI (#5190) or that lost
+      # its firewall rules (#5287): the manifest must carry Version x.y.z.0,
+      # app\bin\crosspaste-cli.exe, both execution aliases and the
+      # windows.firewallRules extension for bin\CrossPaste.exe, and the
+      # package must contain both exes. The verified file is then moved into
+      # output/ under an unambiguous name (the site MSIX is
       # crosspaste-<version>-<revision>.x64.msix) so it is uploaded to the
       # versioned OSS prefix and listed in checksum.txt for
       # scripts/publish-msstore.sh. It is deliberately NOT part of the update
@@ -330,15 +332,22 @@ jobs:
             echo "Expected exactly one MSIX in output-store/, found: ${files[*]:-none}"
             exit 1
           fi
-          # The <Identity> element spans several lines; flatten before matching.
-          unzip -p "${files[0]}" AppxManifest.xml | tr '\n' ' ' > store-manifest.xml
+          # Elements span several lines; flatten and squeeze all whitespace so
+          # the patterns below don't depend on the manifest's line breaks or
+          # indentation.
+          unzip -p "${files[0]}" AppxManifest.xml | tr -s '[:space:]' ' ' > store-manifest.xml
           grep -o '<Identity [^>]*>' store-manifest.xml
           grep -q '<Identity [^>]* Version="${{ env.VERSION }}.0"' store-manifest.xml || { echo "Store manifest Version is not ${{ env.VERSION }}.0"; exit 1; }
           grep -q 'Executable="app\\bin\\crosspaste-cli.exe"' store-manifest.xml || { echo "Store manifest lacks the crosspaste-cli.exe Application"; exit 1; }
           grep -q 'Alias="crosspaste.exe"' store-manifest.xml || { echo "Store manifest lacks the crosspaste.exe execution alias"; exit 1; }
           grep -q 'Alias="crosspaste-cli.exe"' store-manifest.xml || { echo "Store manifest lacks the crosspaste-cli.exe execution alias"; exit 1; }
+          grep -q 'Category="windows.firewallRules"' store-manifest.xml || { echo "Store manifest lacks the windows.firewallRules extension"; exit 1; }
+          grep -q 'FirewallRules Executable="bin\\CrossPaste.exe"' store-manifest.xml || { echo "Store manifest firewall rules do not target bin\\CrossPaste.exe"; exit 1; }
+          grep -q 'IPProtocol="TCP"' store-manifest.xml || { echo "Store manifest lacks the TCP firewall rule"; exit 1; }
+          grep -q 'IPProtocol="UDP"' store-manifest.xml || { echo "Store manifest lacks the UDP firewall rule"; exit 1; }
           # No grep -q here: an early exit would SIGPIPE unzip and trip pipefail.
           unzip -Z1 "${files[0]}" | grep -x 'app/bin/crosspaste-cli.exe' > /dev/null || { echo "Store MSIX does not contain app/bin/crosspaste-cli.exe"; exit 1; }
+          unzip -Z1 "${files[0]}" | grep -x 'bin/CrossPaste.exe' > /dev/null || { echo "Store MSIX does not contain bin/CrossPaste.exe, the firewall rules' target"; exit 1; }
           mv "${files[0]}" "output/crosspaste-${{ env.VERSION }}-store.x64.msix"
           rm -rf output-store store-manifest.xml
 
