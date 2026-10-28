@@ -6,8 +6,11 @@ All notable changes to this project will be documented in this file.
 # Highlights 🌟
 
 - 📋 **Floating paste button fixes**
-  Fixed interaction issues with the floating paste button and its panel
-  (#5283 #5284 #5285 #5286).
+  Fixed interaction issues with the floating paste button and its panel;
+  on Wayland its pastes now reach native Wayland apps, because clipboard
+  writes go straight into the Wayland clipboard instead of an XWayland
+  selection that KWin mirrors only while CrossPaste has the focus
+  (#5283 #5284 #5285 #5286 #5292 #5293).
 
 - 🪟 **MSIX packages declare their firewall rules**
   Inbound TCP/UDP for `bin\CrossPaste.exe` on domain and private networks
@@ -26,6 +29,7 @@ All notable changes to this project will be documented in this file.
 
 # Bug Fixes 🐛
 
+- :bug: Write the Wayland clipboard natively so background writes reach Wayland apps (#5293)
 - :bug: Fold the MSIX CLI aliases into the main Application so the Store accepts it (#5290)
 - :bug: Declare MSIX firewall rules so Store updates stop re-prompting (#5288)
 - :bug: Highlight the clicked row in the paste panel (#5286)
