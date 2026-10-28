@@ -16,22 +16,24 @@ import javax.imageio.ImageIO
  * not involved in a data-control write, so this does by hand what
  * `XDataTransferer` does when it exports flavors as X11 targets.
  *
- * Each payload is produced on first request and then reused, so a paste that
- * only wants text never encodes the image, and single-use stream values (RTF)
- * survive repeated requests.
+ * Each payload is serialized on first request and then reused, so a paste that
+ * only wants text never encodes the image (whose decoding is deferred too), and
+ * single-use stream values (RTF) survive repeated requests.
  */
 object WaylandClipboardContents {
 
-    /** Text MIME types, in the order Wayland and XWayland clients look for them. */
-    private val TEXT_MIME_TYPES = listOf("text/plain;charset=utf-8", "UTF8_STRING", "text/plain", "STRING", "TEXT")
+    /**
+     * UTF-8 text MIME types. Not the ICCCM `STRING`/`TEXT` targets: they mean Latin-1,
+     * no Wayland client asks for them, and the compositor would hand X clients our
+     * UTF-8 bytes under those names unconverted.
+     */
+    private val TEXT_MIME_TYPES = listOf("text/plain;charset=utf-8", "UTF8_STRING", "text/plain")
 
     private val RTF_MIME_TYPES = listOf("text/rtf", "application/rtf")
 
     private const val URI_LIST = "text/uri-list"
 
     private const val GNOME_COPIED_FILES = "x-special/gnome-copied-files"
-
-    private val ORIGIN_MARKER = "crosspaste".encodeToByteArray()
 
     fun create(transferable: Transferable): Map<String, () -> ByteArray?> {
         val contents = LinkedHashMap<String, () -> ByteArray?>()
@@ -79,7 +81,9 @@ object WaylandClipboardContents {
 
         // Only when there is something to paste: a bare marker must not empty the clipboard.
         if (contents.isNotEmpty()) {
-            offer(listOf(PasteDataFlavors.CROSSPASTE_ORIGIN_MIME)) { ORIGIN_MARKER }
+            offer(listOf(PasteDataFlavors.CROSSPASTE_ORIGIN_MIME)) {
+                PasteDataFlavors.CROSSPASTE_ORIGIN_MARKER.encodeToByteArray()
+            }
         }
         return contents
     }

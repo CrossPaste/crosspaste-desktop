@@ -386,8 +386,16 @@ class LinuxPasteboardService(
 
     private fun write(transferable: DesktopWriteTransferable) {
         val monitor = waylandMonitor
-        if (monitor != null && monitor.setSelection(WaylandClipboardContents.create(transferable))) {
-            return
+        if (monitor != null) {
+            val contents = WaylandClipboardContents.create(transferable)
+            if (contents.isEmpty()) {
+                logger.warn {
+                    "No Wayland MIME type for flavors ${transferable.transferDataFlavors.map { it.mimeType }}, " +
+                        "writing through AWT"
+                }
+            } else if (monitor.setSelection(contents)) {
+                return
+            }
         }
         systemClipboard.setContents(markOrigin(transferable), this)
     }

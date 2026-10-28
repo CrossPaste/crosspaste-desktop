@@ -30,8 +30,6 @@ class WaylandClipboardContentsTest {
                 "text/plain;charset=utf-8",
                 "UTF8_STRING",
                 "text/plain",
-                "STRING",
-                "TEXT",
                 PasteDataFlavors.CROSSPASTE_ORIGIN_MIME,
             ),
             contents.keys.toList(),

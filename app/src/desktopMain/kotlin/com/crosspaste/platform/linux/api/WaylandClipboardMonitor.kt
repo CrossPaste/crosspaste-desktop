@@ -230,8 +230,8 @@ class WaylandClipboardMonitor(
     /**
      * Makes the clipboard hold [contents]: MIME type to a producer of its bytes,
      * called only when a client asks for that type (possibly more than once).
-     * Returns false when the monitor is not running, so the caller can write
-     * another way.
+     * Returns false when [contents] is empty, when the monitor is not running or
+     * when the request could not be sent, so the caller can write another way.
      */
     fun setSelection(contents: Map<String, () -> ByteArray?>): Boolean {
         if (contents.isEmpty()) return false
@@ -256,7 +256,10 @@ class WaylandClipboardMonitor(
                 lib.wl_proxy_marshal_array(source, SOURCE_OFFER, arguments(mimeType).pointer)
             }
             lib.wl_proxy_marshal_array(device, DEVICE_SET_SELECTION, arguments(source).pointer)
-            flush()
+            if (!flush()) {
+                logger.warn { "Could not send the Wayland selection to the compositor" }
+                return@withLock false
+            }
             true
         }
     }
@@ -264,6 +267,11 @@ class WaylandClipboardMonitor(
     // ---- setup ----
 
     private fun bind(display: Pointer): Boolean {
+        // Build every listener vtable now, on this thread, before any proxy exists: built
+        // lazily they would be created on whichever thread first needs one (the event thread
+        // for offers, a writer for sources), racing on keepAlive, and a vtable dropped from it
+        // would be collected while libwayland still calls through it.
+        listOf(registryListenerTable, offerListenerTable, deviceListenerTable, sourceListenerTable)
         val registry =
             lib.wl_proxy_marshal_array_constructor(
                 display,
@@ -412,12 +420,17 @@ class WaylandClipboardMonitor(
         }
     }
 
-    private fun flush() {
-        val display = display ?: return
-        // EAGAIN only means the socket is momentarily full; the next loop pass flushes again.
-        if (lib.wl_display_flush(display) < 0 && Native.getLastError() != WaylandLibC.EAGAIN) {
-            logger.debug { "wl_display_flush failed, errno=${Native.getLastError()}" }
+    /** False only when the connection is broken; EAGAIN means momentarily full and the next loop pass flushes. */
+    private fun flush(): Boolean {
+        val display = display ?: return false
+        if (lib.wl_display_flush(display) < 0) {
+            val errno = Native.getLastError()
+            if (errno != WaylandLibC.EAGAIN) {
+                logger.debug { "wl_display_flush failed, errno=$errno" }
+                return false
+            }
         }
+        return true
     }
 
     private fun readToEnd(
@@ -577,13 +590,33 @@ class WaylandClipboardMonitor(
         }
     }
 
+    /**
+     * Writes [bytes] to the reader's [fd], waiting for room with `poll` (the fd may be
+     * non-blocking) and giving up after [WRITE_TIMEOUT], so a reader that never reads
+     * cannot pin this thread and the payload forever.
+     */
     private fun writeAll(
         fd: Int,
         bytes: ByteArray,
         mimeType: String?,
     ) {
+        val pollFd = Memory(WaylandLibC.POLLFD_SIZE)
+        val deadlineNanos = System.nanoTime() + WRITE_TIMEOUT.inWholeNanoseconds
         var offset = 0
         while (offset < bytes.size) {
+            val remainingMs = (deadlineNanos - System.nanoTime()) / 1_000_000
+            if (remainingMs <= 0) {
+                logger.warn { "send $mimeType: reader took longer than $WRITE_TIMEOUT, stopping after $offset bytes" }
+                return
+            }
+            WaylandLibC.setPollFd(pollFd, 0, fd, WaylandLibC.POLLOUT)
+            val ready = libc.poll(pollFd, 1, remainingMs.coerceAtMost(POLL_SLICE_MS).toInt())
+            if (ready < 0) {
+                if (Native.getLastError() == WaylandLibC.EINTR) continue
+                logger.warn { "send $mimeType: poll failed, errno=${Native.getLastError()}" }
+                return
+            }
+            if (ready == 0) continue
             val chunk = bytes.copyOfRange(offset, minOf(bytes.size, offset + WRITE_CHUNK))
             val written = libc.write(fd, chunk, chunk.size.toLong())
             if (written < 0) {
@@ -676,6 +709,9 @@ class WaylandClipboardMonitor(
 
         /** How long the owning client gets to serve one MIME type end to end. */
         val READ_TIMEOUT: Duration = 10.seconds
+
+        /** How long a pasting client gets to take one MIME payload from us. */
+        val WRITE_TIMEOUT: Duration = 10.seconds
 
         private val STOP_JOIN_TIMEOUT: Duration = 2.seconds
 
