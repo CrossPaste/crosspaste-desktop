@@ -24,12 +24,8 @@ class LinuxOriginMarkedTransferable(
     override fun getTransferData(flavor: DataFlavor?): Any =
         if (flavor == PasteDataFlavors.CROSSPASTE_ORIGIN_FLAVOR) {
             // A fresh stream per read: AWT may convert the target more than once.
-            ByteArrayInputStream(MARKER_BYTES)
+            ByteArrayInputStream(PasteDataFlavors.CROSSPASTE_ORIGIN_MARKER.encodeToByteArray())
         } else {
             delegate.getTransferData(flavor)
         }
-
-    companion object {
-        private val MARKER_BYTES = "crosspaste".encodeToByteArray()
-    }
 }

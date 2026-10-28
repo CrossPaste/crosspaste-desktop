@@ -19,6 +19,9 @@ object PasteDataFlavors {
      */
     const val CROSSPASTE_ORIGIN_MIME = "application/x-crosspaste-origin"
 
+    /** The payload served under [CROSSPASTE_ORIGIN_MIME]; only its presence matters. */
+    const val CROSSPASTE_ORIGIN_MARKER = "crosspaste"
+
     val CROSSPASTE_ORIGIN_FLAVOR = DataFlavor("$CROSSPASTE_ORIGIN_MIME;class=java.io.InputStream")
 }
 

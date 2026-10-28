@@ -40,13 +40,19 @@ import java.nio.charset.Charset
  *    keeps for X clients, and it is incomplete — KWin never mirrors images
  *    copied in native Wayland apps, so the X11 path below never even notices
  *    the copy (#5167). Copies made by XWayland apps are bridged *into* the
- *    Wayland clipboard by every compositor, so this one channel sees them all.
+ *    Wayland clipboard while they hold the focus, so this one channel sees
+ *    them all.
  *  - **X11 sessions**, and Wayland compositors without data-control (GNOME),
  *    watch the X11 selection with XFixes and read it through AWT.
  *
- * Writes go through AWT in both modes; in Wayland mode they carry
- * [PasteDataFlavors.CROSSPASTE_ORIGIN_FLAVOR] so the bridged echo of our own
- * write is recognised and skipped.
+ * Writes follow the same split. With the Wayland monitor running they go
+ * straight into the Wayland clipboard ([WaylandClipboardMonitor.setSelection]):
+ * KWin mirrors an XWayland client's selection only while that client has the
+ * keyboard focus, so an AWT write made from the background — the
+ * non-activating paste panel, a synced paste — never reached native Wayland
+ * apps (#5292). Otherwise they go through AWT. Either way a Wayland-mode write
+ * carries [PasteDataFlavors.CROSSPASTE_ORIGIN_MIME], so the monitor recognises
+ * the echo of our own write and skips it.
  */
 class LinuxPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
@@ -368,13 +374,29 @@ class LinuxPasteboardService(
         pasteItem: PasteItem,
         transferable: DesktopWriteTransferable,
     ) {
-        systemClipboard.setContents(markOrigin(transferable), this)
+        write(transferable)
     }
 
     override fun writePasteboard(
         pasteData: PasteData,
         transferable: DesktopWriteTransferable,
     ) {
+        write(transferable)
+    }
+
+    private fun write(transferable: DesktopWriteTransferable) {
+        val monitor = waylandMonitor
+        if (monitor != null) {
+            val contents = WaylandClipboardContents.create(transferable)
+            if (contents.isEmpty()) {
+                logger.warn {
+                    "No Wayland MIME type for flavors ${transferable.transferDataFlavors.map { it.mimeType }}, " +
+                        "writing through AWT"
+                }
+            } else if (monitor.setSelection(contents)) {
+                return
+            }
+        }
         systemClipboard.setContents(markOrigin(transferable), this)
     }
 
