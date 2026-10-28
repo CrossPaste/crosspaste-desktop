@@ -317,7 +317,7 @@ jobs:
       # would reject (wrong Version, or a second, headless Application that
       # needs a HeadlessAppBypass waiver), that lost the CLI (#5190) or that
       # lost its firewall rules (#5287): the manifest must carry Version
-      # x.y.z.0, exactly one <Application>, the app\bin\crosspaste-cli.exe
+      # x.y.z.0, exactly one visible <Application>, the app\bin\crosspaste-cli.exe
       # alias extension with both aliases and the windows.firewallRules
       # extension for bin\CrossPaste.exe, and the package must contain both
       # exes. The verified file is then moved into
@@ -345,9 +345,11 @@ jobs:
           apps=$(grep -o '<Application ' store-manifest.xml | wc -l || true)
           [ "$apps" -eq 1 ] || { echo "Store manifest declares $apps Applications; expected exactly one visible <Application>"; exit 1; }
           grep -q 'AppListEntry="default"' store-manifest.xml || { echo "Store manifest Application is not listed in the Start menu (AppListEntry must be default)"; exit 1; }
-          # Separate patterns so attribute order inside the alias extension doesn't matter.
-          grep -q 'Category="windows.appExecutionAlias"' store-manifest.xml || { echo "Store manifest lacks the execution alias extension"; exit 1; }
-          grep -q 'Executable="app\\bin\\crosspaste-cli.exe"' store-manifest.xml || { echo "Store manifest execution aliases do not target app\\bin\\crosspaste-cli.exe"; exit 1; }
+          # Match Executable inside the alias extension's own start tag, so the
+          # check stays bound to that extension but not to attribute order.
+          alias_ext=$(grep -o '<[^>]*Category="windows.appExecutionAlias"[^>]*>' store-manifest.xml || true)
+          [ -n "$alias_ext" ] || { echo "Store manifest lacks the execution alias extension"; exit 1; }
+          printf '%s\n' "$alias_ext" | grep -q 'Executable="app\\bin\\crosspaste-cli.exe"' || { echo "Store manifest execution alias extension does not target app\\bin\\crosspaste-cli.exe"; exit 1; }
           grep -q 'Alias="crosspaste.exe"' store-manifest.xml || { echo "Store manifest lacks the crosspaste.exe execution alias"; exit 1; }
           grep -q 'Alias="crosspaste-cli.exe"' store-manifest.xml || { echo "Store manifest lacks the crosspaste-cli.exe execution alias"; exit 1; }
           grep -q 'Category="windows.firewallRules"' store-manifest.xml || { echo "Store manifest lacks the windows.firewallRules extension"; exit 1; }
