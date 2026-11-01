@@ -114,7 +114,7 @@ internal fun isInside(
     return canonicalChild.startsWith(canonicalParent)
 }
 
-internal fun canonicalizeOrSelf(path: Path): Path =
+private fun canonicalizeOrSelf(path: Path): Path =
     runCatching { getFileUtils().fileSystem.canonicalize(path) }.getOrDefault(path)
 
 private fun Path.withTrailingSeparator(): String =

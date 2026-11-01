@@ -21,7 +21,7 @@ fun PasteFiles.getAppFileType(): AppFileType =
 /**
  * The row's [PasteFiles.basePath] as a path on this device, or null when its files
  * live in managed storage. Read basePath through this rather than directly: it is
- * stored by [encodeStoredPath] and may hold an `{appHome}` placeholder.
+ * stored by [encodeStoredPath], which on some platforms is not a usable path as is.
  */
 fun PasteFiles.resolveBasePath(): Path? = basePath?.let(::decodeStoredPath)
 
