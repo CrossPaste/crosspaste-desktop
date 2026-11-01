@@ -94,7 +94,7 @@ class NoblePakeEcOps : PakeEcOps {
         }
         val scalar: dynamic = bigIntFromBytes(bytes)
         val inRange = scalar >= bigOne && scalar < order
-        if (!(inRange as Boolean)) {
+        if (!inRange) {
             throw PakeException("SPAKE2 scalar is outside the P-256 group order")
         }
         return scalar
@@ -122,7 +122,7 @@ class NoblePakeEcOps : PakeEcOps {
         return raw.toByteArray()
     }
 
-    private fun isIdentity(p: dynamic): Boolean = p.equals(point.ZERO) as Boolean
+    private fun isIdentity(p: dynamic): Boolean = p.equals(point.ZERO)
 
     private inline fun <T> guard(
         context: String,
