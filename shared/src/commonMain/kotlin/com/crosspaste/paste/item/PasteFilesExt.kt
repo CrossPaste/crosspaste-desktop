@@ -47,8 +47,8 @@ fun PasteFiles.hasExistingFiles(): Boolean {
  * showing the folder they were actually written to.
  */
 fun PasteFiles.externalFolderName(userDataPathProvider: UserDataPathProvider): String? {
-    if (basePath.isNullOrBlank()) return null
-    val base = resolveBasePath()?.normalized() ?: return null
+    val storedPath = basePath?.takeIf { it.isNotBlank() } ?: return null
+    val base = decodeStoredPath(storedPath).normalized()
     if (isInside(base, userDataPathProvider.getUserDataPath())) {
         return null
     }

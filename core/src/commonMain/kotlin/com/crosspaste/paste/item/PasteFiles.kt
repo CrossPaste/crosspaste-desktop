@@ -6,6 +6,10 @@ interface PasteFiles {
 
     val count: Long
 
+    /**
+     * Stored form of the directory the files live in, or null for managed storage.
+     * It may hold an `{appHome}` placeholder; read it through `resolveBasePath()`.
+     */
     val basePath: String?
 
     /**
