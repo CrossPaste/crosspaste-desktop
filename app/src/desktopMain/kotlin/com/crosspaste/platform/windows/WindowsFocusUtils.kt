@@ -94,19 +94,23 @@ object WindowsFocusUtils {
             }
 
         // Attaching a thread to itself is invalid (ERROR_INVALID_PARAMETER).
-        val shouldAttach = prevThreadId != null && prevThreadId != targetThreadId
-        if (shouldAttach) {
-            val success =
-                user32.AttachThreadInput(
-                    DWORD(prevThreadId.toLong()),
-                    DWORD(targetThreadId.toLong()),
-                    true,
-                )
-            if (!success) {
-                logger.error { "AttachThreadInput failed: ${Kernel32.INSTANCE.GetLastError()}" }
-                return
-            }
-        }
+        val attachThreadId = prevThreadId?.takeIf { it != targetThreadId }
+        // The cached previous thread may be gone (its app exited); attaching then fails,
+        // but we still try to bring the window to the front without it.
+        val attached =
+            attachThreadId != null &&
+                user32
+                    .AttachThreadInput(
+                        DWORD(attachThreadId.toLong()),
+                        DWORD(targetThreadId.toLong()),
+                        true,
+                    ).also { success ->
+                        if (!success) {
+                            logger.warn {
+                                "AttachThreadInput failed: ${Kernel32.INSTANCE.GetLastError()}, continuing without it"
+                            }
+                        }
+                    }
 
         try {
             user32.ShowWindow(handle, SW_RESTORE)
@@ -117,9 +121,9 @@ object WindowsFocusUtils {
                 logger.info { "Failed to set foreground window. Please switch manually" }
             }
         } finally {
-            if (shouldAttach) {
+            if (attached) {
                 user32.AttachThreadInput(
-                    DWORD(prevThreadId.toLong()),
+                    DWORD(attachThreadId.toLong()),
                     DWORD(targetThreadId.toLong()),
                     false,
                 )
