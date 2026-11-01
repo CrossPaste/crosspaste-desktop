@@ -5,8 +5,8 @@ import com.crosspaste.config.isInside
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.path.UserDataPathProvider
-import com.crosspaste.path.relocateToAppContainer
 import com.crosspaste.utils.getFileUtils
+import com.crosspaste.utils.getPlatformUtils
 import okio.Path
 import okio.Path.Companion.toPath
 
@@ -19,10 +19,10 @@ fun PasteFiles.getAppFileType(): AppFileType =
 
 /**
  * The row's [PasteFiles.basePath] as a path on this device, or null when its files
- * live in managed storage. Read basePath through this rather than directly: an iOS
- * basePath embeds the app container path, which can change after the row is written.
+ * live in managed storage. Read basePath through this rather than directly: the
+ * stored absolute path can point to a location the platform has since moved.
  */
-fun PasteFiles.resolveBasePath(): Path? = basePath?.toPath()?.let(::relocateToAppContainer)
+fun PasteFiles.resolveBasePath(): Path? = basePath?.toPath()?.let(getPlatformUtils()::relocateStoredPath)
 
 fun PasteFiles.getFilePaths(userDataPathProvider: UserDataPathProvider): List<Path> {
     val basePath = resolveBasePath() ?: userDataPathProvider.resolve(appFileType = getAppFileType())
@@ -50,7 +50,7 @@ fun PasteFiles.externalFolderName(userDataPathProvider: UserDataPathProvider): S
         basePath
             ?.takeIf { it.isNotBlank() }
             ?.toPath(normalize = true)
-            ?.let(::relocateToAppContainer)
+            ?.let(getPlatformUtils()::relocateStoredPath)
             ?: return null
     if (isInside(base, userDataPathProvider.getUserDataPath())) {
         return null
