@@ -267,6 +267,50 @@ object WMCtrl {
         propName: String?,
     ): Pointer? = getProperty(display, win, xaPropType, propName, null)
 
+    /**
+     * Whether [window] carries `_NET_WM_STATE_FULLSCREEN`. Read directly rather than
+     * through [getProperty]: the property is absent on windows without any state, which
+     * is no error and is polled for, so it must not be logged.
+     */
+    fun isFullscreen(
+        display: X11.Display,
+        window: X11.Window,
+    ): Boolean {
+        val retType = AtomByReference()
+        val retFormat = IntByReference()
+        val retNitems = NativeLongByReference()
+        val retBytesAfter = NativeLongByReference()
+        val retProp = PointerByReference()
+        if (INSTANCE.XGetWindowProperty(
+                display,
+                window,
+                INSTANCE.XInternAtom(display, "_NET_WM_STATE", false),
+                NativeLong(0),
+                NativeLong(MAX_PROPERTY_VALUE_LEN / 4),
+                false,
+                X11.XA_ATOM,
+                retType,
+                retFormat,
+                retNitems,
+                retBytesAfter,
+                retProp,
+            ) != X11.Success
+        ) {
+            return false
+        }
+        val prop = retProp.value ?: return false
+        return try {
+            if (retType.value?.toLong() != X11.XA_ATOM.toLong()) return false
+            val fullscreen = INSTANCE.XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", false).toLong()
+            // Format-32 items come back as C longs
+            (0 until retNitems.value.toInt()).any { i ->
+                prop.getNativeLong(i.toLong() * NativeLong.SIZE).toLong() == fullscreen
+            }
+        } finally {
+            free(prop)
+        }
+    }
+
     fun getActiveWindow(display: X11.Display): X11.Window? =
         getPropertyAsWindow(
             display,

@@ -79,6 +79,8 @@ interface MacosApi : Library {
         levelOffset: Int,
     )
 
+    fun setWindowLevelFloating(windowPtr: Pointer?)
+
     fun makeWindowNonActivating(windowPtr: Pointer?)
 
     fun applyAcrylicBackground(

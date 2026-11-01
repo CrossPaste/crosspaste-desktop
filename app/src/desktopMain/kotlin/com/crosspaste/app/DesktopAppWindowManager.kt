@@ -21,11 +21,16 @@ import com.crosspaste.utils.namedScope
 import com.crosspaste.utils.pollUntil
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okio.Path
@@ -245,6 +250,22 @@ abstract class DesktopAppWindowManager(
             current.copy(show = true, state = state, trigger = WindowTrigger.SHORTCUT)
         }
     }
+
+    /**
+     * Whether the foreground app is full screen (e.g. a full-screen video). The button is
+     * always on top, so it is hidden meanwhile instead of covering the screen. macOS keeps
+     * the default: there the button simply stays out of full-screen spaces.
+     */
+    open val foregroundFullscreen: Flow<Boolean> = flowOf(false)
+
+    /** Polls [isFullscreen] while collected. */
+    protected fun pollForegroundFullscreen(isFullscreen: () -> Boolean): Flow<Boolean> =
+        flow {
+            while (true) {
+                emit(runCatching(isFullscreen).getOrDefault(false))
+                delay(1.seconds)
+            }
+        }.distinctUntilChanged().flowOn(ioDispatcher)
 
     fun hidePastePanelButton() {
         hidePastePanelWindow()

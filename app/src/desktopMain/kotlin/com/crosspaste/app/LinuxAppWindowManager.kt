@@ -90,6 +90,9 @@ class LinuxAppWindowManager(
             registerApp(activeApp.appName, activeApp.x11Window)
         }
 
+    override val foregroundFullscreen: Flow<Boolean> =
+        pollForegroundFullscreen { X11Api.isActiveWindowFullscreen(isWaylandSession) }
+
     override fun getRunningAppNames(): List<String> =
         runCatching {
             X11Api

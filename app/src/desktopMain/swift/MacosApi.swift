@@ -366,6 +366,24 @@ public func setWindowLevelPopUpMenu(_ rawPtr: UnsafeRawPointer?, levelOffset: In
     }
 }
 
+// Floats above ordinary windows but, unlike setWindowLevelPopUpMenu, stays out of
+// full-screen spaces, so a full-screen video or app is never covered.
+@_cdecl("setWindowLevelFloating")
+public func setWindowLevelFloating(_ rawPtr: UnsafeRawPointer?) {
+    guard let rawPtr = rawPtr else { return }
+
+    let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
+
+    DispatchQueue.main.async {
+        if window.windowNumber <= 0 {
+            return
+        }
+
+        window.level = .floating
+        window.collectionBehavior = [.canJoinAllSpaces]
+    }
+}
+
 @_cdecl("makeWindowNonActivating")
 public func makeWindowNonActivating(_ rawPtr: UnsafeRawPointer?) {
     guard let rawPtr = rawPtr else { return }

@@ -30,7 +30,11 @@ object WindowsFocusUtils {
 
     private val pasteKeystroke = WindowsPasteKeystroke(user32)
 
+    private val fullscreenProbe = WindowsFullscreenProbe(user32)
+
     fun isSearchWindowComposing(search: HWND?): Boolean = inputMethod.isComposing(search)
+
+    fun isForegroundFullscreen(): Boolean = fullscreenProbe.isForegroundFullscreen()
 
     fun isTrayForeground(): Boolean = user32.GetForegroundWindow()?.let(trayHitTest::ownsForeground) == true
 

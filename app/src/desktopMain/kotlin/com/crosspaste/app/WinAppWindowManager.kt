@@ -113,6 +113,9 @@ class WinAppWindowManager(
             WinAppInfo(ownerHwnd).getAppName(winAppInfoCaches)
         } ?: getForegroundAppName()
 
+    override val foregroundFullscreen: Flow<Boolean> =
+        pollForegroundFullscreen(WindowsFocusUtils::isForegroundFullscreen)
+
     private fun getForegroundAppName(): String? =
         WinAppInfo(INSTANCE.GetForegroundWindow()).getAppName(winAppInfoCaches)
 

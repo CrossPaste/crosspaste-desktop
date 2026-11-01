@@ -36,6 +36,10 @@ object MacAppUtils {
         INSTANCE.setWindowLevelPopUpMenu(windowPtr, levelOffset)
     }
 
+    fun setWindowLevelFloating(windowPtr: Pointer?) {
+        INSTANCE.setWindowLevelFloating(windowPtr)
+    }
+
     fun makeWindowNonActivating(windowPtr: Pointer?) {
         INSTANCE.makeWindowNonActivating(windowPtr)
     }

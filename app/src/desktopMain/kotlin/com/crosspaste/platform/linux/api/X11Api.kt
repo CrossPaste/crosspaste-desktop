@@ -90,6 +90,23 @@ interface X11Api : X11 {
         }
 
         /**
+         * Whether the active X11 window is full screen. With [requireXInputFocus] a
+         * focused native Wayland window counts as not full screen, as it cannot be seen.
+         */
+        fun isActiveWindowFullscreen(requireXInputFocus: Boolean): Boolean {
+            val display = INSTANCE.XOpenDisplay(null) ?: return false
+            return try {
+                if (requireXInputFocus && !hasXInputFocus(display)) {
+                    false
+                } else {
+                    getActiveWindow(display)?.let { WMCtrl.isFullscreen(display, it) } == true
+                }
+            } finally {
+                INSTANCE.XCloseDisplay(display)
+            }
+        }
+
+        /**
          * The focused app as seen through X11, or null when it cannot be named.
          *
          * With [requireXInputFocus] the answer is also null while a native Wayland
