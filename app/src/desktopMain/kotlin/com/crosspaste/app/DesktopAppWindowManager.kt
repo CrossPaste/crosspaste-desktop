@@ -21,14 +21,11 @@ import com.crosspaste.utils.namedScope
 import com.crosspaste.utils.pollUntil
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
@@ -120,6 +117,8 @@ abstract class DesktopAppWindowManager(
         private val FOREGROUND_TIMEOUT = 1.seconds
 
         private val FOREGROUND_POLL_INTERVAL = 10.milliseconds
+
+        private val FULLSCREEN_POLL_INTERVAL = 500.milliseconds
     }
 
     protected val logger: KLogger = KotlinLogging.logger {}
@@ -251,21 +250,35 @@ abstract class DesktopAppWindowManager(
         }
     }
 
-    /**
-     * Whether the foreground app is full screen (e.g. a full-screen video). The button is
-     * always on top, so it is hidden meanwhile instead of covering the screen. macOS keeps
-     * the default: there the button simply stays out of full-screen spaces.
-     */
-    open val foregroundFullscreen: Flow<Boolean> = flowOf(false)
+    var pastePanelButtonComposeWindow: ComposeWindow? = null
 
-    /** Polls [isFullscreen] while collected. */
-    protected fun pollForegroundFullscreen(isFullscreen: () -> Boolean): Flow<Boolean> =
-        flow {
-            while (true) {
-                emit(runCatching(isFullscreen).getOrDefault(false))
-                delay(1.seconds)
-            }
-        }.distinctUntilChanged().flowOn(ioDispatcher)
+    // Set while a full-screen app (e.g. a full-screen video) is on the button's display,
+    // which the always-on-top button would otherwise cover. It hides the button alone:
+    // the setting, the remembered position and an open panel are left as they are.
+    private val _pastePanelButtonSuppressed = MutableStateFlow(false)
+    val pastePanelButtonSuppressed: StateFlow<Boolean> = _pastePanelButtonSuppressed
+
+    fun suppressPastePanelButton(suppressed: Boolean) {
+        _pastePanelButtonSuppressed.value = suppressed
+    }
+
+    /**
+     * Brings back a button hidden for a full-screen app until the full-screen state next
+     * changes. Returns false when the button was not hidden that way.
+     */
+    fun revealPastePanelButton(): Boolean = _pastePanelButtonSuppressed.compareAndSet(expect = true, update = false)
+
+    /**
+     * Whether a full-screen app is on the button's display. macOS keeps this default: there
+     * the button simply stays out of full-screen spaces, see PastePanelButtonWindow.
+     */
+    open val fullscreenOverPastePanelButton: Flow<Boolean> = flowOf(false)
+
+    protected fun pollFullscreenOverPastePanelButton(isFullscreenOver: (ComposeWindow) -> Boolean): Flow<Boolean> =
+        pollFullscreen(FULLSCREEN_POLL_INTERVAL, logger) {
+            // Without a native peer the button has never been shown and covers nothing
+            pastePanelButtonComposeWindow?.takeIf { it.isDisplayable }?.let(isFullscreenOver) == true
+        }.flowOn(ioDispatcher)
 
     fun hidePastePanelButton() {
         hidePastePanelWindow()

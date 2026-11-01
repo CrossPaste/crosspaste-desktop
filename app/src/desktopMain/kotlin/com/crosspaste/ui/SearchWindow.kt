@@ -602,13 +602,19 @@ private fun BubbleModalBarrier(onPress: () -> Unit) {
 /** Owned popup windows can take AWT focus while interaction stays within the search UI. */
 internal fun Window.hasFocusedWindow(): Boolean = isFocused || ownedWindows.any { it.hasFocusedWindow() }
 
+/**
+ * Sets the macOS window level, plus the acrylic background when [isDark] is given. The
+ * default pop-up-menu level floats above full-screen apps; [floating] keeps the window above
+ * ordinary windows only, out of full-screen spaces, so it never covers a full-screen video.
+ */
 @Composable
 fun MacAcrylicEffect(
     window: ComposeWindow,
     isDark: Boolean? = null,
     levelOffset: Int = 0,
+    floating: Boolean = false,
 ) {
-    LaunchedEffect(window, isDark, levelOffset) {
+    LaunchedEffect(window, isDark, levelOffset, floating) {
         snapshotFlow { window.isDisplayable }
             .first { it }
 
@@ -619,7 +625,11 @@ fun MacAcrylicEffect(
         withContext(cpuDispatcher) {
             runCatching {
                 val pointer = Pointer(window.windowHandle)
-                MacAppUtils.setWindowLevelPopUpMenu(pointer, levelOffset)
+                if (floating) {
+                    MacAppUtils.setWindowLevelFloating(pointer)
+                } else {
+                    MacAppUtils.setWindowLevelPopUpMenu(pointer, levelOffset)
+                }
                 if (isDark != null) {
                     MacAppUtils.applyAcrylicBackground(pointer, isDark)
                 }

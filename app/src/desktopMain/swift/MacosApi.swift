@@ -367,7 +367,10 @@ public func setWindowLevelPopUpMenu(_ rawPtr: UnsafeRawPointer?, levelOffset: In
 }
 
 // Floats above ordinary windows but, unlike setWindowLevelPopUpMenu, stays out of
-// full-screen spaces, so a full-screen video or app is never covered.
+// full-screen spaces, so a full-screen video or app is never covered. .floating is what
+// AWT's always-on-top already sets; the collection behavior is what matters here. Like
+// setWindowLevelPopUpMenu it is a no-op before the window is on screen, so callers apply
+// it again on every show.
 @_cdecl("setWindowLevelFloating")
 public func setWindowLevelFloating(_ rawPtr: UnsafeRawPointer?) {
     guard let rawPtr = rawPtr else { return }

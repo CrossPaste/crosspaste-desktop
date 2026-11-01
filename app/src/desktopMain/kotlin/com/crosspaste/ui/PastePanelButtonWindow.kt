@@ -5,11 +5,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowPosition
@@ -19,18 +18,13 @@ import com.crosspaste.app.WindowTrigger
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.platform.Platform
-import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.windows.WindowsPopupMenu
 import com.crosspaste.ui.DesktopContext.PastePanelWindowContext
 import com.crosspaste.ui.base.MenuHelper
 import com.crosspaste.ui.base.NativeMenuEntry
 import com.crosspaste.ui.paste.panel.PastePanelButtonContent
 import com.crosspaste.utils.GlobalCoroutineScope.mainCoroutineDispatcher
-import com.crosspaste.utils.cpuDispatcher
-import com.sun.jna.Pointer
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 import java.awt.MenuItem
 import java.awt.PopupMenu
@@ -60,6 +54,8 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
     }
 
     val buttonInfo by appWindowManager.pastePanelButtonInfo.collectAsState()
+    val buttonSuppressed by appWindowManager.pastePanelButtonSuppressed.collectAsState()
+    val buttonVisible = buttonInfo.show && !buttonSuppressed
     val panelInfo by appWindowManager.pastePanelWindowInfo.collectAsState()
 
     val isMac = remember { platform.isMacos() }
@@ -91,17 +87,25 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
         )
 
     NonActivatingWindow(
-        visible = buttonInfo.show,
+        visible = buttonVisible,
         state = buttonInfo.state,
         title = appWindowManager.pastePanelButtonWindowTitle,
         transparent = true,
         onClosing = { appWindowManager.hidePastePanelButton() },
     ) {
-        if (isMac) {
-            MacFloatingLevelEffect(window = this.window)
-        }
-
         val window = this.window
+        if (isMac) {
+            // Re-applied on every show: AppKit ignores it until the window is on screen
+            key(buttonVisible) {
+                MacAcrylicEffect(window = window, floating = true)
+            }
+        }
+        DisposableEffect(window) {
+            appWindowManager.pastePanelButtonComposeWindow = window
+            onDispose {
+                appWindowManager.pastePanelButtonComposeWindow = null
+            }
+        }
         val popupMenu =
             if (isMac) {
                 remember(window) { PopupMenu().also { window.add(it) } }
@@ -164,20 +168,5 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
             entries = menuEntries(),
             onDismiss = { linuxMenuAnchor = null },
         )
-    }
-}
-
-// Floating level keeps the button above ordinary windows while leaving full-screen
-// spaces alone, so it never covers a full-screen video. Windows and Linux get the same
-// result by hiding the button, see DesktopAppWindowManager.foregroundFullscreen.
-@Composable
-private fun MacFloatingLevelEffect(window: ComposeWindow) {
-    LaunchedEffect(window) {
-        snapshotFlow { window.isDisplayable }.first { it }
-        withContext(cpuDispatcher) {
-            runCatching {
-                MacAppUtils.setWindowLevelFloating(Pointer(window.windowHandle))
-            }
-        }
     }
 }

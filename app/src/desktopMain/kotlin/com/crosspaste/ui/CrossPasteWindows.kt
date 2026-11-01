@@ -71,18 +71,23 @@ fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
         configManager.config
             .map { it.showPastePanelButton }
             .distinctUntilChanged()
-            .flatMapLatest { enabled ->
-                if (enabled) {
-                    appWindowManager.foregroundFullscreen.map { fullscreen -> !fullscreen }
-                } else {
-                    flowOf(false)
-                }
-            }.collect { shown ->
+            .collect { shown ->
                 if (shown) {
                     appWindowManager.showPastePanelButton()
                 } else {
                     appWindowManager.hidePastePanelButton()
                 }
+            }
+    }
+
+    LaunchedEffect(Unit) {
+        configManager.config
+            .map { it.showPastePanelButton }
+            .distinctUntilChanged()
+            .flatMapLatest { enabled ->
+                if (enabled) appWindowManager.fullscreenOverPastePanelButton else flowOf(false)
+            }.collect { fullscreen ->
+                appWindowManager.suppressPastePanelButton(fullscreen)
             }
     }
 

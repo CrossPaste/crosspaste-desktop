@@ -34,7 +34,7 @@ object WindowsFocusUtils {
 
     fun isSearchWindowComposing(search: HWND?): Boolean = inputMethod.isComposing(search)
 
-    fun isForegroundFullscreen(): Boolean = fullscreenProbe.isForegroundFullscreen()
+    fun isFullscreenOver(hwnd: HWND): Boolean = fullscreenProbe.isFullscreenOver(hwnd)
 
     fun isTrayForeground(): Boolean = user32.GetForegroundWindow()?.let(trayHitTest::ownsForeground) == true
 

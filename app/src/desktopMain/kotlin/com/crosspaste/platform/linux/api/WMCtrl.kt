@@ -14,6 +14,7 @@ import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.NativeLongByReference
 import com.sun.jna.ptr.PointerByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.awt.Rectangle
 import java.awt.image.BufferedImage
 
 object WMCtrl {
@@ -267,6 +268,10 @@ object WMCtrl {
         propName: String?,
     ): Pointer? = getProperty(display, win, xaPropType, propName, null)
 
+    // Atoms are server-wide and never change, so look this one up once
+    @Volatile
+    private var fullscreenAtom: Long = 0
+
     /**
      * Whether [window] carries `_NET_WM_STATE_FULLSCREEN`. Read directly rather than
      * through [getProperty]: the property is absent on windows without any state, which
@@ -300,15 +305,46 @@ object WMCtrl {
         }
         val prop = retProp.value ?: return false
         return try {
-            if (retType.value?.toLong() != X11.XA_ATOM.toLong()) return false
-            val fullscreen = INSTANCE.XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", false).toLong()
-            // Format-32 items come back as C longs
-            (0 until retNitems.value.toInt()).any { i ->
-                prop.getNativeLong(i.toLong() * NativeLong.SIZE).toLong() == fullscreen
-            }
+            retType.value?.toLong() == X11.XA_ATOM.toLong() &&
+                retFormat.value == 32 &&
+                containsAtom(prop, retNitems.value.toInt(), fullscreenAtom(display))
         } finally {
             free(prop)
         }
+    }
+
+    private fun fullscreenAtom(display: X11.Display): Long {
+        if (fullscreenAtom == 0L) {
+            fullscreenAtom = INSTANCE.XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", false).toLong()
+        }
+        return fullscreenAtom
+    }
+
+    /** Format-32 property items come back from Xlib as C longs. */
+    internal fun containsAtom(
+        items: Pointer,
+        count: Int,
+        atom: Long,
+    ): Boolean = (0 until count).any { i -> items.getNativeLong(i.toLong() * NativeLong.SIZE).toLong() == atom }
+
+    /** [window]'s bounds in root window coordinates, or null when it cannot be read. */
+    fun rootBounds(
+        display: X11.Display,
+        window: X11.Window,
+    ): Rectangle? {
+        val root = X11.WindowByReference()
+        val unused = IntByReference()
+        val width = IntByReference()
+        val height = IntByReference()
+        if (INSTANCE.XGetGeometry(display, window, root, unused, unused, width, height, unused, unused) == 0) {
+            return null
+        }
+        val x = IntByReference()
+        val y = IntByReference()
+        if (!INSTANCE.XTranslateCoordinates(display, window, root.value, 0, 0, x, y, X11.WindowByReference())) {
+            return null
+        }
+        return Rectangle(x.value, y.value, width.value, height.value)
     }
 
     fun getActiveWindow(display: X11.Display): X11.Window? =

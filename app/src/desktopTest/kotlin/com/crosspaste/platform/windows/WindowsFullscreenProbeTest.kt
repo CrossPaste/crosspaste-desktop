@@ -5,6 +5,7 @@ import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.WinDef.BOOL
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.RECT
+import com.sun.jna.platform.win32.WinUser.GA_ROOTOWNER
 import com.sun.jna.platform.win32.WinUser.HMONITOR
 import com.sun.jna.platform.win32.WinUser.MONITORINFO
 import io.mockk.every
@@ -16,36 +17,92 @@ import kotlin.test.assertTrue
 class WindowsFullscreenProbeTest {
     private val user32 = mockk<User32>()
     private val foreground = HWND(Pointer(101))
+    private val button = HWND(Pointer(102))
+    private val primary = HMONITOR(Pointer(201))
+    private val secondary = HMONITOR(Pointer(202))
     private val probe = WindowsFullscreenProbe(user32)
 
+    // Secondary monitor sits left of the primary one, at negative coordinates
+    private val monitorRects =
+        mapOf(
+            primary to rect(0, 0, 1920, 1080),
+            secondary to rect(-2560, 0, 0, 1440),
+        )
+
     private fun setup(
-        className: String,
         window: RECT,
+        className: String = "Chrome_WidgetWin_1",
+        windowMonitor: HMONITOR = primary,
+        buttonMonitor: HMONITOR = primary,
     ) {
         every { user32.GetForegroundWindow() } returns foreground
+        every { user32.GetAncestor(foreground, GA_ROOTOWNER) } returns foreground
         every { user32.GetClassNameW(foreground, any(), any()) } answers {
             className.toCharArray().copyInto(secondArg())
             className.length
         }
         every { user32.GetWindowRect(foreground, any()) } answers {
-            secondArg<RECT>().apply {
-                left = window.left
-                top = window.top
-                right = window.right
-                bottom = window.bottom
-            }
+            secondArg<RECT>().copyFrom(window)
             true
         }
-        every { user32.MonitorFromWindow(foreground, any()) } returns HMONITOR(Pointer(201))
+        every { user32.MonitorFromWindow(foreground, any()) } returns windowMonitor
+        every { user32.MonitorFromWindow(button, any()) } returns buttonMonitor
         every { user32.GetMonitorInfo(any<HMONITOR>(), any<MONITORINFO>()) } answers {
-            secondArg<MONITORINFO>().rcMonitor.apply {
-                left = 0
-                top = 0
-                right = 1920
-                bottom = 1080
-            }
+            secondArg<MONITORINFO>().rcMonitor.copyFrom(monitorRects.getValue(firstArg()))
             BOOL(true)
         }
+    }
+
+    @Test
+    fun `window filling the button's monitor is full screen`() {
+        setup(rect(0, 0, 1920, 1080))
+        assertTrue(probe.isFullscreenOver(button))
+    }
+
+    @Test
+    fun `full screen on a secondary monitor at negative coordinates`() {
+        setup(rect(-2560, 0, 0, 1440), windowMonitor = secondary, buttonMonitor = secondary)
+        assertTrue(probe.isFullscreenOver(button))
+    }
+
+    @Test
+    fun `full screen on another monitor leaves the button alone`() {
+        setup(rect(-2560, 0, 0, 1440), windowMonitor = secondary, buttonMonitor = primary)
+        assertFalse(probe.isFullscreenOver(button))
+    }
+
+    @Test
+    fun `popup owned by a full-screen window counts as full screen`() {
+        val popup = HWND(Pointer(103))
+        setup(rect(0, 0, 1920, 1080))
+        every { user32.GetForegroundWindow() } returns popup
+        every { user32.GetAncestor(popup, GA_ROOTOWNER) } returns foreground
+        assertTrue(probe.isFullscreenOver(button))
+    }
+
+    @Test
+    fun `maximized window overhanging the work area by its frame is not full screen`() {
+        setup(rect(-8, -8, 1928, 1048))
+        assertFalse(probe.isFullscreenOver(button))
+    }
+
+    @Test
+    fun `desktop wallpaper window is not full screen`() {
+        setup(rect(0, 0, 1920, 1080), className = "WorkerW")
+        assertFalse(probe.isFullscreenOver(button))
+    }
+
+    @Test
+    fun `no foreground window is not full screen`() {
+        every { user32.GetForegroundWindow() } returns null
+        assertFalse(probe.isFullscreenOver(button))
+    }
+
+    private fun RECT.copyFrom(other: RECT) {
+        left = other.left
+        top = other.top
+        right = other.right
+        bottom = other.bottom
     }
 
     private fun rect(
@@ -58,23 +115,5 @@ class WindowsFullscreenProbeTest {
         this.top = top
         this.right = right
         this.bottom = bottom
-    }
-
-    @Test
-    fun `window filling the monitor is full screen`() {
-        setup("Chrome_WidgetWin_1", rect(0, 0, 1920, 1080))
-        assertTrue(probe.isForegroundFullscreen())
-    }
-
-    @Test
-    fun `maximized window overhanging the monitor by its frame is not full screen`() {
-        setup("Chrome_WidgetWin_1", rect(-8, -8, 1928, 1088))
-        assertFalse(probe.isForegroundFullscreen())
-    }
-
-    @Test
-    fun `desktop wallpaper window is not full screen`() {
-        setup("WorkerW", rect(0, 0, 1920, 1080))
-        assertFalse(probe.isForegroundFullscreen())
     }
 }

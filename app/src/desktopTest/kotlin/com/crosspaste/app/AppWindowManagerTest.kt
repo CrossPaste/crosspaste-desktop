@@ -229,4 +229,28 @@ class AppWindowManagerTest {
 
         assertEquals(defaultState.position, manager.pastePanelButtonInfo.value.state.position)
     }
+
+    @Test
+    fun `suppressing the paste panel button leaves the button setting and the open panel alone`() {
+        val (manager, _) = createPanelButtonWindowManager(onDisplay = true)
+        manager.showPastePanelButton()
+        manager.showPastePanelWindow(WindowTrigger.SYSTEM)
+
+        manager.suppressPastePanelButton(true)
+
+        assertTrue(manager.pastePanelButtonSuppressed.value)
+        assertTrue(manager.pastePanelButtonInfo.value.show)
+        assertTrue(manager.pastePanelWindowInfo.value.show)
+    }
+
+    @Test
+    fun `revealing brings back only a suppressed paste panel button`() {
+        val (manager, _) = createPanelButtonWindowManager(onDisplay = true)
+        assertFalse(manager.revealPastePanelButton())
+
+        manager.suppressPastePanelButton(true)
+
+        assertTrue(manager.revealPastePanelButton())
+        assertFalse(manager.pastePanelButtonSuppressed.value)
+    }
 }

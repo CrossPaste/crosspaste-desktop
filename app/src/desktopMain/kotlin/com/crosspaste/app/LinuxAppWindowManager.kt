@@ -14,12 +14,14 @@ import com.crosspaste.platform.linux.LinuxDesktopEntry
 import com.crosspaste.platform.linux.api.PortalHandles
 import com.crosspaste.platform.linux.api.RemoteDesktopPortalKeyboard
 import com.crosspaste.platform.linux.api.X11Api
+import com.sun.jna.Native
 import com.sun.jna.NativeLong
 import com.sun.jna.platform.unix.X11.Window
 import io.ktor.util.collections.ConcurrentSet
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import okio.Path
@@ -90,8 +92,15 @@ class LinuxAppWindowManager(
             registerApp(activeApp.appName, activeApp.x11Window)
         }
 
-    override val foregroundFullscreen: Flow<Boolean> =
-        pollForegroundFullscreen { X11Api.isActiveWindowFullscreen(isWaylandSession) }
+    // Under Wayland a focused native window is invisible to X11, so there is nothing to poll
+    override val fullscreenOverPastePanelButton: Flow<Boolean> =
+        if (isWaylandSession) {
+            flowOf(false)
+        } else {
+            pollFullscreenOverPastePanelButton { window ->
+                X11Api.isActiveWindowFullscreenOver(Native.getWindowID(window))
+            }
+        }
 
     override fun getRunningAppNames(): List<String> =
         runCatching {
