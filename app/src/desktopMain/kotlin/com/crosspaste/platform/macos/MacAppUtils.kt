@@ -3,6 +3,7 @@ package com.crosspaste.platform.macos
 import com.crosspaste.platform.macos.api.MacosApi
 import com.crosspaste.platform.macos.api.MacosApi.Companion.INSTANCE
 import com.sun.jna.Pointer
+import java.awt.Rectangle
 
 object MacAppUtils {
 
@@ -35,13 +36,6 @@ object MacAppUtils {
     ) {
         INSTANCE.setWindowLevelPopUpMenu(windowPtr, levelOffset)
     }
-
-    fun setWindowLevelFloating(windowPtr: Pointer?) {
-        INSTANCE.setWindowLevelFloating(windowPtr)
-    }
-
-    fun revealWindowOnFullScreenSpace(windowPtr: Pointer?): Boolean =
-        INSTANCE.revealWindowOnFullScreenSpace(windowPtr) != 0
 
     fun makeWindowNonActivating(windowPtr: Pointer?) {
         INSTANCE.makeWindowNonActivating(windowPtr)
@@ -78,6 +72,15 @@ object MacAppUtils {
     fun isApplicationActive(): Boolean = INSTANCE.isApplicationActive() != 0
 
     fun isPointerOnStatusItem(): Boolean = INSTANCE.isPointerOnStatusItem() != 0
+
+    /** Whether a full-screen app fills the display showing [bounds] (AWT coordinates). */
+    fun isFullScreenAppOnDisplay(bounds: Rectangle): Boolean =
+        INSTANCE.isFullScreenAppOnDisplay(
+            bounds.x.toDouble(),
+            bounds.y.toDouble(),
+            bounds.width.toDouble(),
+            bounds.height.toDouble(),
+        ) != 0
 
     fun getRunningApplications(): List<Pair<String, String>> {
         val raw = MacosApi.getString(INSTANCE.getRunningApplications()) ?: return emptyList()

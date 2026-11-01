@@ -8,15 +8,12 @@ import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.macos.MacPasteUtils
 import com.crosspaste.utils.getSystemProperty
-import com.crosspaste.utils.ioDispatcher
-import com.sun.jna.Pointer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okio.Path
 import okio.Path.Companion.toPath
 import kotlin.time.Duration.Companion.milliseconds
@@ -71,13 +68,11 @@ class MacAppWindowManager(
 
     private val macPasteUtils: MacPasteUtils by lazy { MacPasteUtils(lazyShortcutKeys.value) }
 
-    // The button is never suppressed here; a full-screen space keeps it out instead, see
-    // MacAcrylicEffect. Off the UI thread: the native check waits for the AppKit thread.
-    override suspend fun revealPastePanelButton(): Boolean =
-        withContext(ioDispatcher) {
-            pastePanelButtonComposeWindow?.takeIf { it.isDisplayable }?.let { window ->
-                MacAppUtils.revealWindowOnFullScreenSpace(Pointer(window.windowHandle))
-            } == true
+    // A non-activating panel that joins all spaces shows on full-screen spaces whatever
+    // its collection behavior, so the button is hidden there like on the other platforms
+    override val fullscreenOverPastePanelButton: Flow<Boolean> =
+        pollFullscreenOverPastePanelButton { window ->
+            MacAppUtils.isFullScreenAppOnDisplay(window.bounds)
         }
 
     override fun getPrevAppName(): Flow<String?> =

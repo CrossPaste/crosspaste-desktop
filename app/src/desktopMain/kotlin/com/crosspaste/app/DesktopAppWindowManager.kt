@@ -272,8 +272,8 @@ abstract class DesktopAppWindowManager(
         _pastePanelButtonSuppressed.compareAndSet(expect = true, update = false)
 
     /**
-     * Whether a full-screen app is on the button's display. macOS keeps this default: there
-     * the button simply stays out of full-screen spaces, see PastePanelButtonWindow.
+     * Whether a full-screen app is on the button's display. Platforms that cannot tell keep
+     * this default, and the button stays shown.
      */
     open val fullscreenOverPastePanelButton: Flow<Boolean> = flowOf(false)
 

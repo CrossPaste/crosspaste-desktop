@@ -95,9 +95,11 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
     ) {
         val window = this.window
         if (isMac) {
-            // Re-applied on every show: AppKit ignores it until the window is on screen
+            // Pop-up-menu level, so the button floats above full-screen apps when the
+            // user brings it back there. Re-applied on every show, as AppKit ignores it
+            // before the window is on screen.
             key(buttonVisible) {
-                MacAcrylicEffect(window = window, floating = true)
+                MacAcrylicEffect(window = window)
             }
         }
         DisposableEffect(window) {

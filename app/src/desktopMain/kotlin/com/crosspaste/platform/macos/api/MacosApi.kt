@@ -56,6 +56,13 @@ interface MacosApi : Library {
 
     fun isPointerOnStatusItem(): Int
 
+    fun isFullScreenAppOnDisplay(
+        x: Double,
+        y: Double,
+        width: Double,
+        height: Double,
+    ): Int
+
     fun getRunningApplications(): Pointer?
 
     fun getAppInfoAtPath(path: String): Pointer?
@@ -78,10 +85,6 @@ interface MacosApi : Library {
         windowPtr: Pointer?,
         levelOffset: Int,
     )
-
-    fun setWindowLevelFloating(windowPtr: Pointer?)
-
-    fun revealWindowOnFullScreenSpace(windowPtr: Pointer?): Int
 
     fun makeWindowNonActivating(windowPtr: Pointer?)
 

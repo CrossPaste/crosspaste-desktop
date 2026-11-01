@@ -366,67 +366,6 @@ public func setWindowLevelPopUpMenu(_ rawPtr: UnsafeRawPointer?, levelOffset: In
     }
 }
 
-// Floats above ordinary windows but, unlike setWindowLevelPopUpMenu, stays out of
-// full-screen spaces, so a full-screen video or app is never covered. .floating is what
-// AWT's always-on-top already sets; the collection behavior is what matters here. Like
-// setWindowLevelPopUpMenu it is a no-op before the window is on screen, so callers apply
-// it again on every show.
-@_cdecl("setWindowLevelFloating")
-public func setWindowLevelFloating(_ rawPtr: UnsafeRawPointer?) {
-    guard let rawPtr = rawPtr else { return }
-
-    let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
-
-    DispatchQueue.main.async {
-        if window.windowNumber <= 0 {
-            return
-        }
-
-        window.level = .floating
-        window.collectionBehavior = [.canJoinAllSpaces]
-    }
-}
-
-private var fullScreenRevealObserver: NSObjectProtocol?
-
-// Shows a floating-level window on the full-screen space it is kept out of, until the
-// user leaves that space. Returns 1 when it did, 0 when the window is hidden or already
-// on screen. Occlusion tells the two apart: the window is ordered in, yet not visible
-// because the active space is a full-screen one.
-@_cdecl("revealWindowOnFullScreenSpace")
-public func revealWindowOnFullScreenSpace(_ rawPtr: UnsafeRawPointer?) -> Int32 {
-    guard let rawPtr = rawPtr else { return 0 }
-
-    if !Thread.isMainThread {
-        return DispatchQueue.main.sync { revealWindowOnFullScreenSpace(rawPtr) }
-    }
-
-    let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
-    guard window.isVisible, !window.occlusionState.contains(.visible) else { return 0 }
-
-    window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.popUpMenuWindow)))
-    window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-    window.orderFrontRegardless()
-
-    let center = NSWorkspace.shared.notificationCenter
-    if let observer = fullScreenRevealObserver {
-        center.removeObserver(observer)
-    }
-    fullScreenRevealObserver = center.addObserver(
-        forName: NSWorkspace.activeSpaceDidChangeNotification,
-        object: nil,
-        queue: .main
-    ) { _ in
-        if let observer = fullScreenRevealObserver {
-            center.removeObserver(observer)
-            fullScreenRevealObserver = nil
-        }
-        window.level = .floating
-        window.collectionBehavior = [.canJoinAllSpaces]
-    }
-    return 1
-}
-
 @_cdecl("makeWindowNonActivating")
 public func makeWindowNonActivating(_ rawPtr: UnsafeRawPointer?) {
     guard let rawPtr = rawPtr else { return }
@@ -591,6 +530,35 @@ public func isApplicationActive() -> Int32 {
         return active ? 1 : 0
     }
     return DispatchQueue.main.sync { (NSApp?.isActive ?? false) ? 1 : 0 }
+}
+
+// Whether another app's ordinary window fills the display holding the given rect exactly,
+// as a full-screen app or video does. The rect is in global top-left coordinates in points,
+// which is what AWT uses. Any matching window counts, not only the frontmost: a full-screen
+// browser keeps small toolbar windows in front. Outside full screen the menu bar keeps
+// ordinary windows from covering a whole display. Bounds need no screen recording access.
+@_cdecl("isFullScreenAppOnDisplay")
+public func isFullScreenAppOnDisplay(_ x: Double, _ y: Double, _ width: Double, _ height: Double) -> Int32 {
+    var display: CGDirectDisplayID = 0
+    var count: UInt32 = 0
+    let center = CGPoint(x: x + width / 2, y: y + height / 2)
+    guard CGGetDisplaysWithPoint(center, 1, &display, &count) == .success, count > 0 else { return 0 }
+    let displayBounds = CGDisplayBounds(display)
+
+    let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+    guard let windows = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else {
+        return 0
+    }
+    let ownPid = ProcessInfo.processInfo.processIdentifier
+    let fullScreen = windows.contains { info in
+        guard (info[kCGWindowLayer as String] as? Int) == 0,
+              (info[kCGWindowOwnerPID as String] as? Int32) != ownPid,
+              let boundsInfo = info[kCGWindowBounds as String] as? NSDictionary,
+              let bounds = CGRect(dictionaryRepresentation: boundsInfo)
+        else { return false }
+        return bounds == displayBounds
+    }
+    return fullScreen ? 1 : 0
 }
 
 @_cdecl("isPointerOnStatusItem")
