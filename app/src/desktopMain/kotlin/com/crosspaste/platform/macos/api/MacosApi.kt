@@ -81,6 +81,8 @@ interface MacosApi : Library {
 
     fun setWindowLevelFloating(windowPtr: Pointer?)
 
+    fun revealWindowOnFullScreenSpace(windowPtr: Pointer?): Int
+
     fun makeWindowNonActivating(windowPtr: Pointer?)
 
     fun applyAcrylicBackground(

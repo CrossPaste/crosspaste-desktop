@@ -75,8 +75,18 @@ class WindowsFullscreenProbeTest {
     fun `popup owned by a full-screen window counts as full screen`() {
         val popup = HWND(Pointer(103))
         setup(rect(0, 0, 1920, 1080))
+        mockWindow(popup, rect(1500, 900, 1900, 1060))
         every { user32.GetForegroundWindow() } returns popup
         every { user32.GetAncestor(popup, GA_ROOTOWNER) } returns foreground
+        assertTrue(probe.isFullscreenOver(button))
+    }
+
+    @Test
+    fun `full-screen window owned by an ordinary window counts as full screen`() {
+        val owner = HWND(Pointer(104))
+        setup(rect(0, 0, 1920, 1080))
+        mockWindow(owner, rect(100, 100, 900, 700))
+        every { user32.GetAncestor(foreground, GA_ROOTOWNER) } returns owner
         assertTrue(probe.isFullscreenOver(button))
     }
 
@@ -96,6 +106,18 @@ class WindowsFullscreenProbeTest {
     fun `no foreground window is not full screen`() {
         every { user32.GetForegroundWindow() } returns null
         assertFalse(probe.isFullscreenOver(button))
+    }
+
+    private fun mockWindow(
+        hwnd: HWND,
+        bounds: RECT,
+    ) {
+        every { user32.GetClassNameW(hwnd, any(), any()) } returns 0
+        every { user32.GetWindowRect(hwnd, any()) } answers {
+            secondArg<RECT>().copyFrom(bounds)
+            true
+        }
+        every { user32.MonitorFromWindow(hwnd, any()) } returns primary
     }
 
     private fun RECT.copyFrom(other: RECT) {

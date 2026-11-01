@@ -250,6 +250,8 @@ abstract class DesktopAppWindowManager(
         }
     }
 
+    // Read by the full-screen polling off the UI thread
+    @Volatile
     var pastePanelButtonComposeWindow: ComposeWindow? = null
 
     // Set while a full-screen app (e.g. a full-screen video) is on the button's display,
@@ -266,7 +268,8 @@ abstract class DesktopAppWindowManager(
      * Brings back a button hidden for a full-screen app until the full-screen state next
      * changes. Returns false when the button was not hidden that way.
      */
-    fun revealPastePanelButton(): Boolean = _pastePanelButtonSuppressed.compareAndSet(expect = true, update = false)
+    open suspend fun revealPastePanelButton(): Boolean =
+        _pastePanelButtonSuppressed.compareAndSet(expect = true, update = false)
 
     /**
      * Whether a full-screen app is on the button's display. macOS keeps this default: there

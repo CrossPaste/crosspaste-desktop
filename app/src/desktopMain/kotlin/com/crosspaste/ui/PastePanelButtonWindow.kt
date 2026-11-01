@@ -64,8 +64,8 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
 
     // Keep the menu outside the button window: hidden window content stops recomposing.
     var linuxMenuAnchor by remember { mutableStateOf<Rectangle?>(null) }
-    LaunchedEffect(buttonInfo.show) {
-        if (!buttonInfo.show) {
+    LaunchedEffect(buttonVisible) {
+        if (!buttonVisible) {
             linuxMenuAnchor = null
         }
     }
@@ -162,7 +162,7 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
             )
         }
     }
-    linuxMenuAnchor?.takeIf { buttonInfo.show }?.let { anchor ->
+    linuxMenuAnchor?.takeIf { buttonVisible }?.let { anchor ->
         PastePanelMenuWindow(
             anchor = anchor,
             entries = menuEntries(),

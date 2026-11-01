@@ -40,6 +40,9 @@ object MacAppUtils {
         INSTANCE.setWindowLevelFloating(windowPtr)
     }
 
+    fun revealWindowOnFullScreenSpace(windowPtr: Pointer?): Boolean =
+        INSTANCE.revealWindowOnFullScreenSpace(windowPtr) != 0
+
     fun makeWindowNonActivating(windowPtr: Pointer?) {
         INSTANCE.makeWindowNonActivating(windowPtr)
     }

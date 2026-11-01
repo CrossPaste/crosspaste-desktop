@@ -94,9 +94,12 @@ interface X11Api : X11 {
          * Only X11 sessions can tell: under Wayland a native window may be focused unseen.
          */
         fun isActiveWindowFullscreenOver(windowId: Long): Boolean {
+            if (windowId == 0L) return false
             val display = INSTANCE.XOpenDisplay(null) ?: return false
             return try {
-                val active = getActiveWindow(display) ?: return false
+                // _NET_ACTIVE_WINDOW is None while the desktop has the focus; querying
+                // None raises BadWindow
+                val active = getActiveWindow(display)?.takeIf { it.toLong() != 0L } ?: return false
                 if (!WMCtrl.isFullscreen(display, active)) return false
                 val fullscreen = WMCtrl.rootBounds(display, active) ?: return false
                 val window = WMCtrl.rootBounds(display, Window(windowId)) ?: return false

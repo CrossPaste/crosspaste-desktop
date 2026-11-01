@@ -387,6 +387,46 @@ public func setWindowLevelFloating(_ rawPtr: UnsafeRawPointer?) {
     }
 }
 
+private var fullScreenRevealObserver: NSObjectProtocol?
+
+// Shows a floating-level window on the full-screen space it is kept out of, until the
+// user leaves that space. Returns 1 when it did, 0 when the window is hidden or already
+// on screen. Occlusion tells the two apart: the window is ordered in, yet not visible
+// because the active space is a full-screen one.
+@_cdecl("revealWindowOnFullScreenSpace")
+public func revealWindowOnFullScreenSpace(_ rawPtr: UnsafeRawPointer?) -> Int32 {
+    guard let rawPtr = rawPtr else { return 0 }
+
+    if !Thread.isMainThread {
+        return DispatchQueue.main.sync { revealWindowOnFullScreenSpace(rawPtr) }
+    }
+
+    let window = Unmanaged<NSWindow>.fromOpaque(rawPtr).takeUnretainedValue()
+    guard window.isVisible, !window.occlusionState.contains(.visible) else { return 0 }
+
+    window.level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.popUpMenuWindow)))
+    window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+    window.orderFrontRegardless()
+
+    let center = NSWorkspace.shared.notificationCenter
+    if let observer = fullScreenRevealObserver {
+        center.removeObserver(observer)
+    }
+    fullScreenRevealObserver = center.addObserver(
+        forName: NSWorkspace.activeSpaceDidChangeNotification,
+        object: nil,
+        queue: .main
+    ) { _ in
+        if let observer = fullScreenRevealObserver {
+            center.removeObserver(observer)
+            fullScreenRevealObserver = nil
+        }
+        window.level = .floating
+        window.collectionBehavior = [.canJoinAllSpaces]
+    }
+    return 1
+}
+
 @_cdecl("makeWindowNonActivating")
 public func makeWindowNonActivating(_ rawPtr: UnsafeRawPointer?) {
     guard let rawPtr = rawPtr else { return }

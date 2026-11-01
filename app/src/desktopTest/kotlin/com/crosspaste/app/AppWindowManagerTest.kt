@@ -244,13 +244,14 @@ class AppWindowManagerTest {
     }
 
     @Test
-    fun `revealing brings back only a suppressed paste panel button`() {
-        val (manager, _) = createPanelButtonWindowManager(onDisplay = true)
-        assertFalse(manager.revealPastePanelButton())
+    fun `revealing brings back only a suppressed paste panel button`() =
+        runTest {
+            val (manager, _) = createPanelButtonWindowManager(onDisplay = true)
+            assertFalse(manager.revealPastePanelButton())
 
-        manager.suppressPastePanelButton(true)
+            manager.suppressPastePanelButton(true)
 
-        assertTrue(manager.revealPastePanelButton())
-        assertFalse(manager.pastePanelButtonSuppressed.value)
-    }
+            assertTrue(manager.revealPastePanelButton())
+            assertFalse(manager.pastePanelButtonSuppressed.value)
+        }
 }
