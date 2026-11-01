@@ -201,6 +201,8 @@ class AppWindowManagerTest {
             spyk(DesktopAppSize(getPlatformUtils().platform, createConfigManager())) {
                 every { getSearchWindowState(any()) } returns WindowState()
                 every { getPastePanelButtonWindowState() } returns defaultState
+                // Panel placement asks the real displays, which a headless CI runner lacks
+                every { getPastePanelWindowState(any()) } returns WindowState()
                 every { isOnAnyDisplay(any()) } returns onDisplay
             }
         return TestWindowManager(appSize, MockOS()) to defaultState
