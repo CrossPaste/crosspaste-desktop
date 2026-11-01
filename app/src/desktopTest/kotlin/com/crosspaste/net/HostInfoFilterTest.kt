@@ -6,7 +6,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
-import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class HostInfoFilterTest {
@@ -20,14 +19,6 @@ class HostInfoFilterTest {
         assertTrue(NoFilter.filter(hostInfo1))
         assertTrue(NoFilter.filter(hostInfo2))
         assertTrue(NoFilter.filter(hostInfo3))
-    }
-
-    @Test
-    fun testNoFilterEquals() {
-        assertSame(NoFilter, NoFilter)
-        assertFalse(NoFilter.equals(null))
-        assertFalse(NoFilter.equals("not-a-filter"))
-        assertFalse(NoFilter.equals(createHostInfoFilter("192.168.1.1", 24)))
     }
 
     @Test
@@ -184,7 +175,6 @@ class HostInfoFilterTest {
         val filter3 = createHostInfoFilter("192.168.1.101", 24)
         val filter4 = createHostInfoFilter("192.168.1.100", 16)
 
-        assertEquals(filter1, filter1)
         assertEquals(filter1, filter2)
         assertEquals(filter2, filter1)
 

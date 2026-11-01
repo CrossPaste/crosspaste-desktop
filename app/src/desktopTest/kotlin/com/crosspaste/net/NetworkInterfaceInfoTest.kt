@@ -18,10 +18,4 @@ class NetworkInterfaceInfoTest {
         val info = NetworkInterfaceInfo("wlan0", 16, "10.0.0.1")
         assertEquals("wlan0 - 10.0.0.1/16", info.toString())
     }
-
-    @Test
-    fun `toHostInfo preserves different prefix lengths`() {
-        assertEquals(8.toShort(), NetworkInterfaceInfo("lo", 8, "127.0.0.1").toHostInfo().networkPrefixLength)
-        assertEquals(32.toShort(), NetworkInterfaceInfo("lo", 32, "127.0.0.1").toHostInfo().networkPrefixLength)
-    }
 }

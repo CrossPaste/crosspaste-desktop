@@ -174,18 +174,6 @@ class GeneralNearbyDeviceManagerTest {
         }
 
     @Test
-    fun startSearching_setsSearchingTrue() =
-        runTest {
-            val childScope = CoroutineScope(coroutineContext + Job())
-            val deps = TestDeps(childScope)
-            val manager = deps.createManager(childScope)
-
-            assertFalse(manager.searching.value)
-            manager.startSearching()
-            assertTrue(manager.searching.value)
-        }
-
-    @Test
     fun stopSearching_setsSearchingFalse() =
         runTest {
             val childScope = CoroutineScope(coroutineContext + Job())

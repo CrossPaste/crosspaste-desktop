@@ -113,13 +113,6 @@ class FilesIndexTest {
         assertNull(index.getChunk(-1))
     }
 
-    @Test
-    fun `getChunk returns null for negative index`() {
-        val builder = FilesIndexBuilder(chunkSize = 1024)
-        val index = builder.build()
-        assertNull(index.getChunk(-1))
-    }
-
     // --- Large file scenario ---
 
     @Test

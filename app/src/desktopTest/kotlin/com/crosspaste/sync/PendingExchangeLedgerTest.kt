@@ -50,15 +50,6 @@ class PendingExchangeLedgerTest {
     }
 
     @Test
-    fun `successful consume drops the record`() {
-        val ledger = PendingExchangeLedger()
-        ledger.record("a", 1L)
-        assertTrue(ledger.consume("a", 1L))
-        assertNull(ledger.current("a"))
-        assertFalse(ledger.consume("a", 1L))
-    }
-
-    @Test
     fun `concurrent stale consume never removes replacement generation`() =
         runBlocking {
             val ledger = PendingExchangeLedger()

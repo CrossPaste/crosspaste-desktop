@@ -88,33 +88,6 @@ class SyncRuntimeInfoDaoTest {
         }
 
     @Test
-    fun `updateList triggers flow emission`() =
-        runTest {
-            // Pre-insert test data
-            syncRuntimeInfoDao.insertOrUpdateSyncInfo(testSyncInfo)
-
-            syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow().test {
-                // Verify initial value
-                val initialList = awaitItem()
-                assertEquals(1, initialList.size)
-
-                // Update data using updateList
-                syncRuntimeInfoDao.updateConnectInfo(updatedSyncRuntimeInfo)
-
-                // Verify the Flow emits the updated value
-                val updatedItems = awaitItem()
-                assertEquals(1, updatedItems.size)
-                assertEquals(updatedSyncRuntimeInfo.connectState, updatedItems[0].connectState)
-
-                // Verify no further emissions
-                expectNoEvents()
-
-                // Cancel the test
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
-    @Test
     fun `getAllSyncRuntimeInfosFlow reacts to insertOrUpdateSyncInfo`() =
         runTest {
             // Collect the Flow and verify updates

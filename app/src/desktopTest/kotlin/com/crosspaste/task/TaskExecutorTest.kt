@@ -14,7 +14,6 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
-import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -32,38 +31,6 @@ class TaskExecutorTest {
             modifyTime = System.currentTimeMillis(),
             extraInfo = """{"type":"base","executionHistories":[]}""",
         )
-
-    @Test
-    fun `empty executor list creates valid executor`() =
-        runTest {
-            val taskDao: TaskDao = mockk(relaxed = true)
-            val executor =
-                TaskExecutor(
-                    emptyList(),
-                    taskDao,
-                    scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
-                )
-            executor.shutdown()
-        }
-
-    @Test
-    fun `executor maps task types correctly`() =
-        runTest {
-            val mockExecutor1: SingleTypeTaskExecutor = mockk(relaxed = true)
-            val mockExecutor2: SingleTypeTaskExecutor = mockk(relaxed = true)
-            coEvery { mockExecutor1.taskType } returns TaskType.DELETE_PASTE_TASK
-            coEvery { mockExecutor2.taskType } returns TaskType.CLEAN_TASK_TASK
-
-            val taskDao: TaskDao = mockk(relaxed = true)
-            val executor =
-                TaskExecutor(
-                    listOf(mockExecutor1, mockExecutor2),
-                    taskDao,
-                    scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
-                )
-
-            executor.shutdown()
-        }
 
     @Test
     fun `submitTask emits task id and executes`() =
@@ -241,19 +208,5 @@ class TaskExecutorTest {
 
             coVerify(exactly = 0) { taskDao.executingTask(any()) }
             coVerify(exactly = 0) { taskDao.failureTask(any(), any(), any()) }
-        }
-
-    @Test
-    fun `shutdown cancels scope`() =
-        runTest {
-            val taskDao: TaskDao = mockk(relaxed = true)
-            val executor =
-                TaskExecutor(
-                    emptyList(),
-                    taskDao,
-                    scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob()),
-                )
-            executor.shutdown()
-            assertTrue(true)
         }
 }

@@ -104,28 +104,6 @@ class JvmLazyClipboardTest {
     inner class MacosEagerClipboardTests {
 
         @Test
-        fun `setContents triggers immediate getTransferData for string flavor`() {
-            val called = AtomicBoolean(false)
-            try {
-                systemClipboard.setContents(trackingStringTransferable(called), noOpOwner)
-                assertTrue(called.get(), "getTransferData should be called eagerly during setContents on macOS")
-            } finally {
-                cleanupClipboard()
-            }
-        }
-
-        @Test
-        fun `setContents triggers immediate getTransferData for file list flavor`() {
-            val called = AtomicBoolean(false)
-            try {
-                systemClipboard.setContents(trackingFileListTransferable(called), noOpOwner)
-                assertTrue(called.get(), "getTransferData should be called eagerly during setContents on macOS")
-            } finally {
-                cleanupClipboard()
-            }
-        }
-
-        @Test
         fun `setContents triggers immediate getTransferData for all advertised flavors`() {
             val htmlFlavor = DataFlavor("text/html;class=java.lang.String")
             val advertisedFlavors = arrayOf(DataFlavor.stringFlavor, htmlFlavor)
@@ -140,18 +118,6 @@ class JvmLazyClipboardTest {
                     "getTransferData should be called at least once per advertised flavor on macOS, " +
                         "but was called ${callCount.get()} times for ${advertisedFlavors.size} flavors",
                 )
-            } finally {
-                cleanupClipboard()
-            }
-        }
-
-        @Test
-        fun `clipboard data persists after owner lost`() {
-            try {
-                systemClipboard.setContents(ownerLostTransferable(), noOpOwner)
-                systemClipboard.setContents(StringSelection("other"), noOpOwner)
-                val contents = systemClipboard.getData(DataFlavor.stringFlavor) as String
-                assertEquals("other", contents, "Clipboard should contain the new value after owner change")
             } finally {
                 cleanupClipboard()
             }

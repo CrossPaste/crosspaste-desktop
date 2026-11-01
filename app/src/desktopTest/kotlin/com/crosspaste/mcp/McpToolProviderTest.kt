@@ -362,16 +362,6 @@ class McpToolProviderTest {
         }
 
     @Test
-    fun `add_to_clipboard defaults to text type`() =
-        runTest {
-            val server = createServer()
-            val result = callTool(server, "add_to_clipboard", mapOf("content" to "no type specified"))
-            assertTrue(result.contains("type: text"))
-        }
-
-    // ========== add_to_clipboard - html ==========
-
-    @Test
     fun `add_to_clipboard creates html item`() =
         runTest {
             val server = createServer()

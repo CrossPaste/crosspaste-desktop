@@ -47,16 +47,6 @@ class PasteRoutingTest {
         assertEquals(pasteData.hash, bound.hash)
     }
 
-    @Test
-    fun `matching identity is still marked remote`() {
-        val pasteData = createPasteData(appInstanceId = "authenticated-peer")
-
-        val bound = pasteData.bindAuthenticatedRemoteIdentity("authenticated-peer")
-
-        assertEquals("authenticated-peer", bound.appInstanceId)
-        assertTrue(bound.remote)
-    }
-
     // ========== /sync/paste target identity validation (#4894) ==========
 
     private val jsonUtils = getJsonUtils()

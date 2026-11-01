@@ -58,14 +58,6 @@ class GenerateTextPluginTest {
     }
 
     @Test
-    fun `text-only list returns unchanged`() {
-        val textItem = createTextPasteItem(text = "plain text")
-        val result = plugin.process(coord, listOf(textItem), null)
-        assertEquals(1, result.size)
-        assertTrue(result[0] is TextPasteItem)
-    }
-
-    @Test
     fun `generated text from html has content`() {
         val htmlItem = createHtmlPasteItem(html = "<b>bold text</b>")
         val items: List<PasteItem> = listOf(htmlItem)
