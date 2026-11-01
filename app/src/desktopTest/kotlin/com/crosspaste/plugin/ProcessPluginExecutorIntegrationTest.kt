@@ -22,6 +22,8 @@ class ProcessPluginExecutorIntegrationTest {
 
     private val pluginDir: File = Files.createTempDirectory("plugin 插件").toFile()
 
+    private val manifestJson = Json { ignoreUnknownKeys = true }
+
     @AfterTest
     fun cleanup() {
         pluginDir.deleteRecursively()
@@ -76,8 +78,7 @@ class ProcessPluginExecutorIntegrationTest {
         if (File.separatorChar == '\\' || findMissingExecutables(listOf("jq")).isNotEmpty()) return
         val sampleDir = File("../doc/plugins/uppercase").canonicalFile
         val manifest =
-            Json { ignoreUnknownKeys = true }
-                .decodeFromString(PluginManifest.serializer(), File(sampleDir, "manifest.json").readText())
+            manifestJson.decodeFromString(PluginManifest.serializer(), File(sampleDir, "manifest.json").readText())
         val environment =
             PluginEnvironment(
                 platform = Platform(Platform.MACOS, "aarch64", 64, "15"),

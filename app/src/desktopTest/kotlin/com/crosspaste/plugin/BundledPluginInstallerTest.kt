@@ -100,14 +100,14 @@ class BundledPluginInstallerTest {
                 assertEquals("翻译", plugin.manifest!!.displayName("zh"))
                 assertEquals(
                     "English",
-                    plugin.manifest!!
+                    plugin.manifest
                         .actions
                         .first()
                         .displayName("zh"),
                 )
                 assertEquals(
                     "简体中文",
-                    plugin.manifest!!
+                    plugin.manifest
                         .actions
                         .first { it.id == "zh-CN" }
                         .displayName("en"),

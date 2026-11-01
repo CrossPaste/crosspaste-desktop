@@ -95,7 +95,6 @@ class LinuxPasteTargetTest {
             val pasted = mutableListOf<Int>()
             coEvery { manager.toPaste() } answers {
                 pasted.add(prepared.last())
-                Unit
             }
 
             manager.hideSearchWindowAndPaste(4) {

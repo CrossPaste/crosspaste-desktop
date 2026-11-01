@@ -33,7 +33,7 @@ class DesktopMigrationTest {
         val platformProvider = mockk<PlatformUserDataPathProvider>()
         every { platformProvider.getUserDefaultStoragePath() } returns storagePath.toOkioPath()
 
-        val userDataPathProvider = UserDataPathProvider(configManager as CommonConfigManager, platformProvider)
+        val userDataPathProvider = UserDataPathProvider(configManager.asCommon(), platformProvider)
 
         return DesktopMigration(
             configManager = configManager,
@@ -218,7 +218,7 @@ class DesktopMigrationTest {
                 configManager = configManager,
                 driverFactory = driverFactory,
                 notificationManager = mockk(relaxed = true),
-                userDataPathProvider = UserDataPathProvider(configManager as CommonConfigManager, platformProvider),
+                userDataPathProvider = UserDataPathProvider(configManager.asCommon(), platformProvider),
             )
 
         // An existing store: the database plus one paste file.
@@ -299,3 +299,8 @@ class DesktopMigrationTest {
         assertTrue(fixture.migrationDir.listFiles().isNullOrEmpty(), "the partial copy is removed")
     }
 }
+
+// DesktopConfigManager manages DesktopAppConfig, a subtype of AppConfig, but
+// ConfigManager<T> is invariant in T, so the compiler can't prove the upcast.
+@Suppress("UNCHECKED_CAST")
+private fun DesktopConfigManager.asCommon(): CommonConfigManager = this as CommonConfigManager

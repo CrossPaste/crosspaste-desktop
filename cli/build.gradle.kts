@@ -27,6 +27,12 @@ plugins {
     alias(libs.plugins.ktlint)
 }
 
+// Apple targets carry cinterops, so KGP can't cross-compile their klibs from
+// a non-mac host and warns once per target instead. Opting out of klib
+// cross-compilation for this project only keeps the Linux CI log clean;
+// assembleDist already skips Apple targets on non-mac hosts.
+extra["kotlin.native.enableKlibsCrossCompilation"] = "false"
+
 ktlint {
     verbose = true
     android = false
