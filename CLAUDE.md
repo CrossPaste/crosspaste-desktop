@@ -100,6 +100,23 @@ Tag a class `@IntegrationTest` if it does ANY of the following:
 
 Everything else stays untagged in the fast tier. Do not "fix" a slow test by tagging it if it could instead be rewritten against virtual time or mocks — tagging is for tests whose value comes from exercising the real thing. Never delete or weaken a test to make the fast tier faster; move it to the integration tier instead.
 
+#### Test Quality
+
+A test only earns its keep if it can fail when the code it names is broken. Before
+adding or keeping one, ask: *if I delete the production line this test covers, does it
+go red?* If not, it is documentation, not a test.
+
+Never write:
+- tautologies — `assertTrue(true)`, `assertEquals(x, x)`, literal vs literal
+- a test-local copy of the production logic (a re-declared regex/lambda) asserted against itself
+- assertions on a test double's own behaviour (an abstract method implemented by the fake)
+- constructor-argument echo (`assertEquals(v, Foo(v).v)`) or a `const val` restated as a literal
+- `assertNotNull` on a non-nullable Kotlin type, `isNotEmpty()` on guaranteed-non-empty data
+- `println`-only bodies
+
+Assert derived values (hash, size, wire bytes, state transitions, emitted events), not
+the values the test passed in.
+
 ## Code Style and Conventions
 
 - **Commit messages**: Use emoji prefixes (see `doc/en/CommitMessage.md`)

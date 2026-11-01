@@ -600,8 +600,12 @@ class GeneralSyncManagerTest {
             advanceTimeBy(100)
             syncManager.stop()
 
-            // Should be able to call stop multiple times
+            // stop() must tear down the real-time scope it started with.
+            assertTrue(childScope.coroutineContext[Job]!!.isCancelled)
+
+            // A second stop() is a no-op and must not undo the teardown.
             syncManager.stop()
+            assertTrue(childScope.coroutineContext[Job]!!.isCancelled)
         }
 
     @Test

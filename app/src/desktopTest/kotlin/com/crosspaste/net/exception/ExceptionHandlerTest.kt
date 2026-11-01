@@ -59,18 +59,6 @@ class ExceptionHandlerTest {
     }
 
     @Test
-    fun `isConnectionRefused delegates to subclass`() {
-        assertTrue(handler.isConnectionRefused(RuntimeException("Connection refused")))
-        assertFalse(handler.isConnectionRefused(RuntimeException("timeout")))
-    }
-
-    @Test
-    fun `isPortAlreadyInUse delegates to subclass`() {
-        assertTrue(handler.isPortAlreadyInUse(RuntimeException("Address already in use")))
-        assertFalse(handler.isPortAlreadyInUse(RuntimeException("other")))
-    }
-
-    @Test
     fun `isEncryptFail returns false for null throwable message`() {
         assertFalse(handler.isEncryptFail(RuntimeException()))
     }

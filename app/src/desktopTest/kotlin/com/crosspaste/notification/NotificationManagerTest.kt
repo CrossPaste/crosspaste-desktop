@@ -74,26 +74,6 @@ class NotificationManagerTest {
     }
 
     @Test
-    fun `push then remove all results in empty list`() {
-        val manager = TestNotificationManager(createCopywriter())
-        manager.pushNotification(Message(messageId = 1, title = "A", messageType = MessageType.Info))
-        manager.pushNotification(Message(messageId = 2, title = "B", messageType = MessageType.Info))
-        manager.removeNotification(1)
-        manager.removeNotification(2)
-        assertTrue(manager.notificationList.value.isEmpty())
-    }
-
-    @Test
-    fun `getMessageId returns incrementing ids`() {
-        val manager = TestNotificationManager(createCopywriter())
-        val id1 = manager.getMessageId()
-        val id2 = manager.getMessageId()
-        val id3 = manager.getMessageId()
-        assertTrue(id2 > id1)
-        assertTrue(id3 > id2)
-    }
-
-    @Test
     fun `pushNotification auto-removes expired notification after duration`() =
         runBlocking {
             val manager = TestNotificationManager(createCopywriter())

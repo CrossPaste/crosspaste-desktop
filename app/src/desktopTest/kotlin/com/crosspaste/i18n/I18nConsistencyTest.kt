@@ -60,7 +60,12 @@ class I18nConsistencyTest {
         private val KEY_PATTERN = Regex("^[a-z0-9_?]+$")
 
         /** Keys built at runtime by prefix + suffix; no literal reference exists. */
-        private val DYNAMIC_KEY_PREFIXES = listOf("desktop_guide_")
+        private val DYNAMIC_KEY_PREFIXES =
+            listOf(
+                "desktop_guide_",
+                // AppearanceSettingsContentView: "paste_panel_button_size_$size"
+                "paste_panel_button_size_",
+            )
 
         /** Keys referenced only by the mobile apps, which reuse `commonMain`. */
         private val MOBILE_ONLY_KEYS = emptySet<String>()
@@ -339,9 +344,10 @@ class I18nConsistencyTest {
     }
 
     @Test
-    fun `report keys with no literal reference in desktop or common source`() {
-        // Report only. A key here may be used by mobile or built dynamically; verify
-        // both before deleting it, then update MOBILE_ONLY_KEYS / DYNAMIC_KEY_PREFIXES.
+    fun `every key has a literal reference in desktop or common source`() {
+        // A key with no literal reference is dead weight: it is translated, shipped, and
+        // maintained but never shown. Keys used by mobile or built dynamically must be
+        // declared in MOBILE_ONLY_KEYS / DYNAMIC_KEY_PREFIXES above.
         val referenced =
             (kotlinSources() + webSources())
                 .flatMap { file -> ANY_LITERAL.findAll(file.readText()).map { it.groupValues[1] }.toList() }
@@ -354,10 +360,10 @@ class I18nConsistencyTest {
                 .filter { key -> key !in referenced }
                 .filterNot { key -> DYNAMIC_KEY_PREFIXES.any { key.startsWith(it) } }
                 .filterNot { it in MOBILE_ONLY_KEYS }
-        if (unreferenced.isNotEmpty()) {
-            println("i18n keys with no literal reference in commonMain/desktopMain (${unreferenced.size}):")
-            unreferenced.forEach { println("  $it") }
-        }
+        assertTrue(
+            unreferenced.isEmpty(),
+            "i18n keys with no literal reference; add to MOBILE_ONLY_KEYS or remove the key: $unreferenced",
+        )
     }
 
     private fun webSources(): Sequence<Path> =

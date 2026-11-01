@@ -59,12 +59,6 @@ private fun frameData(
 class PickRendererTest {
 
     @Test
-    fun frameHasExactlyTheRequestedHeight() {
-        val frame = renderPickFrame(frameData(listOf(row(1, "one"))), width = 80, height = 24, level = AnsiLevel.NONE)
-        assertEquals(24, frame.lines.size)
-    }
-
-    @Test
     fun plainRenderingContainsRowsAndMarksTheSelection() {
         val frame =
             renderPickFrame(

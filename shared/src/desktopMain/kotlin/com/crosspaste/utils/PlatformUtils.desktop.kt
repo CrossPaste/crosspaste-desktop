@@ -15,10 +15,10 @@ actual fun getPlatformUtils(): PlatformUtils = DesktopPlatformUtils
 
 object DesktopPlatformUtils : PlatformUtils {
 
-    override val platform: Platform by lazy { getCurrentPlatform() }
+    override val platform: Platform by lazy { detectPlatform(getSystemProperty()) }
 
-    private fun getCurrentPlatform(): Platform {
-        val systemProperty = getSystemProperty()
+    // @VisibleForTesting: `platform` is cached, so tests call this directly.
+    fun detectPlatform(systemProperty: SystemProperty): Platform {
         val osName = systemProperty.get("os.name").lowercase()
 
         val name =

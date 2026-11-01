@@ -164,16 +164,6 @@ class PasteSearchViewModelTest {
     }
 
     @Test
-    fun `QUERY_BATCH_SIZE is 50`() {
-        assertEquals(50, PasteSearchViewModel.QUERY_BATCH_SIZE)
-    }
-
-    @Test
-    fun `LOAD_MORE_THROTTLE_MS is 500`() {
-        assertEquals(500L, PasteSearchViewModel.LOAD_MORE_THROTTLE_MS)
-    }
-
-    @Test
     fun `clearing the input applies without waiting for the debounce`() =
         runTest {
             val vm = TestSearchViewModel()

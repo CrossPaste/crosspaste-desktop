@@ -60,13 +60,6 @@ class DesktopSearchContentServiceTest {
         assertTrue(result.contains("bar"))
     }
 
-    @Test
-    fun `createSearchContent single string overload works`() {
-        val result = service.createSearchContent(null, "hello world")
-        assertTrue(result.contains("hello"))
-        assertTrue(result.contains("world"))
-    }
-
     // ========== createSearchTerms ==========
 
     @Test

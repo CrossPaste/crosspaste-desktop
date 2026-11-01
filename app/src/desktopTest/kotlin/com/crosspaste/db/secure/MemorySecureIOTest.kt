@@ -11,15 +11,6 @@ import kotlin.test.assertTrue
 class MemorySecureIOTest {
 
     @Test
-    fun `saveCryptPublicKey stores key`() =
-        runBlocking {
-            val io = MemorySecureIO()
-            val key = byteArrayOf(1, 2, 3, 4)
-            io.saveCryptPublicKey("app1", key)
-            assertTrue(io.existCryptPublicKey("app1"))
-        }
-
-    @Test
     fun `existCryptPublicKey returns false for missing key`() =
         runBlocking {
             val io = MemorySecureIO()
@@ -35,18 +26,6 @@ class MemorySecureIOTest {
 
             io.deleteCryptPublicKey("app1")
             assertFalse(io.existCryptPublicKey("app1"))
-        }
-
-    @Test
-    fun `serializedPublicKey returns stored key`() =
-        runBlocking {
-            val io = MemorySecureIO()
-            val key = byteArrayOf(10, 20, 30)
-            io.saveCryptPublicKey("app1", key)
-
-            val retrieved = io.serializedPublicKey("app1")
-            assertNotNull(retrieved)
-            assertContentEquals(key, retrieved)
         }
 
     @Test

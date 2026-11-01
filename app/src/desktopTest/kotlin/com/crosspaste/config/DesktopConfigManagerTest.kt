@@ -111,23 +111,6 @@ class DesktopConfigManagerTest {
     }
 
     @Test
-    fun `updateConfig with invalid save reverts config`() {
-        // Create a config with read-only persist to force save failure
-        val configDirPath = Files.createTempDirectory("configRevert").toOkioPath()
-        configDirPath.toFile().deleteOnExit()
-        val configPath = configDirPath.resolve("appConfig.json")
-
-        val manager =
-            DesktopConfigManager(
-                OneFilePersist(configPath),
-                DesktopLocaleUtils,
-            )
-        // First save should work
-        manager.updateConfig("port", 1234)
-        assertEquals(1234, manager.getCurrentConfig().port)
-    }
-
-    @Test
     fun `loadConfig returns null for non-existent file`() {
         val configDirPath = Files.createTempDirectory("configLoad").toOkioPath()
         configDirPath.toFile().deleteOnExit()

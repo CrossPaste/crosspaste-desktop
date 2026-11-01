@@ -191,6 +191,54 @@ class OpenGraphServiceTest {
         }
 
     @Test
+    fun `largest valid image wins and tracking pixels are never requested`() =
+        runTest {
+            val item = createUrlPasteItem(url = "https://example.com/image-filter")
+            val heroUrl = "https://cdn.example.com/hero.png"
+            val trackingUrls =
+                listOf(
+                    "https://cdn.example.com/pixel.gif",
+                    "https://cdn.example.com/tracking.png",
+                    "https://cdn.example.com/1x1.png",
+                )
+            val resourcesClient = mockk<ResourcesClient>()
+            val service =
+                OpenGraphService<Any>(
+                    configManager = TestConfigManager(TestAppConfig()),
+                    generateImageService = mockk(),
+                    imageHandler = mockk(),
+                    resourcesClient = resourcesClient,
+                    updatePasteItemHelper = mockk(),
+                    userDataPathProvider = createPathProvider(),
+                    pasteDao = mockk(),
+                )
+            val response = mockk<ClientResponse>()
+            every { response.getContentType() } returns ContentType.Text.Html
+            coEvery { response.getBody() } returns
+                ByteReadChannel(
+                    // Bigger than the hero on purpose: the filter must reject them on name,
+                    // not on size.
+                    trackingUrls.joinToString("\n") { """<img src="$it" width="2000" height="2000">""" } +
+                        """
+                        <img src="$heroUrl" width="600" height="400">
+                        """.trimIndent(),
+                )
+            coEvery { resourcesClient.request(item.url, ResourceRequestLimits.HTML) } returns
+                Result.success(response)
+            coEvery { resourcesClient.request(heroUrl, ResourceRequestLimits.IMAGE) } returns
+                Result.failure(IllegalStateException("Stop after image request"))
+
+            service.render(createPasteData(8251L, item))
+
+            trackingUrls.forEach { trackingUrl ->
+                coVerify(exactly = 0) {
+                    resourcesClient.request(trackingUrl, ResourceRequestLimits.IMAGE)
+                }
+            }
+            coVerify(exactly = 1) { resourcesClient.request(heroUrl, ResourceRequestLimits.IMAGE) }
+        }
+
+    @Test
     fun `preview path is keyed by url hash`() {
         val pathProvider = createPathProvider()
         val coordinate = PasteCoordinate(7L, "instance", 123L)
@@ -269,67 +317,6 @@ class OpenGraphServiceTest {
             assertTrue(writtenPath.captured.name.endsWith("-${oldItem.hash}.png"))
             coVerify(exactly = 0) { generateImageService.markGenerationComplete(any()) }
         }
-
-    @Test
-    fun `JSON_LD_IMAGE_PATTERN matches image in JSON-LD`() {
-        val pattern = """"image"\s*:\s*"([^"]+)"""".toRegex()
-        val json = """{"@type":"Article","image":"https://example.com/image.jpg","name":"Test"}"""
-        val match = pattern.find(json)
-        assertEquals("https://example.com/image.jpg", match?.groupValues?.get(1))
-    }
-
-    @Test
-    fun `JSON_LD_IMAGE_PATTERN matches image with spaces`() {
-        val pattern = """"image"\s*:\s*"([^"]+)"""".toRegex()
-        val json = """{"image" : "https://example.com/photo.png"}"""
-        val match = pattern.find(json)
-        assertEquals("https://example.com/photo.png", match?.groupValues?.get(1))
-    }
-
-    @Test
-    fun `JSON_LD_IMAGE_PATTERN does not match without quotes`() {
-        val pattern = """"image"\s*:\s*"([^"]+)"""".toRegex()
-        val json = """{"image": null}"""
-        val match = pattern.find(json)
-        assertEquals(null, match)
-    }
-
-    @Test
-    fun `JSON_LD_IMAGE_PATTERN matches first image in multiple`() {
-        val pattern = """"image"\s*:\s*"([^"]+)"""".toRegex()
-        val json = """{"image":"https://first.jpg","other":"data","image":"https://second.jpg"}"""
-        val match = pattern.find(json)
-        assertEquals("https://first.jpg", match?.groupValues?.get(1))
-    }
-
-    @Test
-    fun `image URL filtering logic excludes tracking pixels`() {
-        val src = "https://example.com/pixel.gif"
-        val isFiltered =
-            src.contains("pixel") ||
-                src.contains("tracking") ||
-                src.contains("1x1") ||
-                src.endsWith(".gif")
-        assertEquals(true, isFiltered)
-    }
-
-    @Test
-    fun `image URL filtering excludes 1x1 images`() {
-        val src = "https://example.com/1x1.png"
-        val isFiltered = src.contains("1x1")
-        assertEquals(true, isFiltered)
-    }
-
-    @Test
-    fun `image URL filtering allows normal images`() {
-        val src = "https://example.com/hero-banner.jpg"
-        val isFiltered =
-            src.contains("pixel") ||
-                src.contains("tracking") ||
-                src.contains("1x1") ||
-                src.endsWith(".gif")
-        assertEquals(false, isFiltered)
-    }
 
     private fun createPathProvider(): UserDataPathProvider =
         UserDataPathProvider(

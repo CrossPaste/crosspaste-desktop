@@ -66,19 +66,6 @@ class PairingTranscriptCodecTest {
     }
 
     @Test
-    fun testTranscriptHashIsDeterministicAcrossRoles() =
-        runTest {
-            // Both roles construct the transcript independently from the same session data
-            val initiatorView = sampleTranscript()
-            val acceptorView = sampleTranscript()
-
-            assertContentEquals(
-                PairingTranscriptCodec.transcriptHash(initiatorView),
-                PairingTranscriptCodec.transcriptHash(acceptorView),
-            )
-        }
-
-    @Test
     fun testEveryTranscriptFieldChangesTheHash() =
         runTest {
             val base = sampleTranscript()

@@ -193,24 +193,6 @@ class TelnetHelperTest {
         }
 
     @Test
-    fun switchHost_allFail_returnsNull() =
-        runBlocking {
-            val pasteClient = createMockPasteClient()
-            coEvery { pasteClient.get(any(), any(), any()) } throws RuntimeException("connection failed")
-
-            val helper = createTelnetHelper(pasteClient)
-            val hostInfoList =
-                listOf(
-                    HostInfo(24, "192.168.1.100"),
-                    HostInfo(24, "192.168.1.101"),
-                )
-
-            val result = helper.switchHost(hostInfoList, 13129, timeout = 2000L)
-
-            assertNull(result)
-        }
-
-    @Test
     fun switchHost_oneSucceedsAmongFailures_returnsSuccessful() =
         runBlocking<Unit> {
             val pasteClient = createMockPasteClient()

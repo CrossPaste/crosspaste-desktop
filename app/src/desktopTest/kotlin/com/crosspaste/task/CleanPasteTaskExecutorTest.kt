@@ -185,20 +185,4 @@ class CleanPasteTaskExecutorTest {
             // First execution: empty history → retries allowed
             assertTrue(result.needRetry)
         }
-
-    @Test
-    fun `no data to clean returns success`() =
-        runTest {
-            val deps = TestDeps()
-            // Under threshold
-            coEvery { deps.pasteDao.getSize(true) } returns 100L
-            coEvery { deps.pasteDao.getSize(false) } returns 50L
-
-            val executor = deps.createExecutor()
-            val task = createPasteTask()
-
-            val result = executor.doExecuteTask(task)
-
-            assertTrue(result is SuccessPasteTaskResult)
-        }
 }

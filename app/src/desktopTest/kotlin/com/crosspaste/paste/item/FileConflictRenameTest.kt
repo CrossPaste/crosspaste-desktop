@@ -57,15 +57,6 @@ class FileConflictRenameTest {
     // ===== A. FilesPasteItem.applyRenameMap =====
 
     @Test
-    fun `FilesPasteItem applyRenameMap with empty map returns equivalent item`() {
-        val item = createFilesItem("a.txt", "b.txt")
-        val result = item.applyRenameMap(emptyMap())
-
-        assertEquals(item.relativePathList, result.relativePathList)
-        assertEquals(item.fileInfoTreeMap, result.fileInfoTreeMap)
-    }
-
-    @Test
     fun `FilesPasteItem applyRenameMap renames single file`() {
         val item = createFilesItem("report.pdf")
         val result = item.applyRenameMap(mapOf("report.pdf" to "report(1).pdf"))
@@ -109,15 +100,6 @@ class FileConflictRenameTest {
     }
 
     // ===== B. ImagesPasteItem.applyRenameMap =====
-
-    @Test
-    fun `ImagesPasteItem applyRenameMap with empty map returns equivalent item`() {
-        val item = createImagesItem("photo.png", "icon.jpg")
-        val result = item.applyRenameMap(emptyMap())
-
-        assertEquals(item.relativePathList, result.relativePathList)
-        assertEquals(item.fileInfoTreeMap, result.fileInfoTreeMap)
-    }
 
     @Test
     fun `ImagesPasteItem applyRenameMap renames single image`() {

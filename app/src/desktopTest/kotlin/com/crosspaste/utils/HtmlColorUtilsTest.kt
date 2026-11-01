@@ -167,17 +167,18 @@ class HtmlColorUtilsTest {
     }
 
     @Test
-    fun `test malformed HTML handling`() {
+    fun `truncated background-color declaration yields no colour`() {
+        // A fragment cut mid-value (common when copying from a broken page) must not be
+        // half-parsed into a wrong colour; the renderer should fall back to no preview.
         val html =
             """
             <div style="background-color: rgb(255, 255, 255"
             """.trimIndent()
 
-        val backgroundColor = HtmlColorUtils.getBackgroundColor(html)
-
-        // Depending on implementation, this might return null or handle gracefully
-        // Adjust assertion based on expected behavior
-        println("Malformed HTML result: ${backgroundColor?.toRGBString()}")
+        assertNull(
+            "A truncated background-color declaration must not produce a colour",
+            HtmlColorUtils.getBackgroundColor(html),
+        )
     }
 
     @Test

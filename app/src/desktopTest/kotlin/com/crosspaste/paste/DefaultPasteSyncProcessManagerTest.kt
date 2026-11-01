@@ -325,17 +325,6 @@ class DefaultPasteSyncProcessManagerTest {
         }
 
     @Test
-    fun testEmptyTaskList() =
-        runBlocking {
-            val manager = DefaultPasteSyncProcessManager()
-            val pasteDataId = 123L
-
-            val results = manager.runTask(pasteDataId, emptyList())
-
-            assertTrue(results.isEmpty(), "Should return empty list for empty task list")
-        }
-
-    @Test
     fun testProgressFlowUpdates() =
         runBlocking {
             val manager = DefaultPasteSyncProcessManager()

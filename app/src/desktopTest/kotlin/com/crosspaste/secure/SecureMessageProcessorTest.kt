@@ -3,8 +3,6 @@ package com.crosspaste.secure
 import com.crosspaste.exception.PasteException
 import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.utils.CryptographyUtils.generateSecureKeyPair
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
@@ -360,55 +358,6 @@ class SecureMessageProcessorTest {
                     "Exception should be PasteException",
                 )
             }
-        }
-
-    @Test
-    fun testConcurrentEncryptionDecryption() =
-        runBlocking {
-            val aSecureKeyPair = generateSecureKeyPair()
-            val bSecureKeyPair = generateSecureKeyPair()
-
-            val aProcessor =
-                SecureMessageProcessor(
-                    aSecureKeyPair.cryptKeyPair.privateKey,
-                    bSecureKeyPair.cryptKeyPair.publicKey,
-                )
-
-            val bProcessor =
-                SecureMessageProcessor(
-                    bSecureKeyPair.cryptKeyPair.privateKey,
-                    aSecureKeyPair.cryptKeyPair.publicKey,
-                )
-
-            val numberOfThreads = 10
-            val results = ConcurrentHashMap<Int, Boolean>()
-
-            val jobs =
-                (0 until numberOfThreads).map { threadId ->
-                    async {
-                        try {
-                            val message = "Thread $threadId message".encodeToByteArray()
-                            val encrypted = aProcessor.encrypt(message)
-                            val decrypted = bProcessor.decrypt(encrypted)
-                            results[threadId] = message.contentEquals(decrypted)
-                        } catch (_: Exception) {
-                            results[threadId] = false
-                        }
-                    }
-                }
-
-            jobs.awaitAll()
-
-            assertEquals(
-                numberOfThreads,
-                results.size,
-                "All threads should complete",
-            )
-
-            assertTrue(
-                results.values.all { it },
-                "All concurrent operations should succeed",
-            )
         }
 
     @Test

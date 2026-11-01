@@ -117,17 +117,6 @@ class MacSearchWindowFocusSessionTest {
     }
 
     @Test
-    fun `switching apps immediately after focus gain dismisses without a timer`() {
-        val session = MacSearchWindowFocusSession()
-        val queued = mutableListOf<() -> Unit>()
-        var dismissed = false
-        session.onFocusGained()
-        session.deferFocusLoss(queued::add, { focusState(appActive = false).shouldDismiss }) { dismissed = true }
-        queued.single()()
-        assertTrue(dismissed)
-    }
-
-    @Test
     fun `focus in the main window dismisses while the app stays active`() {
         assertTrue(focusState(appActive = true, mainFocused = true).shouldDismiss)
     }

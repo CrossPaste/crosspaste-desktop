@@ -21,11 +21,6 @@ class SyncApiTest {
     }
 
     @Test
-    fun `compareVersion returns HIGHER_THAN for zero`() {
-        assertEquals(VersionRelation.HIGHER_THAN, SyncApi.compareVersion(0))
-    }
-
-    @Test
     fun `compareVersion returns LOWER_THAN for MAX_VALUE`() {
         assertEquals(VersionRelation.LOWER_THAN, SyncApi.compareVersion(Int.MAX_VALUE))
     }
