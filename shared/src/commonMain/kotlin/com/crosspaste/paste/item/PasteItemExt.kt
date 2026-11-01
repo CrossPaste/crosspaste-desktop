@@ -98,7 +98,7 @@ fun PasteItem.bindItem(
                 basePath = newBasePath,
                 relativePathList = newRelativePathList,
                 fileInfoTreeMap = fileInfoTreeMap,
-                extraInfo = extraInfo,
+                extraInfo = bindBaseDir(extraInfo, destinationPath),
             )
         }
         is ImagesPasteItem -> {
@@ -111,7 +111,7 @@ fun PasteItem.bindItem(
                 basePath = newBasePath,
                 relativePathList = newRelativePathList,
                 fileInfoTreeMap = fileInfoTreeMap,
-                extraInfo = extraInfo,
+                extraInfo = bindBaseDir(extraInfo, destinationPath),
             )
         }
         else -> this.bind(pasteCoordinate, destinationPath)

@@ -7,6 +7,10 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getPlatformUtils
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
 import okio.Path
 import okio.Path.Companion.toPath
 
@@ -19,10 +23,47 @@ fun PasteFiles.getAppFileType(): AppFileType =
 
 /**
  * The row's [PasteFiles.basePath] as a path on this device, or null when its files
- * live in managed storage. Read basePath through this rather than directly: the
- * stored absolute path can point to a location the platform has since moved.
+ * live in managed storage. Read basePath through this rather than directly: a row
+ * marked with [PasteItemProperties.BASE_DIR] resolves to the current system
+ * Downloads dir, since the absolute path stored for it can go stale.
  */
-fun PasteFiles.resolveBasePath(): Path? = basePath?.toPath()?.let(getPlatformUtils()::relocateStoredPath)
+fun PasteFiles.resolveBasePath(): Path? {
+    val storedPath = basePath ?: return null
+    return if (isInSystemDownloadDir()) {
+        getPlatformUtils().getSystemDownloadDir()
+    } else {
+        storedPath.toPath()
+    }
+}
+
+private fun PasteFiles.isInSystemDownloadDir(): Boolean =
+    (this as? PasteItem)
+        ?.extraInfo
+        ?.get(PasteItemProperties.BASE_DIR)
+        ?.jsonPrimitive
+        ?.contentOrNull == PasteItemProperties.BASE_DIR_DOWNLOAD
+
+/**
+ * [extraInfo] for an item bound to [destinationPath]. The [PasteItemProperties.BASE_DIR]
+ * mark is set or cleared here rather than carried over, because a received item
+ * arrives with the sender's extraInfo.
+ */
+fun bindBaseDir(
+    extraInfo: JsonObject?,
+    destinationPath: String?,
+): JsonObject? {
+    val inSystemDownloadDir =
+        destinationPath != null && destinationPath == getPlatformUtils().getSystemDownloadDir().toString()
+    val others = extraInfo?.filterKeys { it != PasteItemProperties.BASE_DIR }.orEmpty()
+    return when {
+        inSystemDownloadDir ->
+            JsonObject(
+                others + (PasteItemProperties.BASE_DIR to JsonPrimitive(PasteItemProperties.BASE_DIR_DOWNLOAD)),
+            )
+        extraInfo?.containsKey(PasteItemProperties.BASE_DIR) == true -> JsonObject(others).takeIf { it.isNotEmpty() }
+        else -> extraInfo
+    }
+}
 
 fun PasteFiles.getFilePaths(userDataPathProvider: UserDataPathProvider): List<Path> {
     val basePath = resolveBasePath() ?: userDataPathProvider.resolve(appFileType = getAppFileType())
@@ -46,12 +87,8 @@ fun PasteFiles.hasExistingFiles(): Boolean {
  * showing the folder they were actually written to.
  */
 fun PasteFiles.externalFolderName(userDataPathProvider: UserDataPathProvider): String? {
-    val base =
-        basePath
-            ?.takeIf { it.isNotBlank() }
-            ?.toPath(normalize = true)
-            ?.let(getPlatformUtils()::relocateStoredPath)
-            ?: return null
+    if (basePath.isNullOrBlank()) return null
+    val base = resolveBasePath()?.normalized() ?: return null
     if (isInside(base, userDataPathProvider.getUserDataPath())) {
         return null
     }
