@@ -113,6 +113,11 @@ class WinAppWindowManager(
             WinAppInfo(ownerHwnd).getAppName(winAppInfoCaches)
         } ?: getForegroundAppName()
 
+    override val fullscreenOverPastePanelButton: Flow<Boolean> =
+        pollFullscreenOverPastePanelButton { window ->
+            WindowsFocusUtils.isFullscreenOver(HWND(Native.getWindowPointer(window)))
+        }
+
     private fun getForegroundAppName(): String? =
         WinAppInfo(INSTANCE.GetForegroundWindow()).getAppName(winAppInfoCaches)
 

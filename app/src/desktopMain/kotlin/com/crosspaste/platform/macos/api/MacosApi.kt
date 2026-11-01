@@ -56,6 +56,13 @@ interface MacosApi : Library {
 
     fun isPointerOnStatusItem(): Int
 
+    fun isFullScreenAppOnDisplay(
+        x: Double,
+        y: Double,
+        width: Double,
+        height: Double,
+    ): Int
+
     fun getRunningApplications(): Pointer?
 
     fun getAppInfoAtPath(path: String): Pointer?

@@ -1,5 +1,6 @@
 package com.crosspaste.platform.windows
 
+import com.crosspaste.platform.windows.api.Dwmapi
 import com.crosspaste.platform.windows.api.Imm32
 import com.crosspaste.platform.windows.api.Shell32
 import com.crosspaste.platform.windows.api.User32
@@ -30,7 +31,12 @@ object WindowsFocusUtils {
 
     private val pasteKeystroke = WindowsPasteKeystroke(user32)
 
+    private val fullscreenProbe =
+        WindowsFullscreenProbe(user32, Dwmapi.INSTANCE, Kernel32.INSTANCE.GetCurrentProcessId())
+
     fun isSearchWindowComposing(search: HWND?): Boolean = inputMethod.isComposing(search)
+
+    fun isFullscreenOver(hwnd: HWND): Boolean = fullscreenProbe.isFullscreenOver(hwnd)
 
     fun isTrayForeground(): Boolean = user32.GetForegroundWindow()?.let(trayHitTest::ownsForeground) == true
 

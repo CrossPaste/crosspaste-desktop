@@ -5,6 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,6 +54,8 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
     }
 
     val buttonInfo by appWindowManager.pastePanelButtonInfo.collectAsState()
+    val buttonSuppressed by appWindowManager.pastePanelButtonSuppressed.collectAsState()
+    val buttonVisible = buttonInfo.show && !buttonSuppressed
     val panelInfo by appWindowManager.pastePanelWindowInfo.collectAsState()
 
     val isMac = remember { platform.isMacos() }
@@ -61,8 +64,8 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
 
     // Keep the menu outside the button window: hidden window content stops recomposing.
     var linuxMenuAnchor by remember { mutableStateOf<Rectangle?>(null) }
-    LaunchedEffect(buttonInfo.show) {
-        if (!buttonInfo.show) {
+    LaunchedEffect(buttonVisible) {
+        if (!buttonVisible) {
             linuxMenuAnchor = null
         }
     }
@@ -84,18 +87,27 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
         )
 
     NonActivatingWindow(
-        visible = buttonInfo.show,
+        visible = buttonVisible,
         state = buttonInfo.state,
         title = appWindowManager.pastePanelButtonWindowTitle,
         transparent = true,
         onClosing = { appWindowManager.hidePastePanelButton() },
     ) {
-        if (isMac) {
-            // Pop-up-menu level only, so the button floats above full-screen apps
-            MacAcrylicEffect(window = this.window)
-        }
-
         val window = this.window
+        if (isMac) {
+            // Pop-up-menu level, so the button floats above full-screen apps when the
+            // user brings it back there. Re-applied on every show, as AppKit ignores it
+            // before the window is on screen.
+            key(buttonVisible) {
+                MacAcrylicEffect(window = window)
+            }
+        }
+        DisposableEffect(window) {
+            appWindowManager.pastePanelButtonComposeWindow = window
+            onDispose {
+                appWindowManager.pastePanelButtonComposeWindow = null
+            }
+        }
         val popupMenu =
             if (isMac) {
                 remember(window) { PopupMenu().also { window.add(it) } }
@@ -152,7 +164,7 @@ fun PastePanelButtonWindow(windowIcon: Painter?) {
             )
         }
     }
-    linuxMenuAnchor?.takeIf { buttonInfo.show }?.let { anchor ->
+    linuxMenuAnchor?.takeIf { buttonVisible }?.let { anchor ->
         PastePanelMenuWindow(
             anchor = anchor,
             entries = menuEntries(),

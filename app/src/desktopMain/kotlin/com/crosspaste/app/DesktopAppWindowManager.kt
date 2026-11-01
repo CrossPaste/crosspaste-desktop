@@ -26,6 +26,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okio.Path
@@ -115,6 +117,8 @@ abstract class DesktopAppWindowManager(
         private val FOREGROUND_TIMEOUT = 1.seconds
 
         private val FOREGROUND_POLL_INTERVAL = 10.milliseconds
+
+        private val FULLSCREEN_POLL_INTERVAL = 500.milliseconds
     }
 
     protected val logger: KLogger = KotlinLogging.logger {}
@@ -245,6 +249,39 @@ abstract class DesktopAppWindowManager(
             current.copy(show = true, state = state, trigger = WindowTrigger.SHORTCUT)
         }
     }
+
+    // Read by the full-screen polling off the UI thread
+    @Volatile
+    var pastePanelButtonComposeWindow: ComposeWindow? = null
+
+    // Set while a full-screen app (e.g. a full-screen video) is on the button's display,
+    // which the always-on-top button would otherwise cover. It hides the button alone:
+    // the setting, the remembered position and an open panel are left as they are.
+    private val _pastePanelButtonSuppressed = MutableStateFlow(false)
+    val pastePanelButtonSuppressed: StateFlow<Boolean> = _pastePanelButtonSuppressed
+
+    fun suppressPastePanelButton(suppressed: Boolean) {
+        _pastePanelButtonSuppressed.value = suppressed
+    }
+
+    /**
+     * Brings back a button hidden for a full-screen app until the full-screen state next
+     * changes. Returns false when the button was not hidden that way.
+     */
+    open suspend fun revealPastePanelButton(): Boolean =
+        _pastePanelButtonSuppressed.compareAndSet(expect = true, update = false)
+
+    /**
+     * Whether a full-screen app is on the button's display. Platforms that cannot tell keep
+     * this default, and the button stays shown.
+     */
+    open val fullscreenOverPastePanelButton: Flow<Boolean> = flowOf(false)
+
+    protected fun pollFullscreenOverPastePanelButton(isFullscreenOver: (ComposeWindow) -> Boolean): Flow<Boolean> =
+        pollFullscreen(FULLSCREEN_POLL_INTERVAL, logger) {
+            // Without a native peer the button has never been shown and covers nothing
+            pastePanelButtonComposeWindow?.takeIf { it.isDisplayable }?.let(isFullscreenOver) == true
+        }.flowOn(ioDispatcher)
 
     fun hidePastePanelButton() {
         hidePastePanelWindow()

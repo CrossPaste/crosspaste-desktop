@@ -17,7 +17,10 @@ import com.crosspaste.app.generated.resources.crosspaste_mac
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.ui.tray.TrayView
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.koinInject
@@ -34,6 +37,7 @@ internal fun handleFirstLaunch(
     }
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @Composable
 fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
     val platform = koinInject<Platform>()
@@ -73,6 +77,17 @@ fun ApplicationScope.CrossPasteWindows(exiting: Boolean) {
                 } else {
                     appWindowManager.hidePastePanelButton()
                 }
+            }
+    }
+
+    LaunchedEffect(Unit) {
+        configManager.config
+            .map { it.showPastePanelButton }
+            .distinctUntilChanged()
+            .flatMapLatest { enabled ->
+                if (enabled) appWindowManager.fullscreenOverPastePanelButton else flowOf(false)
+            }.collect { fullscreen ->
+                appWindowManager.suppressPastePanelButton(fullscreen)
             }
     }
 

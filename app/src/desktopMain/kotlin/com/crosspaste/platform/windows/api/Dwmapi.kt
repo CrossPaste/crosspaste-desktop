@@ -3,6 +3,7 @@ package com.crosspaste.platform.windows.api
 import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.WinDef
+import com.sun.jna.ptr.IntByReference
 import com.sun.jna.win32.StdCallLibrary
 import kotlin.jvm.java
 
@@ -14,9 +15,19 @@ interface Dwmapi : StdCallLibrary {
         cbAttribute: Int,
     ): Int
 
+    fun DwmGetWindowAttribute(
+        hwnd: WinDef.HWND,
+        dwAttribute: Int,
+        pvAttribute: IntByReference,
+        cbAttribute: Int,
+    ): Int
+
     companion object {
         val INSTANCE: Dwmapi = Native.load("dwmapi", Dwmapi::class.java)
 
+        // Nonzero for windows that are "visible" yet not drawn: on another virtual desktop,
+        // or a suspended Store app
+        const val DWMWA_CLOAKED = 14
         const val DWMWA_USE_IMMERSIVE_DARK_MODE = 20
         const val DWMWA_WINDOW_CORNER_PREFERENCE = 33
         const val DWMWA_SYSTEMBACKDROP_TYPE = 38

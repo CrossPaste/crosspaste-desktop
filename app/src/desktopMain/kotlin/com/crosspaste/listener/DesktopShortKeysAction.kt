@@ -116,6 +116,9 @@ class DesktopShortKeysAction(
             actionName = "SwitchPastePanelButton",
             actionLogMessage = "Switch paste panel button",
         ) {
+            // A button hidden for a full-screen app comes back instead of the setting
+            // being switched off unseen
+            if (appWindowManager.revealPastePanelButton()) return@mainRunAction
             // The button window follows this setting, see CrossPasteWindows
             configManager.updateConfig(
                 "showPastePanelButton",

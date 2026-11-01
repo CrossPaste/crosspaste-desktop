@@ -68,6 +68,13 @@ class MacAppWindowManager(
 
     private val macPasteUtils: MacPasteUtils by lazy { MacPasteUtils(lazyShortcutKeys.value) }
 
+    // A non-activating panel that joins all spaces shows on full-screen spaces whatever
+    // its collection behavior, so the button is hidden there like on the other platforms
+    override val fullscreenOverPastePanelButton: Flow<Boolean> =
+        pollFullscreenOverPastePanelButton { window ->
+            MacAppUtils.isFullScreenAppOnDisplay(window.bounds)
+        }
+
     override fun getPrevAppName(): Flow<String?> =
         prevMacAppInfo.map { appInfo ->
             appInfo?.localizedName

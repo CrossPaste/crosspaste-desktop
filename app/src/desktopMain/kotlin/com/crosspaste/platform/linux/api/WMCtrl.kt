@@ -14,7 +14,9 @@ import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.NativeLongByReference
 import com.sun.jna.ptr.PointerByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.awt.Rectangle
 import java.awt.image.BufferedImage
+import java.util.concurrent.ConcurrentHashMap
 
 object WMCtrl {
 
@@ -266,6 +268,86 @@ object WMCtrl {
         xaPropType: Atom,
         propName: String?,
     ): Pointer? = getProperty(display, win, xaPropType, propName, null)
+
+    // Atoms are server-wide and never change, so each one is looked up once
+    private val atoms = ConcurrentHashMap<String, Long>()
+
+    fun atom(
+        display: X11.Display,
+        name: String,
+    ): Long = atoms.getOrPut(name) { INSTANCE.XInternAtom(display, name, false).toLong() }
+
+    /**
+     * A format-32 property (atoms, windows, cardinals) of [window], or null when it is
+     * absent or of another type. Read directly rather than through [getProperty]: absent
+     * properties such as `_NET_WM_STATE` on a window without any state are no error and
+     * are polled for, so they must not be logged.
+     */
+    fun getFormat32Property(
+        display: X11.Display,
+        window: X11.Window,
+        name: String,
+        type: Atom,
+    ): LongArray? {
+        val retType = AtomByReference()
+        val retFormat = IntByReference()
+        val retNitems = NativeLongByReference()
+        val retBytesAfter = NativeLongByReference()
+        val retProp = PointerByReference()
+        if (INSTANCE.XGetWindowProperty(
+                display,
+                window,
+                Atom(atom(display, name)),
+                NativeLong(0),
+                NativeLong(MAX_PROPERTY_VALUE_LEN / 4),
+                false,
+                type,
+                retType,
+                retFormat,
+                retNitems,
+                retBytesAfter,
+                retProp,
+            ) != X11.Success
+        ) {
+            return null
+        }
+        val prop = retProp.value ?: return null
+        return try {
+            if (retType.value?.toLong() == type.toLong() && retFormat.value == 32) {
+                format32Items(prop, retNitems.value.toInt())
+            } else {
+                null
+            }
+        } finally {
+            free(prop)
+        }
+    }
+
+    /** Format-32 property items come back from Xlib as C longs. */
+    internal fun format32Items(
+        items: Pointer,
+        count: Int,
+    ): LongArray = LongArray(count) { i -> items.getNativeLong(i.toLong() * NativeLong.SIZE).toLong() }
+
+    /** [window]'s bounds in root window coordinates, or null when it cannot be read. */
+    fun rootBounds(
+        display: X11.Display,
+        window: X11.Window,
+    ): Rectangle? {
+        val root = X11.WindowByReference()
+        val unused = IntByReference()
+        val width = IntByReference()
+        val height = IntByReference()
+        if (INSTANCE.XGetGeometry(display, window, root, unused, unused, width, height, unused, unused) == 0) {
+            return null
+        }
+        val x = IntByReference()
+        val y = IntByReference()
+        if (!INSTANCE.XTranslateCoordinates(display, window, root.value, 0, 0, x, y, X11.WindowByReference())) {
+            return null
+        }
+        return Rectangle(x.value, y.value, width.value, height.value)
+    }
 
     fun getActiveWindow(display: X11.Display): X11.Window? =
         getPropertyAsWindow(
