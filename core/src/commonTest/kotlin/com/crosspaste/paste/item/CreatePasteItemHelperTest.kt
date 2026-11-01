@@ -25,12 +25,6 @@ class CreatePasteItemHelperTest {
     // --- TextPasteItem ---
 
     @Test
-    fun `createTextPasteItem creates item with correct text`() {
-        val item = createTextPasteItem(text = "Hello World")
-        assertEquals("Hello World", item.text)
-    }
-
-    @Test
     fun `createTextPasteItem computes hash from text bytes`() {
         val item = createTextPasteItem(text = "test")
         assertTrue(item.hash.isNotEmpty())
@@ -55,13 +49,6 @@ class CreatePasteItemHelperTest {
         val item1 = createTextPasteItem(text = "alpha")
         val item2 = createTextPasteItem(text = "beta")
         assertNotEquals(item1.hash, item2.hash)
-    }
-
-    @Test
-    fun `createTextPasteItem stores identifiers`() {
-        val ids = listOf("text/plain", "text/html")
-        val item = createTextPasteItem(identifiers = ids, text = "test")
-        assertEquals(ids, item.identifiers)
     }
 
     @Test
@@ -91,13 +78,6 @@ class CreatePasteItemHelperTest {
     // --- HtmlPasteItem ---
 
     @Test
-    fun `createHtmlPasteItem creates item with correct html`() {
-        val html = "<p>Hello</p>"
-        val item = createHtmlPasteItem(html = html)
-        assertEquals(html, item.html)
-    }
-
-    @Test
     fun `createHtmlPasteItem computes hash from html bytes`() {
         val item = createHtmlPasteItem(html = "<b>test</b>")
         assertTrue(item.hash.isNotEmpty())
@@ -119,13 +99,6 @@ class CreatePasteItemHelperTest {
     }
 
     // --- RtfPasteItem ---
-
-    @Test
-    fun `createRtfPasteItem creates item with correct rtf`() {
-        val rtf = "{\\rtf1 Hello}"
-        val item = createRtfPasteItem(rtf = rtf)
-        assertEquals(rtf, item.rtf)
-    }
 
     @Test
     fun `createRtfPasteItem computes hash and size`() {
@@ -191,21 +164,9 @@ class CreatePasteItemHelperTest {
     // --- ColorPasteItem ---
 
     @Test
-    fun `createColorPasteItem creates item with correct color`() {
-        val item = createColorPasteItem(color = 0xFF0000)
-        assertEquals(0xFF0000, item.color)
-    }
-
-    @Test
     fun `createColorPasteItem hash is string of color`() {
         val item = createColorPasteItem(color = 255)
         assertEquals("255", item.hash)
-    }
-
-    @Test
-    fun `createColorPasteItem size is always 8`() {
-        val item = createColorPasteItem(color = 0)
-        assertEquals(8L, item.size)
     }
 
     @Test

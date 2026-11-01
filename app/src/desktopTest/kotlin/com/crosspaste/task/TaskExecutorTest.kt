@@ -8,12 +8,14 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -208,5 +210,16 @@ class TaskExecutorTest {
 
             coVerify(exactly = 0) { taskDao.executingTask(any()) }
             coVerify(exactly = 0) { taskDao.failureTask(any(), any(), any()) }
+        }
+
+    @Test
+    fun `shutdown cancels the execution scope`() =
+        runTest {
+            val scope = CoroutineScope(UnconfinedTestDispatcher(testScheduler) + SupervisorJob())
+            val executor = TaskExecutor(emptyList(), mockk(relaxed = true), scope = scope)
+
+            executor.shutdown()
+
+            assertTrue(scope.coroutineContext[Job]!!.isCancelled)
         }
 }

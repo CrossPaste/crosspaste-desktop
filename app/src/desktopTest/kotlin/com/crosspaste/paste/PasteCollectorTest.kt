@@ -106,14 +106,8 @@ class PasteCollectorTest {
     }
 
     // ========== collectError ==========
-
-    @Test
-    fun `collectError records error`() {
-        val collector = PasteCollector(1, appInfo, pasteDao, pasteReleaseService, sourceContext)
-        collector.collectError(1L, 0, RuntimeException("test error"))
-        // Error recorded, but we can't directly assert existError
-        // We verify indirectly through completeCollect behavior
-    }
+    // collectError's effect is asserted by
+    // `completeCollect with all indices errored marks paste for deletion` below.
 
     // ========== createPrePasteData ==========
 

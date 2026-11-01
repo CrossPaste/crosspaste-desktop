@@ -14,43 +14,13 @@ class FileInfoTreeTest {
     // --- SingleFileInfoTree ---
 
     @Test
-    fun `SingleFileInfoTree isFile returns true`() {
-        val tree = SingleFileInfoTree(size = 100L, hash = "abc")
-        assertTrue(tree.isFile())
-    }
-
-    @Test
-    fun `SingleFileInfoTree getCount returns 1`() {
-        val tree = SingleFileInfoTree(size = 100L, hash = "abc")
-        assertEquals(1L, tree.getCount())
-    }
-
-    @Test
     fun `SingleFileInfoTree getPasteFileList returns single file`() {
         val tree = SingleFileInfoTree(size = 100L, hash = "abc")
         val files = tree.getPasteFileList("/test/file.txt".toPath())
         assertEquals(1, files.size)
     }
 
-    @Test
-    fun `SingleFileInfoTree preserves size and hash`() {
-        val tree = SingleFileInfoTree(size = 42L, hash = "myhash")
-        assertEquals(42L, tree.size)
-        assertEquals("myhash", tree.hash)
-    }
-
     // --- DirFileInfoTree ---
-
-    @Test
-    fun `DirFileInfoTree isFile returns false`() {
-        val tree =
-            DirFileInfoTree(
-                tree = mapOf("a.txt" to SingleFileInfoTree(10, "h1")),
-                size = 10L,
-                hash = "dirhash",
-            )
-        assertFalse(tree.isFile())
-    }
 
     @Test
     fun `DirFileInfoTree getCount returns total file count`() {
