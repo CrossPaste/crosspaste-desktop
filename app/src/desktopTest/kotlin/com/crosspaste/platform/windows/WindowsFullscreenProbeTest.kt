@@ -1,123 +1,157 @@
 package com.crosspaste.platform.windows
 
+import com.crosspaste.platform.windows.api.Dwmapi
 import com.crosspaste.platform.windows.api.User32
+import com.crosspaste.platform.windows.api.WndEnumProc
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.WinDef.BOOL
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.RECT
-import com.sun.jna.platform.win32.WinUser.GA_ROOTOWNER
+import com.sun.jna.platform.win32.WinUser
 import com.sun.jna.platform.win32.WinUser.HMONITOR
 import com.sun.jna.platform.win32.WinUser.MONITORINFO
+import com.sun.jna.ptr.IntByReference
 import io.mockk.every
 import io.mockk.mockk
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class WindowsFullscreenProbeTest {
     private val user32 = mockk<User32>()
-    private val foreground = HWND(Pointer(101))
-    private val button = HWND(Pointer(102))
+    private val dwmapi = mockk<Dwmapi>()
+    private val button = HWND(Pointer(100))
     private val primary = HMONITOR(Pointer(201))
     private val secondary = HMONITOR(Pointer(202))
-    private val probe = WindowsFullscreenProbe(user32)
+    private val probe = WindowsFullscreenProbe(user32, dwmapi, OWN_PID)
+
+    private val primaryBounds = rect(0, 0, 1920, 1080)
 
     // Secondary monitor sits left of the primary one, at negative coordinates
-    private val monitorRects =
-        mapOf(
-            primary to rect(0, 0, 1920, 1080),
-            secondary to rect(-2560, 0, 0, 1440),
-        )
+    private val secondaryBounds = rect(-2560, 0, 0, 1440)
 
-    private fun setup(
-        window: RECT,
-        className: String = "Chrome_WidgetWin_1",
-        windowMonitor: HMONITOR = primary,
-        buttonMonitor: HMONITOR = primary,
-    ) {
-        every { user32.GetForegroundWindow() } returns foreground
-        every { user32.GetAncestor(foreground, GA_ROOTOWNER) } returns foreground
-        every { user32.GetClassNameW(foreground, any(), any()) } answers {
-            className.toCharArray().copyInto(secondArg())
-            className.length
+    private class FakeWindow(
+        val bounds: RECT,
+        val className: String = "Chrome_WidgetWin_1",
+        val pid: Int = 7,
+        val exStyle: Int = 0,
+        val owner: HWND? = null,
+        val visible: Boolean = true,
+        val iconic: Boolean = false,
+        val cloaked: Boolean = false,
+    )
+
+    // Front to back, as EnumWindows reports them
+    private var stack: List<FakeWindow> = emptyList()
+
+    private fun hwndOf(index: Int) = HWND(Pointer(1000L + index))
+
+    private fun window(hwnd: HWND) = stack[(Pointer.nativeValue(hwnd.pointer) - 1000).toInt()]
+
+    @BeforeTest
+    fun setup() {
+        every { user32.MonitorFromWindow(button, any()) } returns primary
+        every { user32.GetMonitorInfo(any<HMONITOR>(), any<MONITORINFO>()) } answers {
+            val bounds = if (firstArg<HMONITOR>() == primary) primaryBounds else secondaryBounds
+            secondArg<MONITORINFO>().rcMonitor.copyFrom(bounds)
+            BOOL(true)
         }
-        every { user32.GetWindowRect(foreground, any()) } answers {
-            secondArg<RECT>().copyFrom(window)
+        every { user32.EnumWindows(any<WndEnumProc>(), null) } answers {
+            val callback = firstArg<WndEnumProc>()
+            stack.indices.all { callback.callback(hwndOf(it), null) }
+        }
+        every { user32.IsWindowVisible(any()) } answers { window(firstArg()).visible }
+        every { user32.IsIconic(any()) } answers { window(firstArg()).iconic }
+        every { user32.GetWindowThreadProcessId(any(), any()) } answers {
+            secondArg<IntByReference>().value = window(firstArg()).pid
+            1
+        }
+        every { user32.GetWindowLong(any(), WinUser.GWL_EXSTYLE) } answers { window(firstArg()).exStyle }
+        every { user32.GetWindow(any(), any()) } answers { window(firstArg()).owner }
+        every { user32.GetClassNameW(any(), any(), any()) } answers {
+            val name = window(firstArg()).className
+            name.toCharArray().copyInto(secondArg())
+            name.length
+        }
+        every { user32.GetWindowRect(any(), any()) } answers {
+            secondArg<RECT>().copyFrom(window(firstArg()).bounds)
             true
         }
-        every { user32.MonitorFromWindow(foreground, any()) } returns windowMonitor
-        every { user32.MonitorFromWindow(button, any()) } returns buttonMonitor
-        every { user32.GetMonitorInfo(any<HMONITOR>(), any<MONITORINFO>()) } answers {
-            secondArg<MONITORINFO>().rcMonitor.copyFrom(monitorRects.getValue(firstArg()))
-            BOOL(true)
+        every { dwmapi.DwmGetWindowAttribute(any(), Dwmapi.DWMWA_CLOAKED, any(), any()) } answers {
+            thirdArg<IntByReference>().value = if (window(firstArg()).cloaked) 1 else 0
+            0
         }
     }
 
     @Test
-    fun `window filling the button's monitor is full screen`() {
-        setup(rect(0, 0, 1920, 1080))
+    fun `full-screen window on the button's monitor hides it whichever app has the focus`() {
+        stack = listOf(FakeWindow(primaryBounds))
         assertTrue(probe.isFullscreenOver(button))
     }
 
     @Test
     fun `full screen on a secondary monitor at negative coordinates`() {
-        setup(rect(-2560, 0, 0, 1440), windowMonitor = secondary, buttonMonitor = secondary)
+        every { user32.MonitorFromWindow(button, any()) } returns secondary
+        stack = listOf(FakeWindow(rect(100, 100, 900, 700)), FakeWindow(secondaryBounds))
         assertTrue(probe.isFullscreenOver(button))
     }
 
     @Test
     fun `full screen on another monitor leaves the button alone`() {
-        setup(rect(-2560, 0, 0, 1440), windowMonitor = secondary, buttonMonitor = primary)
+        stack = listOf(FakeWindow(secondaryBounds), FakeWindow(rect(100, 100, 900, 700)))
         assertFalse(probe.isFullscreenOver(button))
     }
 
     @Test
-    fun `popup owned by a full-screen window counts as full screen`() {
-        val popup = HWND(Pointer(103))
-        setup(rect(0, 0, 1920, 1080))
-        mockWindow(popup, rect(1500, 900, 1900, 1060))
-        every { user32.GetForegroundWindow() } returns popup
-        every { user32.GetAncestor(popup, GA_ROOTOWNER) } returns foreground
+    fun `ordinary window in front of the full-screen one shows the button`() {
+        stack = listOf(FakeWindow(rect(100, 100, 900, 700)), FakeWindow(primaryBounds))
+        assertFalse(probe.isFullscreenOver(button))
+    }
+
+    @Test
+    fun `overlays, owned popups and our own windows in front are looked past`() {
+        stack =
+            listOf(
+                FakeWindow(rect(1880, 500, 1928, 548), pid = OWN_PID),
+                FakeWindow(rect(0, 1032, 1920, 1080), className = "Shell_TrayWnd", exStyle = WS_EX_TOPMOST),
+                FakeWindow(rect(1500, 900, 1900, 1060), owner = HWND(Pointer(1))),
+                FakeWindow(rect(800, 400, 1100, 500), exStyle = WS_EX_TOOLWINDOW),
+                FakeWindow(rect(100, 100, 900, 700), cloaked = true),
+                FakeWindow(rect(100, 100, 900, 700), iconic = true),
+                FakeWindow(primaryBounds),
+            )
         assertTrue(probe.isFullscreenOver(button))
     }
 
     @Test
-    fun `full-screen window owned by an ordinary window counts as full screen`() {
-        val owner = HWND(Pointer(104))
-        setup(rect(0, 0, 1920, 1080))
-        mockWindow(owner, rect(100, 100, 900, 700))
-        every { user32.GetAncestor(foreground, GA_ROOTOWNER) } returns owner
+    fun `chromium full-screen window a pixel short of the monitor is full screen`() {
+        stack = listOf(FakeWindow(rect(0, 0, 1920, 1079)))
         assertTrue(probe.isFullscreenOver(button))
+    }
+
+    @Test
+    fun `maximized window with an auto-hidden taskbar overhangs the monitor and is not full screen`() {
+        stack = listOf(FakeWindow(rect(-8, -8, 1928, 1088)))
+        assertFalse(probe.isFullscreenOver(button))
     }
 
     @Test
     fun `maximized window overhanging the work area by its frame is not full screen`() {
-        setup(rect(-8, -8, 1928, 1048))
+        stack = listOf(FakeWindow(rect(-8, -8, 1928, 1048)))
         assertFalse(probe.isFullscreenOver(button))
     }
 
     @Test
     fun `desktop wallpaper window is not full screen`() {
-        setup(rect(0, 0, 1920, 1080), className = "WorkerW")
+        stack = listOf(FakeWindow(primaryBounds, className = "WorkerW"))
         assertFalse(probe.isFullscreenOver(button))
     }
 
     @Test
-    fun `no foreground window is not full screen`() {
-        every { user32.GetForegroundWindow() } returns null
+    fun `no windows is not full screen`() {
+        stack = emptyList()
         assertFalse(probe.isFullscreenOver(button))
-    }
-
-    private fun mockWindow(
-        hwnd: HWND,
-        bounds: RECT,
-    ) {
-        every { user32.GetClassNameW(hwnd, any(), any()) } returns 0
-        every { user32.GetWindowRect(hwnd, any()) } answers {
-            secondArg<RECT>().copyFrom(bounds)
-            true
-        }
-        every { user32.MonitorFromWindow(hwnd, any()) } returns primary
     }
 
     private fun RECT.copyFrom(other: RECT) {
@@ -137,5 +171,11 @@ class WindowsFullscreenProbeTest {
         this.top = top
         this.right = right
         this.bottom = bottom
+    }
+
+    companion object {
+        private const val OWN_PID = 42
+        private const val WS_EX_TOOLWINDOW = 0x00000080
+        private const val WS_EX_TOPMOST = 0x00000008
     }
 }

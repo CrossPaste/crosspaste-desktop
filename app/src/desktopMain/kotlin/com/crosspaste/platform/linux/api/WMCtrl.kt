@@ -16,6 +16,7 @@ import com.sun.jna.ptr.PointerByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.Rectangle
 import java.awt.image.BufferedImage
+import java.util.concurrent.ConcurrentHashMap
 
 object WMCtrl {
 
@@ -268,19 +269,26 @@ object WMCtrl {
         propName: String?,
     ): Pointer? = getProperty(display, win, xaPropType, propName, null)
 
-    // Atoms are server-wide and never change, so look this one up once
-    @Volatile
-    private var fullscreenAtom: Long = 0
+    // Atoms are server-wide and never change, so each one is looked up once
+    private val atoms = ConcurrentHashMap<String, Long>()
+
+    fun atom(
+        display: X11.Display,
+        name: String,
+    ): Long = atoms.getOrPut(name) { INSTANCE.XInternAtom(display, name, false).toLong() }
 
     /**
-     * Whether [window] carries `_NET_WM_STATE_FULLSCREEN`. Read directly rather than
-     * through [getProperty]: the property is absent on windows without any state, which
-     * is no error and is polled for, so it must not be logged.
+     * A format-32 property (atoms, windows, cardinals) of [window], or null when it is
+     * absent or of another type. Read directly rather than through [getProperty]: absent
+     * properties such as `_NET_WM_STATE` on a window without any state are no error and
+     * are polled for, so they must not be logged.
      */
-    fun isFullscreen(
+    fun getFormat32Property(
         display: X11.Display,
         window: X11.Window,
-    ): Boolean {
+        name: String,
+        type: Atom,
+    ): LongArray? {
         val retType = AtomByReference()
         val retFormat = IntByReference()
         val retNitems = NativeLongByReference()
@@ -289,11 +297,11 @@ object WMCtrl {
         if (INSTANCE.XGetWindowProperty(
                 display,
                 window,
-                INSTANCE.XInternAtom(display, "_NET_WM_STATE", false),
+                Atom(atom(display, name)),
                 NativeLong(0),
                 NativeLong(MAX_PROPERTY_VALUE_LEN / 4),
                 false,
-                X11.XA_ATOM,
+                type,
                 retType,
                 retFormat,
                 retNitems,
@@ -301,31 +309,25 @@ object WMCtrl {
                 retProp,
             ) != X11.Success
         ) {
-            return false
+            return null
         }
-        val prop = retProp.value ?: return false
+        val prop = retProp.value ?: return null
         return try {
-            retType.value?.toLong() == X11.XA_ATOM.toLong() &&
-                retFormat.value == 32 &&
-                containsAtom(prop, retNitems.value.toInt(), fullscreenAtom(display))
+            if (retType.value?.toLong() == type.toLong() && retFormat.value == 32) {
+                format32Items(prop, retNitems.value.toInt())
+            } else {
+                null
+            }
         } finally {
             free(prop)
         }
     }
 
-    private fun fullscreenAtom(display: X11.Display): Long {
-        if (fullscreenAtom == 0L) {
-            fullscreenAtom = INSTANCE.XInternAtom(display, "_NET_WM_STATE_FULLSCREEN", false).toLong()
-        }
-        return fullscreenAtom
-    }
-
     /** Format-32 property items come back from Xlib as C longs. */
-    internal fun containsAtom(
+    internal fun format32Items(
         items: Pointer,
         count: Int,
-        atom: Long,
-    ): Boolean = (0 until count).any { i -> items.getNativeLong(i.toLong() * NativeLong.SIZE).toLong() == atom }
+    ): LongArray = LongArray(count) { i -> items.getNativeLong(i.toLong() * NativeLong.SIZE).toLong() }
 
     /** [window]'s bounds in root window coordinates, or null when it cannot be read. */
     fun rootBounds(

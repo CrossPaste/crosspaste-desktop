@@ -1,6 +1,8 @@
 package com.crosspaste.platform.linux.api
 
 import com.crosspaste.app.LinuxAppInfo
+import com.crosspaste.platform.StackedWindow
+import com.crosspaste.platform.isFullscreenOnTop
 import com.crosspaste.platform.linux.api.WMCtrl.getActiveWindow
 import com.crosspaste.utils.pollUntil
 import com.sun.jna.Native
@@ -13,6 +15,7 @@ import com.sun.jna.ptr.IntByReference
 import com.sun.jna.ptr.NativeLongByReference
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
+import java.awt.Rectangle
 import java.nio.file.Path
 import javax.imageio.ImageIO
 import kotlin.coroutines.cancellation.CancellationException
@@ -53,6 +56,12 @@ interface X11Api : X11 {
 
         val INSTANCE: X11Api = Native.load("X11", X11Api::class.java)
 
+        // _NET_WM_DESKTOP of a sticky window, shown on every desktop
+        private const val ALL_DESKTOPS = 0xFFFFFFFFL
+
+        // Panels and the desktop span the screen without being apps
+        private val IGNORED_WINDOW_TYPES = listOf("_NET_WM_WINDOW_TYPE_DESKTOP", "_NET_WM_WINDOW_TYPE_DOCK")
+
         private val ACTIVATION_TIMEOUT = 500.milliseconds
 
         private val ACTIVATION_POLL_INTERVAL = 10.milliseconds
@@ -90,24 +99,53 @@ interface X11Api : X11 {
         }
 
         /**
-         * Whether the active X11 window is full screen on the screen showing [windowId].
-         * Only X11 sessions can tell: under Wayland a native window may be focused unseen.
+         * Whether a full-screen window is on the screen showing [windowId], whichever
+         * window has the focus. Walks the managed windows from front to back, see
+         * [isFullscreenOnTop]. Only X11 sessions can tell: under Wayland native windows
+         * are invisible here.
          */
-        fun isActiveWindowFullscreenOver(windowId: Long): Boolean {
+        fun isFullscreenOver(windowId: Long): Boolean {
             if (windowId == 0L) return false
             val display = INSTANCE.XOpenDisplay(null) ?: return false
             return try {
-                // _NET_ACTIVE_WINDOW is None while the desktop has the focus; querying
-                // None raises BadWindow
-                val active = getActiveWindow(display)?.takeIf { it.toLong() != 0L } ?: return false
-                if (!WMCtrl.isFullscreen(display, active)) return false
-                val fullscreen = WMCtrl.rootBounds(display, active) ?: return false
-                val window = WMCtrl.rootBounds(display, Window(windowId)) ?: return false
-                // A full-screen window fills its monitor, so overlapping means the same one
-                fullscreen.intersects(window)
+                val target = WMCtrl.rootBounds(display, Window(windowId)) ?: return false
+                val root = INSTANCE.XDefaultRootWindow(display)
+                val stacking =
+                    WMCtrl.getFormat32Property(display, root, "_NET_CLIENT_LIST_STACKING", X11.XA_WINDOW)
+                        ?: return false
+                val currentDesktop =
+                    WMCtrl.getFormat32Property(display, root, "_NET_CURRENT_DESKTOP", X11.XA_CARDINAL)?.firstOrNull()
+                isFullscreenOnTop(
+                    // The stacking list runs bottom to top
+                    stacking.reversed().asSequence().mapNotNull { id ->
+                        stackedWindow(display, Window(id), target, currentDesktop)
+                    },
+                )
             } finally {
                 INSTANCE.XCloseDisplay(display)
             }
+        }
+
+        private fun stackedWindow(
+            display: Display,
+            window: Window,
+            target: Rectangle,
+            currentDesktop: Long?,
+        ): StackedWindow? {
+            val desktop = WMCtrl.getFormat32Property(display, window, "_NET_WM_DESKTOP", X11.XA_CARDINAL)?.firstOrNull()
+            if (desktop != null && desktop != ALL_DESKTOPS && currentDesktop != null && desktop != currentDesktop) {
+                return null
+            }
+            val states = WMCtrl.getFormat32Property(display, window, "_NET_WM_STATE", X11.XA_ATOM) ?: LongArray(0)
+            if (WMCtrl.atom(display, "_NET_WM_STATE_HIDDEN") in states) return null
+            val types = WMCtrl.getFormat32Property(display, window, "_NET_WM_WINDOW_TYPE", X11.XA_ATOM) ?: LongArray(0)
+            if (IGNORED_WINDOW_TYPES.any { WMCtrl.atom(display, it) in types }) return null
+            val bounds = WMCtrl.rootBounds(display, window)?.takeIf { it.intersects(target) } ?: return null
+            val transient = WMCtrl.getFormat32Property(display, window, "WM_TRANSIENT_FOR", X11.XA_WINDOW) != null
+            return StackedWindow(
+                fullscreen = WMCtrl.atom(display, "_NET_WM_STATE_FULLSCREEN") in states,
+                ordinary = !transient && WMCtrl.atom(display, "_NET_WM_STATE_ABOVE") !in states,
+            )
         }
 
         /**

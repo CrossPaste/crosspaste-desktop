@@ -98,7 +98,7 @@ class LinuxAppWindowManager(
             flowOf(false)
         } else {
             pollFullscreenOverPastePanelButton { window ->
-                X11Api.isActiveWindowFullscreenOver(Native.getWindowID(window))
+                X11Api.isFullscreenOver(Native.getWindowID(window))
             }
         }
 
