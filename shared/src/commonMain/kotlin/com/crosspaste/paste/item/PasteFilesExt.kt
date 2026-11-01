@@ -5,6 +5,7 @@ import com.crosspaste.config.isInside
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
 import com.crosspaste.path.UserDataPathProvider
+import com.crosspaste.path.relocateToAppContainer
 import com.crosspaste.utils.getFileUtils
 import okio.Path
 import okio.Path.Companion.toPath
@@ -16,18 +17,25 @@ fun PasteFiles.getAppFileType(): AppFileType =
         else -> AppFileType.FILE
     }
 
+/**
+ * The row's [PasteFiles.basePath] as a path on this device, or null when its files
+ * live in managed storage. Read basePath through this rather than directly: an iOS
+ * basePath embeds the app container path, which can change after the row is written.
+ */
+fun PasteFiles.resolveBasePath(): Path? = basePath?.toPath()?.let(::relocateToAppContainer)
+
 fun PasteFiles.getFilePaths(userDataPathProvider: UserDataPathProvider): List<Path> {
-    val basePath = basePath?.toPath() ?: userDataPathProvider.resolve(appFileType = getAppFileType())
+    val basePath = resolveBasePath() ?: userDataPathProvider.resolve(appFileType = getAppFileType())
     return relativePathList.map { relativePath ->
         userDataPathProvider.resolve(basePath, relativePath, autoCreate = false, isFile = true)
     }
 }
 
 fun PasteFiles.hasExistingFiles(): Boolean {
-    val base = basePath ?: return true
+    val base = resolveBasePath() ?: return true
     val fileUtils = getFileUtils()
     return relativePathList.any { relativePath ->
-        fileUtils.existFile(base.toPath() / relativePath.toPath().name)
+        fileUtils.existFile(base / relativePath.toPath().name)
     }
 }
 
@@ -38,7 +46,12 @@ fun PasteFiles.hasExistingFiles(): Boolean {
  * showing the folder they were actually written to.
  */
 fun PasteFiles.externalFolderName(userDataPathProvider: UserDataPathProvider): String? {
-    val base = basePath?.takeIf { it.isNotBlank() }?.toPath(normalize = true) ?: return null
+    val base =
+        basePath
+            ?.takeIf { it.isNotBlank() }
+            ?.toPath(normalize = true)
+            ?.let(::relocateToAppContainer)
+            ?: return null
     if (isInside(base, userDataPathProvider.getUserDataPath())) {
         return null
     }

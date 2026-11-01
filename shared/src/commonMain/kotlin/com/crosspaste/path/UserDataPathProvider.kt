@@ -9,6 +9,7 @@ import com.crosspaste.paste.PasteData
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.getAppFileType
 import com.crosspaste.paste.item.getFilePaths
+import com.crosspaste.paste.item.resolveBasePath
 import com.crosspaste.presist.DirFileInfoTree
 import com.crosspaste.presist.FileInfoTree
 import com.crosspaste.presist.FilesIndexBuilder
@@ -105,7 +106,7 @@ class UserDataPathProvider(
         val renameMap = mutableMapOf<String, String>()
         val isDownloadDir = pasteFiles.basePath != null
         val basePath =
-            pasteFiles.basePath?.toPath() ?: run {
+            pasteFiles.resolveBasePath() ?: run {
                 resolve(appFileType = pasteFiles.getAppFileType())
                     .resolveStorageComponent(appInstanceId)
                     .resolve(dateString)
