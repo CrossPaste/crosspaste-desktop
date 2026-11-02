@@ -13,6 +13,7 @@ interface MacosApi : Library {
         remote: IntByReference,
         isCrossPaste: IntByReference,
         isConcealed: IntByReference,
+        isDeviceSync: IntByReference,
     ): Int
 
     fun writeFilesToPasteboard(

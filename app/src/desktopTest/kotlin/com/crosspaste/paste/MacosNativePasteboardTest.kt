@@ -178,7 +178,13 @@ class MacosNativePasteboardTest {
             val isCrossPaste = IntByReference()
             val isConcealed = IntByReference()
             // Pass a stale changeCount so getPasteboardChangeCount inspects the items
-            MacosApi.INSTANCE.getPasteboardChangeCount(writeChangeCount - 1, remote, isCrossPaste, isConcealed)
+            MacosApi.INSTANCE.getPasteboardChangeCount(
+                writeChangeCount - 1,
+                remote,
+                isCrossPaste,
+                isConcealed,
+                IntByReference(),
+            )
             assertTrue(isCrossPaste.value != 0, "isCrossPaste marker should be set")
             assertEquals(0, isConcealed.value, "own writes must not look concealed")
         } finally {
@@ -244,7 +250,14 @@ class MacosNativePasteboardTest {
             val remote = IntByReference()
             val isCrossPaste = IntByReference()
             val isConcealed = IntByReference()
-            val count = MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
+            val count =
+                MacosApi.INSTANCE.getPasteboardChangeCount(
+                    0,
+                    remote,
+                    isCrossPaste,
+                    isConcealed,
+                    IntByReference(),
+                )
             assertTrue(count > 0, "change count should be greater than 0")
             assertEquals(0, isCrossPaste.value, "isCrossPaste should not be set")
             assertTrue(isConcealed.value != 0, "isConcealed marker should be detected")
@@ -276,10 +289,53 @@ class MacosNativePasteboardTest {
             val remote = IntByReference()
             val isCrossPaste = IntByReference()
             val isConcealed = IntByReference()
-            val count = MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
+            val count =
+                MacosApi.INSTANCE.getPasteboardChangeCount(
+                    0,
+                    remote,
+                    isCrossPaste,
+                    isConcealed,
+                    IntByReference(),
+                )
             assertTrue(count > 0, "change count should be greater than 0")
             assertEquals(0, isCrossPaste.value, "isCrossPaste should not be set")
             assertTrue(isConcealed.value != 0, "isConcealed marker should be detected for transient type")
+        } finally {
+            cleanupClipboard()
+        }
+    }
+
+    @Test
+    fun `getPasteboardChangeCount detects Xcode device pasteboard sync`() {
+        try {
+            val process =
+                ProcessBuilder(
+                    "osascript",
+                    "-l",
+                    "JavaScript",
+                    "-e",
+                    """
+                    ObjC.import("AppKit");
+                    var pb = $.NSPasteboard.generalPasteboard;
+                    pb.clearContents;
+                    pb.setStringForType($("echoed-text"), $("public.utf8-plain-text"));
+                    pb.setStringForType($(""), $("com.apple.coredevice.dtpasteboardd.sync"));
+                    """.trimIndent(),
+                ).start()
+            val exitCode = process.waitFor()
+            assertEquals(0, exitCode, "osascript should set device sync type on pasteboard")
+
+            val isConcealed = IntByReference()
+            val isDeviceSync = IntByReference()
+            MacosApi.INSTANCE.getPasteboardChangeCount(
+                0,
+                IntByReference(),
+                IntByReference(),
+                isConcealed,
+                isDeviceSync,
+            )
+            assertTrue(isDeviceSync.value != 0, "isDeviceSync marker should be detected")
+            assertEquals(0, isConcealed.value, "device sync must not look concealed")
         } finally {
             cleanupClipboard()
         }

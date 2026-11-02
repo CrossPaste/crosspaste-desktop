@@ -11,19 +11,25 @@ import Security
 public func getPasteboardChangeCount(currentChangeCount: Int,
                                      isRemote: UnsafeMutablePointer<Int32>,
                                      isCrossPaste: UnsafeMutablePointer<Int32>,
-                                     isConcealed: UnsafeMutablePointer<Int32>) -> Int {
+                                     isConcealed: UnsafeMutablePointer<Int32>,
+                                     isDeviceSync: UnsafeMutablePointer<Int32>) -> Int {
     let pasteboard = NSPasteboard.general
     let newChangeCount = pasteboard.changeCount
 
     isRemote.pointee = 0
     isCrossPaste.pointee = 0
     isConcealed.pointee = 0
+    isDeviceSync.pointee = 0
 
     if newChangeCount != currentChangeCount, let items = pasteboard.pasteboardItems {
         for item in items {
             for type in item.types {
                 if type.rawValue == "com.apple.is-remote-clipboard" {
                     isRemote.pointee = 1
+                } else if type.rawValue == "com.apple.coredevice.dtpasteboardd.sync" {
+                    // Xcode's simulator/device pasteboard daemon writes the Mac pasteboard
+                    // back with this marker, echoing what we just wrote.
+                    isDeviceSync.pointee = 1
                 } else if type.rawValue == "com.crosspaste" {
                     isCrossPaste.pointee = 1
                 } else if type.rawValue == "org.nspasteboard.ConcealedType" ||
