@@ -284,4 +284,35 @@ class MacosNativePasteboardTest {
             cleanupClipboard()
         }
     }
+
+    @Test
+    fun `getPasteboardChangeCount marks Xcode device pasteboard sync as remote`() {
+        try {
+            val process =
+                ProcessBuilder(
+                    "osascript",
+                    "-l",
+                    "JavaScript",
+                    "-e",
+                    """
+                    ObjC.import("AppKit");
+                    var pb = $.NSPasteboard.generalPasteboard;
+                    pb.clearContents;
+                    pb.setStringForType($("synced-text"), $("public.utf8-plain-text"));
+                    pb.setStringForType($(""), $("com.apple.coredevice.dtpasteboardd.sync"));
+                    """.trimIndent(),
+                ).start()
+            val exitCode = process.waitFor()
+            assertEquals(0, exitCode, "osascript should set device sync type on pasteboard")
+
+            val remote = IntByReference()
+            val isCrossPaste = IntByReference()
+            val isConcealed = IntByReference()
+            MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
+            assertTrue(remote.value != 0, "Xcode device sync content should be marked remote")
+            assertEquals(0, isConcealed.value, "device sync must not look concealed")
+        } finally {
+            cleanupClipboard()
+        }
+    }
 }
