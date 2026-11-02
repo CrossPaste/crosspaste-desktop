@@ -71,16 +71,14 @@ class MacosPasteboardService(
     /**
      * One poll of the pasteboard change count. Decides whether the change is
      * worth reading at all (not our own write, not a password-manager secret,
-     * not an Xcode device-sync echo, not stale content from before launch)
-     * before touching the contents.
+     * not stale content from before launch) before touching the contents.
      */
     private suspend fun CoroutineScope.pollPasteboard(firstRead: Boolean) {
         val remote = IntByReference()
         val isCrossPaste = IntByReference()
         val isConcealed = IntByReference()
-        val isDeviceSync = IntByReference()
         val currentChangeCount =
-            MacosApi.INSTANCE.getPasteboardChangeCount(changeCount, remote, isCrossPaste, isConcealed, isDeviceSync)
+            MacosApi.INSTANCE.getPasteboardChangeCount(changeCount, remote, isCrossPaste, isConcealed)
         if (changeCount == currentChangeCount) return
 
         logger.info { "currentChangeCount $currentChangeCount changeCount $changeCount" }
@@ -97,9 +95,6 @@ class MacosPasteboardService(
             }
             isConcealed.value != 0 -> {
                 logger.debug { "Ignoring concealed pasteboard content" }
-            }
-            isDeviceSync.value != 0 -> {
-                logger.debug { "Ignoring Xcode device pasteboard sync" }
             }
             else -> {
                 consumeChange(
@@ -154,7 +149,6 @@ class MacosPasteboardService(
     private fun readChangeCount(): Int =
         MacosApi.INSTANCE.getPasteboardChangeCount(
             changeCount,
-            IntByReference(),
             IntByReference(),
             IntByReference(),
             IntByReference(),

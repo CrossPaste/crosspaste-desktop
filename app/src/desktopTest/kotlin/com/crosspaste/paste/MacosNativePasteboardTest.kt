@@ -178,13 +178,7 @@ class MacosNativePasteboardTest {
             val isCrossPaste = IntByReference()
             val isConcealed = IntByReference()
             // Pass a stale changeCount so getPasteboardChangeCount inspects the items
-            MacosApi.INSTANCE.getPasteboardChangeCount(
-                writeChangeCount - 1,
-                remote,
-                isCrossPaste,
-                isConcealed,
-                IntByReference(),
-            )
+            MacosApi.INSTANCE.getPasteboardChangeCount(writeChangeCount - 1, remote, isCrossPaste, isConcealed)
             assertTrue(isCrossPaste.value != 0, "isCrossPaste marker should be set")
             assertEquals(0, isConcealed.value, "own writes must not look concealed")
         } finally {
@@ -250,14 +244,7 @@ class MacosNativePasteboardTest {
             val remote = IntByReference()
             val isCrossPaste = IntByReference()
             val isConcealed = IntByReference()
-            val count =
-                MacosApi.INSTANCE.getPasteboardChangeCount(
-                    0,
-                    remote,
-                    isCrossPaste,
-                    isConcealed,
-                    IntByReference(),
-                )
+            val count = MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
             assertTrue(count > 0, "change count should be greater than 0")
             assertEquals(0, isCrossPaste.value, "isCrossPaste should not be set")
             assertTrue(isConcealed.value != 0, "isConcealed marker should be detected")
@@ -289,14 +276,7 @@ class MacosNativePasteboardTest {
             val remote = IntByReference()
             val isCrossPaste = IntByReference()
             val isConcealed = IntByReference()
-            val count =
-                MacosApi.INSTANCE.getPasteboardChangeCount(
-                    0,
-                    remote,
-                    isCrossPaste,
-                    isConcealed,
-                    IntByReference(),
-                )
+            val count = MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
             assertTrue(count > 0, "change count should be greater than 0")
             assertEquals(0, isCrossPaste.value, "isCrossPaste should not be set")
             assertTrue(isConcealed.value != 0, "isConcealed marker should be detected for transient type")
@@ -306,7 +286,7 @@ class MacosNativePasteboardTest {
     }
 
     @Test
-    fun `getPasteboardChangeCount detects Xcode device pasteboard sync`() {
+    fun `getPasteboardChangeCount marks Xcode device pasteboard sync as remote`() {
         try {
             val process =
                 ProcessBuilder(
@@ -318,23 +298,18 @@ class MacosNativePasteboardTest {
                     ObjC.import("AppKit");
                     var pb = $.NSPasteboard.generalPasteboard;
                     pb.clearContents;
-                    pb.setStringForType($("echoed-text"), $("public.utf8-plain-text"));
+                    pb.setStringForType($("synced-text"), $("public.utf8-plain-text"));
                     pb.setStringForType($(""), $("com.apple.coredevice.dtpasteboardd.sync"));
                     """.trimIndent(),
                 ).start()
             val exitCode = process.waitFor()
             assertEquals(0, exitCode, "osascript should set device sync type on pasteboard")
 
+            val remote = IntByReference()
+            val isCrossPaste = IntByReference()
             val isConcealed = IntByReference()
-            val isDeviceSync = IntByReference()
-            MacosApi.INSTANCE.getPasteboardChangeCount(
-                0,
-                IntByReference(),
-                IntByReference(),
-                isConcealed,
-                isDeviceSync,
-            )
-            assertTrue(isDeviceSync.value != 0, "isDeviceSync marker should be detected")
+            MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
+            assertTrue(remote.value != 0, "Xcode device sync content should be marked remote")
             assertEquals(0, isConcealed.value, "device sync must not look concealed")
         } finally {
             cleanupClipboard()
