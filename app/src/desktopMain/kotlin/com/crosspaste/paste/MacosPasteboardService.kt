@@ -20,11 +20,7 @@ import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.TimeMark
-import kotlin.time.TimeSource
 
 class MacosPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
@@ -54,7 +50,10 @@ class MacosPasteboardService(
 
     private var job: Job? = null
 
-    private val universalClipboardChange = UniversalClipboardChange()
+    // Change count of the last Universal Clipboard (com.apple.is-remote-clipboard)
+    // content that was read and recorded, so it is the current paste while unchanged
+    @Volatile
+    private var universalClipboardChangeCount: Int? = null
 
     init {
         startRemotePasteboardListener()
@@ -91,7 +90,6 @@ class MacosPasteboardService(
         val config = configManager.getCurrentConfig()
         val firstChange = firstRead && changeCount == config.lastPasteboardChangeCount
         changeCount = currentChangeCount
-        if (remote.value != 0) universalClipboardChange.record(currentChangeCount)
 
         when {
             firstChange && config.enableSkipPreLaunchPasteboardContent -> {
@@ -137,6 +135,7 @@ class MacosPasteboardService(
         if (contents == null || contents == ownerTransferable) return
 
         ownerTransferable = contents
+        if (remote) universalClipboardChangeCount = expectedChangeCount
         // Content that arrived via Universal Clipboard is already on every Apple
         // device; only push it to the others.
         val targetAppInstanceIds = if (remote) nonAppleSyncTargets() else null
@@ -173,14 +172,20 @@ class MacosPasteboardService(
         return if (firstChange && source == AppName) null else source
     }
 
-    // When Universal Clipboard has just delivered the same copy, it is already on the
-    // pasteboard; writing it again would be relayed back to the device it came from.
+    // Universal Clipboard already put this copy on the pasteboard; writing it again
+    // would be relayed back to the device it came from.
     override fun shouldWriteRemotePaste(pasteData: PasteData): Boolean {
-        val deliveredByUniversalClipboard = universalClipboardChange.isCurrent(readChangeCount())
-        if (deliveredByUniversalClipboard) {
+        val delivered =
+            isDeliveredByUniversalClipboard(
+                universalClipboardChangeCount = universalClipboardChangeCount,
+                currentChangeCount = readChangeCount(),
+                currentPaste = { currentPaste.getPasteId()?.let(currentPaste.pasteDao::getPasteDataBlock) },
+                incoming = pasteData,
+            )
+        if (delivered) {
             logger.debug { "Skipping pasteboard write, Universal Clipboard already delivered it" }
         }
-        return !deliveredByUniversalClipboard
+        return !delivered
     }
 
     private fun nonAppleSyncTargets(): Set<String> =
@@ -211,6 +216,23 @@ class MacosPasteboardService(
 
     companion object {
         /**
+         * True when the pasteboard still holds the recorded Universal Clipboard content
+         * and that content is [incoming]. The current paste is read after the incoming
+         * one replaced it as a same-hash duplicate, hence a lookup that includes
+         * deleted rows.
+         */
+        fun isDeliveredByUniversalClipboard(
+            universalClipboardChangeCount: Int?,
+            currentChangeCount: Int,
+            currentPaste: () -> PasteData?,
+            incoming: PasteData,
+        ): Boolean {
+            if (universalClipboardChangeCount != currentChangeCount || incoming.hash.isEmpty()) return false
+            val pasteboardPaste = currentPaste() ?: return false
+            return pasteboardPaste.pasteType == incoming.pasteType && pasteboardPaste.hash == incoming.hash
+        }
+
+        /**
          * Reads the pasteboard and keeps the result only if no other write landed
          * while it was being read. AWT reads one type at a time, so a write in
          * between yields a mix of both contents, and the source and concealed
@@ -235,28 +257,5 @@ class MacosPasteboardService(
             }
             return snapshot
         }
-    }
-}
-
-/**
- * The last pasteboard change that Universal Clipboard (com.apple.is-remote-clipboard)
- * made. It still describes the pasteboard while the change count has not moved,
- * but only for [window]: an old copy left on the pasteboard says nothing about a
- * paste arriving now.
- */
-internal class UniversalClipboardChange(
-    private val window: Duration = 10.seconds,
-    private val timeSource: TimeSource = TimeSource.Monotonic,
-) {
-    @Volatile
-    private var last: Pair<Int, TimeMark>? = null
-
-    fun record(changeCount: Int) {
-        last = changeCount to timeSource.markNow()
-    }
-
-    fun isCurrent(currentChangeCount: Int): Boolean {
-        val (changeCount, mark) = last ?: return false
-        return changeCount == currentChangeCount && mark.elapsedNow() <= window
     }
 }
