@@ -312,6 +312,20 @@ class PasteDaoTest {
             assertEquals(PasteState.DELETED, deleted.pasteState)
         }
 
+    @Test
+    fun `getPasteDataBlock still returns a marked-deleted paste`() =
+        runTest {
+            stubDeleteTaskSubmission()
+
+            val pasteData = createTestPasteData(text = "replaced by a synced duplicate")
+            val id = pasteDao.createPasteData(pasteData)
+            pasteDao.markDeletePasteData(id)
+
+            val retrieved = pasteDao.getPasteDataBlock(id)
+            assertEquals(pasteData.hash, retrieved?.hash)
+            assertEquals(PasteState.DELETED, retrieved?.pasteState)
+        }
+
     // --- Search ---
 
     @Test

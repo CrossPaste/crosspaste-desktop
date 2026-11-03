@@ -97,6 +97,14 @@ class SqlPasteDao(
                 PasteData::mapper,
             ).executeAsOneOrNull()
 
+    override fun getPasteDataBlock(id: Long): PasteData? =
+        pasteDatabaseQueries
+            .getPasteData(
+                id,
+                listOf(PasteState.LOADING.toLong(), PasteState.LOADED.toLong(), PasteState.DELETED.toLong()),
+                PasteData::mapper,
+            ).executeAsOneOrNull()
+
     override suspend fun getLatestLoadedPasteData(): PasteData? =
         withContext(ioDispatcher) {
             pasteDatabaseQueries

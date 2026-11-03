@@ -111,8 +111,16 @@ abstract class AbstractPasteboardService :
         pasteReleaseService.releaseRemotePasteData(
             pasteData,
             seenAppInstanceIds,
-            tryWritePasteboard = ::enqueueRemotePaste,
-        )
+        ) { storePasteData ->
+            if (shouldWriteRemotePaste(storePasteData)) enqueueRemotePaste(storePasteData)
+        }
+
+    /**
+     * Whether a paste pushed live by a peer should also land on the system
+     * clipboard; it is stored in history either way. History pulls are not
+     * asked, they always write when requested.
+     */
+    open fun shouldWriteRemotePaste(pasteData: PasteData): Boolean = true
 
     private fun enqueueRemotePaste(storePasteData: PasteData) {
         remotePasteboardChannel
@@ -167,7 +175,7 @@ abstract class AbstractPasteboardService :
         historyPull: Boolean,
     ): Result<Unit?> =
         pasteReleaseService.releaseRemotePasteDataWithFile(pasteId, seenAppInstanceIds, historyPull) { storePasteData ->
-            if (writeToPasteboard) {
+            if (writeToPasteboard && (historyPull || shouldWriteRemotePaste(storePasteData))) {
                 remotePasteboardChannel
                     .trySend {
                         tryWritePasteboard(

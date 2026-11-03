@@ -22,6 +22,9 @@ interface PasteDao : SearchPasteData {
 
     fun getLoadedPasteDataBlock(id: Long): PasteData?
 
+    // Any state, including rows already marked deleted
+    fun getPasteDataBlock(id: Long): PasteData?
+
     suspend fun getLatestLoadedPasteData(): PasteData?
 
     suspend fun getDeletePasteData(id: Long): PasteData?
