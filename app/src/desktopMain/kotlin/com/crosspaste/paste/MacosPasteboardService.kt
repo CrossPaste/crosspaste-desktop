@@ -111,6 +111,17 @@ class MacosPasteboardService(
         firstChange: Boolean,
         remote: Boolean,
     ) {
+        // Content that arrived via Universal Clipboard is already on every Apple
+        // device; only push it to the others.
+        val targetAppInstanceIds = if (remote) nonAppleSyncTargets() else null
+        if (targetAppInstanceIds?.isEmpty() == true) {
+            // Universal Clipboard data is a promise: reading it makes macOS fetch it
+            // from the other Apple device behind a "pasting from" wait, once per
+            // flavor read. With no one to push it to, leave it untouched.
+            logger.debug { "Ignoring Universal Clipboard content without non-Apple sync targets" }
+            return
+        }
+
         val source = resolveSource(firstChange)
         if (sourceExclusionService.isExcluded(source)) {
             logger.debug { "Ignoring excluded source: $source" }
@@ -130,9 +141,6 @@ class MacosPasteboardService(
         if (contents == null || contents == ownerTransferable) return
 
         ownerTransferable = contents
-        // Content that arrived via Universal Clipboard is already on every Apple
-        // device; only push it to the others.
-        val targetAppInstanceIds = if (remote) nonAppleSyncTargets() else null
         launch(CoroutineName("MacPasteboardServiceConsumer")) {
             pasteConsumer.consume(
                 DesktopReadTransferable(contents),
