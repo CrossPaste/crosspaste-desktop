@@ -23,6 +23,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -151,6 +152,21 @@ class PasteReleaseServiceRemoteDiscardTest {
             assertTrue(wrotePasteboard)
             coVerify(exactly = 1) { taskSubmitter.submit(any()) }
             verify(exactly = 0) { notificationManager.sendNotification(any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun `remote non-file paste is written to the pasteboard with its local id`() =
+        runBlocking {
+            val pasteDao = mockk<PasteDao>(relaxed = true)
+            coEvery { pasteDao.createPasteData(any(), any()) } returns 42L
+            val service = newService(pasteDao = pasteDao, taskSubmitter = immediateSubmitter())
+
+            var writtenId: Long? = null
+            service.releaseRemotePasteData(remotePasteData(createTextPasteItem(text = "small")).copy(id = 7L)) {
+                writtenId = it.id
+            }
+
+            assertEquals(42L, writtenId)
         }
 
     @Test
