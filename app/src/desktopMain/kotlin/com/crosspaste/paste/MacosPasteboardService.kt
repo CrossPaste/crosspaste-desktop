@@ -20,7 +20,11 @@ import kotlinx.coroutines.launch
 import java.awt.Toolkit
 import java.awt.datatransfer.Clipboard
 import java.awt.datatransfer.Transferable
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 class MacosPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
@@ -49,6 +53,8 @@ class MacosPasteboardService(
     override val systemClipboard: Clipboard = Toolkit.getDefaultToolkit().systemClipboard
 
     private var job: Job? = null
+
+    private val universalClipboardChange = UniversalClipboardChange()
 
     init {
         startRemotePasteboardListener()
@@ -85,6 +91,7 @@ class MacosPasteboardService(
         val config = configManager.getCurrentConfig()
         val firstChange = firstRead && changeCount == config.lastPasteboardChangeCount
         changeCount = currentChangeCount
+        if (remote.value != 0) universalClipboardChange.record(currentChangeCount)
 
         when {
             firstChange && config.enableSkipPreLaunchPasteboardContent -> {
@@ -166,6 +173,16 @@ class MacosPasteboardService(
         return if (firstChange && source == AppName) null else source
     }
 
+    // When Universal Clipboard has just delivered the same copy, it is already on the
+    // pasteboard; writing it again would be relayed back to the device it came from.
+    override fun shouldWriteRemotePaste(pasteData: PasteData): Boolean {
+        val deliveredByUniversalClipboard = universalClipboardChange.isCurrent(readChangeCount())
+        if (deliveredByUniversalClipboard) {
+            logger.debug { "Skipping pasteboard write, Universal Clipboard already delivered it" }
+        }
+        return !deliveredByUniversalClipboard
+    }
+
     private fun nonAppleSyncTargets(): Set<String> =
         syncManager
             .getSyncHandlers()
@@ -218,5 +235,28 @@ class MacosPasteboardService(
             }
             return snapshot
         }
+    }
+}
+
+/**
+ * The last pasteboard change that Universal Clipboard (com.apple.is-remote-clipboard)
+ * made. It still describes the pasteboard while the change count has not moved,
+ * but only for [window]: an old copy left on the pasteboard says nothing about a
+ * paste arriving now.
+ */
+internal class UniversalClipboardChange(
+    private val window: Duration = 10.seconds,
+    private val timeSource: TimeSource = TimeSource.Monotonic,
+) {
+    @Volatile
+    private var last: Pair<Int, TimeMark>? = null
+
+    fun record(changeCount: Int) {
+        last = changeCount to timeSource.markNow()
+    }
+
+    fun isCurrent(currentChangeCount: Int): Boolean {
+        val (changeCount, mark) = last ?: return false
+        return changeCount == currentChangeCount && mark.elapsedNow() <= window
     }
 }
