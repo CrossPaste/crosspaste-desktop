@@ -646,7 +646,8 @@ class PasteReleaseService(
         markDeleteSameHash(id, pasteData.pasteType, pasteData.hash)
         addRenderingTask(id, pasteData.getType())
         if (!historyPull) addRelaySyncTask(id, pasteData.appInstanceId, seenAppInstanceIds)
-        tryWritePasteboard(pasteData)
+        // pasteData.id is the sender's id; writing takes the local row as the current paste
+        tryWritePasteboard(pasteData.copy(id = id))
         return id
     }
 
