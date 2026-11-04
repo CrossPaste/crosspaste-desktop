@@ -22,12 +22,13 @@ public func getPasteboardChangeCount(currentChangeCount: Int,
     if newChangeCount != currentChangeCount, let items = pasteboard.pasteboardItems {
         for item in items {
             for type in item.types {
-                if type.rawValue == "com.apple.is-remote-clipboard" ||
-                    type.rawValue == "com.apple.coredevice.dtpasteboardd.sync" {
-                    // Put here by another Apple device: Universal Clipboard, or Xcode's
-                    // pasteboard sync with an attached device. Syncing it back to Apple
-                    // devices would loop through that sync.
+                if type.rawValue == "com.apple.is-remote-clipboard" {
+                    // Put here by another Apple device: 1 = Universal Clipboard,
+                    // 2 = Xcode's pasteboard sync with an attached device. Syncing
+                    // either back to Apple devices would loop through that sync.
                     isRemote.pointee = 1
+                } else if type.rawValue == "com.apple.coredevice.dtpasteboardd.sync" {
+                    if isRemote.pointee == 0 { isRemote.pointee = 2 }
                 } else if type.rawValue == "com.crosspaste" {
                     isCrossPaste.pointee = 1
                 } else if type.rawValue == "org.nspasteboard.ConcealedType" ||

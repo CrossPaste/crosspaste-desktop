@@ -19,6 +19,7 @@ fun getDesktopPasteboardService(
     soundService: SoundService,
     sourceExclusionService: DesktopSourceExclusionService,
     syncManager: SyncManager,
+    universalClipboardHint: UniversalClipboardHint,
 ): AbstractPasteboardService =
     if (platform.isMacos()) {
         MacosPasteboardService(
@@ -32,6 +33,7 @@ fun getDesktopPasteboardService(
             soundService,
             sourceExclusionService,
             syncManager,
+            universalClipboardHint,
         )
     } else if (platform.isWindows()) {
         WindowsPasteboardService(
