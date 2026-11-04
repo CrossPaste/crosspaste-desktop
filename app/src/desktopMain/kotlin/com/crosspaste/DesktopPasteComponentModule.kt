@@ -32,6 +32,7 @@ import com.crosspaste.paste.PasteboardService
 import com.crosspaste.paste.SearchContentService
 import com.crosspaste.paste.TransferableConsumer
 import com.crosspaste.paste.TransferableProducer
+import com.crosspaste.paste.UniversalClipboardHint
 import com.crosspaste.paste.getDesktopPasteboardService
 import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.PasteItemReader
@@ -104,6 +105,7 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
                     get(),
                     get(),
                     get(),
+                    UniversalClipboardHint(get(), get(), get()),
                 )
             }
         }

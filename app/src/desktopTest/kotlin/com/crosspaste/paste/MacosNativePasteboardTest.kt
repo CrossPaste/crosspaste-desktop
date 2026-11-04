@@ -309,8 +309,43 @@ class MacosNativePasteboardTest {
             val isCrossPaste = IntByReference()
             val isConcealed = IntByReference()
             MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
-            assertTrue(remote.value != 0, "Xcode device sync content should be marked remote")
+            assertEquals(
+                2,
+                remote.value,
+                "Xcode device sync content should be marked remote, apart from Universal Clipboard",
+            )
             assertEquals(0, isConcealed.value, "device sync must not look concealed")
+        } finally {
+            cleanupClipboard()
+        }
+    }
+
+    @Test
+    fun `getPasteboardChangeCount marks Universal Clipboard content as remote`() {
+        try {
+            val process =
+                ProcessBuilder(
+                    "osascript",
+                    "-l",
+                    "JavaScript",
+                    "-e",
+                    """
+                    ObjC.import("AppKit");
+                    var pb = $.NSPasteboard.generalPasteboard;
+                    pb.clearContents;
+                    pb.setStringForType($("synced-text"), $("public.utf8-plain-text"));
+                    pb.setStringForType($(""), $("com.apple.is-remote-clipboard"));
+                    """.trimIndent(),
+                ).start()
+            val exitCode = process.waitFor()
+            assertEquals(0, exitCode, "osascript should set Universal Clipboard type on pasteboard")
+
+            val remote = IntByReference()
+            val isCrossPaste = IntByReference()
+            val isConcealed = IntByReference()
+            MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
+            assertEquals(1, remote.value, "Universal Clipboard content should be marked remote")
+            assertEquals(0, isConcealed.value, "Universal Clipboard content must not look concealed")
         } finally {
             cleanupClipboard()
         }
