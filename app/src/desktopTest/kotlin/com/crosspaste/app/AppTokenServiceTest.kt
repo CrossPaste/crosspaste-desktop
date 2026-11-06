@@ -15,25 +15,29 @@ class AppTokenServiceTest {
 
     private fun createService(): TestAppTokenService = TestAppTokenService()
 
+    private fun AppTokenService.currentToken(): Int = token.value.concatToString().toInt()
+
     @Test
-    fun `initial token is 6-digit all-zeros`() {
+    fun `sameToken rejects the current token while no pairing session is open`() {
         val service = createService()
-        val token = service.token.value
-        assertEquals(6, token.size)
-        assertTrue(token.all { it == '0' })
+        assertFalse(service.sameToken(service.currentToken()))
+        assertFalse(service.sameToken(0))
     }
 
     @Test
-    fun `sameToken matches when integer equals concatenated token digits`() {
+    fun `sameToken accepts the displayed token only while a pairing session is open`() {
         val service = createService()
-        // Initial token is all zeros -> "000000" -> 0
-        assertTrue(service.sameToken(0))
-    }
+        runBlocking {
+            service.startRefresh(showToken = false)
+            withTimeout(5.seconds) { service.refresh.first { it } }
+            val displayed = service.currentToken()
+            assertTrue(service.sameToken(displayed))
+            assertFalse(service.sameToken((displayed + 1) % 1_000_000))
 
-    @Test
-    fun `sameToken rejects non-matching integer`() {
-        val service = createService()
-        assertFalse(service.sameToken(123456))
+            service.stopRefresh(hideToken = false)
+            withTimeout(5.seconds) { service.refresh.first { !it } }
+            assertFalse(service.sameToken(displayed))
+        }
     }
 
     @Test

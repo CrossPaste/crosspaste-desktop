@@ -6,6 +6,8 @@ import com.crosspaste.dto.sync.ControlChallenge
 import com.crosspaste.dto.sync.ControlOperation
 import com.crosspaste.dto.sync.EndpointInfo
 import com.crosspaste.dto.sync.SyncInfo
+import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.net.clientapi.ClientApiResult
 import com.crosspaste.net.clientapi.FailureResult
 import com.crosspaste.net.clientapi.SuccessResult
 import com.crosspaste.sync.SyncHandler
@@ -18,15 +20,19 @@ import io.ktor.util.reflect.typeInfo
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 @IntegrationTest
 class SyncIntegrationTest {
@@ -42,6 +48,11 @@ class SyncIntegrationTest {
         }
     }
 
+    private fun assertTokenInvalid(result: ClientApiResult) {
+        assertIs<FailureResult>(result)
+        assertEquals(StandardErrorCode.TOKEN_INVALID.toErrorCode(), result.exception.getErrorCode())
+    }
+
     private fun urlFor(instance: TestInstance): (io.ktor.http.URLBuilder.() -> Unit) =
         {
             buildUrl(HostAndPort("localhost", instance.getPort()))
@@ -55,7 +66,7 @@ class SyncIntegrationTest {
             b.syncClientApi.trust(
                 a.appInfo.appInstanceId,
                 "localhost",
-                a.getToken(),
+                a.openPairingSession(),
                 urlFor(a),
             )
         assertTrue(result is SuccessResult, "Trust B->A should succeed")
@@ -182,7 +193,7 @@ class SyncIntegrationTest {
                 a.syncClientApi.trust(
                     b.appInfo.appInstanceId,
                     "localhost",
-                    b.getToken(),
+                    b.openPairingSession(),
                     urlFor(b),
                 )
             assertTrue(result is SuccessResult)
@@ -261,16 +272,61 @@ class SyncIntegrationTest {
             a.start()
             b.start()
 
+            // Open a session so the failure comes from the token mismatch,
+            // not from the missing session.
+            val token = a.openPairingSession()
             val result =
                 b.syncClientApi.trust(
                     a.appInfo.appInstanceId,
                     "localhost",
-                    999999,
+                    (token + 1) % 1_000_000,
                     urlFor(a),
                 )
 
-            assertTrue(result is FailureResult)
+            assertTokenInvalid(result)
             assertFalse(a.secureIO.existCryptPublicKey(b.appInfo.appInstanceId))
+        }
+
+    // ---- Test 6a: Trust with idle token (no pairing session) ----
+
+    @Test
+    fun testTrustWithIdleTokenIsRejected() =
+        runBlocking {
+            val a = createInstance("idle-a")
+            val b = createInstance("idle-b")
+            a.start()
+            b.start()
+
+            val result = b.syncClientApi.trust(a.appInfo.appInstanceId, "localhost", a.getToken(), urlFor(a))
+
+            assertTokenInvalid(result)
+            assertFalse(a.secureIO.existCryptPublicKey(b.appInfo.appInstanceId))
+        }
+
+    // ---- Test 6b: Trust with token of a closed pairing session ----
+
+    @Test
+    fun testTrustAfterSessionClosedIsRejected() =
+        runBlocking {
+            val a = createInstance("close-a")
+            val b = createInstance("close-b")
+            a.start()
+            b.start()
+
+            // Production path: the initiator opens the session via GET /sync/showToken.
+            assertTrue(b.syncClientApi.showToken(urlFor(a)) is SuccessResult)
+            withTimeout(5.seconds) { a.appTokenApi.refresh.first { it } }
+            val staleToken = a.getToken()
+            a.appTokenApi.releaseVerifier(b.appInfo.appInstanceId)
+            withTimeout(5.seconds) { a.appTokenApi.refresh.first { !it } }
+
+            val stale = b.syncClientApi.trust(a.appInfo.appInstanceId, "localhost", staleToken, urlFor(a))
+            assertTokenInvalid(stale)
+
+            assertTrue(b.syncClientApi.showToken(urlFor(a)) is SuccessResult)
+            withTimeout(5.seconds) { a.appTokenApi.refresh.first { it } }
+            val fresh = b.syncClientApi.trust(a.appInfo.appInstanceId, "localhost", a.getToken(), urlFor(a))
+            assertTrue(fresh is SuccessResult)
         }
 
     // ---- Test 7: Heartbeat without trust ----
