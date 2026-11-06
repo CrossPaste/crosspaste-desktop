@@ -6,6 +6,7 @@ import ImageIO
 import Network
 import QuickLookThumbnailing
 import Security
+import UserNotifications
 
 @_cdecl("getPasteboardChangeCount")
 public func getPasteboardChangeCount(currentChangeCount: Int,
@@ -848,5 +849,75 @@ public func stopNetworkStateMonitor() {
         networkPathMonitor?.cancel()
         networkPathMonitor = nil
         networkStateCallback = nil
+    }
+}
+
+// MARK: - User notifications
+
+// Shows banners even while CrossPaste is the active app; macOS hides them otherwise
+private class ForegroundNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        if #available(macOS 11.0, *) {
+            completionHandler([.banner, .list])
+        } else {
+            completionHandler([.alert])
+        }
+    }
+}
+
+private let foregroundNotificationDelegate = ForegroundNotificationDelegate()
+
+private func authorizationStatus(_ center: UNUserNotificationCenter) -> UNAuthorizationStatus? {
+    let semaphore = DispatchSemaphore(value: 0)
+    var status: UNAuthorizationStatus?
+    center.getNotificationSettings { settings in
+        status = settings.authorizationStatus
+        semaphore.signal()
+    }
+    return semaphore.wait(timeout: .now() + 1) == .success ? status : nil
+}
+
+private func addNotification(_ center: UNUserNotificationCenter, _ content: UNNotificationContent) {
+    center.add(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)) { error in
+        if let error = error {
+            NSLog("CrossPaste: failed to post notification: %@", error.localizedDescription)
+        }
+    }
+}
+
+/// Posts a notification to Notification Center. Returns 0 when it will not be shown,
+/// so the caller can show the message another way: the process is not an app bundle
+/// (a development run from a bare java launcher, where UNUserNotificationCenter raises
+/// an uncatchable exception), or the user has not allowed notifications. On first use
+/// it asks for permission and returns 1; that one message is lost if the user declines.
+@_cdecl("postUserNotification")
+public func postUserNotification(title: UnsafePointer<CChar>, body: UnsafePointer<CChar>) -> Int32 {
+    // The JDK's bin/ also carries a bundle identifier, but has no LaunchServices
+    // bundle proxy; only a real .app can use UNUserNotificationCenter
+    guard Bundle.main.bundleURL.pathExtension == "app",
+          Bundle.main.bundleIdentifier != nil else { return 0 }
+
+    let content = UNMutableNotificationContent()
+    content.title = String(cString: title)
+    content.body = String(cString: body)
+
+    let center = UNUserNotificationCenter.current()
+    if center.delegate == nil {
+        center.delegate = foregroundNotificationDelegate
+    }
+
+    switch authorizationStatus(center) {
+    case .authorized, .provisional:
+        addNotification(center, content)
+        return 1
+    case .notDetermined:
+        center.requestAuthorization(options: [.alert]) { granted, _ in
+            if granted { addNotification(center, content) }
+        }
+        return 1
+    default:
+        return 0
     }
 }

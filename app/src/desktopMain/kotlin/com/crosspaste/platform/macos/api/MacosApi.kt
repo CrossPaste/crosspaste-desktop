@@ -124,6 +124,12 @@ interface MacosApi : Library {
         thumbnailPath: String,
     ): Boolean
 
+    // Returns 1 when posted, 0 when Notification Center is unavailable to this process
+    fun postUserNotification(
+        title: String,
+        body: String,
+    ): Int
+
     fun startNetworkStateMonitor(callback: NetworkChangeCallback)
 
     fun stopNetworkStateMonitor()
