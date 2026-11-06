@@ -3,6 +3,7 @@ package com.crosspaste.platform.windows
 import com.crosspaste.notification.MessageType
 import com.crosspaste.platform.windows.api.Shell32
 import com.crosspaste.platform.windows.api.User32
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 /**
  * Shows a notification as a balloon on our tray icon; Windows 10/11 present it as a
@@ -13,13 +14,19 @@ internal class WindowsTrayNotifier(
     private val shell32: Shell32,
     private val processId: Int,
 ) {
+    private val logger = KotlinLogging.logger {}
+
     /** False when the tray icon is missing or the shell refused the balloon. */
     fun notify(
         title: String,
         message: String,
         messageType: MessageType,
     ): Boolean {
-        val owner = findTrayIconOwner(user32, processId) ?: return false
+        val owner =
+            findTrayIconOwner(user32, processId) ?: run {
+                logger.info { "No tray icon to show a balloon on" }
+                return false
+            }
         val data =
             Shell32.NotifyIconData().apply {
                 hWnd = owner
@@ -29,7 +36,9 @@ internal class WindowsTrayNotifier(
                 fill(szInfo, message)
                 dwInfoFlags = infoIcon(messageType) or NIIF_NOSOUND
             }
-        return shell32.Shell_NotifyIcon(NIM_MODIFY, data)
+        return shell32.Shell_NotifyIcon(NIM_MODIFY, data).also { shown ->
+            if (!shown) logger.info { "Shell refused the tray balloon" }
+        }
     }
 
     companion object {
@@ -49,12 +58,16 @@ internal class WindowsTrayNotifier(
                 MessageType.Success -> NIIF_NONE
             }
 
-        /** Copies [text] into a fixed WCHAR buffer, truncated so a terminating NUL always fits. */
+        /**
+         * Copies [text] into a fixed WCHAR buffer, truncated so a terminating NUL always fits
+         * and a surrogate pair is never split.
+         */
         fun fill(
             buffer: CharArray,
             text: String,
         ) {
-            val length = minOf(text.length, buffer.size - 1)
+            var length = minOf(text.length, buffer.size - 1)
+            if (length < text.length && length > 0 && text[length - 1].isHighSurrogate()) length--
             text.toCharArray(buffer, 0, 0, length)
             buffer.fill('\u0000', length)
         }

@@ -51,6 +51,15 @@ class DesktopNotificationManagerWindowsTest {
     }
 
     @Test
+    fun `hidden window on Windows falls back to a toast when the balloon throws an Error`() {
+        val manager = manager { throw UnsatisfiedLinkError("shell32") }
+
+        manager.doSendNotification(message)
+
+        assertEquals(listOf(message), manager.notificationList.value)
+    }
+
+    @Test
     fun `visible main window on Windows shows a toast without a balloon`() {
         val posted = mutableListOf<Message>()
         val manager = manager(mainWindowShown = true) { posted.add(it) }

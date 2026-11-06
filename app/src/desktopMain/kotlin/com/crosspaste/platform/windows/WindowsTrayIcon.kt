@@ -7,7 +7,11 @@ import com.sun.jna.Native
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.WinDef.HWND
 
-/** Our single ComposeNativeTray 2.1.7 icon is owned by a "TRAY" window and has icon id 1000. */
+/**
+ * Icon id of the first tray ComposeNativeTray 2.1.7 creates, owned by a "TRAY" window. The
+ * native side assigns ids from a per-process counter starting at 1000, so a tray that is
+ * disposed and recreated gets 1001 and breaks both the hit test and the balloon.
+ */
 internal const val TRAY_ICON_ID = 1000
 
 /** The window of [processId] that owns its tray icon, or null when no icon is shown. */

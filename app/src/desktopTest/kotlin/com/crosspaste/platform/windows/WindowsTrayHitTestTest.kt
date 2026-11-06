@@ -11,14 +11,11 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.condition.EnabledOnOs
-import org.junit.jupiter.api.condition.OS
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@EnabledOnOs(OS.WINDOWS)
 class WindowsTrayHitTestTest {
     private val user32 = mockk<User32>(relaxed = true)
     private val shell32 = mockk<Shell32>()

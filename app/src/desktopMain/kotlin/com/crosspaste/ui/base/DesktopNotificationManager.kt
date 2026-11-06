@@ -12,6 +12,7 @@ import com.crosspaste.platform.windows.api.Shell32
 import com.crosspaste.platform.windows.api.User32
 import com.crosspaste.sound.SoundService
 import com.sun.jna.platform.win32.Kernel32
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.concurrent.atomic.AtomicInteger
 
 class DesktopNotificationManager(
@@ -20,11 +21,10 @@ class DesktopNotificationManager(
     private val platform: Platform,
     private val soundService: SoundService,
     // Shows a balloon on the Windows tray icon; false when it cannot be shown
-    private val postWindowsNotification: (Message) -> Boolean = { message ->
-        WindowsTrayNotifier(User32.INSTANCE, Shell32.INSTANCE, Kernel32.INSTANCE.GetCurrentProcessId())
-            .notify(message.title, message.message ?: "", message.messageType)
-    },
+    private val postWindowsNotification: (Message) -> Boolean = defaultWindowsNotification(),
 ) : NotificationManager(copywriter) {
+
+    private val logger = KotlinLogging.logger {}
 
     val idGenerator = AtomicInteger(0)
 
@@ -50,7 +50,13 @@ class DesktopNotificationManager(
     }
 
     private fun notifyWindows(message: Message) {
-        if (!postWindowsNotification(message)) {
+        // runCatching also catches JNA Errors (e.g. UnsatisfiedLinkError); anything thrown here
+        // would end the collector in NotificationManager and silence every later notification
+        val shown =
+            runCatching { postWindowsNotification(message) }
+                .onFailure { logger.warn(it) { "Failed to show tray balloon" } }
+                .getOrDefault(false)
+        if (!shown) {
             pushNotification(message)
         }
     }
@@ -69,4 +75,11 @@ class DesktopNotificationManager(
             ),
         )
     }
+}
+
+private fun defaultWindowsNotification(): (Message) -> Boolean {
+    val notifier by lazy {
+        WindowsTrayNotifier(User32.INSTANCE, Shell32.INSTANCE, Kernel32.INSTANCE.GetCurrentProcessId())
+    }
+    return { message -> notifier.notify(message.title, message.message ?: "", message.messageType) }
 }

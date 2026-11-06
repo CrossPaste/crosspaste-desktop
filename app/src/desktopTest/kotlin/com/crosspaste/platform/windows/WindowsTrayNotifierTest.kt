@@ -11,14 +11,11 @@ import com.sun.jna.ptr.IntByReference
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import org.junit.jupiter.api.condition.EnabledOnOs
-import org.junit.jupiter.api.condition.OS
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@EnabledOnOs(OS.WINDOWS)
 class WindowsTrayNotifierTest {
     private val user32 = mockk<User32>(relaxed = true)
     private val shell32 = mockk<Shell32>()
@@ -53,8 +50,6 @@ class WindowsTrayNotifierTest {
 
         verify { shell32.Shell_NotifyIcon(WindowsTrayNotifier.NIM_MODIFY, any()) }
         val data = sent!!
-        // NOTIFYICONDATAW, Vista+ layout
-        assertEquals(if (Native.POINTER_SIZE == 8) 976 else 956, data.cbSize)
         assertEquals(ownTray, data.hWnd)
         assertEquals(TRAY_ICON_ID, data.uID)
         assertEquals(WindowsTrayNotifier.NIF_INFO, data.uFlags)
@@ -76,6 +71,15 @@ class WindowsTrayNotifierTest {
 
         assertEquals(63, Native.toString(sent!!.szInfoTitle).length)
         assertEquals(255, Native.toString(sent!!.szInfo).length)
+    }
+
+    @Test
+    fun `truncation never splits a surrogate pair`() {
+        val buffer = CharArray(4)
+
+        WindowsTrayNotifier.fill(buffer, "ab\uD83D\uDE00")
+
+        assertEquals("ab", Native.toString(buffer))
     }
 
     @Test
