@@ -1,12 +1,12 @@
 package com.crosspaste.ui.base
 
-import androidx.compose.ui.window.Notification
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.Message
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.Platform
+import com.crosspaste.platform.macos.api.MacosApi
 import com.crosspaste.platform.windows.WindowsTrayNotifier
 import com.crosspaste.platform.windows.api.Shell32
 import com.crosspaste.platform.windows.api.User32
@@ -22,13 +22,15 @@ class DesktopNotificationManager(
     private val soundService: SoundService,
     // Shows a balloon on the Windows tray icon; false when it cannot be shown
     private val postWindowsNotification: (Message) -> Boolean = defaultWindowsNotification(),
+    // Posts to macOS Notification Center; false when unavailable to this process
+    private val postMacosNotification: (Message) -> Boolean = { message ->
+        MacosApi.INSTANCE.postUserNotification(message.title, message.message ?: "") != 0
+    },
 ) : NotificationManager(copywriter) {
 
     private val logger = KotlinLogging.logger {}
 
     val idGenerator = AtomicInteger(0)
-
-    val trayState = CrossPasteTrayState()
 
     override fun getMessageId(): Int = idGenerator.incrementAndGet()
 
@@ -41,9 +43,9 @@ class DesktopNotificationManager(
             // Frequent results like "copy successful" would be noise as system notifications
             pushNotification(message)
         } else if (platform.isWindows()) {
-            notifyWindows(message)
+            notifySystem(message, postWindowsNotification)
         } else {
-            notifyTray(message)
+            notifySystem(message, postMacosNotification)
         }
         if (message.messageType == MessageType.Error) {
             soundService.errorSound()
@@ -55,31 +57,19 @@ class DesktopNotificationManager(
     private fun Message.needsSystemNotification(): Boolean =
         messageType == MessageType.Error || messageType == MessageType.Warning
 
-    private fun notifyWindows(message: Message) {
+    private fun notifySystem(
+        message: Message,
+        post: (Message) -> Boolean,
+    ) {
         // runCatching also catches JNA Errors (e.g. UnsatisfiedLinkError); anything thrown here
         // would end the collector in NotificationManager and silence every later notification
         val shown =
-            runCatching { postWindowsNotification(message) }
-                .onFailure { logger.warn(it) { "Failed to show tray balloon" } }
+            runCatching { post(message) }
+                .onFailure { logger.warn(it) { "Failed to show system notification" } }
                 .getOrDefault(false)
         if (!shown) {
             pushNotification(message)
         }
-    }
-
-    private fun notifyTray(message: Message) {
-        trayState.sendNotification(
-            Notification(
-                message.title,
-                message.message ?: "",
-                when (message.messageType) {
-                    MessageType.Error -> Notification.Type.Error
-                    MessageType.Info -> Notification.Type.Info
-                    MessageType.Success -> Notification.Type.None
-                    MessageType.Warning -> Notification.Type.Warning
-                },
-            ),
-        )
     }
 }
 
