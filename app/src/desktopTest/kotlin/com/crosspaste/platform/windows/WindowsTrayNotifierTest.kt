@@ -59,6 +59,21 @@ class WindowsTrayNotifierTest {
     }
 
     @Test
+    fun `title-only message is shown as the body because an empty body removes the balloon`() {
+        withOwnTray()
+        var sent: Shell32.NotifyIconData? = null
+        every { shell32.Shell_NotifyIcon(any(), any()) } answers {
+            sent = secondArg()
+            true
+        }
+
+        notifier.notify("Copy successful", "", MessageType.Success)
+
+        assertEquals("", Native.toString(sent!!.szInfoTitle))
+        assertEquals("Copy successful", Native.toString(sent!!.szInfo))
+    }
+
+    @Test
     fun `long text is truncated to keep the terminating NUL`() {
         withOwnTray()
         var sent: Shell32.NotifyIconData? = null

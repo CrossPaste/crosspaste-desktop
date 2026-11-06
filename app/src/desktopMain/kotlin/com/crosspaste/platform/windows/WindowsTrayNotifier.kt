@@ -27,13 +27,16 @@ internal class WindowsTrayNotifier(
                 logger.info { "No tray icon to show a balloon on" }
                 return false
             }
+        // An empty szInfo removes the balloon instead of showing it, so a title-only
+        // message (e.g. "copy successful") is shown as the body
+        val (infoTitle, info) = if (message.isEmpty()) "" to title else title to message
         val data =
             Shell32.NotifyIconData().apply {
                 hWnd = owner
                 uID = TRAY_ICON_ID
                 uFlags = NIF_INFO
-                fill(szInfoTitle, title)
-                fill(szInfo, message)
+                fill(szInfoTitle, infoTitle)
+                fill(szInfo, info)
                 dwInfoFlags = infoIcon(messageType) or NIIF_NOSOUND
             }
         return shell32.Shell_NotifyIcon(NIM_MODIFY, data).also { shown ->
