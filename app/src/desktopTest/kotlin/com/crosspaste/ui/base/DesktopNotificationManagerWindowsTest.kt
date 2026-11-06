@@ -12,7 +12,7 @@ import kotlin.test.assertEquals
 class DesktopNotificationManagerWindowsTest {
 
     private val message =
-        Message(messageId = 1, title = "title", message = "body", messageType = MessageType.Info, duration = null)
+        Message(messageId = 1, title = "title", message = "body", messageType = MessageType.Warning, duration = null)
 
     private val windows = Platform(Platform.WINDOWS, "x86_64", 64, "11")
 
@@ -57,6 +57,20 @@ class DesktopNotificationManagerWindowsTest {
         manager.doSendNotification(message)
 
         assertEquals(listOf(message), manager.notificationList.value)
+    }
+
+    @Test
+    fun `hidden window on Windows keeps success and info out of system notifications`() {
+        val posted = mutableListOf<Message>()
+        val manager = manager { posted.add(it) }
+        val success = message.copy(messageType = MessageType.Success)
+        val info = message.copy(messageId = 2, messageType = MessageType.Info)
+
+        manager.doSendNotification(success)
+        manager.doSendNotification(info)
+
+        assertEquals(emptyList(), posted)
+        assertEquals(listOf(info, success), manager.notificationList.value)
     }
 
     @Test

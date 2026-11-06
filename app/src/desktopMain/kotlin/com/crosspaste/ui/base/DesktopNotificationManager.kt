@@ -37,6 +37,9 @@ class DesktopNotificationManager(
             pushNotification(message)
         } else if (platform.isLinux()) {
             pushNotification(message)
+        } else if (!message.needsSystemNotification()) {
+            // Frequent results like "copy successful" would be noise as system notifications
+            pushNotification(message)
         } else if (platform.isWindows()) {
             notifyWindows(message)
         } else {
@@ -48,6 +51,9 @@ class DesktopNotificationManager(
             soundService.successSound()
         }
     }
+
+    private fun Message.needsSystemNotification(): Boolean =
+        messageType == MessageType.Error || messageType == MessageType.Warning
 
     private fun notifyWindows(message: Message) {
         // runCatching also catches JNA Errors (e.g. UnsatisfiedLinkError); anything thrown here
