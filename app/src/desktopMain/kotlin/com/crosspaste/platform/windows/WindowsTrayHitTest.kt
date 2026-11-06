@@ -2,16 +2,13 @@ package com.crosspaste.platform.windows
 
 import com.crosspaste.platform.windows.api.Shell32
 import com.crosspaste.platform.windows.api.User32
-import com.crosspaste.platform.windows.api.WndEnumProc
 import com.crosspaste.platform.windows.api.windowFromPoint
 import com.crosspaste.platform.windows.api.windowProcessId
-import com.sun.jna.Native
-import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.WinDef.HWND
 import com.sun.jna.platform.win32.WinDef.RECT
 import com.sun.jna.platform.win32.WinUser.GA_ROOT
 
-/** Adapter for our single ComposeNativeTray 2.1.7 icon (TRAY window, icon id 1000). */
+/** Hit testing against our tray icon, see [findTrayIconOwner]. */
 internal class WindowsTrayHitTest(
     private val user32: User32,
     private val shell32: Shell32,
@@ -39,26 +36,11 @@ internal class WindowsTrayHitTest(
     }
 
     private fun iconRect(): RECT? {
-        var owner: HWND? = null
-        user32.EnumWindows(
-            object : WndEnumProc {
-                override fun callback(
-                    hWnd: HWND,
-                    lParam: Pointer?,
-                ): Boolean {
-                    if (user32.windowProcessId(hWnd) != processId) return true
-                    val name = CharArray(32)
-                    if (user32.GetClassNameW(hWnd, name, name.size) == 0 || Native.toString(name) != "TRAY") return true
-                    owner = hWnd
-                    return false
-                }
-            },
-            null,
-        )
+        val owner = findTrayIconOwner(user32, processId)
         val identifier =
             Shell32.NotifyIconIdentifier().apply {
                 hWnd = owner ?: return null
-                uID = 1000
+                uID = TRAY_ICON_ID
             }
         val rect = RECT()
         if (shell32.Shell_NotifyIconGetRect(identifier, rect).toInt() != 0) return null
