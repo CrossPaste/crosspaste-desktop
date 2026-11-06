@@ -90,8 +90,6 @@ abstract class AppTokenService : AppTokenApi {
         }
     }
 
-    // A token is only valid while a pairing session is open; outside one the
-    // stale (or initial) value must never authorize a trust request.
     override fun sameToken(token: Int): Boolean =
         _refresh.value &&
             token ==
@@ -169,8 +167,9 @@ abstract class AppTokenService : AppTokenApi {
         preShowPairingCode()
     }
 
-    // Runs on the command consumer coroutine only. Opening a session issues a
-    // fresh token before the session becomes visible to sameToken().
+    // Runs on the command consumer coroutine only. The caller that opens the
+    // session generates a fresh token before the session becomes visible to
+    // sameToken(); later verifiers joining the open session share that token.
     private fun beginRefresh() {
         if (!_refresh.value) {
             refreshToken()

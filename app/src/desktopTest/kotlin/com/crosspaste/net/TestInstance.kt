@@ -39,7 +39,9 @@ import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.getPlatformUtils
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 class TestInstance(
     val appInstanceId: String,
@@ -183,10 +185,11 @@ class TestInstance(
             .concatToString()
             .toInt()
 
-    // Opens a pairing session (as the token dialog does) so the token is accepted.
-    suspend fun openPairingToken(): Int {
+    // Opens a pairing session (as the token dialog does) and returns its token.
+    // The session stays open for the rest of the test instance's lifetime.
+    suspend fun openPairingSession(): Int {
         appTokenApi.startRefresh(showToken = false)
-        appTokenApi.refresh.first { it }
+        withTimeout(5.seconds) { appTokenApi.refresh.first { it } }
         return getToken()
     }
 }

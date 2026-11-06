@@ -198,7 +198,7 @@ class SyncTest : KoinTest {
             runBlocking {
                 pasteServer.start()
                 appTokenApi.startRefresh(showToken = false)
-                appTokenApi.refresh.first { it }
+                withTimeout(5.seconds) { appTokenApi.refresh.first { it } }
 
                 syncClientApi.trust(
                     serverAppInfo.appInstanceId,
