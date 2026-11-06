@@ -33,6 +33,7 @@ class MacosPasteboardService(
     override val soundService: SoundService,
     override val sourceExclusionService: DesktopSourceExclusionService,
     private val syncManager: SyncManager,
+    private val universalClipboardHint: UniversalClipboardHint,
 ) : AbstractPasteboardService() {
     override val logger: KLogger = KotlinLogging.logger {}
 
@@ -85,6 +86,10 @@ class MacosPasteboardService(
         val config = configManager.getCurrentConfig()
         val firstChange = firstRead && changeCount == config.lastPasteboardChangeCount
         changeCount = currentChangeCount
+
+        if (remote.value == REMOTE_UNIVERSAL_CLIPBOARD) {
+            universalClipboardHint.onUniversalClipboardContent()
+        }
 
         when {
             firstChange && config.enableSkipPreLaunchPasteboardContent -> {
@@ -193,6 +198,10 @@ class MacosPasteboardService(
     }
 
     companion object {
+        // getPasteboardChangeCount's remote value for Universal Clipboard content;
+        // 2 marks Xcode's pasteboard sync with an attached device
+        private const val REMOTE_UNIVERSAL_CLIPBOARD = 1
+
         /**
          * Reads the pasteboard and keeps the result only if no other write landed
          * while it was being read. AWT reads one type at a time, so a write in
