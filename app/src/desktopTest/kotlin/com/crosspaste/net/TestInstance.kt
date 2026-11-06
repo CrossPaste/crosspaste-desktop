@@ -37,6 +37,7 @@ import com.crosspaste.utils.CryptographyUtils.generateSecureKeyPair
 import com.crosspaste.utils.DesktopDeviceUtils
 import com.crosspaste.utils.DeviceUtils
 import com.crosspaste.utils.getPlatformUtils
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlin.time.Duration
 
@@ -181,4 +182,11 @@ class TestInstance(
         appTokenApi.token.value
             .concatToString()
             .toInt()
+
+    // Opens a pairing session (as the token dialog does) so the token is accepted.
+    suspend fun openPairingToken(): Int {
+        appTokenApi.startRefresh(showToken = false)
+        appTokenApi.refresh.first { it }
+        return getToken()
+    }
 }

@@ -55,7 +55,7 @@ class SyncIntegrationTest {
             b.syncClientApi.trust(
                 a.appInfo.appInstanceId,
                 "localhost",
-                a.getToken(),
+                a.openPairingToken(),
                 urlFor(a),
             )
         assertTrue(result is SuccessResult, "Trust B->A should succeed")
@@ -182,7 +182,7 @@ class SyncIntegrationTest {
                 a.syncClientApi.trust(
                     b.appInfo.appInstanceId,
                     "localhost",
-                    b.getToken(),
+                    b.openPairingToken(),
                     urlFor(b),
                 )
             assertTrue(result is SuccessResult)
