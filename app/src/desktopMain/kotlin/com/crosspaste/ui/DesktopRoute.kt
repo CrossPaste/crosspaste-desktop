@@ -48,7 +48,6 @@ fun getRootRouteName(dest: NavDestination): String? =
         dest.hasRoute<Export>() -> Export.NAME
         dest.hasRoute<Extension>() -> Extension.NAME
         dest.hasRoute<Import>() -> Import.NAME
-        dest.hasRoute<NotificationCenterRoute>() -> NotificationCenterRoute.NAME
         dest.hasRoute<NearbyDeviceDetail>() -> Devices.NAME
         dest.hasRoute<OCR>() -> Extension.NAME
         dest.hasRoute<MCP>() -> Extension.NAME

@@ -38,11 +38,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowScope
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Close
+import com.composables.icons.materialsymbols.rounded.Notifications
 import com.composables.icons.materialsymbols.rounded.Push_pin
 import com.composables.icons.materialsymbols.roundedfilled.Push_pin
 import com.crosspaste.app.DesktopAppLaunchState
@@ -80,6 +82,7 @@ fun MainWindow(windowIcon: Painter?) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val platform = koinInject<Platform>()
     val screenProvider = koinInject<DesktopScreenProvider>()
+    val navController = LocalNavHostController.current
 
     val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
     val mainWindowInfo by appWindowManager.mainWindowInfo.collectAsState()
@@ -116,6 +119,9 @@ fun MainWindow(windowIcon: Painter?) {
                         isMacos = isMacos,
                         alwaysOnTop = alwaysOnTop,
                         onToggleAlwaysOnTop = { appWindowManager.switchAlwaysOnTopMainWindow() },
+                        onOpenNotificationCenter = {
+                            navController.navigate(NotificationCenterRoute) { launchSingleTop = true }
+                        },
                         onClose = { appWindowManager.hideMainWindow() },
                     )
 
@@ -177,9 +183,9 @@ private fun Modifier.mainWindowOutline(platform: Platform): Modifier =
 
 /**
  * Title bar row shared by all platforms:
- *   - macOS: pin only; padding(start) reserves space for the traffic lights and
- *     the system frame already provides dragging.
- *   - Windows/Linux: pin followed by a full-height close button on the right,
+ *   - macOS: notifications and pin; the start inset reserves room for the
+ *     traffic lights and the system frame already provides dragging.
+ *   - Windows/Linux: the same actions followed by a full-height close button,
  *     wrapped in a Compose drag area because the window is undecorated.
  */
 @Composable
@@ -187,9 +193,12 @@ private fun WindowScope.MainWindowTitleBar(
     isMacos: Boolean,
     alwaysOnTop: Boolean,
     onToggleAlwaysOnTop: () -> Unit,
+    onOpenNotificationCenter: () -> Unit,
     onClose: () -> Unit,
 ) {
     val appSizeValue = LocalDesktopAppSizeValueState.current
+    val appSize = koinInject<DesktopAppSize>()
+    val pinEndPadding = remember(appSize) { appSize.getPinPushEndPadding() }
 
     val titleBar: @Composable () -> Unit = {
         Row(
@@ -202,8 +211,20 @@ private fun WindowScope.MainWindowTitleBar(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.End,
         ) {
-            AlwaysOnTopButton(
-                alwaysOnTop = alwaysOnTop,
+            TitleBarActionButton(
+                imageVector = MaterialSymbols.Rounded.Notifications,
+                description = NotificationCenterRoute.NAME,
+                onClick = onOpenNotificationCenter,
+            )
+            TitleBarActionButton(
+                modifier = Modifier.padding(end = pinEndPadding),
+                imageVector =
+                    if (alwaysOnTop) {
+                        MaterialSymbols.RoundedFilled.Push_pin
+                    } else {
+                        MaterialSymbols.Rounded.Push_pin
+                    },
+                description = "always_on_top",
                 onClick = onToggleAlwaysOnTop,
             )
 
@@ -227,26 +248,16 @@ private fun WindowScope.MainWindowTitleBar(
 }
 
 @Composable
-private fun AlwaysOnTopButton(
-    alwaysOnTop: Boolean,
+private fun TitleBarActionButton(
+    imageVector: ImageVector,
+    description: String,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val appSize = koinInject<DesktopAppSize>()
-    val pushpinPadding = remember { appSize.getPinPushEndPadding() }
-
     GeneralIconButton(
-        modifier =
-            Modifier.padding(
-                top = medium,
-                end = pushpinPadding,
-            ),
-        imageVector =
-            if (alwaysOnTop) {
-                MaterialSymbols.RoundedFilled.Push_pin
-            } else {
-                MaterialSymbols.Rounded.Push_pin
-            },
-        desc = "always_on_top",
+        modifier = modifier.padding(top = medium),
+        imageVector = imageVector,
+        desc = description,
         colors =
             IconButtonDefaults.iconButtonColors(
                 containerColor = Color.Transparent,
