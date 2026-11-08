@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -25,7 +26,9 @@ import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationCenter
 import com.crosspaste.ui.base.AlertCard
+import com.crosspaste.ui.base.MessageContentCard
 import com.crosspaste.ui.base.SectionHeader
+import com.crosspaste.ui.base.getMessageColor
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
@@ -87,11 +90,20 @@ fun NotificationCenterContentView() {
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        AlertCard(
-                            title = copywriter.getText(notice.titleKey),
-                            message = notice.messageKey?.let { copywriter.getText(it) },
-                            messageType = notice.messageType,
-                        )
+                        val (_, iconColor) = notice.messageType.getMessageColor()
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.surfaceContainer,
+                            shape = MaterialTheme.shapes.large,
+                        ) {
+                            MessageContentCard(
+                                title = copywriter.getText(notice.titleKey),
+                                message = notice.messageKey?.let { copywriter.getText(it) },
+                                messageType = notice.messageType,
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                                iconColor = iconColor,
+                            )
+                        }
                     }
                 }
             }

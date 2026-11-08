@@ -23,6 +23,7 @@ fun MessageContentCard(
     messageType: MessageType,
     onCancel: (() -> Unit)? = null,
     contentColor: Color,
+    iconColor: Color = contentColor.copy(alpha = 0.8f),
 ) {
     ListItem(
         headlineContent = {
@@ -45,7 +46,7 @@ fun MessageContentCard(
                 imageVector = messageType.getMessageImageVector(),
                 contentDescription = null,
                 modifier = Modifier.size(xLarge),
-                tint = contentColor.copy(alpha = 0.8f),
+                tint = iconColor,
             )
         },
         trailingContent =
