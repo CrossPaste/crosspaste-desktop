@@ -56,7 +56,7 @@ import com.crosspaste.module.ocr.DesktopOCRModule
 import com.crosspaste.module.ocr.DesktopOCRModule.Companion.getTrainedDataName
 import com.crosspaste.module.ocr.DesktopOCRModule.Companion.splitOcrLanguages
 import com.crosspaste.notification.MessageType
-import com.crosspaste.notification.NotificationManager
+import com.crosspaste.notification.NotificationCenter
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.AlertCard
 import com.crosspaste.ui.base.SectionHeader
@@ -89,7 +89,7 @@ fun OCRContentView() {
     val configManager = koinInject<DesktopConfigManager>()
     val copywriter = koinInject<GlobalCopywriter>()
     val moduleDownloadManager = koinInject<ModuleDownloadManager>()
-    val notificationManager = koinInject<NotificationManager>()
+    val notificationCenter = koinInject<NotificationCenter>()
     val ocrModule = koinInject<DesktopOCRModule>()
     val allLanguages = copywriter.getAllLanguages()
 
@@ -103,10 +103,10 @@ fun OCRContentView() {
 
     LaunchedEffect(config.ocrLanguage) {
         if (config.ocrLanguage.isEmpty()) {
-            notificationManager.sendNotification(
-                title = { it.getText("ocr_no_language_loaded") },
+            notificationCenter.save(
+                titleKey = "ocr_no_language_loaded",
                 messageType = MessageType.Warning,
-                duration = null,
+                onceKey = "ocr.no_language_loaded",
             )
         }
     }
@@ -121,6 +121,15 @@ fun OCRContentView() {
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(tiny),
     ) {
+        if (config.ocrLanguage.isEmpty()) {
+            item(key = "ocr_no_language_notice") {
+                AlertCard(
+                    title = copywriter.getText("ocr_no_language_loaded"),
+                    messageType = MessageType.Warning,
+                )
+            }
+        }
+
         if (loadedLanguages.isNotEmpty()) {
             item(key = "ocr_alert_notice") {
                 AlertCard(

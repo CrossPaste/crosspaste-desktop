@@ -43,6 +43,7 @@ import com.composables.icons.materialsymbols.rounded.Exit_to_app
 import com.composables.icons.materialsymbols.rounded.Extension
 import com.composables.icons.materialsymbols.rounded.Info
 import com.composables.icons.materialsymbols.rounded.Keyboard
+import com.composables.icons.materialsymbols.rounded.Notifications
 import com.composables.icons.materialsymbols.rounded.Refresh
 import com.composables.icons.materialsymbols.rounded.Settings
 import com.composables.icons.materialsymbols.rounded.Share
@@ -87,6 +88,11 @@ fun MainMenuView() {
                 MainMenuItem("pairing_code", PairingCode, MaterialSymbols.Rounded.Vpn_key),
                 MainMenuItem("settings", Settings, MaterialSymbols.Rounded.Settings),
                 MainMenuItem("extension", Extension, MaterialSymbols.Rounded.Extension),
+                MainMenuItem(
+                    NotificationCenterRoute.NAME,
+                    NotificationCenterRoute,
+                    MaterialSymbols.Rounded.Notifications,
+                ),
             )
         }
 
