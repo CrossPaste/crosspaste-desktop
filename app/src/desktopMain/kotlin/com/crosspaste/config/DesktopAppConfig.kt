@@ -60,9 +60,6 @@ data class DesktopAppConfig(
     // One-time macOS prompt offering to install the /usr/local/bin/crosspaste
     // CLI symlink; cleared after the user installs or dismisses it once.
     val showInstallCliPrompt: Boolean = true,
-    // One-time macOS notice that Universal Clipboard and CrossPaste both sync the
-    // pasteboard between Apple devices; cleared once shown.
-    val showUniversalClipboardHint: Boolean = true,
     // Floating button that opens the paste panel; toggled by the show_paste_panel shortcut
     val showPastePanelButton: Boolean = false,
     // "normal" or "small", see DesktopAppSize.PASTE_PANEL_BUTTON_SIZE_*
@@ -198,8 +195,6 @@ data class DesktopAppConfig(
             proxyPort = if (key == "proxyPort") toString(value) else proxyPort,
             showGrantAccessibility = if (key == "showGrantAccessibility") toBoolean(value) else showGrantAccessibility,
             showInstallCliPrompt = if (key == "showInstallCliPrompt") toBoolean(value) else showInstallCliPrompt,
-            showUniversalClipboardHint =
-                if (key == "showUniversalClipboardHint") toBoolean(value) else showUniversalClipboardHint,
             showPastePanelButton = if (key == "showPastePanelButton") toBoolean(value) else showPastePanelButton,
             pastePanelButtonSize = if (key == "pastePanelButtonSize") toString(value) else pastePanelButtonSize,
             enableSyncText = if (key == "enableSyncText") toBoolean(value) else enableSyncText,
