@@ -1,5 +1,6 @@
 package com.crosspaste.notification
 
+import com.crosspaste.i18n.Copywriter
 import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.utils.DateUtils
 import com.crosspaste.utils.ioDispatcher
@@ -12,7 +13,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
-import java.util.UUID
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 @Serializable
 data class SavedNotification(
@@ -21,7 +23,11 @@ data class SavedNotification(
     val messageKey: String?,
     val messageType: MessageType,
     val createdAt: Long,
-)
+    val messageArgs: List<String> = emptyList(),
+) {
+    fun localizedMessage(copywriter: Copywriter): String? =
+        messageKey?.let { copywriter.getText(it, *messageArgs.toTypedArray()) }
+}
 
 @Serializable
 private data class NotificationHistory(
@@ -44,12 +50,15 @@ class NotificationCenter(
     /**
      * Returns true only when the notice was saved. Use a stable onceKey per
      * notice kind, since delivery keys outlive the corresponding entries.
+     * Pass text values for the message's localized string placeholders.
      */
+    @OptIn(ExperimentalUuidApi::class)
     suspend fun save(
         titleKey: String,
         messageKey: String? = null,
         messageType: MessageType = MessageType.Info,
         onceKey: String? = null,
+        messageArgs: List<String> = emptyList(),
     ): Result<Boolean> =
         withHistory { current ->
             if (onceKey != null && onceKey in current.deliveredOnceKeys) {
@@ -57,11 +66,12 @@ class NotificationCenter(
             } else {
                 val notice =
                     SavedNotification(
-                        id = UUID.randomUUID().toString(),
+                        id = Uuid.random().toString(),
                         titleKey = titleKey,
                         messageKey = messageKey,
                         messageType = messageType,
                         createdAt = DateUtils.nowEpochMilliseconds(),
+                        messageArgs = messageArgs.toList(),
                     )
                 commit(
                     current.copy(

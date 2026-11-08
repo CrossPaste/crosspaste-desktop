@@ -137,7 +137,7 @@ fun NotificationCenterContentView() {
                         ) {
                             MessageContentCard(
                                 title = copywriter.getText(notice.titleKey),
-                                message = notice.messageKey?.let { copywriter.getText(it) },
+                                message = notice.localizedMessage(copywriter),
                                 messageType = notice.messageType,
                                 contentColor = MaterialTheme.colorScheme.onSurface,
                                 iconColor = iconColor,

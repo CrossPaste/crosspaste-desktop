@@ -1,5 +1,6 @@
 package com.crosspaste.notification
 
+import com.crosspaste.i18n.DesktopCopywriter
 import com.crosspaste.presist.OneFilePersist
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -138,5 +139,54 @@ class NotificationCenterTest {
             val entries = assertNotNull(reopened.notifications.value)
             assertEquals((99 downTo 0).map { "entry-$it" }, entries.map { it.titleKey })
             assertFalse(reopened.save("old", onceKey = "once").getOrThrow())
+        }
+
+    @Test
+    fun `history written before message arguments were added still loads`() =
+        runTest {
+            Files.writeString(
+                historyFile,
+                """
+                {
+                  "notifications": [
+                    {
+                      "id": "legacy",
+                      "titleKey": "ocr_no_language_loaded",
+                      "messageKey": null,
+                      "messageType": "Warning",
+                      "createdAt": 1000
+                    }
+                  ],
+                  "deliveredOnceKeys": ["ocr.no_language_loaded"]
+                }
+                """.trimIndent(),
+            )
+            val center = center()
+
+            center.load().getOrThrow()
+
+            val notice = assertNotNull(center.notifications.value).single()
+            assertEquals("legacy", notice.id)
+            assertEquals(emptyList(), notice.messageArgs)
+            assertFalse(center.save("ocr_no_language_loaded", onceKey = "ocr.no_language_loaded").getOrThrow())
+            assertFalse(Files.exists(backupFile))
+        }
+
+    @Test
+    fun `saved arguments survive restart and format in the current language`() =
+        runTest {
+            center()
+                .save(
+                    titleKey = "notification_center",
+                    messageKey = "relative_minutes_ago",
+                    messageArgs = listOf("5"),
+                ).getOrThrow()
+
+            val reopened = center()
+            reopened.load().getOrThrow()
+            val notice = assertNotNull(reopened.notifications.value).single()
+            assertEquals(listOf("5"), notice.messageArgs)
+            assertEquals("5 minutes ago", notice.localizedMessage(DesktopCopywriter("en")))
+            assertEquals("5 分钟前", notice.localizedMessage(DesktopCopywriter("zh")))
         }
 }
