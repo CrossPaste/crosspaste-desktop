@@ -6,6 +6,7 @@ import coil3.memory.MemoryCache
 import com.crosspaste.app.AppControl
 import com.crosspaste.app.AppEnv
 import com.crosspaste.app.AppExitService
+import com.crosspaste.app.AppFileType
 import com.crosspaste.app.AppInfo
 import com.crosspaste.app.AppInfoFactory
 import com.crosspaste.app.AppLaunchState
@@ -62,6 +63,7 @@ import com.crosspaste.net.AbstractResourcesClient
 import com.crosspaste.net.ResourcesClient
 import com.crosspaste.net.Server
 import com.crosspaste.net.SyncInfoFactory
+import com.crosspaste.notification.NotificationCenter
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.paste.CacheManager
 import com.crosspaste.paste.DesktopCacheManager
@@ -261,6 +263,10 @@ fun desktopAppModule(
         single<FontManager> { DesktopFontManager(get()) }
         single<KLogger> { klogger }
         single<LocaleUtils> { DesktopLocaleUtils }
+        single {
+            val path = appPathProvider.resolve("notifications.json", AppFileType.USER)
+            NotificationCenter(FilePersist.createOneFilePersist(path))
+        }
         single<Platform> { platform }
         single<QRCodeGenerator> { DesktopQRCodeGenerator(get(), get(), get()) }
         single<SyncInfoFactory> { SyncInfoFactory(get(), get()) }

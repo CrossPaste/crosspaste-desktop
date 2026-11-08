@@ -57,6 +57,7 @@ import com.crosspaste.module.ocr.DesktopOCRModule.Companion.getTrainedDataName
 import com.crosspaste.module.ocr.DesktopOCRModule.Companion.splitOcrLanguages
 import com.crosspaste.notification.MessageType
 import com.crosspaste.notification.NotificationCenter
+import com.crosspaste.notification.NotificationManager
 import com.crosspaste.ui.LocalThemeState
 import com.crosspaste.ui.base.AlertCard
 import com.crosspaste.ui.base.SectionHeader
@@ -79,6 +80,8 @@ import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import kotlin.math.roundToInt
 
+private const val NO_OCR_LANGUAGE_KEY = "ocr_no_language_loaded"
+
 private val ActionPillShape = RoundedCornerShape(small)
 private val RowPadding = PaddingValues(horizontal = medium, vertical = tiny)
 private val PillPadding = PaddingValues(horizontal = small, vertical = tiny3X)
@@ -90,6 +93,7 @@ fun OCRContentView() {
     val copywriter = koinInject<GlobalCopywriter>()
     val moduleDownloadManager = koinInject<ModuleDownloadManager>()
     val notificationCenter = koinInject<NotificationCenter>()
+    val notificationManager = koinInject<NotificationManager>()
     val ocrModule = koinInject<DesktopOCRModule>()
     val allLanguages = copywriter.getAllLanguages()
 
@@ -103,11 +107,17 @@ fun OCRContentView() {
 
     LaunchedEffect(config.ocrLanguage) {
         if (config.ocrLanguage.isEmpty()) {
-            notificationCenter.save(
-                titleKey = "ocr_no_language_loaded",
-                messageType = MessageType.Warning,
-                onceKey = "ocr.no_language_loaded",
-            )
+            notificationCenter
+                .save(
+                    titleKey = NO_OCR_LANGUAGE_KEY,
+                    messageType = MessageType.Warning,
+                    onceKey = "ocr.no_language_loaded",
+                ).onFailure {
+                    notificationManager.sendNotification(
+                        title = { it.getText(NO_OCR_LANGUAGE_KEY) },
+                        messageType = MessageType.Warning,
+                    )
+                }
         }
     }
 
@@ -124,7 +134,7 @@ fun OCRContentView() {
         if (config.ocrLanguage.isEmpty()) {
             item(key = "ocr_no_language_notice") {
                 AlertCard(
-                    title = copywriter.getText("ocr_no_language_loaded"),
+                    title = copywriter.getText(NO_OCR_LANGUAGE_KEY),
                     messageType = MessageType.Warning,
                 )
             }

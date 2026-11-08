@@ -11,6 +11,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
 import java.util.UUID
 
 @Serializable
@@ -40,7 +41,10 @@ class NotificationCenter(
 
     suspend fun load(): Result<Unit> = withHistory { }
 
-    /** Returns true only when the notice was saved. Keep a onceKey stable across app versions. */
+    /**
+     * Returns true only when the notice was saved. Use a stable onceKey per
+     * notice kind, since delivery keys outlive the corresponding entries.
+     */
     suspend fun save(
         titleKey: String,
         messageKey: String? = null,
@@ -61,7 +65,7 @@ class NotificationCenter(
                     )
                 commit(
                     current.copy(
-                        notifications = listOf(notice) + current.notifications,
+                        notifications = listOf(notice) + current.notifications.take(MAX_ENTRIES - 1),
                         deliveredOnceKeys = current.deliveredOnceKeys + listOfNotNull(onceKey),
                     ),
                 )
@@ -74,6 +78,16 @@ class NotificationCenter(
             if (current.notifications.isNotEmpty()) {
                 commit(current.copy(notifications = emptyList()))
             }
+        }
+
+    private fun loadHistory(): NotificationHistory =
+        try {
+            storage.read(NotificationHistory::class) ?: NotificationHistory()
+        } catch (e: SerializationException) {
+            // Let a failed backup propagate. A later retry can recover without overwriting the original.
+            val backupPath = storage.quarantine()
+            logger.warn(e) { "Notification history is corrupt; moved it to $backupPath" }
+            NotificationHistory()
         }
 
     private fun commit(updated: NotificationHistory) {
@@ -90,12 +104,12 @@ class NotificationCenter(
         withContext(ioDispatcher) {
             mutex.withLock {
                 runCatching {
-                    val current =
-                        history ?: run {
-                            (storage.read(NotificationHistory::class) ?: NotificationHistory()).also(::publish)
-                        }
-                    action(current)
+                    action(history ?: loadHistory().also(::publish))
                 }.onFailure { logger.error(it) { "Notification history operation failed" } }
             }
         }
+
+    private companion object {
+        const val MAX_ENTRIES = 100
+    }
 }

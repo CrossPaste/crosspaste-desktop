@@ -30,10 +30,7 @@ import com.crosspaste.listener.ShortcutKeys
 import com.crosspaste.listener.ShortcutKeysAction
 import com.crosspaste.listener.ShortcutKeysListener
 import com.crosspaste.listener.ShortcutKeysLoader
-import com.crosspaste.notification.NotificationCenter
 import com.crosspaste.notification.NotificationManager
-import com.crosspaste.path.AppPathProvider
-import com.crosspaste.presist.OneFilePersist
 import com.crosspaste.sound.DesktopSoundService
 import com.crosspaste.sound.SoundService
 import com.crosspaste.sync.TokenCache
@@ -126,10 +123,6 @@ fun desktopUiModule(): Module =
         // region Misc
         single<AppSourceIconTransformer> { DefaultAppSourceIconTransformer }
         single<DesktopIconColorExtractor> { DesktopIconColorExtractor(get()) }
-        single {
-            val path = get<AppPathProvider>().pasteUserPath.resolve("notifications.json")
-            NotificationCenter(OneFilePersist(path))
-        }
         single<NotificationManager> { DesktopNotificationManager(get(), get(), get(), get()) }
         single<PlatformContext> { PlatformContext.INSTANCE }
         single<SoundService> { DesktopSoundService(get()) }

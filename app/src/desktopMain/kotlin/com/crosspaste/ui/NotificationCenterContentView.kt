@@ -17,6 +17,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -33,21 +35,38 @@ import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.utils.DateUtils
+import com.crosspaste.utils.RelativeTimeKey
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun NotificationCenterContentView() {
     val center = koinInject<NotificationCenter>()
     val copywriter = koinInject<GlobalCopywriter>()
     val notifications by center.notifications.collectAsState()
+    val entries = notifications
+    val hasEntries = !entries.isNullOrEmpty()
     val scope = rememberCoroutineScope()
     var confirmClear by remember { mutableStateOf(false) }
     var clearing by remember { mutableStateOf(false) }
-    var errorKey by remember { mutableStateOf<String?>(null) }
+    var clearFailed by remember { mutableStateOf(false) }
+    var loadFailed by remember { mutableStateOf(false) }
+    var loadAttempt by remember { mutableIntStateOf(0) }
+    var now by remember { mutableLongStateOf(DateUtils.nowEpochMilliseconds()) }
 
-    LaunchedEffect(center) {
-        if (center.load().isFailure) errorKey = "notification_center_load_failed"
+    LaunchedEffect(center, loadAttempt) {
+        loadFailed = center.load().isFailure
+    }
+
+    LaunchedEffect(hasEntries) {
+        if (hasEntries) {
+            while (true) {
+                now = DateUtils.nowEpochMilliseconds()
+                delay(30.seconds)
+            }
+        }
     }
 
     Column(
@@ -60,18 +79,32 @@ fun NotificationCenterContentView() {
             trailingContent = {
                 TextButton(
                     onClick = { confirmClear = true },
-                    enabled = !notifications.isNullOrEmpty() && !clearing,
+                    enabled = hasEntries && !clearing,
                 ) {
                     Text(copywriter.getText("notification_center_clear_all"))
                 }
             },
         )
-        errorKey?.let {
-            AlertCard(title = copywriter.getText(it), messageType = MessageType.Error)
+        if (entries == null && loadFailed) {
+            AlertCard(
+                title = copywriter.getText("notification_center_load_failed"),
+                messageType = MessageType.Error,
+            )
+            TextButton(
+                onClick = {
+                    loadFailed = false
+                    loadAttempt++
+                },
+            ) { Text(copywriter.getText("retry")) }
         }
-        val entries = notifications
+        if (clearFailed) {
+            AlertCard(
+                title = copywriter.getText("notification_center_clear_failed"),
+                messageType = MessageType.Error,
+            )
+        }
         when {
-            entries == null && errorKey == null -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            entries == null && !loadFailed -> LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             entries != null && entries.isEmpty() -> {
                 Text(
                     text = copywriter.getText("notification_center_empty"),
@@ -83,9 +116,15 @@ fun NotificationCenterContentView() {
             entries != null -> {
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(tiny)) {
                     items(entries, key = { it.id }) { notice ->
-                        val date = DateUtils.epochMillisecondsToLocalDateTime(notice.createdAt)
+                        val relative = DateUtils.getRelativeTime(notice.createdAt, now)
+                        val timestamp =
+                            if (relative.unit == RelativeTimeKey.SECONDS) {
+                                copywriter.getText(RelativeTimeKey.NOW)
+                            } else {
+                                copywriter.getText(relative.unit, relative.value ?: "")
+                            }
                         Text(
-                            text = copywriter.getDate(date),
+                            text = timestamp,
                             modifier = Modifier.padding(start = tiny, end = tiny, bottom = tiny3X),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -124,11 +163,11 @@ fun NotificationCenterContentView() {
                         confirmClear = false
                         clearing = true
                         scope.launch {
-                            errorKey = if (center.clearAll().isFailure) "notification_center_clear_failed" else null
+                            clearFailed = center.clearAll().isFailure
                             clearing = false
                         }
                     },
-                ) { Text(copywriter.getText("clear_now")) }
+                ) { Text(copywriter.getText("notification_center_clear_all")) }
             },
         )
     }
