@@ -28,6 +28,7 @@ import com.crosspaste.ui.base.AlertCard
 import com.crosspaste.ui.base.SectionHeader
 import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
+import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.utils.DateUtils
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -82,7 +83,7 @@ fun NotificationCenterContentView() {
                         val date = DateUtils.epochMillisecondsToLocalDateTime(notice.createdAt)
                         Text(
                             text = copywriter.getDate(date),
-                            modifier = Modifier.padding(horizontal = tiny),
+                            modifier = Modifier.padding(start = tiny, end = tiny, bottom = tiny3X),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
