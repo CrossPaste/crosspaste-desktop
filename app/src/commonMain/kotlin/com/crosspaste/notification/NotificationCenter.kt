@@ -50,6 +50,7 @@ class NotificationCenter(
     /**
      * Returns true only when the notice was saved. Use a stable onceKey per
      * notice kind, since delivery keys outlive the corresponding entries.
+     * Avoid per-device or per-event IDs, which would grow the key set indefinitely.
      * Pass text values for the message's localized string placeholders.
      */
     @OptIn(ExperimentalUuidApi::class)

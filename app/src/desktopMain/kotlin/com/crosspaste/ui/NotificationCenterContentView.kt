@@ -35,10 +35,10 @@ import com.crosspaste.ui.theme.AppUISize.medium
 import com.crosspaste.ui.theme.AppUISize.tiny
 import com.crosspaste.ui.theme.AppUISize.tiny3X
 import com.crosspaste.utils.DateUtils
-import com.crosspaste.utils.RelativeTimeKey
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -48,6 +48,7 @@ fun NotificationCenterContentView() {
     val notifications by center.notifications.collectAsState()
     val entries = notifications
     val hasEntries = !entries.isNullOrEmpty()
+    val newestTimestamp = entries?.firstOrNull()?.createdAt
     val scope = rememberCoroutineScope()
     var confirmClear by remember { mutableStateOf(false) }
     var clearing by remember { mutableStateOf(false) }
@@ -60,11 +61,14 @@ fun NotificationCenterContentView() {
         loadFailed = center.load().isFailure
     }
 
-    LaunchedEffect(hasEntries) {
-        if (hasEntries) {
+    LaunchedEffect(newestTimestamp) {
+        if (newestTimestamp != null) {
             while (true) {
-                now = DateUtils.nowEpochMilliseconds()
-                delay(30.seconds)
+                val currentTime = DateUtils.nowEpochMilliseconds()
+                now = currentTime
+                val refreshInterval =
+                    if (currentTime - newestTimestamp < 1.minutes.inWholeMilliseconds) 1.seconds else 30.seconds
+                delay(refreshInterval)
             }
         }
     }
@@ -118,11 +122,8 @@ fun NotificationCenterContentView() {
                     items(entries, key = { it.id }) { notice ->
                         val relative = DateUtils.getRelativeTime(notice.createdAt, now)
                         val timestamp =
-                            if (relative.unit == RelativeTimeKey.SECONDS) {
-                                copywriter.getText(RelativeTimeKey.NOW)
-                            } else {
-                                copywriter.getText(relative.unit, relative.value ?: "")
-                            }
+                            relative.value?.let { copywriter.getText(relative.unit, it) }
+                                ?: copywriter.getText(relative.unit)
                         Text(
                             text = timestamp,
                             modifier = Modifier.padding(start = tiny, end = tiny, bottom = tiny3X),

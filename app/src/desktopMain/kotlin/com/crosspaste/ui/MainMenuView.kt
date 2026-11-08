@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Auto_awesome
@@ -136,7 +137,14 @@ fun MainMenuView() {
     val firstLaunchCompleted by appLaunch.firstLaunchCompleted.collectAsState()
     val navController = LocalNavHostController.current
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val rootRouteName = backStackEntry?.let { getRootRouteName(it.destination) }
+    val destination = backStackEntry?.destination
+    val sidebarDestination =
+        if (destination?.hasRoute<NotificationCenterRoute>() == true) {
+            navController.previousBackStackEntry?.destination
+        } else {
+            destination
+        }
+    val rootRouteName = sidebarDestination?.let(::getRootRouteName)
     val exitApplication = LocalExitApplication.current
 
     // The menu is designed for the full 700dp window, but the window height is
