@@ -72,7 +72,7 @@ object EncryptResponse :
                 is OutgoingContent.ReadChannelContent -> {
                     // Note: reads entire body into memory for encryption. Acceptable for small
                     // responses (JSON metadata). Large payloads use WriteChannelContent with chunked streaming.
-                    val bytes = body.readFrom().readRemaining().readByteArray()
+                    val bytes = body.readFrom().readBuffer().readByteArray()
                     context.subject =
                         ByteArrayContent(
                             encrypt(bytes),

@@ -57,7 +57,7 @@ internal suspend fun ByteReadChannel.readLimitedByteArray(
     description: String,
 ): ByteArray {
     require(maxBytes in 0 until Int.MAX_VALUE) { "maxBytes must fit in a ByteArray" }
-    val bytes = readRemaining(maxBytes + 1).readByteArray()
+    val bytes = readBuffer(maxBytes + 1).readByteArray()
     if (bytes.size.toLong() > maxBytes) {
         throw EncryptedPayloadException("$description exceeds $maxBytes bytes")
     }
