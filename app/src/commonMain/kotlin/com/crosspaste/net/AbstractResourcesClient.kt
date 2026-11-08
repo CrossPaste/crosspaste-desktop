@@ -13,7 +13,7 @@ import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.contentLength
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
-import io.ktor.utils.io.readRemaining
+import io.ktor.utils.io.readBuffer
 import kotlinx.io.readByteArray
 import okio.Path
 import kotlin.coroutines.cancellation.CancellationException
@@ -104,7 +104,7 @@ abstract class AbstractResourcesClient(
                     val body =
                         response
                             .bodyAsChannel()
-                            .readRemaining(maxBytes + 1)
+                            .readBuffer(maxBytes + 1)
                             .readByteArray()
                     if (body.size.toLong() > maxBytes) {
                         throw ResourceResponseTooLargeException(maxBytes)

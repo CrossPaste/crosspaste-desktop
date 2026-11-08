@@ -2,6 +2,7 @@ package com.crosspaste.mcp
 
 import com.crosspaste.utils.ioDispatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.server.application.Application
 import io.ktor.server.cio.CIO
 import io.ktor.server.cio.CIOApplicationEngine
 import io.ktor.server.engine.EmbeddedServer
@@ -9,6 +10,7 @@ import io.ktor.server.engine.embeddedServer
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.server.mcp
+import io.modelcontextprotocol.kotlin.sdk.server.mcpStreamableHttp
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
 import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
 import kotlinx.coroutines.CoroutineDispatcher
@@ -61,12 +63,18 @@ private class DefaultMcpServerInstanceFactory(
 
         val server =
             embeddedServer(CIO, host = "127.0.0.1", port = port) {
-                mcp {
-                    mcpServer
-                }
+                installCrossPasteMcp(mcpServer)
             }
         return KtorMcpServerInstance(server)
     }
+}
+
+internal fun Application.installCrossPasteMcp(server: Server) {
+    mcpStreamableHttp(path = DesktopMcpServer.HTTP_PATH) { server }
+
+    // Keep the original endpoint for clients already configured with the SSE transport.
+    @Suppress("DEPRECATION")
+    mcp { server }
 }
 
 private class KtorMcpServerInstance(
@@ -116,7 +124,7 @@ class DesktopMcpServer internal constructor(
                 val port = resolvePort(configuredPort)
                 server = createStartedServer(port)
                 actualPort = port
-                logger.info { "MCP Server started at port $actualPort (WebSocket)" }
+                logger.info { "MCP Server started at port $actualPort (Streamable HTTP)" }
             }
         }
     }
@@ -153,7 +161,7 @@ class DesktopMcpServer internal constructor(
                 server = replacement
                 configuredPort = newPort
                 actualPort = port
-                logger.info { "MCP Server restarted at port $actualPort (WebSocket)" }
+                logger.info { "MCP Server restarted at port $actualPort (Streamable HTTP)" }
             }
         }
     }
@@ -203,5 +211,6 @@ class DesktopMcpServer internal constructor(
 
     companion object {
         const val DEFAULT_PORT = 13130
+        internal const val HTTP_PATH = "/mcp"
     }
 }
