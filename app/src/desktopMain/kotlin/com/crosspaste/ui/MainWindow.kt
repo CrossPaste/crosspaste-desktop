@@ -18,8 +18,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.window.WindowDraggableArea
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PlainTooltip
@@ -30,6 +33,7 @@ import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvide
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -38,11 +42,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposeWindow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowScope
+import androidx.navigation.NavDestination.Companion.hasRoute
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.composables.icons.materialsymbols.MaterialSymbols
 import com.composables.icons.materialsymbols.rounded.Close
+import com.composables.icons.materialsymbols.rounded.Notifications
 import com.composables.icons.materialsymbols.rounded.Push_pin
 import com.composables.icons.materialsymbols.roundedfilled.Push_pin
 import com.crosspaste.app.DesktopAppLaunchState
@@ -52,10 +62,10 @@ import com.crosspaste.cli.CliSymlinkService
 import com.crosspaste.cli.CliSymlinkState
 import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.i18n.GlobalCopywriter
+import com.crosspaste.notification.NotificationCenter
 import com.crosspaste.platform.Platform
 import com.crosspaste.platform.windows.api.Dwmapi
 import com.crosspaste.ui.DesktopContext.MainWindowContext
-import com.crosspaste.ui.base.GeneralIconButton
 import com.crosspaste.ui.settings.GrantAccessibilityDialog
 import com.crosspaste.ui.settings.InstallCliDialog
 import com.crosspaste.ui.theme.AppUIColors
@@ -80,11 +90,20 @@ fun MainWindow(windowIcon: Painter?) {
     val appWindowManager = koinInject<DesktopAppWindowManager>()
     val platform = koinInject<Platform>()
     val screenProvider = koinInject<DesktopScreenProvider>()
+    val notificationCenter = koinInject<NotificationCenter>()
+    val navController = LocalNavHostController.current
 
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val notificationCenterOpen = backStackEntry?.destination?.hasRoute<NotificationCenterRoute>() == true
+    val notifications by notificationCenter.notifications.collectAsState()
     val alwaysOnTop by appWindowManager.alwaysOnTopMainWindow.collectAsState()
     val mainWindowInfo by appWindowManager.mainWindowInfo.collectAsState()
 
     val isMacos = remember { platform.isMacos() }
+
+    LaunchedEffect(notificationCenter) {
+        notificationCenter.load()
+    }
 
     Window(
         onCloseRequest = {
@@ -115,7 +134,12 @@ fun MainWindow(windowIcon: Painter?) {
                     MainWindowTitleBar(
                         isMacos = isMacos,
                         alwaysOnTop = alwaysOnTop,
+                        notificationCenterOpen = notificationCenterOpen,
+                        hasSavedNotifications = !notifications.isNullOrEmpty(),
                         onToggleAlwaysOnTop = { appWindowManager.switchAlwaysOnTopMainWindow() },
+                        onOpenNotificationCenter = {
+                            navController.navigate(NotificationCenterRoute) { launchSingleTop = true }
+                        },
                         onClose = { appWindowManager.hideMainWindow() },
                     )
 
@@ -177,19 +201,24 @@ private fun Modifier.mainWindowOutline(platform: Platform): Modifier =
 
 /**
  * Title bar row shared by all platforms:
- *   - macOS: pin only; padding(start) reserves space for the traffic lights and
- *     the system frame already provides dragging.
- *   - Windows/Linux: pin followed by a full-height close button on the right,
+ *   - macOS: notifications and pin; the start inset reserves room for the
+ *     traffic lights and the system frame already provides dragging.
+ *   - Windows/Linux: the same actions followed by a full-height close button,
  *     wrapped in a Compose drag area because the window is undecorated.
  */
 @Composable
 private fun WindowScope.MainWindowTitleBar(
     isMacos: Boolean,
     alwaysOnTop: Boolean,
+    notificationCenterOpen: Boolean,
+    hasSavedNotifications: Boolean,
     onToggleAlwaysOnTop: () -> Unit,
+    onOpenNotificationCenter: () -> Unit,
     onClose: () -> Unit,
 ) {
     val appSizeValue = LocalDesktopAppSizeValueState.current
+    val appSize = koinInject<DesktopAppSize>()
+    val pinEndPadding = remember(appSize) { appSize.getPinPushEndPadding() }
 
     val titleBar: @Composable () -> Unit = {
         Row(
@@ -202,8 +231,22 @@ private fun WindowScope.MainWindowTitleBar(
             verticalAlignment = Alignment.Top,
             horizontalArrangement = Arrangement.End,
         ) {
-            AlwaysOnTopButton(
-                alwaysOnTop = alwaysOnTop,
+            TitleBarActionButton(
+                imageVector = MaterialSymbols.Rounded.Notifications,
+                description = NotificationCenterRoute.NAME,
+                onClick = onOpenNotificationCenter,
+                enabled = !notificationCenterOpen,
+                showBadge = hasSavedNotifications && !notificationCenterOpen,
+            )
+            TitleBarActionButton(
+                modifier = Modifier.padding(end = pinEndPadding),
+                imageVector =
+                    if (alwaysOnTop) {
+                        MaterialSymbols.RoundedFilled.Push_pin
+                    } else {
+                        MaterialSymbols.Rounded.Push_pin
+                    },
+                description = "always_on_top",
                 onClick = onToggleAlwaysOnTop,
             )
 
@@ -226,37 +269,50 @@ private fun WindowScope.MainWindowTitleBar(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun AlwaysOnTopButton(
-    alwaysOnTop: Boolean,
+private fun TitleBarActionButton(
+    imageVector: ImageVector,
+    description: String,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    showBadge: Boolean = false,
 ) {
-    val appSize = koinInject<DesktopAppSize>()
-    val pushpinPadding = remember { appSize.getPinPushEndPadding() }
+    val copywriter = koinInject<GlobalCopywriter>()
+    val label = copywriter.getText(description)
 
-    GeneralIconButton(
-        modifier =
-            Modifier.padding(
-                top = medium,
-                end = pushpinPadding,
-            ),
-        imageVector =
-            if (alwaysOnTop) {
-                MaterialSymbols.RoundedFilled.Push_pin
-            } else {
-                MaterialSymbols.Rounded.Push_pin
-            },
-        desc = "always_on_top",
-        colors =
-            IconButtonDefaults.iconButtonColors(
-                containerColor = Color.Transparent,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-            ),
-        buttonSize = xxLarge,
-        iconSize = large2X,
-        shape = tiny2XRoundedCornerShape,
-        onClick = onClick,
-    )
+    TooltipBox(
+        positionProvider = rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+        tooltip = { PlainTooltip { Text(label) } },
+        state = rememberTooltipState(),
+    ) {
+        IconButton(
+            onClick = onClick,
+            modifier = modifier.padding(top = medium).size(xxLarge),
+            enabled = enabled,
+            shape = tiny2XRoundedCornerShape,
+            colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+        ) {
+            BadgedBox(
+                badge = {
+                    if (showBadge) {
+                        val badgeLabel = copywriter.getText("notification_center_has_saved")
+                        Badge(
+                            modifier = Modifier.semantics { contentDescription = badgeLabel },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                },
+            ) {
+                Icon(
+                    imageVector = imageVector,
+                    contentDescription = label,
+                    modifier = Modifier.size(large2X),
+                )
+            }
+        }
+    }
 }
 
 /**

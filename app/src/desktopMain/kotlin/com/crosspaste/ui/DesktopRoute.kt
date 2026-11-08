@@ -2,6 +2,13 @@ package com.crosspaste.ui
 
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
+import kotlinx.serialization.Serializable
+
+@Serializable
+object NotificationCenterRoute : Route {
+    const val NAME = "notification_center"
+    override val name = NAME
+}
 
 fun getRouteName(dest: NavDestination): String? =
     when {
@@ -13,6 +20,7 @@ fun getRouteName(dest: NavDestination): String? =
         dest.hasRoute<Export>() -> Export.NAME
         dest.hasRoute<Extension>() -> Extension.NAME
         dest.hasRoute<Import>() -> Import.NAME
+        dest.hasRoute<NotificationCenterRoute>() -> NotificationCenterRoute.NAME
         dest.hasRoute<NearbyDeviceDetail>() -> NearbyDeviceDetail.NAME
         dest.hasRoute<OCR>() -> OCR.NAME
         dest.hasRoute<MCP>() -> MCP.NAME

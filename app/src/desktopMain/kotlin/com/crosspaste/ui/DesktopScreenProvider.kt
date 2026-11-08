@@ -185,6 +185,7 @@ class DesktopScreenProvider(
                 }
             }
             composable<Import> { ImportScreen() }
+            composable<NotificationCenterRoute> { DesktopScreenLayout { NotificationCenterContentView() } }
             composable<PairingCode> { PairingCodeScreen() }
             composable<Share> { ShareScreen() }
             navigation<SettingsGraph>(startDestination = Settings) {
