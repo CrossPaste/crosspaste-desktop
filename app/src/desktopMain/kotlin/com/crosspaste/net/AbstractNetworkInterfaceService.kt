@@ -119,6 +119,11 @@ abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
 
     protected val preferredNetworkInterfaceInfo = ValueProvider<NetworkInterfaceInfo?>()
 
+    // Enumeration runs on every network event and on inbound peer requests, so the
+    // diagnostics are logged only when the snapshot differs from the last one logged.
+    @Volatile
+    private var lastLoggedSnapshot: List<String>? = null
+
     override fun getAllNetworkInterfaceInfo(): List<NetworkInterfaceInfo> {
         val allNics =
             runCatching {
@@ -158,8 +163,10 @@ abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
                     }.getOrNull()
                 }
 
+        val diagnostics = mutableListOf<String>()
+
         if (skipped.isNotEmpty()) {
-            logger.info { "Skipped ${skipped.size} network interfaces: ${skipped.joinToString(", ")}" }
+            diagnostics += "Skipped ${skipped.size} network interfaces: ${skipped.joinToString(", ")}"
         }
 
         // The other half of the accounting: an interface we keep but that carries no IPv4
@@ -167,23 +174,36 @@ abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
         // (filter/QoS pseudo-adapters), but a real adapter landing here is a finding.
         val withoutIpv4 = usableNics.filter { nic -> nic.interfaceAddresses.none { it.address is Inet4Address } }
         if (withoutIpv4.isNotEmpty()) {
-            logger.info {
-                "No IPv4 address on ${withoutIpv4.size} network interfaces: " +
-                    withoutIpv4.joinToString(", ") { "${it.name}[${it.displayName}]" }
-            }
+            diagnostics += "No IPv4 address on ${withoutIpv4.size} network interfaces: " +
+                withoutIpv4.joinToString(", ") { "${it.name}[${it.displayName}]" }
         }
 
-        return usableNics
-            .flatMap { nic ->
-                val macAddress = getMacAddress(nic)
-                nic.interfaceAddresses.asSequence().map { Triple(it, nic.name, macAddress) }
-            }.mapNotNull { (addr, nicName, macAddress) ->
-                runCatching {
-                    processAddress(addr, nicName, macAddress)
-                }.onFailure { e ->
-                    logger.warn(e) { "Failed to process address for interface: $nicName" }
-                }.getOrNull()
-            }
+        val infos =
+            usableNics
+                .flatMap { nic ->
+                    val macAddress = getMacAddress(nic)
+                    nic.interfaceAddresses.asSequence().map { Triple(it, nic.name, macAddress) }
+                }.mapNotNull { (addr, nicName, macAddress) ->
+                    runCatching {
+                        processAddress(addr, nicName, macAddress)?.also { info ->
+                            diagnostics += "Local address found, Network interface: $nicName " +
+                                "address: ${info.hostAddress} networkPrefixLength: ${info.networkPrefixLength}" +
+                                " mac: $macAddress virtual: ${info.isLikelyVirtual}"
+                        }
+                    }.onFailure { e ->
+                        logger.warn(e) { "Failed to process address for interface: $nicName" }
+                    }.getOrNull()
+                }
+
+        logIfChanged(diagnostics)
+
+        return infos
+    }
+
+    private fun logIfChanged(diagnostics: List<String>) {
+        if (diagnostics == lastLoggedSnapshot) return
+        lastLoggedSnapshot = diagnostics
+        diagnostics.forEach { line -> logger.info { line } }
     }
 
     protected fun processAddress(
@@ -204,19 +224,11 @@ abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
         val hostAddress = address.hostAddress ?: return null
         val networkPrefixLength = addr.networkPrefixLength
 
-        val likelyVirtual = isLikelyVirtual(nicName, macAddress)
-
-        logger.info {
-            "Local address found, Network interface: $nicName " +
-                "address: $hostAddress networkPrefixLength: $networkPrefixLength" +
-                " mac: $macAddress virtual: $likelyVirtual"
-        }
-
         return NetworkInterfaceInfo(
             name = nicName,
             networkPrefixLength = networkPrefixLength,
             hostAddress = hostAddress,
-            isLikelyVirtual = likelyVirtual,
+            isLikelyVirtual = isLikelyVirtual(nicName, macAddress),
         )
     }
 
