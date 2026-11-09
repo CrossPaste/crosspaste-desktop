@@ -121,7 +121,8 @@ abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
 
     // Enumeration runs on every network event and on inbound peer requests, so the
     // diagnostics are logged only when the snapshot differs from the last one logged.
-    @Volatile
+    private val logSnapshotLock = Any()
+
     private var lastLoggedSnapshot: List<String>? = null
 
     override fun getAllNetworkInterfaceInfo(): List<NetworkInterfaceInfo> {
@@ -200,10 +201,14 @@ abstract class AbstractNetworkInterfaceService : NetworkInterfaceService {
         return infos
     }
 
-    private fun logIfChanged(diagnostics: List<String>) {
-        if (diagnostics == lastLoggedSnapshot) return
-        lastLoggedSnapshot = diagnostics
-        diagnostics.forEach { line -> logger.info { line } }
+    // Locked so a network event and an inbound request enumerating at the same time
+    // cannot both see the old snapshot and log the same block twice.
+    internal fun logIfChanged(diagnostics: List<String>) {
+        synchronized(logSnapshotLock) {
+            if (diagnostics == lastLoggedSnapshot) return
+            lastLoggedSnapshot = diagnostics
+            diagnostics.forEach { line -> logger.info { line } }
+        }
     }
 
     protected fun processAddress(
