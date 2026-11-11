@@ -1,6 +1,7 @@
 package com.crosspaste.mcp
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.db.TestDriverFactory
 import com.crosspaste.db.createDatabase
 import com.crosspaste.db.paste.SqlPasteDao
@@ -16,6 +17,7 @@ import com.crosspaste.paste.item.DefaultPasteItemReader
 import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.hasExistingFiles
 import com.crosspaste.paste.plugin.type.DesktopTextTypePlugin
+import com.crosspaste.path.PlatformUserDataPathProvider
 import com.crosspaste.path.UserDataPathProvider
 import com.crosspaste.task.TaskSubmitter
 import com.crosspaste.utils.DateUtils
@@ -26,6 +28,8 @@ import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequestParams
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.ImageContent
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
 import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
@@ -33,10 +37,15 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import okio.Path.Companion.toOkioPath
+import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
 import java.nio.file.Files
+import java.util.Base64
+import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -96,6 +105,11 @@ class McpToolProviderTest {
             pasteItemReader = pasteItemReader,
             pasteTagDao = pasteTagDao,
             searchContentService = searchContentService,
+            userDataPathProvider =
+                UserDataPathProvider(
+                    mockk<CommonConfigManager>(relaxed = true),
+                    mockk<PlatformUserDataPathProvider>(relaxed = true),
+                ),
         )
 
     private fun createServer(): Server {
@@ -118,7 +132,13 @@ class McpToolProviderTest {
         server: Server,
         name: String,
         args: Map<String, Any?> = emptyMap(),
-    ): String {
+    ): String = (callToolResult(server, name, args).content.first() as TextContent).text
+
+    private suspend fun callToolResult(
+        server: Server,
+        name: String,
+        args: Map<String, Any?> = emptyMap(),
+    ): CallToolResult {
         val jsonArgs =
             buildJsonObject {
                 args.forEach { (k, v) ->
@@ -134,8 +154,7 @@ class McpToolProviderTest {
         val handler = server.tools[name]?.handler ?: error("Tool '$name' not found")
         val request = CallToolRequest(CallToolRequestParams(name = name, arguments = jsonArgs))
         val mockConnection = mockk<ClientConnection>()
-        val result = handler(mockConnection, request)
-        return (result.content.first() as TextContent).text
+        return handler(mockConnection, request)
     }
 
     private suspend fun insertTestPasteData(
@@ -237,11 +256,70 @@ class McpToolProviderTest {
     // ========== get_paste_item ==========
 
     @Test
-    fun `get_paste_item returns error for missing id`() =
+    fun `get_paste_item without id returns the most recent item`() =
         runTest {
             val server = createServer()
+            insertTestPasteData("older copy")
+            val latestId = insertTestPasteData("just copied")
             val result = callTool(server, "get_paste_item")
-            assertTrue(result.contains("Error"))
+            assertTrue(result.contains("Paste Item #$latestId"), result)
+            assertTrue(result.contains("just copied"), result)
+            assertFalse(result.contains("older copy"), result)
+        }
+
+    @Test
+    fun `get_paste_item without id on empty history is not an error`() =
+        runTest {
+            val server = createServer()
+            val result = callToolResult(server, "get_paste_item")
+            assertFalse(result.isError == true)
+            assertEquals("No clipboard items found.", (result.content.first() as TextContent).text)
+        }
+
+    @Test
+    fun `get_paste_item returns error for non-numeric id`() =
+        runTest {
+            val server = createServer()
+            insertTestPasteData("some item")
+            val result = callToolResult(server, "get_paste_item", mapOf("id" to "abc"))
+            assertTrue(result.isError == true)
+        }
+
+    @Test
+    fun `get_paste_item returns an image item as downscaled png content with its absolute path`() =
+        runTest {
+            val file = Files.createTempFile("mcp-get", ".png")
+            ImageIO.write(BufferedImage(2000, 1000, BufferedImage.TYPE_INT_RGB), "png", file.toFile())
+            val path = file.toOkioPath()
+            val server = createServer()
+            val added = callTool(server, "add_to_clipboard", mapOf("content" to path.toString(), "type" to "image"))
+            val id = addedId(added)
+
+            val result = callToolResult(server, "get_paste_item", mapOf("id" to id))
+
+            assertTrue((result.content[0] as TextContent).text.contains("  - $path"))
+            val image = assertIs<ImageContent>(result.content[1])
+            assertEquals("image/png", image.mimeType)
+            val decoded = ImageIO.read(ByteArrayInputStream(Base64.getDecoder().decode(image.data)))
+            assertEquals(McpImageEncoder.MAX_EDGE, decoded.width)
+            assertEquals(McpImageEncoder.MAX_EDGE / 2, decoded.height)
+            Files.delete(file)
+        }
+
+    @Test
+    fun `get_paste_item returns the absolute path of a file item without image content`() =
+        runTest {
+            val file = Files.createTempFile("mcp-get", ".txt")
+            val path = file.toOkioPath()
+            val server = createServer()
+            val added = callTool(server, "add_to_clipboard", mapOf("content" to path.toString(), "type" to "file"))
+            val id = addedId(added)
+
+            val result = callToolResult(server, "get_paste_item", mapOf("id" to id))
+
+            assertEquals(1, result.content.size)
+            assertTrue((result.content[0] as TextContent).text.contains("  - $path"))
+            Files.delete(file)
         }
 
     @Test
@@ -554,9 +632,10 @@ class McpToolProviderTest {
             }
         }
 
+    private fun addedId(result: String): Long = Regex("ID: (\\d+)").find(result)!!.groupValues[1].toLong()
+
     private suspend fun addedPasteFiles(result: String): PasteFiles {
-        val id = Regex("ID: (\\d+)").find(result)!!.groupValues[1].toLong()
-        val pasteData = assertNotNull(pasteDao.getNoDeletePasteData(id))
+        val pasteData = assertNotNull(pasteDao.getNoDeletePasteData(addedId(result)))
         return assertNotNull(pasteData.pasteAppearItem as? PasteFiles)
     }
 

@@ -140,7 +140,7 @@ fun desktopNetworkModule(
                 mcpResourceProvider = get(),
             )
         }
-        single<McpToolProvider> { McpToolProvider(get(), get(), get(), get(), get(), get()) }
+        single<McpToolProvider> { McpToolProvider(get(), get(), get(), get(), get(), get(), get()) }
         // endregion
 
         // region Network core
