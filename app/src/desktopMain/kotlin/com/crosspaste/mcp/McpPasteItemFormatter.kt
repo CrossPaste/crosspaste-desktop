@@ -50,7 +50,7 @@ class McpPasteItemFormatter(
             appendContent(pasteData)
         }
 
-    /** The first [MAX_IMAGES] decodable images of an image item; empty for any other type. */
+    /** The first [MAX_IMAGES] files of an image item, minus any that cannot be decoded; empty for any other type. */
     suspend fun encodeImages(pasteData: PasteData): List<ImageContent> {
         if (pasteData.getType() != PasteType.IMAGE_TYPE) return emptyList()
         val pasteFiles = pasteData.getPasteItem(PasteFiles::class) ?: return emptyList()
