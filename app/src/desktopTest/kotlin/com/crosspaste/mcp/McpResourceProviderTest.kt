@@ -6,7 +6,6 @@ import com.crosspaste.db.createDatabase
 import com.crosspaste.db.paste.SqlPasteDao
 import com.crosspaste.paste.PasteCollection
 import com.crosspaste.paste.PasteData
-import com.crosspaste.paste.PasteDataHelper
 import com.crosspaste.paste.PasteState
 import com.crosspaste.paste.PasteType
 import com.crosspaste.paste.SearchContentService
@@ -76,9 +75,8 @@ class McpResourceProviderTest {
             userDataPathProvider = userDataPathProvider,
         )
 
-    private val pasteDataHelper = PasteDataHelper(pasteItemReader)
-
-    private val provider = McpResourceProvider(pasteDao, pasteDataHelper)
+    private val provider =
+        McpResourceProvider(pasteDao, McpPasteItemFormatter(pasteDao, pasteItemReader, userDataPathProvider))
 
     private fun createServer(): Server {
         val server =
@@ -195,6 +193,26 @@ class McpResourceProviderTest {
             insertUrlPasteData("https://example.com")
             val result = readResource(server, "clipboard://latest")
             assertTrue(result.contains("https://example.com"))
+        }
+
+    @Test
+    fun `latest resource reports a still-loading latest item instead of invalid content`() =
+        runTest {
+            val server = createServer()
+            insertTestPasteData("previous copy")
+            val loadingId =
+                pasteDao.createPasteData(
+                    PasteData(
+                        appInstanceId = "test-instance",
+                        pasteCollection = PasteCollection(listOf()),
+                        pasteType = PasteType.INVALID_TYPE.type,
+                        size = 0L,
+                        hash = "",
+                        pasteState = PasteState.LOADING,
+                    ),
+                )
+            val result = readResource(server, "clipboard://latest")
+            assertTrue(result.contains("#$loadingId is still being saved"), result)
         }
 
     // ========== clipboard://stats ==========

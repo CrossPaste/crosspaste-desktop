@@ -1,19 +1,13 @@
 package com.crosspaste.mcp
 
 import com.crosspaste.db.paste.PasteDao
-import com.crosspaste.paste.PasteDataHelper
-import com.crosspaste.paste.PasteType
-import com.crosspaste.paste.item.PasteColor
-import com.crosspaste.paste.item.PasteFiles
-import com.crosspaste.paste.item.PasteText
-import com.crosspaste.paste.item.PasteUrl
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.types.ReadResourceResult
 import io.modelcontextprotocol.kotlin.sdk.types.TextResourceContents
 
 class McpResourceProvider(
     private val pasteDao: PasteDao,
-    private val pasteDataHelper: PasteDataHelper,
+    private val pasteItemFormatter: McpPasteItemFormatter,
 ) {
 
     fun registerResources(server: Server) {
@@ -28,24 +22,12 @@ class McpResourceProvider(
             description = "The most recent clipboard item content",
             mimeType = "text/plain",
         ) { request ->
-            val results =
-                pasteDao.searchPasteData(
-                    searchTerms = emptyList(),
-                    sort = true,
-                    limit = 1,
-                )
-            val latest = results.firstOrNull()
+            val latest = pasteItemFormatter.latestPasteData()
             val text =
-                if (latest == null) {
-                    "No clipboard items available."
-                } else {
-                    buildString {
-                        appendLine("Type: ${latest.getType().name}")
-                        appendLine("Source: ${latest.source ?: "unknown"}")
-                        appendLine("Created: ${latest.createTime}")
-                        appendLine()
-                        appendContent(latest)
-                    }
+                when {
+                    latest == null -> "No clipboard items available."
+                    pasteItemFormatter.isLoading(latest) -> pasteItemFormatter.loadingMessage(latest)
+                    else -> pasteItemFormatter.formatText(latest)
                 }
             ReadResourceResult(
                 contents =
@@ -94,34 +76,6 @@ class McpResourceProvider(
                         ),
                     ),
             )
-        }
-    }
-
-    private fun StringBuilder.appendContent(pasteData: com.crosspaste.paste.PasteData) {
-        when (pasteData.getType()) {
-            PasteType.TEXT_TYPE -> {
-                val text = pasteData.getPasteItem(PasteText::class)
-                appendLine(text?.text ?: "(empty)")
-            }
-            PasteType.URL_TYPE -> {
-                val url = pasteData.getPasteItem(PasteUrl::class)
-                appendLine(url?.url ?: "(empty)")
-            }
-            PasteType.COLOR_TYPE -> {
-                val color = pasteData.getPasteItem(PasteColor::class)
-                if (color != null) appendLine(color.toHexString())
-            }
-            PasteType.FILE_TYPE, PasteType.IMAGE_TYPE -> {
-                val files = pasteData.getPasteItem(PasteFiles::class)
-                if (files != null) {
-                    for (path in files.relativePathList) {
-                        appendLine(path)
-                    }
-                }
-            }
-            else -> {
-                appendLine(pasteDataHelper.getSummary(pasteData, "Loading...", "Unknown"))
-            }
         }
     }
 }

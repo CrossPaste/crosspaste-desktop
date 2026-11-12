@@ -9,6 +9,7 @@ import com.crosspaste.config.DesktopConfigManager
 import com.crosspaste.image.DesktopFaviconLoader
 import com.crosspaste.image.FaviconLoader
 import com.crosspaste.mcp.DesktopMcpServer
+import com.crosspaste.mcp.McpPasteItemFormatter
 import com.crosspaste.mcp.McpResourceProvider
 import com.crosspaste.mcp.McpServer
 import com.crosspaste.mcp.McpToolProvider
@@ -132,6 +133,7 @@ fun desktopNetworkModule(
         // endregion
 
         // region MCP
+        single<McpPasteItemFormatter> { McpPasteItemFormatter(get(), get(), get()) }
         single<McpResourceProvider> { McpResourceProvider(get(), get()) }
         single<McpServer> {
             DesktopMcpServer(
@@ -140,7 +142,7 @@ fun desktopNetworkModule(
                 mcpResourceProvider = get(),
             )
         }
-        single<McpToolProvider> { McpToolProvider(get(), get(), get(), get(), get(), get(), get()) }
+        single<McpToolProvider> { McpToolProvider(get(), get(), get(), get(), get(), get()) }
         // endregion
 
         // region Network core
