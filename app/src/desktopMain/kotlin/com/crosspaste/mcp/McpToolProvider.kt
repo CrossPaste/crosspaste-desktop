@@ -17,12 +17,7 @@ import com.crosspaste.paste.item.CreatePasteItemHelper.createImagesPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createRtfPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createTextPasteItem
 import com.crosspaste.paste.item.CreatePasteItemHelper.createUrlPasteItem
-import com.crosspaste.paste.item.PasteColor
-import com.crosspaste.paste.item.PasteFiles
 import com.crosspaste.paste.item.PasteItem
-import com.crosspaste.paste.item.PasteItemReader
-import com.crosspaste.paste.item.PasteText
-import com.crosspaste.paste.item.PasteUrl
 import com.crosspaste.paste.plugin.type.DesktopFilesTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopHtmlTypePlugin
 import com.crosspaste.paste.plugin.type.DesktopImageTypePlugin
@@ -35,12 +30,16 @@ import com.crosspaste.utils.HtmlUtils
 import com.crosspaste.utils.getFileUtils
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.ContentBlock
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.ToolAnnotations
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.coroutines.flow.first
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import okio.FileSystem
@@ -50,7 +49,7 @@ class McpToolProvider(
     private val appInfo: AppInfo,
     private val pasteDao: PasteDao,
     private val pasteDataHelper: PasteDataHelper,
-    private val pasteItemReader: PasteItemReader,
+    private val pasteItemFormatter: McpPasteItemFormatter,
     private val pasteTagDao: PasteTagDao,
     private val searchContentService: SearchContentService,
 ) {
@@ -216,14 +215,17 @@ class McpToolProvider(
         server.addTool(
             name = "get_paste_item",
             description =
-                "Return the full content and metadata of one clipboard history item by its numeric ID. " +
-                    "Read-only. IDs come from search_clipboard results or from add_to_clipboard. " +
-                    "Output is plain text: a header (ID, type, source app, favorite flag, size, creation time, " +
-                    "whether it came from a remote device) followed by the content: the text of text/html/rtf items, " +
-                    "the URL and page title of links, hex and RGBA values of colors, or the file names of " +
-                    "file/image items (binary data is not returned). " +
-                    "Returns an error if 'id' is missing, not a number, or matches no existing item. " +
-                    "Use search_clipboard first when the ID is not known.",
+                "Return the full content and metadata of one clipboard history item. Read-only. " +
+                    "Omit 'id' to get the most recent item (what the user just copied); otherwise pass an ID " +
+                    "from search_clipboard or add_to_clipboard. " +
+                    "Output starts with a plain-text header (ID, type, source app, favorite flag, size, creation " +
+                    "time, whether it came from a remote device) followed by the content: the text of " +
+                    "text/html/rtf items, the URL and page title of links, hex and RGBA values of colors, or the " +
+                    "absolute local paths of file/image items. Image items also return the images themselves " +
+                    "(JPEG, or PNG when transparent; longest edge at most ${McpImageEncoder.MAX_EDGE}px; " +
+                    "first ${McpPasteItemFormatter.MAX_IMAGES} images). " +
+                    "Returns an error if 'id' is not a number or matches no existing item, or if the item " +
+                    "is still being saved (retry shortly).",
             inputSchema =
                 ToolSchema(
                     properties =
@@ -232,11 +234,11 @@ class McpToolProvider(
                                 put("type", "integer")
                                 put(
                                     "description",
-                                    "Numeric ID of the clipboard item, as reported by search_clipboard or add_to_clipboard",
+                                    "Numeric ID of the clipboard item, as reported by search_clipboard or " +
+                                        "add_to_clipboard. Omit to get the most recent item.",
                                 )
                             }
                         },
-                    required = listOf("id"),
                 ),
             toolAnnotations =
                 ToolAnnotations(
@@ -246,41 +248,35 @@ class McpToolProvider(
                     openWorldHint = false,
                 ),
         ) { request ->
-            val id =
-                request.arguments
-                    ?.get("id")
-                    ?.jsonPrimitive
-                    ?.content
-                    ?.toLongOrNull()
-            if (id == null) {
-                CallToolResult(
-                    content = listOf(TextContent("Error: 'id' parameter is required and must be a number.")),
+            val idElement = request.arguments?.get("id")?.takeIf { it !is JsonNull }
+            val id = (idElement as? JsonPrimitive)?.longOrNull
+            if (idElement != null && id == null) {
+                return@addTool CallToolResult(
+                    content = listOf(TextContent("Error: 'id' must be a number.")),
                     isError = true,
                 )
-            } else {
-                val pasteData = pasteDao.getNoDeletePasteData(id)
-                if (pasteData == null) {
-                    CallToolResult(
-                        content = listOf(TextContent("No paste item found with ID: $id")),
-                        isError = true,
-                    )
-                } else {
-                    val text =
-                        buildString {
-                            appendLine("Paste Item #${pasteData.id}")
-                            appendLine("Type: ${pasteData.getType().name}")
-                            appendLine("Source: ${pasteData.source ?: "unknown"}")
-                            appendLine("Favorite: ${pasteData.favorite}")
-                            appendLine("Size: ${pasteData.size} bytes")
-                            appendLine("Created: ${pasteData.createTime}")
-                            appendLine("Remote: ${pasteData.remote}")
-                            appendLine()
-                            appendLine("--- Content ---")
-                            extractContent(pasteData, this)
-                        }
-                    CallToolResult(content = listOf(TextContent(text)))
-                }
             }
+            val pasteData =
+                if (id == null) {
+                    pasteItemFormatter.latestPasteData()
+                        ?: return@addTool CallToolResult(content = listOf(TextContent("No clipboard items found.")))
+                } else {
+                    pasteDao.getNoDeletePasteData(id)
+                        ?: return@addTool CallToolResult(
+                            content = listOf(TextContent("No paste item found with ID: $id")),
+                            isError = true,
+                        )
+                }
+            if (pasteItemFormatter.isLoading(pasteData)) {
+                return@addTool CallToolResult(
+                    content = listOf(TextContent(pasteItemFormatter.loadingMessage(pasteData))),
+                    isError = true,
+                )
+            }
+            val content: List<ContentBlock> =
+                listOf(TextContent(pasteItemFormatter.formatText(pasteData))) +
+                    pasteItemFormatter.encodeImages(pasteData)
+            CallToolResult(content = content)
         }
     }
 
@@ -584,53 +580,6 @@ class McpToolProvider(
                 )
             }
         return Result.success(item to pasteType)
-    }
-
-    private fun extractContent(
-        pasteData: PasteData,
-        sb: StringBuilder,
-    ) {
-        val type = pasteData.getType()
-        when (type) {
-            PasteType.TEXT_TYPE -> {
-                val text = pasteData.getPasteItem(PasteText::class)
-                sb.appendLine(text?.text ?: "(empty)")
-            }
-            PasteType.URL_TYPE -> {
-                val url = pasteData.getPasteItem(PasteUrl::class)
-                sb.appendLine("URL: ${url?.url ?: "(empty)"}")
-                url?.getTitle()?.let { sb.appendLine("Title: $it") }
-            }
-            PasteType.COLOR_TYPE -> {
-                val color = pasteData.getPasteItem(PasteColor::class)
-                if (color != null) {
-                    sb.appendLine("Hex: ${color.toHexString()}")
-                    sb.appendLine("RGBA: ${color.toRGBAString()}")
-                }
-            }
-            PasteType.FILE_TYPE, PasteType.IMAGE_TYPE -> {
-                val files = pasteData.getPasteItem(PasteFiles::class)
-                if (files != null) {
-                    sb.appendLine("Files (${files.count}):")
-                    for (path in files.relativePathList) {
-                        sb.appendLine("  - $path")
-                    }
-                }
-            }
-            PasteType.HTML_TYPE, PasteType.RTF_TYPE -> {
-                val text = pasteData.getPasteAppearItems().firstOrNull { it is PasteText }
-                if (text != null) {
-                    sb.appendLine((text as PasteText).text)
-                } else {
-                    val summary = pasteData.pasteAppearItem?.let { pasteItemReader.getSummary(it) }
-                    sb.appendLine(summary?.ifEmpty { null } ?: "(no text representation)")
-                }
-            }
-            else -> {
-                val summary = pasteData.pasteAppearItem?.let { pasteItemReader.getSummary(it) }
-                sb.appendLine(summary?.ifEmpty { null } ?: "(unknown content)")
-            }
-        }
     }
 
     private fun findPasteType(name: String): PasteType? =
