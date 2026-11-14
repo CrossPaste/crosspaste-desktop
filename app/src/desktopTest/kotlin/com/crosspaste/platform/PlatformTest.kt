@@ -47,6 +47,7 @@ class PlatformTest {
 
         assertTrue(duo.isIphoneDuo())
         assertFalse(duo.copy(arch = "iPhone19,2").isIphoneDuo())
+        assertFalse(duo.copy(arch = "iPhone19,5").isIphoneDuo())
         assertFalse(duo.copy(arch = "arm64").isIphoneDuo())
         assertFalse(duo.copy(name = Platform.IPAD).isIphoneDuo())
     }

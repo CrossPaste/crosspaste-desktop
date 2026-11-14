@@ -31,7 +31,8 @@ data class Platform(
 
         private const val MACOS_DISPLAY_NAME = "macOS"
 
-        // iOS reports the hardware model identifier in arch.
+        // Xcode 27.2's iPhone Duo device profile lists this modelIdentifier.
+        // iOS reports that identifier in arch on device. Other iPhone19 models include iPhone 18 Pro.
         private const val IPHONE_DUO_MODEL = "iPhone19,4"
     }
 
