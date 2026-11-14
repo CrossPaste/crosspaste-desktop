@@ -13,6 +13,7 @@ import com.crosspaste.platform.Platform
 import com.crosspaste.ui.theme.AppUISize.xLarge
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class PlatformIconTest {
 
@@ -32,13 +33,14 @@ class PlatformIconTest {
             val pixels = image.toComposeImageBitmap().toPixelMap()
             val middle = size / 2
 
-            // At mid-height the Duo has a solid hinge edge followed by a transparent seam.
-            assertEquals(1f, pixels[4, middle].alpha)
-            assertEquals(0f, pixels[6, middle].alpha)
-            assertEquals(1f, pixels[8, middle].alpha)
+            // The Duo has a solid cover and a second chassis edge visible beneath it.
+            assertEquals(1f, pixels[middle, 20].alpha)
+            assertTrue(pixels[19, middle].alpha in 0.5f..0.6f)
+            assertTrue(pixels[middle, 22].alpha in 0.5f..0.6f)
 
             // A peer reporting only arm64 must render the same icon as a standard iPhone.
-            assertEquals(1f, pixels[size + middle, middle].alpha)
+            assertEquals(0f, pixels[size + middle, 4].alpha)
+            assertEquals(1f, pixels[size + middle, 20].alpha)
             for (y in 0 until size) {
                 for (x in 0 until size) {
                     assertEquals(pixels[2 * size + x, y], pixels[size + x, y])
