@@ -12,6 +12,8 @@ fun PlatformIcon(platform: Platform): Painter =
         windows()
     } else if (platform.isLinux()) {
         linux()
+    } else if (platform.isIphoneDuo()) {
+        iphoneDuo()
     } else if (platform.isIphone()) {
         iphone()
     } else if (platform.isIpad()) {

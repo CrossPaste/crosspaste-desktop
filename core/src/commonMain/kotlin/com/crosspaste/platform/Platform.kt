@@ -30,6 +30,10 @@ data class Platform(
         const val UNKNOWN_OS = "Unknown"
 
         private const val MACOS_DISPLAY_NAME = "macOS"
+
+        // Xcode 27.2's iPhone Duo device profile lists this modelIdentifier.
+        // iOS reports that identifier in arch on device. Other iPhone19 models include iPhone 18 Pro.
+        private const val IPHONE_DUO_MODEL = "iPhone19,4"
     }
 
     /**
@@ -48,6 +52,8 @@ data class Platform(
     fun isDesktop(): Boolean = isWindows() || isMacos() || isLinux()
 
     fun isIphone(): Boolean = name == IPHONE
+
+    fun isIphoneDuo(): Boolean = isIphone() && arch == IPHONE_DUO_MODEL
 
     fun isIpad(): Boolean = name == IPAD
 
