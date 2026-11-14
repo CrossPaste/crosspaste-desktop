@@ -7,6 +7,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class PlatformTest {
@@ -38,6 +39,16 @@ class PlatformTest {
         assertEquals("Linux", platform(Platform.LINUX).displayName())
         assertEquals("iPhone", platform(Platform.IPHONE).displayName())
         assertEquals("Unknown", platform(Platform.UNKNOWN_OS).displayName())
+    }
+
+    @Test
+    fun testIphoneDuoUsesReportedHardwareModel() {
+        val duo = Platform(name = Platform.IPHONE, arch = "iPhone19,4", bitMode = 64, version = "27.1")
+
+        assertTrue(duo.isIphoneDuo())
+        assertFalse(duo.copy(arch = "iPhone19,2").isIphoneDuo())
+        assertFalse(duo.copy(arch = "arm64").isIphoneDuo())
+        assertFalse(duo.copy(name = Platform.IPAD).isIphoneDuo())
     }
 
     @Test

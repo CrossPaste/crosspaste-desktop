@@ -30,6 +30,9 @@ data class Platform(
         const val UNKNOWN_OS = "Unknown"
 
         private const val MACOS_DISPLAY_NAME = "macOS"
+
+        // iOS reports the hardware model identifier in arch.
+        private const val IPHONE_DUO_MODEL = "iPhone19,4"
     }
 
     /**
@@ -48,6 +51,8 @@ data class Platform(
     fun isDesktop(): Boolean = isWindows() || isMacos() || isLinux()
 
     fun isIphone(): Boolean = name == IPHONE
+
+    fun isIphoneDuo(): Boolean = isIphone() && arch == IPHONE_DUO_MODEL
 
     fun isIpad(): Boolean = name == IPAD
 
