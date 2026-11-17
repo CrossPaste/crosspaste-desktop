@@ -8,7 +8,7 @@ import com.crosspaste.paste.item.PasteItemReader
 
 class DesktopGuidePasteDataService(
     appInfo: AppInfo,
-    appLaunchState: AppLaunchState,
+    appLaunchState: Lazy<AppLaunchState>,
     copywriter: GlobalCopywriter,
     pasteDao: PasteDao,
     pasteItemReader: PasteItemReader,
