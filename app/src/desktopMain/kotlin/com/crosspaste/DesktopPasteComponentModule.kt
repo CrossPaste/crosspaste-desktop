@@ -1,5 +1,6 @@
 package com.crosspaste
 
+import com.crosspaste.app.AppLaunchState
 import com.crosspaste.clean.CleanScheduler
 import com.crosspaste.cli.CliSymlinkService
 import com.crosspaste.headless.HeadlessPasteboardService
@@ -187,7 +188,9 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
         // endregion
 
         // region Paste data & items
-        single<GuidePasteDataService> { DesktopGuidePasteDataService(get(), get(), get(), get(), get(), get()) }
+        single<GuidePasteDataService> {
+            DesktopGuidePasteDataService(get(), lazy { get<AppLaunchState>() }, get(), get(), get(), get())
+        }
         single<PasteDataHelper> { PasteDataHelper(get()) }
         single<PasteItemReader> { DefaultPasteItemReader() }
         single<PasteReleaseService> {

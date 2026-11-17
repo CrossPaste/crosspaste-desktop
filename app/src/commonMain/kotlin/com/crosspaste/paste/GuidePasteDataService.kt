@@ -17,9 +17,14 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
+/**
+ * [appLaunchState] is lazy because building the launch state takes the app lock (file IO).
+ * Mobile hosts construct this service on the main thread, so they must be able to defer
+ * that work until [initData] runs on a background thread.
+ */
 abstract class GuidePasteDataService(
     private val appInfo: AppInfo,
-    private val appLaunchState: AppLaunchState,
+    private val appLaunchState: Lazy<AppLaunchState>,
     private val copywriter: GlobalCopywriter,
     private val pasteDao: PasteDao,
     private val pasteItemReader: PasteItemReader,
@@ -36,7 +41,7 @@ abstract class GuidePasteDataService(
 
     abstract val guideKey: String
 
-    fun isFirstLaunch(): Boolean = appLaunchState.firstLaunch
+    fun isFirstLaunch(): Boolean = appLaunchState.value.firstLaunch
 
     suspend fun saveData() {
         for (i in 5 downTo 0) {
