@@ -137,7 +137,9 @@ class WsClientConnector(
                     },
                 ) { dispatch ->
                     while (true) {
-                        val received = receiveWsEnvelope(incoming) ?: break
+                        val received =
+                            receiveWsEnvelope(incoming, onFrameReceived = wsSession::recordInboundActivity)
+                                ?: break
                         if (!authenticationContext.verify(received.header, received.envelope.payload)) {
                             logger.warn { "Rejected unauthenticated WS message from $targetAppInstanceId" }
                             close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Invalid message authentication"))

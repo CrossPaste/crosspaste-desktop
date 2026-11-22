@@ -834,4 +834,65 @@ class WsSessionManagerTest {
             assertEquals(emptyList(), closed)
             assertTrue(mgr.isConnected("A"))
         }
+
+    @Test
+    fun probe_chunkedInboundMessageInProgress_keepsSessionAlive() =
+        runTest {
+            val mgr = WsSessionManager()
+            val closed = mutableListOf<String>()
+            mgr.setOnSessionClosed { closed.add(it) }
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                    coEvery { send(any<Frame>()) } just Runs
+                }
+            val session =
+                WsSession(
+                    inner,
+                    "remote",
+                    peerCapabilities = setOf(WsCapability.HEARTBEAT_ACK),
+                )
+            mgr.registerSession("A", session)
+
+            val incoming = kotlinx.coroutines.channels.Channel<Frame>(kotlinx.coroutines.channels.Channel.UNLIMITED)
+            val receiveDeferred =
+                async {
+                    receiveWsEnvelope(incoming, onFrameReceived = session::recordInboundActivity)
+                }
+
+            val headerJson =
+                com.crosspaste.utils
+                    .getJsonUtils()
+                    .JSON
+                    .encodeToString(
+                        WsEnvelopeHeader(
+                            type = WsMessageType.PASTE_PUSH,
+                            hasPayload = true,
+                            payloadChunkCount = 3,
+                        ),
+                    )
+            incoming.send(Frame.Text(headerJson))
+            incoming.send(Frame.Binary(true, byteArrayOf(1, 2)))
+            runCurrent()
+
+            val probeDeferred = async { mgr.probe("A", timeoutMs = 100) }
+            runCurrent()
+
+            // A second chunk arrives within the probe timeout window while assembly is still incomplete.
+            incoming.send(Frame.Binary(true, byteArrayOf(3, 4)))
+            runCurrent()
+
+            advanceTimeBy(101)
+            runCurrent()
+
+            assertTrue(probeDeferred.await())
+            assertEquals(emptyList(), closed)
+            assertTrue(mgr.isConnected("A"))
+            coVerify(exactly = 0) { inner.send(match { it is Frame.Close }) }
+
+            // Final chunk completes the message cleanly.
+            incoming.send(Frame.Binary(true, byteArrayOf(5, 6)))
+            val assembled = receiveDeferred.await()
+            assertEquals(listOf<Byte>(1, 2, 3, 4, 5, 6), assembled?.envelope?.payload?.toList())
+        }
 }

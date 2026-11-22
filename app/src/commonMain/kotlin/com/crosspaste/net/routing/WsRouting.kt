@@ -101,7 +101,12 @@ fun Routing.wsRouting(
                 wsSessionManager.notifySessionClosed(appInstanceId, wsSession)
             },
         ) { dispatch ->
-            receiveWebSocketMessages(appInstanceId, authenticationContext, dispatch)
+            receiveWebSocketMessages(
+                appInstanceId = appInstanceId,
+                authenticationContext = authenticationContext,
+                onFrameReceived = wsSession::recordInboundActivity,
+                dispatch = dispatch,
+            )
         }
     }
 }
@@ -179,11 +184,12 @@ private suspend fun DefaultWebSocketServerSession.authenticateWebSocketPeer(
 private suspend fun DefaultWebSocketServerSession.receiveWebSocketMessages(
     appInstanceId: String,
     authenticationContext: WsAuthenticationContext?,
+    onFrameReceived: () -> Unit,
     dispatch: suspend (WsEnvelope) -> Unit,
 ) {
     val logger = KotlinLogging.logger {}
     while (true) {
-        val receivedResult = runCatching { receiveWsEnvelope(incoming) }
+        val receivedResult = runCatching { receiveWsEnvelope(incoming, onFrameReceived = onFrameReceived) }
         val receiveFailure = receivedResult.exceptionOrNull()
         if (receiveFailure != null) {
             if (receiveFailure is CancellationException) throw receiveFailure
