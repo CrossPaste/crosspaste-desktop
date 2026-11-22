@@ -112,6 +112,20 @@ internal class WsPendingRequests {
     }
 
     /**
+     * Returns true if at least one in-flight request (optionally excluding [excludeRequestId])
+     * is currently bound to [session].
+     */
+    fun hasInFlightForSession(
+        session: WsSession,
+        excludeRequestId: String? = null,
+    ): Boolean =
+        synchronized(lock) {
+            pending.entries.any { (requestId, entry) ->
+                entry.session === session && requestId != excludeRequestId
+            }
+        }
+
+    /**
      * Fail all in-flight requests bound to [appInstanceId].
      *
      * @return number of pending requests failed.

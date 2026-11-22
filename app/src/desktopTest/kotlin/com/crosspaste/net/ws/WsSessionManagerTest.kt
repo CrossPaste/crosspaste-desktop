@@ -750,4 +750,88 @@ class WsSessionManagerTest {
             assertTrue(firstRequest.isCompleted)
             assertTrue(secondRequestFailedImmediately)
         }
+
+    @Test
+    fun probe_busySessionWithInFlightPastePush_doesNotInterruptActiveSync() =
+        runTest {
+            val mgr = WsSessionManager()
+            val sentFrames = mutableListOf<Frame>()
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                    coEvery { send(capture(sentFrames)) } just Runs
+                }
+            mgr.registerSession(
+                "A",
+                WsSession(
+                    inner,
+                    "remote",
+                    peerCapabilities = setOf(WsCapability.PASTE_PUSH_ACK, WsCapability.HEARTBEAT_ACK),
+                ),
+            )
+
+            val pushDeferred =
+                async {
+                    mgr.sendPastePush(
+                        appInstanceId = "A",
+                        envelope = WsEnvelope(WsMessageType.PASTE_PUSH, byteArrayOf(1, 2, 3)),
+                        singleFramePayloadLimit = 64,
+                        chunkedPayloadLimit = 128,
+                        ackTimeoutMs = 30_000,
+                    )
+                }
+            runCurrent()
+
+            // Session already has an in-flight PASTE_PUSH awaiting ACK: probe must not close it.
+            assertTrue(mgr.probe("A", timeoutMs = 100))
+            assertTrue(mgr.isConnected("A"))
+            assertFalse(pushDeferred.isCompleted)
+
+            val pushHeader =
+                com.crosspaste.utils
+                    .getJsonUtils()
+                    .JSON
+                    .decodeFromString<WsEnvelopeHeader>(sentFrames.filterIsInstance<Frame.Text>().single().readText())
+            assertEquals(WsMessageType.PASTE_PUSH, pushHeader.type)
+            val requestId = requireNotNull(pushHeader.requestId)
+            assertTrue(
+                mgr.completePendingRequest(
+                    requestId,
+                    WsEnvelope(WsMessageType.PASTE_PUSH_ACK, requestId = requestId),
+                ),
+            )
+            assertEquals(WsPayloadSendResult.Sent, pushDeferred.await())
+        }
+
+    @Test
+    fun probe_timeoutWhileInboundTrafficObserved_keepsSessionAlive() =
+        runTest {
+            val mgr = WsSessionManager()
+            val closed = mutableListOf<String>()
+            mgr.setOnSessionClosed { closed.add(it) }
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                    coEvery { send(any<Frame>()) } just Runs
+                }
+            val session =
+                WsSession(
+                    inner,
+                    "remote",
+                    peerCapabilities = setOf(WsCapability.HEARTBEAT_ACK),
+                )
+            mgr.registerSession("A", session)
+
+            val probeDeferred = async { mgr.probe("A", timeoutMs = 100) }
+            runCurrent()
+
+            // Simulate peer sending inbound traffic while HEARTBEAT_ACK is delayed.
+            session.recordInboundActivity()
+            advanceTimeBy(101)
+            runCurrent()
+
+            assertTrue(probeDeferred.await())
+            assertEquals(emptyList(), closed)
+            assertTrue(mgr.isConnected("A"))
+        }
 }

@@ -15,6 +15,9 @@ import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 
 class WsMessageHandler(
@@ -360,6 +363,65 @@ class WsMessageHandler(
                 requestId = requestId,
             )
         wsSessionManager.send(appInstanceId, errorEnvelope)
+    }
+
+    companion object {
+        /**
+         * Control and response frames are lightweight and must be handled inline on the
+         * receive loop so slow business handlers (e.g. large paste ingestion or file I/O)
+         * cannot head-of-line block heartbeats or in-flight request ACKs.
+         */
+        internal fun isControlOrResponse(type: String): Boolean =
+            when (type) {
+                WsMessageType.HEARTBEAT,
+                WsMessageType.HEARTBEAT_ACK,
+                WsMessageType.PASTE_PUSH_ACK,
+                WsMessageType.FILE_PULL_RESPONSE,
+                WsMessageType.ERROR,
+                -> true
+                else -> false
+            }
+    }
+}
+
+/**
+ * Runs a WebSocket session's receive loop while decoupling lightweight control/response
+ * frames from slower business messages. Control and response frames run inline on the
+ * receive loop; business messages run serially in FIFO order on a per-session worker so
+ * paste ordering is preserved without blocking heartbeats or ACKs.
+ */
+internal suspend fun dispatchWsSessionMessages(
+    appInstanceId: String,
+    wsSession: WsSession,
+    wsMessageHandler: WsMessageHandler,
+    onReadLoopFinished: () -> Unit,
+    readLoop: suspend (dispatch: suspend (WsEnvelope) -> Unit) -> Unit,
+) = coroutineScope {
+    val logger = KotlinLogging.logger("WsSessionDispatcher")
+    val workChannel = Channel<WsEnvelope>(Channel.UNLIMITED)
+    launch {
+        for (envelope in workChannel) {
+            try {
+                wsMessageHandler.handleMessage(appInstanceId, envelope)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.error(e) { "Unhandled error processing WS ${envelope.type} from $appInstanceId" }
+            }
+        }
+    }
+    try {
+        readLoop { envelope ->
+            wsSession.recordInboundActivity()
+            if (WsMessageHandler.isControlOrResponse(envelope.type)) {
+                wsMessageHandler.handleMessage(appInstanceId, envelope)
+            } else {
+                workChannel.send(envelope)
+            }
+        }
+    } finally {
+        workChannel.close()
+        onReadLoopFinished()
     }
 }
 

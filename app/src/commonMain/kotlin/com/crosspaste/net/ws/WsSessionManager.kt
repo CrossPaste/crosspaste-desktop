@@ -82,6 +82,10 @@ class WsSessionManager {
         }
         val success =
             if (WsCapability.HEARTBEAT_ACK in session.peerCapabilities) {
+                if (pendingRequests.hasInFlightForSession(session)) {
+                    logger.debug { "Skipping WebSocket heartbeat probe for busy session $appInstanceId" }
+                    return true
+                }
                 probeHeartbeat(appInstanceId, session, timeoutMs)
             } else {
                 session.ping()
@@ -103,6 +107,7 @@ class WsSessionManager {
         session: WsSession,
         timeoutMs: Long,
     ): Boolean {
+        val inboundBefore = session.inboundActivitySnapshot()
         val pending = pendingRequests.open(appInstanceId, session)
         try {
             if (sessions[appInstanceId] !== session) return false
@@ -118,6 +123,14 @@ class WsSessionManager {
                 try {
                     pending.await(timeoutMs)
                 } catch (_: TimeoutCancellationException) {
+                    if (session.inboundActivitySnapshot() != inboundBefore ||
+                        pendingRequests.hasInFlightForSession(session, excludeRequestId = pending.requestId)
+                    ) {
+                        logger.debug {
+                            "WebSocket heartbeat probe timed out while session $appInstanceId showed active traffic; keeping session"
+                        }
+                        return true
+                    }
                     logger.warn { "WebSocket heartbeat probe timed out for $appInstanceId" }
                     return false
                 } catch (e: CancellationException) {

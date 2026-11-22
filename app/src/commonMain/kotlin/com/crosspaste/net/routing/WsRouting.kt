@@ -14,6 +14,7 @@ import com.crosspaste.net.ws.WsMessageType
 import com.crosspaste.net.ws.WsServerAuthentication
 import com.crosspaste.net.ws.WsSession
 import com.crosspaste.net.ws.WsSessionManager
+import com.crosspaste.net.ws.dispatchWsSessionMessages
 import com.crosspaste.net.ws.receiveWsEnvelope
 import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.getCodecsUtils
@@ -91,11 +92,16 @@ fun Routing.wsRouting(
             )
         wsSessionManager.registerSession(appInstanceId, wsSession)
 
-        try {
-            receiveWebSocketMessages(appInstanceId, authenticationContext, wsMessageHandler)
-        } finally {
-            logger.info { "WebSocket disconnected: $appInstanceId" }
-            wsSessionManager.notifySessionClosed(appInstanceId, wsSession)
+        dispatchWsSessionMessages(
+            appInstanceId = appInstanceId,
+            wsSession = wsSession,
+            wsMessageHandler = wsMessageHandler,
+            onReadLoopFinished = {
+                logger.info { "WebSocket disconnected: $appInstanceId" }
+                wsSessionManager.notifySessionClosed(appInstanceId, wsSession)
+            },
+        ) { dispatch ->
+            receiveWebSocketMessages(appInstanceId, authenticationContext, dispatch)
         }
     }
 }
@@ -173,7 +179,7 @@ private suspend fun DefaultWebSocketServerSession.authenticateWebSocketPeer(
 private suspend fun DefaultWebSocketServerSession.receiveWebSocketMessages(
     appInstanceId: String,
     authenticationContext: WsAuthenticationContext?,
-    wsMessageHandler: WsMessageHandler,
+    dispatch: suspend (WsEnvelope) -> Unit,
 ) {
     val logger = KotlinLogging.logger {}
     while (true) {
@@ -197,7 +203,7 @@ private suspend fun DefaultWebSocketServerSession.receiveWebSocketMessages(
             close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Invalid message authentication"))
             break
         }
-        wsMessageHandler.handleMessage(appInstanceId, received.envelope)
+        dispatch(received.envelope)
     }
 }
 

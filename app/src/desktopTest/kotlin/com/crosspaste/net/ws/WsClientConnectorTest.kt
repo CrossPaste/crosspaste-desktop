@@ -81,4 +81,61 @@ class WsClientConnectorTest {
                 client.close()
             }
         }
+
+    @Test
+    fun connectAsync_endpointChangeReplacesInFlightHandshakeImmediately() =
+        runBlocking {
+            val oldPortStarted = CompletableDeferred<Unit>()
+            val oldPortCancelled = CompletableDeferred<Unit>()
+            val newPortStarted = CompletableDeferred<Int>()
+
+            val client =
+                HttpClient(
+                    MockEngine { request ->
+                        when (request.url.port) {
+                            8080 -> {
+                                oldPortStarted.complete(Unit)
+                                try {
+                                    kotlinx.coroutines.awaitCancellation()
+                                } finally {
+                                    oldPortCancelled.complete(Unit)
+                                }
+                            }
+                            9090 -> {
+                                newPortStarted.complete(9090)
+                                respondError(HttpStatusCode.ServiceUnavailable)
+                            }
+                            else -> respondError(HttpStatusCode.BadRequest)
+                        }
+                    },
+                ) {
+                    install(WebSockets)
+                }
+
+            val appInfo: AppInfo =
+                mockk(relaxed = true) {
+                    every { appInstanceId } returns "local-peer"
+                }
+            val connector =
+                WsClientConnector(
+                    appInfo = appInfo,
+                    client = client,
+                    secureStore = mockk<SecureStore>(relaxed = true),
+                    wsSessionManager = WsSessionManager(),
+                    wsMessageHandler = mockk<WsMessageHandler>(relaxed = true),
+                )
+
+            try {
+                connector.connectAsync("127.0.0.1", 8080, "remote-peer")
+                withTimeout(5.seconds) { oldPortStarted.await() }
+
+                // Endpoint changes while old handshake is still blocked: must cancel old and dial new immediately.
+                connector.connectAsync("127.0.0.1", 9090, "remote-peer")
+
+                assertEquals(9090, withTimeout(5.seconds) { newPortStarted.await() })
+                withTimeout(5.seconds) { oldPortCancelled.await() }
+            } finally {
+                client.close()
+            }
+        }
 }

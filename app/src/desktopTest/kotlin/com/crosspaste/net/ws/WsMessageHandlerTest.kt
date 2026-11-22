@@ -191,4 +191,61 @@ class WsMessageHandlerTest {
 
             coVerify(exactly = 1) { fixture.wsSessionManager.completePendingRequest("hb-2", ack) }
         }
+
+    @Test
+    fun dispatchWsSessionMessages_heartbeatNotBlockedBySlowPastePush() =
+        runTest {
+            val authenticatedPeer = "authenticated-peer"
+            val wsSessionManager = mockk<WsSessionManager>(relaxed = true)
+            val pasteStarted = kotlinx.coroutines.CompletableDeferred<Unit>()
+            val releasePaste = kotlinx.coroutines.CompletableDeferred<Unit>()
+            val heartbeatAcked = kotlinx.coroutines.CompletableDeferred<WsEnvelope>()
+            val wsMessageHandler = mockk<WsMessageHandler>()
+            coEvery { wsMessageHandler.handleMessage(authenticatedPeer, any()) } coAnswers {
+                val env = secondArg<WsEnvelope>()
+                when (env.type) {
+                    WsMessageType.PASTE_PUSH -> {
+                        pasteStarted.complete(Unit)
+                        releasePaste.await()
+                    }
+                    WsMessageType.HEARTBEAT -> {
+                        val ack = WsEnvelope(WsMessageType.HEARTBEAT_ACK, requestId = env.requestId)
+                        wsSessionManager.send(authenticatedPeer, ack)
+                        heartbeatAcked.complete(ack)
+                    }
+                }
+            }
+            val session =
+                WsSession(
+                    session = mockk(relaxed = true),
+                    remoteAppInstanceId = authenticatedPeer,
+                )
+            var readLoopFinished = false
+
+            dispatchWsSessionMessages(
+                appInstanceId = authenticatedPeer,
+                wsSession = session,
+                wsMessageHandler = wsMessageHandler,
+                onReadLoopFinished = { readLoopFinished = true },
+            ) { dispatch ->
+                dispatch(WsEnvelope(WsMessageType.PASTE_PUSH, requestId = "p-1"))
+                pasteStarted.await()
+
+                // Heartbeat arrives while PASTE_PUSH is still blocked; it must complete immediately.
+                dispatch(WsEnvelope(WsMessageType.HEARTBEAT, requestId = "hb-busy"))
+                val ack = heartbeatAcked.await()
+                assertEquals("hb-busy", ack.requestId)
+                assertEquals(2L, session.inboundActivitySnapshot())
+
+                releasePaste.complete(Unit)
+            }
+
+            assertTrue(readLoopFinished)
+            coVerify(exactly = 1) {
+                wsSessionManager.send(
+                    authenticatedPeer,
+                    WsEnvelope(WsMessageType.HEARTBEAT_ACK, requestId = "hb-busy"),
+                )
+            }
+        }
 }

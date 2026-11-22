@@ -12,6 +12,8 @@ import io.ktor.client.plugins.websocket.*
 import io.ktor.websocket.*
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -22,11 +24,17 @@ class WsClientConnector(
     private val wsSessionManager: WsSessionManager,
     private val wsMessageHandler: WsMessageHandler,
 ) {
+    private class InFlightHandshake(
+        val host: String,
+        val port: Int,
+        val job: Job,
+    )
+
     private val logger = KotlinLogging.logger {}
     private val json = getJsonUtils().JSON
     private val connectScope = namedScope(ioDispatcher, "WsClientConnector")
     private val inFlightLock = SynchronizedObject()
-    private val inFlightTokens = HashMap<String, Any>()
+    private val inFlightHandshakes = HashMap<String, InFlightHandshake>()
 
     /**
      * Attempt to open a WebSocket connection to a remote peer.
@@ -119,7 +127,15 @@ class WsClientConnector(
                 wsSessionManager.registerSession(targetAppInstanceId, wsSession)
                 onHandshakeFinished()
 
-                try {
+                dispatchWsSessionMessages(
+                    appInstanceId = targetAppInstanceId,
+                    wsSession = wsSession,
+                    wsMessageHandler = wsMessageHandler,
+                    onReadLoopFinished = {
+                        logger.info { "WebSocket client disconnected from $targetAppInstanceId" }
+                        wsSessionManager.notifySessionClosed(targetAppInstanceId, wsSession)
+                    },
+                ) { dispatch ->
                     while (true) {
                         val received = receiveWsEnvelope(incoming) ?: break
                         if (!authenticationContext.verify(received.header, received.envelope.payload)) {
@@ -127,11 +143,8 @@ class WsClientConnector(
                             close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "Invalid message authentication"))
                             break
                         }
-                        wsMessageHandler.handleMessage(targetAppInstanceId, received.envelope)
+                        dispatch(received.envelope)
                     }
-                } finally {
-                    logger.info { "WebSocket client disconnected from $targetAppInstanceId" }
-                    wsSessionManager.notifySessionClosed(targetAppInstanceId, wsSession)
                 }
             }
             true
@@ -141,45 +154,62 @@ class WsClientConnector(
 
     /**
      * Attempt WebSocket connection in the background.
-     * Deduplicates concurrent handshake attempts for the same peer and silently handles failures.
+     * Coalesces concurrent handshake attempts to the same peer and endpoint, replaces
+     * an in-flight handshake immediately when the peer's host/port changes, and silently
+     * handles failures.
      */
     fun connectAsync(
         host: String,
         port: Int,
         targetAppInstanceId: String,
     ) {
-        val token = Any()
-        val acquired =
-            synchronized(inFlightLock) {
-                if (targetAppInstanceId in inFlightTokens) {
-                    false
-                } else {
-                    inFlightTokens[targetAppInstanceId] = token
-                    true
-                }
-            }
-        if (!acquired) {
-            logger.debug { "WebSocket connect already in flight for $targetAppInstanceId, skipping duplicate dial" }
-            return
-        }
+        var entry: InFlightHandshake? = null
         val release = {
             synchronized(inFlightLock) {
-                if (inFlightTokens[targetAppInstanceId] === token) {
-                    inFlightTokens.remove(targetAppInstanceId)
+                val current = entry
+                if (current != null && inFlightHandshakes[targetAppInstanceId] === current) {
+                    inFlightHandshakes.remove(targetAppInstanceId)
                 }
             }
         }
-        try {
-            connectScope.launch {
+        val job =
+            connectScope.launch(start = CoroutineStart.LAZY) {
                 try {
                     connectInternal(host, port, targetAppInstanceId, onHandshakeFinished = release)
                 } finally {
                     release()
                 }
             }
-        } catch (e: Throwable) {
-            release()
-            throw e
+        val candidate = InFlightHandshake(host, port, job)
+        entry = candidate
+
+        var previousJobToCancel: Job? = null
+        val shouldStart =
+            synchronized(inFlightLock) {
+                val existing = inFlightHandshakes[targetAppInstanceId]
+                if (existing != null && existing.host == host && existing.port == port) {
+                    false
+                } else {
+                    previousJobToCancel = existing?.job
+                    inFlightHandshakes[targetAppInstanceId] = candidate
+                    true
+                }
+            }
+
+        if (!shouldStart) {
+            job.cancel()
+            logger.debug {
+                "WebSocket connect already in flight for $targetAppInstanceId at $host:$port, skipping duplicate dial"
+            }
+            return
         }
+
+        previousJobToCancel?.let { oldJob ->
+            logger.info {
+                "Replacing in-flight WebSocket handshake for $targetAppInstanceId with new endpoint $host:$port"
+            }
+            oldJob.cancel()
+        }
+        job.start()
     }
 }
