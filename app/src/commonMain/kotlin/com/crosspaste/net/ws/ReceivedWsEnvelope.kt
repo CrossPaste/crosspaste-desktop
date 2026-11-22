@@ -12,15 +12,19 @@ data class ReceivedWsEnvelope(
     val envelope: WsEnvelope,
 )
 
-suspend fun receiveWsEnvelope(incoming: ReceiveChannel<Frame>): ReceivedWsEnvelope? {
+suspend fun receiveWsEnvelope(
+    incoming: ReceiveChannel<Frame>,
+    onFrameReceived: () -> Unit = {},
+): ReceivedWsEnvelope? {
     val json = getJsonUtils().JSON
     while (true) {
         when (val frame = incoming.receiveCatching().getOrNull() ?: return null) {
             is Frame.Text -> {
                 val header = json.decodeFromString<WsEnvelopeHeader>(frame.readText())
+                onFrameReceived()
                 val payload =
                     if (header.hasPayload) {
-                        receiveChunkedPayload(incoming, header.payloadChunkCount)
+                        receiveChunkedPayload(incoming, header.payloadChunkCount, onFrameReceived)
                     } else {
                         byteArrayOf()
                     }
@@ -46,6 +50,7 @@ suspend fun receiveWsEnvelope(incoming: ReceiveChannel<Frame>): ReceivedWsEnvelo
 private suspend fun receiveChunkedPayload(
     incoming: ReceiveChannel<Frame>,
     chunkCount: Int,
+    onFrameReceived: () -> Unit,
 ): ByteArray {
     require(chunkCount in 1..WS_MAX_PAYLOAD_CHUNK_COUNT) {
         "Invalid WebSocket payload chunk count: $chunkCount"
@@ -60,6 +65,7 @@ private suspend fun receiveChunkedPayload(
         require(totalSize <= WS_MAX_PAYLOAD_SIZE) {
             "WebSocket payload exceeds $WS_MAX_PAYLOAD_SIZE bytes"
         }
+        onFrameReceived()
         chunks.add(bytes)
     }
     if (chunks.size == 1) return chunks[0]

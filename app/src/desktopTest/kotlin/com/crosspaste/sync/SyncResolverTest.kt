@@ -520,6 +520,139 @@ class SyncResolverTest {
             assertEquals(SyncState.DISCONNECTED, capturedInfo.captured.connectState)
         }
 
+    @Test
+    fun verifyConnection_wsAbsentAndHeartbeatConnected_attemptsWebSocketUpgrade() =
+        runTest {
+            // Reproduces iOS resume after pause() closed all WS sessions while DB stayed
+            // CONNECTED: ForceResolve/Resolve enters verifyConnection(), HTTP heartbeat
+            // succeeds, and the mobile initiator must re-establish WebSocket instead of
+            // staying permanently degraded to HTTP polling.
+            val deps = TestDeps()
+            every { deps.localPlatform.isDesktop() } returns false
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo =
+                createConnectedSyncRuntimeInfo(
+                    appInstanceId = "desktop-peer",
+                    hostAddress = "192.168.1.108",
+                ).copy(
+                    platform =
+                        Platform(
+                            name = Platform.MACOS,
+                            arch = "arm64",
+                            bitMode = 64,
+                            version = "15.0",
+                        ),
+                )
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(syncRuntimeInfo.appInstanceId) } returns false
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
+                SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.ForceResolve(syncRuntimeInfo, createTestCallback()))
+
+            coVerify(exactly = 1) {
+                deps.wsClientConnector.connectAsync(
+                    "192.168.1.108",
+                    syncRuntimeInfo.port,
+                    syncRuntimeInfo.appInstanceId,
+                )
+            }
+            coVerify(exactly = 0) { deps.syncRuntimeInfoDao.updateConnectInfo(any()) }
+        }
+
+    @Test
+    fun verifyConnection_wsAbsent_nonInitiatorDoesNotAttemptWebSocketUpgrade() =
+        runTest {
+            val deps = TestDeps()
+            every { deps.localPlatform.isDesktop() } returns true
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo =
+                createConnectedSyncRuntimeInfo(
+                    appInstanceId = "mobile-peer",
+                    hostAddress = "192.168.1.109",
+                ).copy(
+                    platform =
+                        Platform(
+                            name = Platform.IPHONE,
+                            arch = "arm64",
+                            bitMode = 64,
+                            version = "18.0",
+                        ),
+                )
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(syncRuntimeInfo.appInstanceId) } returns false
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
+                SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            coVerify(exactly = 0) { deps.wsClientConnector.connectAsync(any(), any(), any()) }
+        }
+
+    @Test
+    fun verifyConnection_wsConnectedWithHeartbeatAckAndProbeFails_fallsBackToHttpAndReupgrades() =
+        runTest {
+            val deps = TestDeps()
+            every { deps.localPlatform.isDesktop() } returns false
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo =
+                createConnectedSyncRuntimeInfo(
+                    appInstanceId = "desktop-peer",
+                    hostAddress = "192.168.1.108",
+                ).copy(
+                    platform =
+                        Platform(
+                            name = Platform.MACOS,
+                            arch = "arm64",
+                            bitMode = 64,
+                            version = "15.0",
+                        ),
+                )
+
+            deps.stubDbRead(syncRuntimeInfo)
+            every { deps.wsSessionManager.isConnected(syncRuntimeInfo.appInstanceId) } returnsMany listOf(true, false)
+            every { deps.wsSessionManager.supportsHeartbeatAck(syncRuntimeInfo.appInstanceId) } returns true
+            coEvery { deps.wsSessionManager.probe(syncRuntimeInfo.appInstanceId) } returns false
+            coEvery { deps.syncClientApi.heartbeat(any(), any(), any()) } returns
+                SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            coVerify(exactly = 1) { deps.wsSessionManager.probe(syncRuntimeInfo.appInstanceId) }
+            coVerify(exactly = 1) { deps.syncClientApi.heartbeat(any(), syncRuntimeInfo.appInstanceId, any()) }
+            coVerify(exactly = 1) {
+                deps.wsClientConnector.connectAsync(
+                    "192.168.1.108",
+                    syncRuntimeInfo.port,
+                    syncRuntimeInfo.appInstanceId,
+                )
+            }
+        }
+
+    @Test
+    fun verifyConnection_wsConnectedWithHeartbeatAckAndProbeSucceeds_skipsHttpHeartbeat() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo =
+                createConnectedSyncRuntimeInfo(
+                    appInstanceId = "desktop-peer",
+                    hostAddress = "192.168.1.108",
+                )
+
+            deps.stubDbRead(syncRuntimeInfo)
+            every { deps.wsSessionManager.isConnected(syncRuntimeInfo.appInstanceId) } returns true
+            every { deps.wsSessionManager.supportsHeartbeatAck(syncRuntimeInfo.appInstanceId) } returns true
+            coEvery { deps.wsSessionManager.probe(syncRuntimeInfo.appInstanceId) } returns true
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            coVerify(exactly = 1) { deps.wsSessionManager.probe(syncRuntimeInfo.appInstanceId) }
+            coVerify(exactly = 0) { deps.syncClientApi.heartbeat(any(), any(), any()) }
+        }
+
     // ========== A2. steady-state heartbeat address advertise (#4509) ==========
 
     @Test

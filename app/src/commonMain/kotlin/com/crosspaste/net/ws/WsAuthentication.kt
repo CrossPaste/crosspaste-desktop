@@ -43,8 +43,9 @@ data class WsServerAuthentication(
 object WsCapability {
 
     const val PASTE_PUSH_ACK = "paste_push_ack"
+    const val HEARTBEAT_ACK = "heartbeat_ack"
 
-    val supported: Set<String> = setOf(PASTE_PUSH_ACK)
+    val supported: Set<String> = setOf(PASTE_PUSH_ACK, HEARTBEAT_ACK)
 }
 
 class WsAuthenticationContext(

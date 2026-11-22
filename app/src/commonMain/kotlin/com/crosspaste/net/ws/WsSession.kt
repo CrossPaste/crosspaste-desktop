@@ -2,6 +2,7 @@ package com.crosspaste.net.ws
 
 import com.crosspaste.utils.getJsonUtils
 import io.ktor.websocket.*
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -49,9 +50,16 @@ class WsSession(
 ) {
     private val json = getJsonUtils().JSON
     private val sendMutex = Mutex()
+    private val inboundActivityCount = atomic(0L)
 
     val isActive: Boolean
         get() = session.isActive
+
+    internal fun recordInboundActivity() {
+        inboundActivityCount.incrementAndGet()
+    }
+
+    internal fun inboundActivitySnapshot(): Long = inboundActivityCount.value
 
     suspend fun sendEnvelope(envelope: WsEnvelope) {
         sendMutex.withLock {
@@ -122,6 +130,6 @@ class WsSession(
 
     companion object {
         private val PING_PAYLOAD = "cp".encodeToByteArray()
-        private const val PING_TIMEOUT_MS = 3_000L
+        internal const val PING_TIMEOUT_MS = 3_000L
     }
 }
