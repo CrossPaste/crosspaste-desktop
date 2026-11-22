@@ -122,6 +122,6 @@ class WsSession(
 
     companion object {
         private val PING_PAYLOAD = "cp".encodeToByteArray()
-        private const val PING_TIMEOUT_MS = 3_000L
+        internal const val PING_TIMEOUT_MS = 3_000L
     }
 }

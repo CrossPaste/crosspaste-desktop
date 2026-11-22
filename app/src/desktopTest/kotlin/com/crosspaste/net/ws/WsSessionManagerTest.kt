@@ -478,4 +478,204 @@ class WsSessionManagerTest {
             assertEquals(WsPayloadSendResult.PayloadTooLarge(65, 64), result)
             coVerify(exactly = 0) { inner.send(any<Frame>()) }
         }
+
+    @Test
+    fun send_cancellationException_rethrowsWithoutClosingHealthySession() =
+        runTest {
+            val mgr = WsSessionManager()
+            val closed = mutableListOf<String>()
+            mgr.setOnSessionClosed { closed.add(it) }
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                    coEvery { send(any<Frame>()) } throws kotlinx.coroutines.CancellationException("caller cancelled")
+                }
+            mgr.registerSession("A", WsSession(inner, "remote"))
+
+            kotlin.test.assertFailsWith<kotlinx.coroutines.CancellationException> {
+                mgr.send("A", WsEnvelope(WsMessageType.HEARTBEAT))
+            }
+
+            assertEquals(emptyList(), closed)
+            assertTrue(mgr.isConnected("A"))
+        }
+
+    @Test
+    fun closeAll_failsInFlightRequestsAndPastePushAckImmediately() =
+        runTest {
+            val mgr = WsSessionManager()
+            val innerA: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                }
+            val innerB: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                }
+            mgr.registerSession(
+                "A",
+                WsSession(innerA, "remote-a", peerCapabilities = setOf(WsCapability.PASTE_PUSH_ACK)),
+            )
+            mgr.registerSession("B", WsSession(innerB, "remote-b"))
+
+            val pushDeferred =
+                async {
+                    mgr.sendPastePush(
+                        appInstanceId = "A",
+                        envelope = WsEnvelope(WsMessageType.PASTE_PUSH, byteArrayOf(1)),
+                        singleFramePayloadLimit = 64,
+                        chunkedPayloadLimit = 128,
+                        ackTimeoutMs = 30_000,
+                    )
+                }
+            val pullDeferred =
+                async {
+                    runCatching {
+                        mgr.request(
+                            appInstanceId = "B",
+                            envelope = WsEnvelope(WsMessageType.FILE_PULL_REQUEST),
+                            timeoutMs = 30_000,
+                        )
+                    }
+                }
+            runCurrent()
+
+            // No time advance — closeAll must unblock waiters immediately rather than waiting 30s.
+            mgr.closeAll()
+            runCurrent()
+
+            assertEquals(WsPayloadSendResult.Failed, pushDeferred.await())
+            assertTrue(pullDeferred.await().exceptionOrNull() is WsSessionClosedException)
+        }
+
+    @Test
+    fun notifySessionClosed_failsInFlightRequestsForClosedSessionOnly() =
+        runTest {
+            val mgr = WsSessionManager()
+            val sessionA = fakeSession()
+            val sessionB = fakeSession()
+            mgr.registerSession("A", sessionA)
+            mgr.registerSession("B", sessionB)
+
+            val requestA =
+                async {
+                    runCatching {
+                        mgr.request("A", WsEnvelope(WsMessageType.FILE_PULL_REQUEST), timeoutMs = 30_000)
+                    }
+                }
+            val requestB =
+                async {
+                    runCatching {
+                        mgr.request("B", WsEnvelope(WsMessageType.FILE_PULL_REQUEST), timeoutMs = 30_000)
+                    }
+                }
+            runCurrent()
+
+            mgr.notifySessionClosed("A", sessionA)
+            runCurrent()
+
+            assertTrue(requestA.isCompleted)
+            assertTrue(requestA.await().exceptionOrNull() is WsSessionClosedException)
+            assertFalse(requestB.isCompleted)
+
+            mgr.closeSession("B")
+            runCurrent()
+            assertTrue(requestB.await().exceptionOrNull() is WsSessionClosedException)
+        }
+
+    @Test
+    fun registerSession_replacingSession_failsOldSessionPendingRequestsImmediately() =
+        runTest {
+            val mgr = WsSessionManager()
+            val oldSession = fakeSession()
+            val newSession = fakeSession()
+            mgr.registerSession("A", oldSession)
+
+            val oldRequest =
+                async {
+                    runCatching {
+                        mgr.request("A", WsEnvelope(WsMessageType.FILE_PULL_REQUEST), timeoutMs = 30_000)
+                    }
+                }
+            runCurrent()
+
+            mgr.registerSession("A", newSession)
+            runCurrent()
+
+            assertTrue(oldRequest.isCompleted)
+            assertTrue(oldRequest.await().exceptionOrNull() is WsSessionClosedException)
+            assertTrue(mgr.isConnected("A"))
+        }
+
+    @Test
+    fun probe_heartbeatAckCapablePeer_waitsForCorrelatedAck() =
+        runTest {
+            val mgr = WsSessionManager()
+            val sentFrames = mutableListOf<Frame>()
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                    coEvery { send(capture(sentFrames)) } just Runs
+                }
+            mgr.registerSession(
+                "A",
+                WsSession(
+                    inner,
+                    "remote",
+                    peerCapabilities = setOf(WsCapability.HEARTBEAT_ACK),
+                ),
+            )
+
+            val probeDeferred = async { mgr.probe("A", timeoutMs = 1_000) }
+            runCurrent()
+
+            val header =
+                com.crosspaste.utils
+                    .getJsonUtils()
+                    .JSON
+                    .decodeFromString<WsEnvelopeHeader>(sentFrames.filterIsInstance<Frame.Text>().single().readText())
+            assertEquals(WsMessageType.HEARTBEAT, header.type)
+            val requestId = requireNotNull(header.requestId)
+            assertFalse(probeDeferred.isCompleted)
+
+            assertTrue(
+                mgr.completePendingRequest(
+                    requestId,
+                    WsEnvelope(WsMessageType.HEARTBEAT_ACK, requestId = requestId),
+                ),
+            )
+            assertTrue(probeDeferred.await())
+            assertTrue(mgr.isConnected("A"))
+        }
+
+    @Test
+    fun probe_heartbeatAckCapablePeer_halfOpenTimesOutAndClosesSession() =
+        runTest {
+            val mgr = WsSessionManager()
+            val closed = mutableListOf<String>()
+            mgr.setOnSessionClosed { closed.add(it) }
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                    // Write succeeds into kernel buffer (half-open TCP), but no ACK ever arrives.
+                    coEvery { send(any<Frame>()) } just Runs
+                }
+            mgr.registerSession(
+                "A",
+                WsSession(
+                    inner,
+                    "remote",
+                    peerCapabilities = setOf(WsCapability.HEARTBEAT_ACK),
+                ),
+            )
+
+            val probeDeferred = async { mgr.probe("A", timeoutMs = 100) }
+            runCurrent()
+            advanceTimeBy(101)
+            runCurrent()
+
+            assertFalse(probeDeferred.await())
+            assertEquals(listOf("A"), closed)
+            assertFalse(mgr.isConnected("A"))
+        }
 }

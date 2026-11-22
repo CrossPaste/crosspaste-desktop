@@ -46,13 +46,19 @@ class WsMessageHandler(
             WsMessageType.HEARTBEAT -> {
                 wsSessionManager.send(
                     appInstanceId,
-                    WsEnvelope(type = WsMessageType.HEARTBEAT_ACK),
+                    WsEnvelope(
+                        type = WsMessageType.HEARTBEAT_ACK,
+                        requestId = envelope.requestId,
+                    ),
                 )
             }
 
             WsMessageType.HEARTBEAT_ACK -> {
                 // Peer acknowledged our heartbeat — connection is alive
                 logger.debug { "Heartbeat ACK from $appInstanceId" }
+                envelope.requestId?.let { requestId ->
+                    wsSessionManager.completePendingRequest(requestId, envelope)
+                }
             }
 
             WsMessageType.PASTE_PUSH -> {

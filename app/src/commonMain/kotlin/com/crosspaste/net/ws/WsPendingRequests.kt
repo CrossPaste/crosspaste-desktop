@@ -1,25 +1,38 @@
 package com.crosspaste.net.ws
 
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.util.collections.*
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeout
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+internal class WsSessionClosedException(
+    message: String,
+) : IllegalStateException(message)
+
 /**
  * Manages in-flight WebSocket request-response correlations.
  *
- * A requester [open]s a [Pending] slot, sends an envelope stamped with its
- * [Pending.requestId], then [Pending.await]s the correlated response that the
- * receive loop delivers through [complete]. [request] bundles those steps for
- * callers that only need a boolean send outcome.
+ * A requester [open]s a [Pending] slot bound to a peer ([appInstanceId]) and
+ * optional [WsSession], sends an envelope stamped with its [Pending.requestId],
+ * then [Pending.await]s the correlated response that the receive loop delivers
+ * through [complete]. When a session closes or is replaced, [failForSession],
+ * [failForPeer], or [failAll] immediately fails matching in-flight waiters
+ * instead of letting them hang until timeout.
  */
 internal class WsPendingRequests {
 
-    private val logger = KotlinLogging.logger {}
+    private class PendingEntry(
+        val appInstanceId: String,
+        val session: WsSession?,
+        val deferred: CompletableDeferred<WsEnvelope>,
+    )
 
-    private val pending: MutableMap<String, CompletableDeferred<WsEnvelope>> = ConcurrentMap()
+    private val logger = KotlinLogging.logger {}
+    private val lock = SynchronizedObject()
+    private val pending: MutableMap<String, PendingEntry> = HashMap()
 
     companion object {
         const val DEFAULT_TIMEOUT_MS = 30_000L
@@ -37,15 +50,22 @@ internal class WsPendingRequests {
             }
 
         fun close() {
-            pending.remove(requestId)
+            synchronized(lock) {
+                pending.remove(requestId)
+            }
         }
     }
 
     @OptIn(ExperimentalUuidApi::class)
-    fun open(): Pending {
+    fun open(
+        appInstanceId: String,
+        session: WsSession? = null,
+    ): Pending {
         val requestId = Uuid.random().toString()
         val deferred = CompletableDeferred<WsEnvelope>()
-        pending[requestId] = deferred
+        synchronized(lock) {
+            pending[requestId] = PendingEntry(appInstanceId, session, deferred)
+        }
         return Pending(requestId, deferred)
     }
 
@@ -56,11 +76,13 @@ internal class WsPendingRequests {
      * [send] returning false is reported as an [IllegalStateException].
      */
     suspend fun request(
+        appInstanceId: String,
+        session: WsSession? = null,
         envelope: WsEnvelope,
         timeoutMs: Long = DEFAULT_TIMEOUT_MS,
         send: suspend (WsEnvelope) -> Boolean,
     ): WsEnvelope {
-        val slot = open()
+        val slot = open(appInstanceId, session)
         try {
             if (!send(envelope.copy(requestId = slot.requestId))) {
                 throw IllegalStateException("WebSocket request send failed")
@@ -80,12 +102,63 @@ internal class WsPendingRequests {
         requestId: String,
         response: WsEnvelope,
     ): Boolean {
-        val deferred = pending.remove(requestId)
-        if (deferred != null) {
-            deferred.complete(response)
+        val entry = synchronized(lock) { pending.remove(requestId) }
+        if (entry != null) {
+            entry.deferred.complete(response)
             return true
         }
         logger.debug { "No pending request for requestId=$requestId" }
         return false
+    }
+
+    /**
+     * Fail all in-flight requests bound to [appInstanceId].
+     *
+     * @return number of pending requests failed.
+     */
+    fun failForPeer(
+        appInstanceId: String,
+        reason: String,
+    ): Int = failMatching(reason) { it.appInstanceId == appInstanceId }
+
+    /**
+     * Fail all in-flight requests bound to [session].
+     *
+     * @return number of pending requests failed.
+     */
+    fun failForSession(
+        session: WsSession,
+        reason: String,
+    ): Int = failMatching(reason) { it.session === session }
+
+    /**
+     * Fail all in-flight requests across all peers.
+     *
+     * @return number of pending requests failed.
+     */
+    fun failAll(reason: String): Int = failMatching(reason) { true }
+
+    private fun failMatching(
+        reason: String,
+        predicate: (PendingEntry) -> Boolean,
+    ): Int {
+        val toFail =
+            synchronized(lock) {
+                val matched = mutableListOf<CompletableDeferred<WsEnvelope>>()
+                val iterator = pending.entries.iterator()
+                while (iterator.hasNext()) {
+                    val entry = iterator.next().value
+                    if (predicate(entry)) {
+                        iterator.remove()
+                        matched.add(entry.deferred)
+                    }
+                }
+                matched
+            }
+        if (toFail.isNotEmpty()) {
+            val cause = WsSessionClosedException(reason)
+            toFail.forEach { it.completeExceptionally(cause) }
+        }
+        return toFail.size
     }
 }

@@ -385,6 +385,8 @@ class SyncResolver(
             logger.info { "trustByTokenCache success $host $port" }
             ratingPromptManager.trackSignificantAction()
             updateConnectState(SyncState.CONNECTED, host, networkPrefixLength)
+            attemptWebSocketUpgrade(host, port)
+            SyncState.CONNECTED
         } else {
             // Verify host is still reachable before showing UNVERIFIED to user
             telnetHelper.telnet(host, port)?.versionRelation?.let { versionRelation ->
@@ -413,7 +415,9 @@ class SyncResolver(
             if (trustByTokenCache()) {
                 logger.info { "trustByTokenCache success (from unverified) $host $port" }
                 ratingPromptManager.trackSignificantAction()
-                return updateConnectState(SyncState.CONNECTED, host, connectNetworkPrefixLength)
+                updateConnectState(SyncState.CONNECTED, host, connectNetworkPrefixLength)
+                attemptWebSocketUpgrade(host, port)
+                return SyncState.CONNECTED
             }
             // Verify host still reachable; only update DB if state changes
             telnetHelper.telnet(host, port)?.versionRelation?.let { versionRelation ->
@@ -446,7 +450,10 @@ class SyncResolver(
             val state = heartbeat(host, port, appInstanceId, callback)
             when (state) {
                 SyncState.CONNECTED -> {
-                    // Still connected — no state change needed
+                    // Still connected over HTTP, but WebSocket is absent (e.g. mobile resume
+                    // after pause() closed sessions, or a transient WS drop). Opportunistically
+                    // re-upgrade so we do not stay degraded to HTTP polling.
+                    attemptWebSocketUpgrade(host, port)
                     connectState
                 }
 
@@ -693,6 +700,7 @@ class SyncResolver(
                 )
                 callback(true)
                 ratingPromptManager.trackSignificantAction()
+                attemptWebSocketUpgrade(host, port)
             } else {
                 callback(false)
             }
@@ -777,6 +785,7 @@ class SyncResolver(
             )
             callback(true)
             ratingPromptManager.trackSignificantAction()
+            attemptWebSocketUpgrade(host, port)
         } ?: callback(false)
     }
 

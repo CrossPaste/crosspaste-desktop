@@ -162,4 +162,33 @@ class WsMessageHandlerTest {
             assertEquals(1, fixture.receivedPastes.size)
             assertTrue(fixture.responses.isEmpty())
         }
+
+    @Test
+    fun heartbeat_echoesRequestIdInAck() =
+        runTest {
+            val authenticatedPeer = "authenticated-peer"
+            val fixture = Fixture(authenticatedPeer)
+
+            fixture.handler.handleMessage(
+                authenticatedPeer,
+                WsEnvelope(WsMessageType.HEARTBEAT, requestId = "hb-1"),
+            )
+
+            assertEquals(
+                WsEnvelope(WsMessageType.HEARTBEAT_ACK, requestId = "hb-1"),
+                fixture.responses.single(),
+            )
+        }
+
+    @Test
+    fun heartbeatAck_withRequestId_completesPendingRequest() =
+        runTest {
+            val authenticatedPeer = "authenticated-peer"
+            val fixture = Fixture(authenticatedPeer)
+            val ack = WsEnvelope(WsMessageType.HEARTBEAT_ACK, requestId = "hb-2")
+
+            fixture.handler.handleMessage(authenticatedPeer, ack)
+
+            coVerify(exactly = 1) { fixture.wsSessionManager.completePendingRequest("hb-2", ack) }
+        }
 }

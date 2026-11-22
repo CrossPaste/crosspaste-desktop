@@ -31,8 +31,14 @@ class WsSessionManager {
         val existing = sessions.put(appInstanceId, session)
         if (existing != null) {
             logger.info { "Replaced existing WebSocket session for $appInstanceId" }
-            runCatching { existing.close("Replaced by new session") }
-                .onFailure { e -> logger.warn(e) { "Error closing old WS session for $appInstanceId" } }
+            pendingRequests.failForSession(existing, "WebSocket session replaced for $appInstanceId")
+            try {
+                existing.close("Replaced by new session")
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.warn(e) { "Error closing old WS session for $appInstanceId" }
+            }
         } else {
             logger.info { "Registered WebSocket session for $appInstanceId" }
         }
@@ -43,12 +49,14 @@ class WsSessionManager {
         sessions.remove(appInstanceId)?.let {
             logger.info { "Unregistered WebSocket session for $appInstanceId" }
         }
+        pendingRequests.failForPeer(appInstanceId, "WebSocket session unregistered for $appInstanceId")
     }
 
     fun notifySessionClosed(
         appInstanceId: String,
         session: WsSession,
     ) {
+        pendingRequests.failForSession(session, "WebSocket session closed for $appInstanceId")
         if (sessions.remove(appInstanceId, session)) {
             logger.info { "Unregistered WebSocket session for $appInstanceId" }
             onSessionClosed?.invoke(appInstanceId)
@@ -62,35 +70,94 @@ class WsSessionManager {
     fun supportsChunkedPayload(appInstanceId: String): Boolean =
         sessions[appInstanceId]?.peerSupportsChunkedPayload == true
 
-    suspend fun probe(appInstanceId: String): Boolean {
+    suspend fun probe(
+        appInstanceId: String,
+        timeoutMs: Long = WsSession.PING_TIMEOUT_MS,
+    ): Boolean {
         val session = sessions[appInstanceId] ?: return false
         if (!session.isActive) {
             notifySessionClosed(appInstanceId, session)
             return false
         }
-        val success = session.ping()
+        val success =
+            if (WsCapability.HEARTBEAT_ACK in session.peerCapabilities) {
+                probeHeartbeat(appInstanceId, session, timeoutMs)
+            } else {
+                session.ping()
+            }
         if (!success) {
             notifySessionClosed(appInstanceId, session)
         }
         return success
     }
 
+    private suspend fun probeHeartbeat(
+        appInstanceId: String,
+        session: WsSession,
+        timeoutMs: Long,
+    ): Boolean {
+        val pending = pendingRequests.open(appInstanceId, session)
+        try {
+            if (sessions[appInstanceId] !== session) return false
+            val sent =
+                sendToSession(
+                    appInstanceId,
+                    session,
+                    WsEnvelope(type = WsMessageType.HEARTBEAT, requestId = pending.requestId),
+                )
+            if (!sent) return false
+
+            val response =
+                try {
+                    pending.await(timeoutMs)
+                } catch (_: TimeoutCancellationException) {
+                    logger.warn { "WebSocket heartbeat probe timed out for $appInstanceId" }
+                    return false
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.debug(e) { "WebSocket heartbeat probe failed for $appInstanceId" }
+                    return false
+                }
+            return response.type == WsMessageType.HEARTBEAT_ACK
+        } finally {
+            pending.close()
+        }
+    }
+
     suspend fun closeSession(appInstanceId: String) {
-        sessions.remove(appInstanceId)?.let { session ->
-            runCatching { session.close("Device removed") }
-                .onFailure { e -> logger.warn(e) { "Error closing WS session for $appInstanceId" } }
+        val session = sessions.remove(appInstanceId)
+        pendingRequests.failForPeer(appInstanceId, "WebSocket session closed for $appInstanceId")
+        if (session != null) {
+            try {
+                session.close("Device removed")
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.warn(e) { "Error closing WS session for $appInstanceId" }
+            }
         }
     }
 
     suspend fun closeAll() {
-        // Drain instead of snapshot-then-iterate: toList() races with concurrent
-        // session registration/removal (NoSuchElementException, see #4884).
-        while (true) {
-            val appInstanceId = sessions.keys.firstOrNull() ?: break
-            sessions.remove(appInstanceId)?.let { session ->
-                runCatching { session.close("App shutting down") }
-                    .onFailure { e -> logger.warn(e) { "Error closing WS session for $appInstanceId" } }
+        pendingRequests.failAll("All WebSocket sessions closed")
+        try {
+            // Drain instead of snapshot-then-iterate: toList() races with concurrent
+            // session registration/removal (NoSuchElementException, see #4884).
+            while (true) {
+                val appInstanceId = sessions.keys.firstOrNull() ?: break
+                sessions.remove(appInstanceId)?.let { session ->
+                    try {
+                        session.close("App shutting down")
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        logger.warn(e) { "Error closing WS session for $appInstanceId" }
+                    }
+                }
             }
+        } finally {
+            pendingRequests.failAll("All WebSocket sessions closed")
         }
     }
 
@@ -99,24 +166,38 @@ class WsSessionManager {
         envelope: WsEnvelope,
     ): Boolean {
         val session = sessions[appInstanceId] ?: return false
-        return runCatching {
+        return sendToSession(appInstanceId, session, envelope)
+    }
+
+    private suspend fun sendToSession(
+        appInstanceId: String,
+        session: WsSession,
+        envelope: WsEnvelope,
+    ): Boolean =
+        try {
             session.sendEnvelope(envelope)
             true
-        }.onFailure { e ->
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             logger.warn(e) { "WebSocket send failed for $appInstanceId" }
             notifySessionClosed(appInstanceId, session)
-        }.getOrDefault(false)
-    }
+            false
+        }
 
     /** Sends [envelope] and suspends until the peer answers with the same requestId. */
     suspend fun request(
         appInstanceId: String,
         envelope: WsEnvelope,
         timeoutMs: Long = WsPendingRequests.DEFAULT_TIMEOUT_MS,
-    ): WsEnvelope =
-        pendingRequests.request(envelope, timeoutMs) { requestEnvelope ->
-            send(appInstanceId, requestEnvelope)
+    ): WsEnvelope {
+        val session =
+            sessions[appInstanceId]
+                ?: throw IllegalStateException("WebSocket request send failed: no active session for $appInstanceId")
+        return pendingRequests.request(appInstanceId, session, envelope, timeoutMs) { requestEnvelope ->
+            sessions[appInstanceId] === session && sendToSession(appInstanceId, session, requestEnvelope)
         }
+    }
 
     internal fun completePendingRequest(
         requestId: String,
@@ -142,8 +223,11 @@ class WsSessionManager {
             return sendWithPayloadLimits(session, appInstanceId, envelope, singleFramePayloadLimit, chunkedPayloadLimit)
         }
 
-        val pending = pendingRequests.open()
+        val pending = pendingRequests.open(appInstanceId, session)
         try {
+            if (sessions[appInstanceId] !== session) {
+                return WsPayloadSendResult.Failed
+            }
             val sendResult =
                 sendWithPayloadLimits(
                     session,
@@ -157,8 +241,13 @@ class WsSessionManager {
             val response =
                 try {
                     pending.await(ackTimeoutMs)
-                } catch (e: TimeoutCancellationException) {
+                } catch (_: TimeoutCancellationException) {
                     logger.warn { "WebSocket paste acknowledgement timed out for $appInstanceId" }
+                    return WsPayloadSendResult.Failed
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.warn(e) { "WebSocket paste acknowledgement failed for $appInstanceId" }
                     return WsPayloadSendResult.Failed
                 }
             return when (response.type) {
