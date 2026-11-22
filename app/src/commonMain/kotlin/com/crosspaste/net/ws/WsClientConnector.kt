@@ -10,6 +10,8 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.websocket.*
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -23,6 +25,8 @@ class WsClientConnector(
     private val logger = KotlinLogging.logger {}
     private val json = getJsonUtils().JSON
     private val connectScope = namedScope(ioDispatcher, "WsClientConnector")
+    private val inFlightLock = SynchronizedObject()
+    private val inFlightTokens = HashMap<String, Any>()
 
     /**
      * Attempt to open a WebSocket connection to a remote peer.
@@ -33,6 +37,13 @@ class WsClientConnector(
         host: String,
         port: Int,
         targetAppInstanceId: String,
+    ): Boolean = connectInternal(host, port, targetAppInstanceId)
+
+    private suspend fun connectInternal(
+        host: String,
+        port: Int,
+        targetAppInstanceId: String,
+        onHandshakeFinished: () -> Unit = {},
     ): Boolean =
         runCatching {
             val path =
@@ -106,6 +117,7 @@ class WsClientConnector(
                         peerCapabilities = challenge.capabilities,
                     )
                 wsSessionManager.registerSession(targetAppInstanceId, wsSession)
+                onHandshakeFinished()
 
                 try {
                     while (true) {
@@ -129,15 +141,45 @@ class WsClientConnector(
 
     /**
      * Attempt WebSocket connection in the background.
-     * Does not block — failures are silently handled.
+     * Deduplicates concurrent handshake attempts for the same peer and silently handles failures.
      */
     fun connectAsync(
         host: String,
         port: Int,
         targetAppInstanceId: String,
     ) {
-        connectScope.launch {
-            connect(host, port, targetAppInstanceId)
+        val token = Any()
+        val acquired =
+            synchronized(inFlightLock) {
+                if (targetAppInstanceId in inFlightTokens) {
+                    false
+                } else {
+                    inFlightTokens[targetAppInstanceId] = token
+                    true
+                }
+            }
+        if (!acquired) {
+            logger.debug { "WebSocket connect already in flight for $targetAppInstanceId, skipping duplicate dial" }
+            return
+        }
+        val release = {
+            synchronized(inFlightLock) {
+                if (inFlightTokens[targetAppInstanceId] === token) {
+                    inFlightTokens.remove(targetAppInstanceId)
+                }
+            }
+        }
+        try {
+            connectScope.launch {
+                try {
+                    connectInternal(host, port, targetAppInstanceId, onHandshakeFinished = release)
+                } finally {
+                    release()
+                }
+            }
+        } catch (e: Throwable) {
+            release()
+            throw e
         }
     }
 }

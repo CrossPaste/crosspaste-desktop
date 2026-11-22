@@ -1,0 +1,84 @@
+package com.crosspaste.net.ws
+
+import com.crosspaste.app.AppInfo
+import com.crosspaste.secure.SecureStore
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respondError
+import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.http.HttpStatusCode
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.seconds
+
+class WsClientConnectorTest {
+
+    @Test
+    fun connectAsync_deduplicatesInFlightHandshakeAndReleasesOnFailure() =
+        runBlocking {
+            val attempts = AtomicInteger(0)
+            val firstStarted = CompletableDeferred<Unit>()
+            val releaseFirst = CompletableDeferred<Unit>()
+            val secondStarted = CompletableDeferred<Unit>()
+
+            val client =
+                HttpClient(
+                    MockEngine {
+                        val attempt = attempts.incrementAndGet()
+                        if (attempt == 1) {
+                            firstStarted.complete(Unit)
+                            releaseFirst.await()
+                        } else {
+                            secondStarted.complete(Unit)
+                        }
+                        respondError(HttpStatusCode.ServiceUnavailable)
+                    },
+                ) {
+                    install(WebSockets)
+                }
+
+            val appInfo: AppInfo =
+                mockk(relaxed = true) {
+                    every { appInstanceId } returns "local-peer"
+                }
+            val connector =
+                WsClientConnector(
+                    appInfo = appInfo,
+                    client = client,
+                    secureStore = mockk<SecureStore>(relaxed = true),
+                    wsSessionManager = WsSessionManager(),
+                    wsMessageHandler = mockk<WsMessageHandler>(relaxed = true),
+                )
+
+            try {
+                connector.connectAsync("127.0.0.1", 8080, "remote-peer")
+                withTimeout(5.seconds) { firstStarted.await() }
+
+                // Duplicate dial while the first handshake is still in flight must be ignored.
+                connector.connectAsync("127.0.0.1", 8080, "remote-peer")
+                assertEquals(1, attempts.get())
+
+                // Release first handshake so it fails and frees the in-flight slot.
+                releaseFirst.complete(Unit)
+
+                withTimeout(5.seconds) {
+                    while (attempts.get() < 2) {
+                        connector.connectAsync("127.0.0.1", 8080, "remote-peer")
+                        if (attempts.get() < 2) {
+                            kotlinx.coroutines.delay(10)
+                        }
+                    }
+                    secondStarted.await()
+                }
+                assertEquals(2, attempts.get())
+            } finally {
+                client.close()
+            }
+        }
+}

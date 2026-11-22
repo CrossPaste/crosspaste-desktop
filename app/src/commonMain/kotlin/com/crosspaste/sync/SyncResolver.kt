@@ -438,8 +438,13 @@ class SyncResolver(
      */
     private suspend fun SyncRuntimeInfo.verifyConnection(callback: ResolveCallback): Int {
         if (wsSessionManager.isConnected(appInstanceId)) {
-            logger.debug { "WebSocket active for $appInstanceId, skipping HTTP heartbeat" }
-            return connectState
+            if (!wsSessionManager.supportsHeartbeatAck(appInstanceId) ||
+                wsSessionManager.probe(appInstanceId)
+            ) {
+                logger.debug { "WebSocket active for $appInstanceId, skipping HTTP heartbeat" }
+                return connectState
+            }
+            logger.info { "WebSocket heartbeat probe failed for $appInstanceId, falling back to HTTP verification" }
         }
         return connectHostAddress?.let { host ->
             // Heartbeat the current address DIRECTLY — it need not be a member of

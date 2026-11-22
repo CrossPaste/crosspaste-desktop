@@ -10,9 +10,12 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -480,7 +483,43 @@ class WsSessionManagerTest {
         }
 
     @Test
-    fun send_cancellationException_rethrowsWithoutClosingHealthySession() =
+    fun send_callerCancelled_rethrowsWithoutClosingHealthySession() =
+        runTest {
+            val mgr = WsSessionManager()
+            val closed = mutableListOf<String>()
+            mgr.setOnSessionClosed { closed.add(it) }
+            val sendStarted = CompletableDeferred<Unit>()
+            val inner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                    coEvery { send(any<Frame>()) } coAnswers {
+                        sendStarted.complete(Unit)
+                        awaitCancellation()
+                    }
+                }
+            mgr.registerSession("A", WsSession(inner, "remote"))
+
+            var caughtCancellation: kotlinx.coroutines.CancellationException? = null
+            val callerJob =
+                launch {
+                    try {
+                        mgr.send("A", WsEnvelope(WsMessageType.HEARTBEAT))
+                    } catch (e: kotlinx.coroutines.CancellationException) {
+                        caughtCancellation = e
+                        throw e
+                    }
+                }
+            sendStarted.await()
+            callerJob.cancel()
+            callerJob.join()
+
+            assertTrue(caughtCancellation != null)
+            assertEquals(emptyList(), closed)
+            assertTrue(mgr.isConnected("A"))
+        }
+
+    @Test
+    fun send_channelCancelledWhileCallerActive_closesSessionAndReturnsFalse() =
         runTest {
             val mgr = WsSessionManager()
             val closed = mutableListOf<String>()
@@ -488,16 +527,16 @@ class WsSessionManagerTest {
             val inner: WebSocketSession =
                 mockk(relaxed = true) {
                     every { coroutineContext } returns Job()
-                    coEvery { send(any<Frame>()) } throws kotlinx.coroutines.CancellationException("caller cancelled")
+                    // Simulates Ktor outgoing channel cancellation while caller coroutine is still active.
+                    coEvery { send(any<Frame>()) } throws kotlinx.coroutines.CancellationException("channel cancelled")
                 }
             mgr.registerSession("A", WsSession(inner, "remote"))
 
-            kotlin.test.assertFailsWith<kotlinx.coroutines.CancellationException> {
-                mgr.send("A", WsEnvelope(WsMessageType.HEARTBEAT))
-            }
+            val sent = mgr.send("A", WsEnvelope(WsMessageType.NOTIFY_REMOVE))
 
-            assertEquals(emptyList(), closed)
-            assertTrue(mgr.isConnected("A"))
+            assertFalse(sent)
+            assertEquals(listOf("A"), closed)
+            assertFalse(mgr.isConnected("A"))
         }
 
     @Test
@@ -677,5 +716,38 @@ class WsSessionManagerTest {
             assertFalse(probeDeferred.await())
             assertEquals(listOf("A"), closed)
             assertFalse(mgr.isConnected("A"))
+            coVerify(exactly = 1) { inner.send(match { it is Frame.Close }) }
+        }
+
+    @Test
+    fun notifySessionClosed_removesSessionBeforeFailingPendingRequests() =
+        runTest {
+            val mgr = WsSessionManager()
+            val session = fakeSession()
+            mgr.registerSession("A", session)
+
+            var secondRequestFailedImmediately = false
+            val firstRequest =
+                launch(start = kotlinx.coroutines.CoroutineStart.UNDISPATCHED) {
+                    val firstResult =
+                        runCatching {
+                            mgr.request("A", WsEnvelope(WsMessageType.FILE_PULL_REQUEST), timeoutMs = 30_000)
+                        }
+                    assertTrue(firstResult.exceptionOrNull() is WsSessionClosedException)
+                    // Immediately enqueue a follow-up request once woken by failForSession:
+                    // the closed session must already be removed so this cannot hang for 30s.
+                    val secondResult =
+                        runCatching {
+                            mgr.request("A", WsEnvelope(WsMessageType.FILE_PULL_REQUEST), timeoutMs = 30_000)
+                        }
+                    secondRequestFailedImmediately = secondResult.isFailure
+                }
+            runCurrent()
+
+            mgr.notifySessionClosed("A", session)
+            runCurrent()
+
+            assertTrue(firstRequest.isCompleted)
+            assertTrue(secondRequestFailedImmediately)
         }
 }
