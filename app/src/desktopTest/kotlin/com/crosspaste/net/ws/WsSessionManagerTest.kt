@@ -895,4 +895,45 @@ class WsSessionManagerTest {
             val assembled = receiveDeferred.await()
             assertEquals(listOf<Byte>(1, 2, 3, 4, 5, 6), assembled?.envelope?.payload?.toList())
         }
+
+    @Test
+    fun pause_rejectsNewRegistrationsAndClosesActiveSessionsUntilResume() =
+        runTest {
+            val mgr = WsSessionManager()
+            val opened = mutableListOf<String>()
+            var listenerCalled = 0
+            mgr.setOnSessionOpened { opened.add(it) }
+            mgr.addOnPausedListener { listenerCalled++ }
+
+            val activeInner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                }
+            assertTrue(mgr.registerSession("A", WsSession(activeInner, "remote-a")))
+            assertEquals(listOf("A"), opened)
+
+            mgr.pause()
+
+            assertFalse(mgr.isAcceptingSessions())
+            assertEquals(1, listenerCalled)
+            assertFalse(mgr.isConnected("A"))
+            coVerify(exactly = 1) { activeInner.send(any<Frame.Close>()) }
+
+            // Registrations while paused must be rejected and closed without firing onSessionOpened.
+            val rejectedInner: WebSocketSession =
+                mockk(relaxed = true) {
+                    every { coroutineContext } returns Job()
+                }
+            assertFalse(mgr.registerSession("B", WsSession(rejectedInner, "remote-b")))
+            assertFalse(mgr.isConnected("B"))
+            assertEquals(listOf("A"), opened)
+            coVerify(exactly = 1) { rejectedInner.send(any<Frame.Close>()) }
+
+            // After resume, registrations work again.
+            mgr.resume()
+            assertTrue(mgr.isAcceptingSessions())
+            assertTrue(mgr.registerSession("B", fakeSession()))
+            assertTrue(mgr.isConnected("B"))
+            assertEquals(listOf("A", "B"), opened)
+        }
 }

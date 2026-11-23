@@ -2,6 +2,8 @@ package com.crosspaste.net.ws
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.util.collections.*
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -14,6 +16,9 @@ class WsSessionManager {
     private val pendingRequests = WsPendingRequests()
 
     private val sessions: ConcurrentMap<String, WsSession> = ConcurrentMap()
+    private val lifecycleLock = SynchronizedObject()
+    private var acceptingSessions = true
+    private val onPausedListeners = mutableListOf<() -> Unit>()
 
     private var onSessionClosed: ((String) -> Unit)? = null
 
@@ -27,11 +32,61 @@ class WsSessionManager {
         onSessionOpened = callback
     }
 
+    fun addOnPausedListener(listener: () -> Unit) {
+        synchronized(lifecycleLock) {
+            onPausedListeners.add(listener)
+        }
+    }
+
+    fun isAcceptingSessions(): Boolean = synchronized(lifecycleLock) { acceptingSessions }
+
+    /**
+     * Stops accepting new sessions or handshakes, cancels any in-flight handshakes
+     * registered via [addOnPausedListener], and closes all active sessions.
+     * Call [resume] when background pause ends.
+     */
+    suspend fun pause() {
+        val listeners =
+            synchronized(lifecycleLock) {
+                acceptingSessions = false
+                onPausedListeners.toList()
+            }
+        listeners.forEach { listener ->
+            try {
+                listener()
+            } catch (e: Exception) {
+                logger.warn(e) { "Error in WsSessionManager onPaused listener" }
+            }
+        }
+        closeAll()
+    }
+
+    /** Re-enables accepting WebSocket handshakes and session registrations after [pause]. */
+    fun resume() {
+        synchronized(lifecycleLock) {
+            acceptingSessions = true
+        }
+    }
+
     suspend fun registerSession(
         appInstanceId: String,
         session: WsSession,
-    ) {
-        val existing = sessions.put(appInstanceId, session)
+    ): Boolean {
+        var rejected = false
+        val existing =
+            synchronized(lifecycleLock) {
+                if (!acceptingSessions) {
+                    rejected = true
+                    null
+                } else {
+                    sessions.put(appInstanceId, session)
+                }
+            }
+        if (rejected) {
+            logger.info { "Rejected WebSocket session registration for $appInstanceId while paused" }
+            closeSessionSafely(appInstanceId, session, "Session manager paused")
+            return false
+        }
         if (existing != null) {
             logger.info { "Replaced existing WebSocket session for $appInstanceId" }
             pendingRequests.failForSession(existing, "WebSocket session replaced for $appInstanceId")
@@ -40,6 +95,7 @@ class WsSessionManager {
             logger.info { "Registered WebSocket session for $appInstanceId" }
         }
         onSessionOpened?.invoke(appInstanceId)
+        return true
     }
 
     fun unregisterSession(appInstanceId: String) {

@@ -138,4 +138,69 @@ class WsClientConnectorTest {
                 client.close()
             }
         }
+
+    @Test
+    fun pause_cancelsInFlightHandshakeAndBlocksNewDialsUntilResume() =
+        runBlocking {
+            val attempts = AtomicInteger(0)
+            val firstStarted = CompletableDeferred<Unit>()
+            val firstCancelled = CompletableDeferred<Unit>()
+            val resumedDialStarted = CompletableDeferred<Unit>()
+
+            val client =
+                HttpClient(
+                    MockEngine {
+                        val attempt = attempts.incrementAndGet()
+                        if (attempt == 1) {
+                            firstStarted.complete(Unit)
+                            try {
+                                kotlinx.coroutines.awaitCancellation()
+                            } finally {
+                                firstCancelled.complete(Unit)
+                            }
+                        } else {
+                            resumedDialStarted.complete(Unit)
+                            respondError(HttpStatusCode.ServiceUnavailable)
+                        }
+                    },
+                ) {
+                    install(WebSockets)
+                }
+
+            val appInfo: AppInfo =
+                mockk(relaxed = true) {
+                    every { appInstanceId } returns "local-peer"
+                }
+            val wsSessionManager = WsSessionManager()
+            val connector =
+                WsClientConnector(
+                    appInfo = appInfo,
+                    client = client,
+                    secureStore = mockk<SecureStore>(relaxed = true),
+                    wsSessionManager = wsSessionManager,
+                    wsMessageHandler = mockk<WsMessageHandler>(relaxed = true),
+                )
+
+            try {
+                connector.connectAsync("127.0.0.1", 8080, "remote-peer")
+                withTimeout(5.seconds) { firstStarted.await() }
+
+                // Pause must cancel the in-flight handshake and reject new dials.
+                wsSessionManager.pause()
+                withTimeout(5.seconds) { firstCancelled.await() }
+
+                connector.connectAsync("127.0.0.1", 8080, "remote-peer")
+                assertEquals(1, attempts.get())
+                assertEquals(false, connector.connect("127.0.0.1", 8080, "remote-peer"))
+                assertEquals(1, attempts.get())
+
+                // Resume re-enables outbound handshakes.
+                wsSessionManager.resume()
+                connector.connectAsync("127.0.0.1", 8080, "remote-peer")
+                withTimeout(5.seconds) { resumedDialStarted.await() }
+                assertEquals(2, attempts.get())
+            } finally {
+                client.close()
+            }
+        }
 }

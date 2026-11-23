@@ -170,6 +170,7 @@ async function completeHandshake(
   const proof = JSON.parse(new TextDecoder().decode(payload)) as WsAuthProofMessage;
   expect(proof.pairingVersion).toBe(3);
   expect(proof.capabilities).toContain(WsCapability.PASTE_PUSH_ACK);
+  expect(proof.capabilities).toContain(WsCapability.HEARTBEAT_ACK);
   expect(
     await processor.verifyAuthentication(
       new Int8Array(handshakePayload("client-proof", "ext-id", "desktop-id", CHALLENGE).buffer),

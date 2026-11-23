@@ -36,6 +36,26 @@ class WsClientConnector(
     private val inFlightLock = SynchronizedObject()
     private val inFlightHandshakes = HashMap<String, InFlightHandshake>()
 
+    init {
+        wsSessionManager.addOnPausedListener {
+            cancelInFlightHandshakes()
+        }
+    }
+
+    fun cancelInFlightHandshakes() {
+        val jobsToCancel =
+            synchronized(inFlightLock) {
+                if (inFlightHandshakes.isEmpty()) {
+                    emptyList()
+                } else {
+                    val jobs = inFlightHandshakes.values.map { it.job }
+                    inFlightHandshakes.clear()
+                    jobs
+                }
+            }
+        jobsToCancel.forEach { it.cancel() }
+    }
+
     /**
      * Attempt to open a WebSocket connection to a remote peer.
      * This is called opportunistically after HTTP CONNECTED state is reached.
@@ -54,11 +74,16 @@ class WsClientConnector(
         onHandshakeFinished: () -> Unit = {},
     ): Boolean =
         runCatching {
+            if (!wsSessionManager.isAcceptingSessions()) {
+                logger.debug { "WebSocket connect skipped for $targetAppInstanceId at $host:$port (paused)" }
+                return false
+            }
             val path =
                 "/ws/sync?appInstanceId=${appInfo.appInstanceId}" +
                     "&targetAppInstanceId=$targetAppInstanceId" +
                     "&authVersion=${WsAuthenticationCodec.VERSION}"
 
+            var sessionRegistered = false
             client.webSocket(host = host, port = port, path = path) {
                 val rawSession = WsSession(this, targetAppInstanceId)
                 val receivedChallenge =
@@ -124,8 +149,12 @@ class WsClientConnector(
                         peerSupportsChunkedPayload = SyncApi.supportsPairingV3(challenge.pairingVersion),
                         peerCapabilities = challenge.capabilities,
                     )
-                wsSessionManager.registerSession(targetAppInstanceId, wsSession)
+                val registered = wsSessionManager.registerSession(targetAppInstanceId, wsSession)
                 onHandshakeFinished()
+                if (!registered) {
+                    return@webSocket
+                }
+                sessionRegistered = true
 
                 dispatchWsSessionMessages(
                     appInstanceId = targetAppInstanceId,
@@ -149,7 +178,7 @@ class WsClientConnector(
                     }
                 }
             }
-            true
+            sessionRegistered
         }.onFailure { e ->
             logger.debug(e) { "WebSocket connection to $targetAppInstanceId at $host:$port failed (fallback to HTTP)" }
         }.getOrDefault(false)
@@ -188,13 +217,17 @@ class WsClientConnector(
         var previousJobToCancel: Job? = null
         val shouldStart =
             synchronized(inFlightLock) {
-                val existing = inFlightHandshakes[targetAppInstanceId]
-                if (existing != null && existing.host == host && existing.port == port) {
+                if (!wsSessionManager.isAcceptingSessions()) {
                     false
                 } else {
-                    previousJobToCancel = existing?.job
-                    inFlightHandshakes[targetAppInstanceId] = candidate
-                    true
+                    val existing = inFlightHandshakes[targetAppInstanceId]
+                    if (existing != null && existing.host == host && existing.port == port) {
+                        false
+                    } else {
+                        previousJobToCancel = existing?.job
+                        inFlightHandshakes[targetAppInstanceId] = candidate
+                        true
+                    }
                 }
             }
 
