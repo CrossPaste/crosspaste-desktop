@@ -22,6 +22,7 @@ export const WsMessageType = {
 
 export const WsCapability = {
   PASTE_PUSH_ACK: "paste_push_ack",
+  HEARTBEAT_ACK: "heartbeat_ack",
 } as const;
 
 export type WsMessageTypeValue = (typeof WsMessageType)[keyof typeof WsMessageType];
@@ -63,8 +64,10 @@ export function toHeader(envelope: WsEnvelope): WsEnvelopeHeader {
 }
 
 /** Create an envelope with no payload. */
-export function simpleEnvelope(type: string): WsEnvelope {
-  return { type, payload: new Uint8Array(0), encrypted: false };
+export function simpleEnvelope(type: string, requestId?: string | null): WsEnvelope {
+  return requestId != null
+    ? { type, payload: new Uint8Array(0), encrypted: false, requestId }
+    : { type, payload: new Uint8Array(0), encrypted: false };
 }
 
 /** WebSocket connection status for a device. */

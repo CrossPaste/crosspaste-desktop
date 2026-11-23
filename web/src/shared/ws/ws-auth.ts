@@ -20,7 +20,10 @@ export const WS_AUTH_VERSION = 1;
 export const WS_AUTH_ROLE_CLIENT_PROOF = "client-proof";
 export const WS_AUTH_ROLE_SERVER_PROOF = "server-proof";
 
-export const WS_SUPPORTED_CAPABILITIES = [WsCapability.PASTE_PUSH_ACK] as const;
+export const WS_SUPPORTED_CAPABILITIES = [
+  WsCapability.PASTE_PUSH_ACK,
+  WsCapability.HEARTBEAT_ACK,
+] as const;
 
 const HANDSHAKE_DOMAIN = "crosspaste-ws-handshake-v1";
 const ENVELOPE_DOMAIN = "crosspaste-ws-envelope-v1";

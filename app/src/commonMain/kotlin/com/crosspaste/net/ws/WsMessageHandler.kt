@@ -15,9 +15,15 @@ import com.crosspaste.secure.SecureStore
 import com.crosspaste.utils.getFileUtils
 import com.crosspaste.utils.getJsonUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.ktor.websocket.CloseReason
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.cancellation.CancellationException
 
 class WsMessageHandler(
@@ -384,29 +390,68 @@ class WsMessageHandler(
     }
 }
 
+private class WsInboundQueueOverflowException : Exception()
+
+private const val OVERFLOW_CLOSE_TIMEOUT_MS = 1_000L
+
 /**
  * Runs a WebSocket session's receive loop while decoupling lightweight control/response
  * frames from slower business messages. Control and response frames run inline on the
  * receive loop; business messages run serially in FIFO order on a per-session worker so
  * paste ordering is preserved without blocking heartbeats or ACKs.
+ *
+ * Enforces a per-session byte budget ([maxPendingPayloadBytes]) and message count cap
+ * ([maxPendingMessages]) on queued business messages. If a peer pushes faster than the
+ * worker drains and exceeds the budget, the session is closed with
+ * [CloseReason.Codes.TRY_AGAIN_LATER] so the sender falls back to its existing retry/HTTP
+ * path instead of accumulating unbounded payload buffers in memory.
  */
 internal suspend fun dispatchWsSessionMessages(
     appInstanceId: String,
     wsSession: WsSession,
     wsMessageHandler: WsMessageHandler,
     onReadLoopFinished: () -> Unit,
+    maxPendingPayloadBytes: Long = WS_MAX_PENDING_PAYLOAD_BYTES,
+    maxPendingMessages: Int = WS_MAX_PENDING_MESSAGES,
     readLoop: suspend (dispatch: suspend (WsEnvelope) -> Unit) -> Unit,
 ) = coroutineScope {
     val logger = KotlinLogging.logger("WsSessionDispatcher")
     val workChannel = Channel<WsEnvelope>(Channel.UNLIMITED)
+    val budgetLock = SynchronizedObject()
+    var pendingBytes = 0L
+    var pendingMessages = 0
+
+    fun tryReserve(payloadBytes: Long): Boolean =
+        synchronized(budgetLock) {
+            if (pendingMessages >= maxPendingMessages ||
+                pendingBytes + payloadBytes > maxPendingPayloadBytes
+            ) {
+                false
+            } else {
+                pendingBytes += payloadBytes
+                pendingMessages += 1
+                true
+            }
+        }
+
+    fun release(payloadBytes: Long) {
+        synchronized(budgetLock) {
+            pendingBytes = (pendingBytes - payloadBytes).coerceAtLeast(0L)
+            pendingMessages = (pendingMessages - 1).coerceAtLeast(0)
+        }
+    }
+
     launch {
         for (envelope in workChannel) {
+            val payloadBytes = envelope.payload.size.toLong()
             try {
                 wsMessageHandler.handleMessage(appInstanceId, envelope)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 logger.error(e) { "Unhandled error processing WS ${envelope.type} from $appInstanceId" }
+            } finally {
+                release(payloadBytes)
             }
         }
     }
@@ -416,9 +461,37 @@ internal suspend fun dispatchWsSessionMessages(
             if (WsMessageHandler.isControlOrResponse(envelope.type)) {
                 wsMessageHandler.handleMessage(appInstanceId, envelope)
             } else {
-                workChannel.send(envelope)
+                val payloadBytes = envelope.payload.size.toLong()
+                if (!tryReserve(payloadBytes)) {
+                    logger.warn {
+                        "WS inbound business queue budget exceeded for $appInstanceId " +
+                            "(incomingBytes=$payloadBytes, maxBytes=$maxPendingPayloadBytes, " +
+                            "maxMessages=$maxPendingMessages); closing session"
+                    }
+                    try {
+                        withTimeoutOrNull(OVERFLOW_CLOSE_TIMEOUT_MS) {
+                            wsSession.close(
+                                reason = "Inbound business queue budget exceeded",
+                                code = CloseReason.Codes.TRY_AGAIN_LATER,
+                            )
+                        }
+                    } catch (e: CancellationException) {
+                        currentCoroutineContext().ensureActive()
+                    } catch (e: Exception) {
+                        logger.debug(e) { "Error closing overflowed WS session for $appInstanceId" }
+                    }
+                    throw WsInboundQueueOverflowException()
+                }
+                try {
+                    workChannel.send(envelope)
+                } catch (e: Throwable) {
+                    release(payloadBytes)
+                    throw e
+                }
             }
         }
+    } catch (_: WsInboundQueueOverflowException) {
+        // Session already closed above; fall through to finally to tear down worker & notify manager.
     } finally {
         workChannel.close()
         onReadLoopFinished()

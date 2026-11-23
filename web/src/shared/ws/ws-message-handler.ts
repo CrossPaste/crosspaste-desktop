@@ -149,7 +149,7 @@ export function createWsMessageHandler(deps: WsMessageHandlerDeps) {
         case WsMessageType.HEARTBEAT:
           await deps.sendToDevice(
             appInstanceId,
-            simpleEnvelope(WsMessageType.HEARTBEAT_ACK),
+            simpleEnvelope(WsMessageType.HEARTBEAT_ACK, envelope.requestId),
           );
           break;
 

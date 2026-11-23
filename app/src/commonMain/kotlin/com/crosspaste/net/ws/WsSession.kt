@@ -124,8 +124,11 @@ class WsSession(
             }
         } ?: false
 
-    suspend fun close(reason: String = "Normal closure") {
-        session.close(CloseReason(CloseReason.Codes.NORMAL, reason))
+    suspend fun close(
+        reason: String = "Normal closure",
+        code: CloseReason.Codes = CloseReason.Codes.NORMAL,
+    ) {
+        session.close(CloseReason(code, reason))
     }
 
     companion object {

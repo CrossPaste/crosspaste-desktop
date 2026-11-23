@@ -13,11 +13,16 @@ import com.crosspaste.secure.SecureStore
 import com.crosspaste.sync.SyncHandler
 import com.crosspaste.sync.SyncTestFixtures.createConnectedSyncRuntimeInfo
 import com.crosspaste.utils.getJsonUtils
+import io.ktor.websocket.CloseReason
+import io.ktor.websocket.Frame
+import io.ktor.websocket.WebSocketSession
+import io.ktor.websocket.readReason
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -247,5 +252,99 @@ class WsMessageHandlerTest {
                     WsEnvelope(WsMessageType.HEARTBEAT_ACK, requestId = "hb-busy"),
                 )
             }
+        }
+
+    @Test
+    fun dispatchWsSessionMessages_closesSessionWhenPendingPayloadBudgetExceeded() =
+        runTest {
+            val authenticatedPeer = "authenticated-peer"
+            val firstStarted = kotlinx.coroutines.CompletableDeferred<Unit>()
+            val releaseFirst = kotlinx.coroutines.CompletableDeferred<Unit>()
+            val handledRequestIds = mutableListOf<String?>()
+            val wsMessageHandler = mockk<WsMessageHandler>()
+            coEvery { wsMessageHandler.handleMessage(authenticatedPeer, any()) } coAnswers {
+                val env = secondArg<WsEnvelope>()
+                handledRequestIds.add(env.requestId)
+                if (env.requestId == "p-1") {
+                    firstStarted.complete(Unit)
+                    releaseFirst.await()
+                }
+            }
+            val innerSession = mockk<WebSocketSession>(relaxed = true)
+            val session =
+                WsSession(
+                    session = innerSession,
+                    remoteAppInstanceId = authenticatedPeer,
+                )
+            var readLoopFinished = false
+
+            val dispatcherJob =
+                launch {
+                    dispatchWsSessionMessages(
+                        appInstanceId = authenticatedPeer,
+                        wsSession = session,
+                        wsMessageHandler = wsMessageHandler,
+                        onReadLoopFinished = { readLoopFinished = true },
+                        maxPendingPayloadBytes = 100L,
+                    ) { dispatch ->
+                        dispatch(WsEnvelope(WsMessageType.PASTE_PUSH, payload = ByteArray(60), requestId = "p-1"))
+                        firstStarted.await()
+                        // Second payload would push queued bytes to 120 > 100; must close session and not enqueue.
+                        dispatch(WsEnvelope(WsMessageType.PASTE_PUSH, payload = ByteArray(60), requestId = "p-2"))
+                    }
+                }
+
+            firstStarted.await()
+            releaseFirst.complete(Unit)
+            dispatcherJob.join()
+
+            assertTrue(readLoopFinished)
+            assertEquals(listOf<String?>("p-1"), handledRequestIds)
+            coVerify(exactly = 1) {
+                innerSession.send(
+                    match<Frame.Close> { frame ->
+                        frame.readReason()?.knownReason == CloseReason.Codes.TRY_AGAIN_LATER
+                    },
+                )
+            }
+        }
+
+    @Test
+    fun dispatchWsSessionMessages_releasesBudgetAfterProcessingMessage() =
+        runTest {
+            val authenticatedPeer = "authenticated-peer"
+            val firstDone = kotlinx.coroutines.CompletableDeferred<Unit>()
+            val handledRequestIds = mutableListOf<String?>()
+            val wsMessageHandler = mockk<WsMessageHandler>()
+            coEvery { wsMessageHandler.handleMessage(authenticatedPeer, any()) } coAnswers {
+                val env = secondArg<WsEnvelope>()
+                handledRequestIds.add(env.requestId)
+                if (env.requestId == "p-1") {
+                    firstDone.complete(Unit)
+                }
+            }
+            val innerSession = mockk<io.ktor.websocket.WebSocketSession>(relaxed = true)
+            val session =
+                WsSession(
+                    session = innerSession,
+                    remoteAppInstanceId = authenticatedPeer,
+                )
+
+            dispatchWsSessionMessages(
+                appInstanceId = authenticatedPeer,
+                wsSession = session,
+                wsMessageHandler = wsMessageHandler,
+                onReadLoopFinished = {},
+                maxPendingPayloadBytes = 100L,
+            ) { dispatch ->
+                dispatch(WsEnvelope(WsMessageType.PASTE_PUSH, payload = ByteArray(80), requestId = "p-1"))
+                firstDone.await()
+                // Yield so worker's finally block releases the 80 bytes before next message arrives.
+                kotlinx.coroutines.yield()
+                dispatch(WsEnvelope(WsMessageType.PASTE_PUSH, payload = ByteArray(80), requestId = "p-2"))
+            }
+
+            assertEquals(listOf<String?>("p-1", "p-2"), handledRequestIds)
+            coVerify(exactly = 0) { innerSession.send(any<io.ktor.websocket.Frame.Close>()) }
         }
 }

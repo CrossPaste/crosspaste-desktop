@@ -39,6 +39,17 @@ const val WS_MAX_PAYLOAD_SIZE: Long = 128L * 1024 * 1024
 const val WS_MAX_PAYLOAD_CHUNK_COUNT: Int = (WS_MAX_PAYLOAD_SIZE / WS_PAYLOAD_CHUNK_SIZE).toInt()
 
 /**
+ * Per-session memory budget for queued (not yet processed) inbound business payloads.
+ * Sized to [WS_MAX_PAYLOAD_SIZE] so a single max-size paste is always accepted when
+ * the queue is empty, while preventing unbounded memory growth if a peer pushes large
+ * messages faster than decryption and DB ingestion can drain them.
+ */
+const val WS_MAX_PENDING_PAYLOAD_BYTES: Long = WS_MAX_PAYLOAD_SIZE
+
+/** Per-session upper bound on queued inbound business messages (guards against zero-byte floods). */
+const val WS_MAX_PENDING_MESSAGES: Int = 256
+
+/**
  * Wire header sent as a Text frame (JSON).
  * When [hasPayload] is true, the next [payloadChunkCount] frames MUST be Binary
  * frames whose concatenation is the payload bytes.

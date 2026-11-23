@@ -56,6 +56,12 @@ fun Routing.wsRouting(
             return@webSocket
         }
 
+        if (!wsSessionManager.isAcceptingSessions()) {
+            logger.info { "WS connection rejected: $appInstanceId while session manager paused" }
+            close(CloseReason(CloseReason.Codes.GOING_AWAY, "Session manager paused"))
+            return@webSocket
+        }
+
         val authenticationRequested =
             call.request.queryParameters["authVersion"] == WsAuthenticationCodec.VERSION.toString()
         val serverAuthentication =
@@ -90,7 +96,9 @@ fun Routing.wsRouting(
                     SyncApi.supportsPairingV3(serverAuthentication?.remotePairingVersion),
                 peerCapabilities = serverAuthentication?.remoteCapabilities.orEmpty(),
             )
-        wsSessionManager.registerSession(appInstanceId, wsSession)
+        if (!wsSessionManager.registerSession(appInstanceId, wsSession)) {
+            return@webSocket
+        }
 
         dispatchWsSessionMessages(
             appInstanceId = appInstanceId,

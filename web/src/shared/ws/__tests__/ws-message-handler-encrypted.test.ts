@@ -171,4 +171,40 @@ describe("encrypted WS envelope handling", () => {
     expect(response.requestId).toBe("request-1");
     expect(deps.updateDeviceStatus).not.toHaveBeenCalled();
   });
+
+  it("echoes requestId in heartbeat_ack when heartbeat includes requestId", async () => {
+    const deps = makeDeps();
+    const handler = createWsMessageHandler(deps);
+
+    await handler.handleMessage("device-1", {
+      type: WsMessageType.HEARTBEAT,
+      payload: new Uint8Array(0),
+      encrypted: false,
+      requestId: "hb-123",
+    });
+
+    expect(deps.sendToDevice).toHaveBeenCalledWith("device-1", {
+      type: WsMessageType.HEARTBEAT_ACK,
+      payload: new Uint8Array(0),
+      encrypted: false,
+      requestId: "hb-123",
+    });
+  });
+
+  it("omits requestId in heartbeat_ack for legacy heartbeat without requestId", async () => {
+    const deps = makeDeps();
+    const handler = createWsMessageHandler(deps);
+
+    await handler.handleMessage("device-1", {
+      type: WsMessageType.HEARTBEAT,
+      payload: new Uint8Array(0),
+      encrypted: false,
+    });
+
+    expect(deps.sendToDevice).toHaveBeenCalledWith("device-1", {
+      type: WsMessageType.HEARTBEAT_ACK,
+      payload: new Uint8Array(0),
+      encrypted: false,
+    });
+  });
 });
