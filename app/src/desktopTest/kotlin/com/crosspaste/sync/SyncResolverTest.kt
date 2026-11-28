@@ -833,6 +833,42 @@ class SyncResolverTest {
         }
 
     @Test
+    fun verifyConnection_crossSubnetUnselectedVpnAddressChanges_reAdvertisesOnRegularPoll() =
+        runTest {
+            // Only the LAN interface is selected for discovery, while traffic to the peer
+            // uses an unselected VPN interface over HTTP-only polling. When the unselected
+            // VPN address changes, the next regular poll must re-advertise once and then
+            // return to plain GET.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "100.64.0.9")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncInfoFactory.createSyncInfo(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
+
+            val lanInterface = NetworkInterfaceInfo("en0", 24, "192.168.1.2")
+            var allInterfaces = listOf(lanInterface, NetworkInterfaceInfo("utun4", 32, "100.64.0.1"))
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns listOf(lanInterface)
+            every { deps.networkInterfaceService.getAllNetworkInterfaceInfo() } answers { allInterfaces }
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            allInterfaces = listOf(lanInterface, NetworkInterfaceInfo("utun4", 32, "100.64.0.3"))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(3, advertised.size)
+            assertNotNull(advertised[0], "initial cross-subnet heartbeat should advertise")
+            assertNotNull(advertised[1], "changed unselected VPN address should re-advertise on regular poll")
+            assertNull(advertised[2], "steady-state poll after re-advertise should return to GET")
+        }
+
+    @Test
     fun verifyConnection_failedHeartbeatReAdvertisesOnReconnect() =
         runTest {
             // A non-success heartbeat must forget what we advertised, so the next successful

@@ -69,9 +69,10 @@ class SyncResolver(
     // (possibly changed) return address without waiting for the next mDNS round (#4509), but
     // only when it actually changed — re-posting every cycle would re-run the peer's
     // trustSyncInfo (a DB write) on every heartbeat. For cross-subnet/VPN peers where
-    // advertisedHosts is empty, localAddresses tracks the selected local IPs and forceResolve
-    // clears the entry so VPN route changes or WS reconnects re-advertise once. Any
-    // non-success drops the entry too, and MarkExit/RemoveDevice clear it on departure.
+    // advertisedHosts is empty, localAddresses tracks all local interface IPs (including
+    // unselected VPN adapters) and forceResolve clears the entry so VPN route changes or
+    // WS reconnects re-advertise once. Any non-success drops the entry too, and
+    // MarkExit/RemoveDevice clear it on departure.
     private val lastHeartbeatAdvertised: MutableMap<String, HeartbeatAdvertiseKey> = ConcurrentMap()
 
     private fun SyncEvent.appInstanceId(): String =
@@ -863,7 +864,11 @@ class SyncResolver(
             advertisedHosts = advertisedHosts,
             localAddresses =
                 if (advertisedHosts.isEmpty()) {
-                    currentInterfaces.map { it.hostAddress }.sorted()
+                    networkInterfaceService
+                        .getAllNetworkInterfaceInfo()
+                        .ifEmpty { currentInterfaces }
+                        .map { it.hostAddress }
+                        .sorted()
                 } else {
                     emptyList()
                 },
