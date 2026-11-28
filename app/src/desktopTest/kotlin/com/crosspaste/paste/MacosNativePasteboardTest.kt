@@ -1,5 +1,6 @@
 package com.crosspaste.paste
 
+import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.macos.api.FileResolverCallback
 import com.crosspaste.platform.macos.api.MacosApi
 import com.crosspaste.test.IntegrationTest
@@ -346,6 +347,100 @@ class MacosNativePasteboardTest {
             MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
             assertEquals(1, remote.value, "Universal Clipboard content should be marked remote")
             assertEquals(0, isConcealed.value, "Universal Clipboard content must not look concealed")
+        } finally {
+            cleanupClipboard()
+        }
+    }
+
+    @Test
+    fun `getPasteboardChangeCount marks RustDesk owner marker as remote`() {
+        try {
+            val process =
+                ProcessBuilder(
+                    "osascript",
+                    "-l",
+                    "JavaScript",
+                    "-e",
+                    """
+                    ObjC.import("AppKit");
+                    var pb = $.NSPasteboard.generalPasteboard;
+                    pb.clearContents;
+                    pb.setStringForType($("remote-text"), $("public.utf8-plain-text"));
+                    pb.setStringForType($("client"), $("dyn.com.rustdesk.owner"));
+                    """.trimIndent(),
+                ).start()
+            val exitCode = process.waitFor()
+            assertEquals(0, exitCode, "osascript should set RustDesk owner marker on pasteboard")
+
+            val remote = IntByReference()
+            val isCrossPaste = IntByReference()
+            val isConcealed = IntByReference()
+            MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
+            assertEquals(
+                MacosPasteboardService.REMOTE_RUSTDESK,
+                remote.value,
+                "RustDesk owner marker should be reported as REMOTE_RUSTDESK",
+            )
+            assertEquals(0, isCrossPaste.value, "isCrossPaste should not be set")
+            assertEquals(0, isConcealed.value, "RustDesk sync must not look concealed")
+        } finally {
+            cleanupClipboard()
+        }
+    }
+
+    @Test
+    fun `getPasteboardSourceAppInfo resolves org nspasteboard source when changeCount matches`() {
+        try {
+            val process =
+                ProcessBuilder(
+                    "osascript",
+                    "-l",
+                    "JavaScript",
+                    "-e",
+                    """
+                    ObjC.import("AppKit");
+                    var pb = $.NSPasteboard.generalPasteboard;
+                    pb.clearContents;
+                    pb.setStringForType($("from-calculator"), $("public.utf8-plain-text"));
+                    pb.setStringForType($("com.apple.calculator"), $("org.nspasteboard.source"));
+                    """.trimIndent(),
+                ).start()
+            val exitCode = process.waitFor()
+            assertEquals(0, exitCode, "osascript should set org.nspasteboard.source on pasteboard")
+
+            val changeCount =
+                MacosApi.INSTANCE.getPasteboardChangeCount(
+                    0,
+                    IntByReference(),
+                    IntByReference(),
+                    IntByReference(),
+                )
+            assertEquals(
+                "com.apple.calculator\nCalculator",
+                MacAppUtils.getPasteboardSourceAppInfo(changeCount),
+            )
+            assertEquals(
+                null,
+                MacAppUtils.getPasteboardSourceAppInfo(changeCount - 1),
+                "stale changeCount must return null",
+            )
+        } finally {
+            cleanupClipboard()
+        }
+    }
+
+    @Test
+    fun `getPasteboardSourceAppInfo returns null when org nspasteboard source is absent`() {
+        try {
+            systemClipboard.setContents(StringSelection("plain-text"), null)
+            val changeCount =
+                MacosApi.INSTANCE.getPasteboardChangeCount(
+                    0,
+                    IntByReference(),
+                    IntByReference(),
+                    IntByReference(),
+                )
+            assertEquals(null, MacAppUtils.getPasteboardSourceAppInfo(changeCount))
         } finally {
             cleanupClipboard()
         }

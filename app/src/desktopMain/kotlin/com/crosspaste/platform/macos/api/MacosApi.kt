@@ -15,6 +15,8 @@ interface MacosApi : Library {
         isConcealed: IntByReference,
     ): Int
 
+    fun getPasteboardSourceAppInfo(expectedChangeCount: Int): Pointer?
+
     fun writeFilesToPasteboard(
         count: Int,
         resolver: FileResolverCallback,

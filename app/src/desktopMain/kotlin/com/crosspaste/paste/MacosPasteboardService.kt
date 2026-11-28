@@ -105,7 +105,7 @@ class MacosPasteboardService(
                 consumeChange(
                     expectedChangeCount = currentChangeCount,
                     firstChange = firstChange,
-                    remote = remote.value != 0,
+                    remoteType = remote.value,
                 )
             }
         }
@@ -114,9 +114,9 @@ class MacosPasteboardService(
     private suspend fun CoroutineScope.consumeChange(
         expectedChangeCount: Int,
         firstChange: Boolean,
-        remote: Boolean,
+        remoteType: Int,
     ) {
-        val source = resolveSource(firstChange)
+        val source = resolveSource(expectedChangeCount, firstChange, remoteType)
         if (sourceExclusionService.isExcluded(source)) {
             logger.debug { "Ignoring excluded source: $source" }
             return
@@ -135,9 +135,10 @@ class MacosPasteboardService(
         if (contents == null || contents == ownerTransferable) return
 
         ownerTransferable = contents
-        // Content that arrived via Universal Clipboard is already on every Apple
-        // device; only push it to the others.
-        val targetAppInstanceIds = if (remote) nonAppleSyncTargets() else null
+        // Content that arrived via an external sync channel must not be relayed
+        // back through it: Apple sync (Universal Clipboard / Xcode) skips Apple
+        // peers; RustDesk can connect to any OS, so it stays local-only.
+        val targetAppInstanceIds = resolveSyncTargets(remoteType, ::nonAppleSyncTargets)
         launch(CoroutineName("MacPasteboardServiceConsumer")) {
             pasteConsumer.consume(
                 DesktopReadTransferable(contents),
@@ -159,17 +160,22 @@ class MacosPasteboardService(
             IntByReference(),
         )
 
-    private suspend fun resolveSource(firstChange: Boolean): String? {
-        val source =
-            controlUtils
-                .ensureMinExecutionTime(delayTime = 20) {
-                    appWindowManager.getCurrentActiveAppName()
-                }.getOrNull()
-        // https://github.com/CrossPaste/crosspaste-desktop/issues/1874
-        // If it is the first time to read the pasteboard content and the source is CrossPaste
-        // we should ignore its source
-        return if (firstChange && source == AppName) null else source
-    }
+    private suspend fun resolveSource(
+        expectedChangeCount: Int,
+        firstChange: Boolean,
+        remoteType: Int,
+    ): String? =
+        resolvePasteboardSource(
+            firstChange = firstChange,
+            remoteType = remoteType,
+            pasteboardSource = { appWindowManager.getPasteboardSourceAppName(expectedChangeCount) },
+            frontmostSource = {
+                controlUtils
+                    .ensureMinExecutionTime(delayTime = 20) {
+                        appWindowManager.getCurrentActiveAppName()
+                    }.getOrNull()
+            },
+        )
 
     private fun nonAppleSyncTargets(): Set<String> =
         syncManager
@@ -198,9 +204,40 @@ class MacosPasteboardService(
     }
 
     companion object {
-        // getPasteboardChangeCount's remote value for Universal Clipboard content;
-        // 2 marks Xcode's pasteboard sync with an attached device
-        private const val REMOTE_UNIVERSAL_CLIPBOARD = 1
+        // getPasteboardChangeCount's remote values:
+        // 1 = Apple Universal Clipboard,
+        // 2 = Xcode's pasteboard sync with an attached device,
+        // 3 = RustDesk remote clipboard sync (dyn.com.rustdesk.owner).
+        internal const val REMOTE_UNIVERSAL_CLIPBOARD = 1
+        internal const val REMOTE_XCODE_SYNC = 2
+        internal const val REMOTE_RUSTDESK = 3
+
+        internal fun resolveSyncTargets(
+            remoteType: Int,
+            nonAppleSyncTargets: () -> Set<String>,
+        ): Set<String>? =
+            when (remoteType) {
+                REMOTE_UNIVERSAL_CLIPBOARD, REMOTE_XCODE_SYNC -> nonAppleSyncTargets()
+                REMOTE_RUSTDESK -> emptySet()
+                else -> null
+            }
+
+        internal suspend fun resolvePasteboardSource(
+            firstChange: Boolean,
+            remoteType: Int,
+            pasteboardSource: () -> String?,
+            frontmostSource: suspend () -> String?,
+        ): String? {
+            if (remoteType == REMOTE_RUSTDESK) {
+                return ExternalClipboardSyncHints.RUSTDESK_SOURCE
+            }
+            pasteboardSource()?.let { return it }
+            val source = frontmostSource()
+            // https://github.com/CrossPaste/crosspaste-desktop/issues/1874
+            // If it is the first time to read the pasteboard content and the source is CrossPaste
+            // we should ignore its source
+            return if (firstChange && source == AppName) null else source
+        }
 
         /**
          * Reads the pasteboard and keeps the result only if no other write landed

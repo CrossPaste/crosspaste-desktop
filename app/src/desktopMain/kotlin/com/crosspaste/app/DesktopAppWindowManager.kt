@@ -485,6 +485,13 @@ abstract class DesktopAppWindowManager(
 
     abstract fun getCurrentActiveAppName(): String?
 
+    /**
+     * Resolves the app name declared directly on the pasteboard (e.g. macOS
+     * `org.nspasteboard.source`) when [expectedChangeCount] still matches the
+     * current pasteboard, or null when no explicit source metadata is present.
+     */
+    open fun getPasteboardSourceAppName(expectedChangeCount: Int): String? = null
+
     abstract fun getRunningAppNames(): List<String>
 
     /** File extensions (lower case, no dot) the "add app" picker offers on this platform. */

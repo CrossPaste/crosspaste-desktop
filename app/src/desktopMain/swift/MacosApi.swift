@@ -27,9 +27,13 @@ public func getPasteboardChangeCount(currentChangeCount: Int,
                     // Put here by another Apple device: 1 = Universal Clipboard,
                     // 2 = Xcode's pasteboard sync with an attached device. Syncing
                     // either back to Apple devices would loop through that sync.
+                    // 3 = RustDesk remote clipboard sync; syncing it to any peer
+                    // would loop back through the remote RustDesk session.
                     isRemote.pointee = 1
                 } else if type.rawValue == "com.apple.coredevice.dtpasteboardd.sync" {
                     if isRemote.pointee == 0 { isRemote.pointee = 2 }
+                } else if type.rawValue == "dyn.com.rustdesk.owner" {
+                    if isRemote.pointee == 0 { isRemote.pointee = 3 }
                 } else if type.rawValue == "com.crosspaste" {
                     isCrossPaste.pointee = 1
                 } else if type.rawValue == "org.nspasteboard.ConcealedType" ||
@@ -247,6 +251,48 @@ private func IOPlatformUUID() -> String? {
     return serialNumberAsCFString
 }
 
+private func bundleDisplayName(bundle: Bundle, url: URL) -> String {
+    return (bundle.localizedInfoDictionary?["CFBundleDisplayName"] as? String)
+        ?? (bundle.infoDictionary?["CFBundleDisplayName"] as? String)
+        ?? (bundle.localizedInfoDictionary?["CFBundleName"] as? String)
+        ?? (bundle.infoDictionary?["CFBundleName"] as? String)
+        ?? url.deletingPathExtension().lastPathComponent
+}
+
+private func resolveAppName(forBundleIdentifier bundleId: String) -> String? {
+    if let running = NSRunningApplication.runningApplications(withBundleIdentifier: bundleId).first,
+       let name = running.localizedName {
+        return name
+    }
+    if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleId),
+       let bundle = Bundle(url: url) {
+        return bundleDisplayName(bundle: bundle, url: url)
+    }
+    return nil
+}
+
+// Resolves the app that wrote the current pasteboard when it declared one via
+// org.nspasteboard.source (a bundle identifier per nspasteboard.org). Guards
+// against races by checking expectedChangeCount first. Returns
+// "bundleIdentifier\nlocalizedName" like getCurrentActiveAppInfo, or nil when
+// absent, stale, or the bundle cannot be resolved.
+@_cdecl("getPasteboardSourceAppInfo")
+public func getPasteboardSourceAppInfo(expectedChangeCount: Int) -> UnsafePointer<CChar>? {
+    let pasteboard = NSPasteboard.general
+    guard pasteboard.changeCount == expectedChangeCount,
+          let items = pasteboard.pasteboardItems else { return nil }
+    let sourceType = NSPasteboard.PasteboardType("org.nspasteboard.source")
+    for item in items {
+        guard let raw = item.string(forType: sourceType) else { continue }
+        let bundleId = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !bundleId.isEmpty else { continue }
+        if let name = resolveAppName(forBundleIdentifier: bundleId) {
+            return UnsafePointer<CChar>(strdup("\(bundleId)\n\(name)"))
+        }
+    }
+    return nil
+}
+
 // Names an app bundle on disk the way NSRunningApplication.localizedName names it
 // once running, so a picked app matches later clipboard attributions.
 // Returns "bundleIdentifier\nlocalizedName" or nil when the path is not a bundle.
@@ -254,11 +300,7 @@ private func IOPlatformUUID() -> String? {
 public func getAppInfoAtPath(path: UnsafePointer<CChar>) -> UnsafePointer<CChar>? {
     let url = URL(fileURLWithPath: String(cString: path))
     guard let bundle = Bundle(url: url), let bundleId = bundle.bundleIdentifier else { return nil }
-    let name = (bundle.localizedInfoDictionary?["CFBundleDisplayName"] as? String)
-        ?? (bundle.infoDictionary?["CFBundleDisplayName"] as? String)
-        ?? (bundle.localizedInfoDictionary?["CFBundleName"] as? String)
-        ?? (bundle.infoDictionary?["CFBundleName"] as? String)
-        ?? url.deletingPathExtension().lastPathComponent
+    let name = bundleDisplayName(bundle: bundle, url: url)
     return UnsafePointer<CChar>(strdup("\(bundleId)\n\(name)"))
 }
 

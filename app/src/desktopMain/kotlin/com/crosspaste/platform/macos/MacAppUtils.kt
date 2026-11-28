@@ -69,6 +69,9 @@ object MacAppUtils {
 
     fun getCurrentActiveAppInfo(): String? = MacosApi.getString(INSTANCE.getCurrentActiveAppInfo())
 
+    fun getPasteboardSourceAppInfo(expectedChangeCount: Int): String? =
+        MacosApi.getString(INSTANCE.getPasteboardSourceAppInfo(expectedChangeCount))
+
     fun isApplicationActive(): Boolean = INSTANCE.isApplicationActive() != 0
 
     fun isPointerOnStatusItem(): Boolean = INSTANCE.isPointerOnStatusItem() != 0

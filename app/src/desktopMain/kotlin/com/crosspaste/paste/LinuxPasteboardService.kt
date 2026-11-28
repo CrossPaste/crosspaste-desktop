@@ -168,8 +168,9 @@ class LinuxPasteboardService(
             return
         }
 
+        val externalSyncSource = ExternalClipboardSyncHints.sourceFromLinux(mimeTypes)
         val source =
-            if (selection.initial) {
+            externalSyncSource ?: if (selection.initial) {
                 null
             } else {
                 controlUtils
@@ -198,7 +199,11 @@ class LinuxPasteboardService(
         scope.launch(CoroutineName("LinuxPasteboardServiceConsumer")) {
             pasteConsumer.consume(
                 DesktopReadTransferable(contents),
-                PasteSourceContext(source = source, remote = false),
+                PasteSourceContext(
+                    source = source,
+                    remote = false,
+                    targetAppInstanceIds = if (externalSyncSource != null) emptySet() else null,
+                ),
             )
         }
     }
@@ -303,6 +308,13 @@ class LinuxPasteboardService(
             return
         }
 
+        val externalSyncSource = targets?.let(ExternalClipboardSyncHints::sourceFromLinux)
+        val effectiveSource = externalSyncSource ?: source
+        if (externalSyncSource != null && sourceExclusionService.isExcluded(effectiveSource)) {
+            logger.debug { "Ignoring excluded source: $effectiveSource" }
+            return
+        }
+
         val contents =
             controlUtils.linearBackoffUntilValid(
                 initTime = 20L,
@@ -321,7 +333,11 @@ class LinuxPasteboardService(
                     val pasteTransferable = DesktopReadTransferable(correctHtmlEncoding(it))
                     pasteConsumer.consume(
                         pasteTransferable,
-                        PasteSourceContext(source = source, remote = false),
+                        PasteSourceContext(
+                            source = effectiveSource,
+                            remote = false,
+                            targetAppInstanceIds = if (externalSyncSource != null) emptySet() else null,
+                        ),
                     )
                 }
             }
