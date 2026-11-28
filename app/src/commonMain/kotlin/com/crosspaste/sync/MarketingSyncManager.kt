@@ -141,6 +141,7 @@ class MarketingSyncManager : SyncManager {
     override fun trustSyncInfo(
         syncInfo: SyncInfo,
         host: String?,
+        observedRemoteAddress: String?,
     ) {
     }
 

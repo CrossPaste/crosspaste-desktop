@@ -62,6 +62,7 @@ interface SyncRoutingApi {
     fun trustSyncInfo(
         syncInfo: SyncInfo,
         host: String?,
+        observedRemoteAddress: String? = null,
     )
 
     fun removeSyncHandler(appInstanceId: String)

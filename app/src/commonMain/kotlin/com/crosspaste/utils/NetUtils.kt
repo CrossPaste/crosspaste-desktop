@@ -36,6 +36,24 @@ object NetUtils {
     }
 
     /**
+     * Normalizes an observed peer IP string into a non-loopback, non-unspecified IPv4 literal
+     * suitable as a return-connection candidate, or returns null if not usable.
+     * Unwraps IPv4-mapped IPv6 addresses (e.g. `::ffff:100.64.0.1` -> `100.64.0.1`).
+     */
+    fun normalizeRoutableIpv4(address: String?): String? {
+        val trimmed = address?.trim()?.removePrefix("[")?.removeSuffix("]") ?: return null
+        val candidate =
+            if (trimmed.startsWith("::ffff:", ignoreCase = true)) {
+                trimmed.substring(7)
+            } else {
+                trimmed
+            }
+        if (!isValidIp(candidate)) return null
+        if (candidate == "0.0.0.0" || candidate.startsWith("127.")) return null
+        return candidate
+    }
+
+    /**
      * Check if the port is within valid range (1-65535)
      */
     fun isValidPort(port: String): Boolean {

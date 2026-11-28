@@ -66,6 +66,10 @@ interface SyncManager : SyncRoutingApi {
     // abandons pairing before confirm. Routes to POST /sync/trust/v2/cancel.
     fun cancelPairing(appInstanceId: String)
 
+    fun updateSyncInfoAndReconnect(syncInfo: SyncInfo) {
+        updateSyncInfo(syncInfo)
+    }
+
     fun refresh(
         ids: List<String> = listOf(),
         callback: () -> Unit = {},

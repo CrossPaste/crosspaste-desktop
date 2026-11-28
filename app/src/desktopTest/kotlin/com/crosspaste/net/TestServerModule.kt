@@ -62,7 +62,7 @@ class TestServerModule(
                     syncApi,
                     syncInfoFactory,
                     syncRoutingApi,
-                    { _, _, _ -> },
+                    { _, _, _, _ -> },
                     { appInstanceId ->
                         if (pendingKeyExchangeStore.remove(appInstanceId)) {
                             appTokenApi.releaseVerifier(appInstanceId)
@@ -83,7 +83,7 @@ class TestServerModule(
                                 appTokenApi.releaseVerifier(appInstanceId)
                             }
                         },
-                    ) { _, _, _ -> }
+                    ) { _, _, _, _ -> }
                 }
             }
         }

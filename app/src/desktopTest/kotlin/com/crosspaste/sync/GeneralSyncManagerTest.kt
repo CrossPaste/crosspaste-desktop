@@ -1,5 +1,7 @@
 package com.crosspaste.sync
 
+import com.crosspaste.db.sync.ConnectInfo
+import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
@@ -19,6 +21,7 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
+import io.mockk.slot
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -659,5 +662,188 @@ class GeneralSyncManagerTest {
             assertEquals("app-2", handler2.currentSyncRuntimeInfo.appInstanceId)
             assertEquals("device-1", handler1.currentSyncRuntimeInfo.deviceId)
             assertEquals("device-2", handler2.currentSyncRuntimeInfo.deviceId)
+        }
+
+    @Test
+    fun trustSyncInfo_prependsObservedRemoteAddressWhenCrossSubnet() =
+        runTest {
+            val mocks = createMocks()
+            val syncInfo =
+                SyncTestFixtures.createSyncInfo(
+                    appInstanceId = "tailscale-peer",
+                    hostInfoList = listOf(HostInfo(24, "192.168.1.10")),
+                    port = 13129,
+                )
+            val savedSyncInfo = slot<SyncInfo>()
+            val savedConnectInfo = mutableListOf<ConnectInfo?>()
+            coEvery {
+                mocks.syncRuntimeInfoDao.insertOrUpdateSyncInfo(
+                    capture(savedSyncInfo),
+                    captureNullable(savedConnectInfo),
+                )
+            } just runs
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+
+            syncManager.trustSyncInfo(
+                syncInfo = syncInfo,
+                host = "100.64.0.2",
+                observedRemoteAddress = "::ffff:100.64.0.1",
+            )
+            advanceUntilIdle()
+
+            assertEquals(
+                listOf(HostInfo(32, "100.64.0.1"), HostInfo(24, "192.168.1.10")),
+                savedSyncInfo.captured.endpointInfo.hostInfoList,
+            )
+            assertEquals(listOf<ConnectInfo?>(null), savedConnectInfo)
+            childScope.cancel()
+        }
+
+    @Test
+    fun trustSyncInfo_ignoresLoopbackAndExtensionObservedRemoteAddress() =
+        runTest {
+            val mocks = createMocks()
+            val desktopSyncInfo =
+                SyncTestFixtures.createSyncInfo(
+                    appInstanceId = "desktop-peer",
+                    hostInfoList = listOf(HostInfo(24, "192.168.1.10")),
+                    port = 13129,
+                )
+            val extensionBase =
+                SyncTestFixtures.createSyncInfo(
+                    appInstanceId = "ext-peer",
+                    hostInfoList = emptyList(),
+                    port = 13129,
+                )
+            val extensionSyncInfo =
+                extensionBase.copy(
+                    endpointInfo =
+                        extensionBase.endpointInfo.copy(
+                            platform = Platform(Platform.CHROME_EXTENSION, "web", 64, "1.0"),
+                        ),
+                )
+            val zeroPortSyncInfo =
+                SyncTestFixtures.createSyncInfo(
+                    appInstanceId = "zero-port-peer",
+                    hostInfoList = emptyList(),
+                    port = 0,
+                )
+            val saved = mutableListOf<SyncInfo>()
+            coEvery { mocks.syncRuntimeInfoDao.insertOrUpdateSyncInfo(capture(saved), any()) } just runs
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+
+            syncManager.trustSyncInfo(desktopSyncInfo, host = "127.0.0.1", observedRemoteAddress = "127.0.0.1")
+            syncManager.trustSyncInfo(extensionSyncInfo, host = "100.64.0.2", observedRemoteAddress = "100.64.0.1")
+            syncManager.trustSyncInfo(zeroPortSyncInfo, host = "100.64.0.2", observedRemoteAddress = "100.64.0.1")
+            advanceUntilIdle()
+
+            assertEquals(3, saved.size)
+            assertEquals(listOf(HostInfo(24, "192.168.1.10")), saved[0].endpointInfo.hostInfoList)
+            assertTrue(saved[1].endpointInfo.hostInfoList.isEmpty())
+            assertTrue(saved[2].endpointInfo.hostInfoList.isEmpty())
+            childScope.cancel()
+        }
+
+    @Test
+    fun trustSyncInfo_triggersFastReconnectWhenDisconnectedPeerGainsObservedAddress() =
+        runTest {
+            val mocks = createMocks()
+            val runtimeInfo =
+                createTestSyncRuntimeInfo(
+                    appInstanceId = "tailscale-peer",
+                    connectState = SyncState.DISCONNECTED,
+                ).copy(hostInfoList = listOf(HostInfo(24, "192.168.1.10")))
+            val syncInfo =
+                SyncTestFixtures.createSyncInfo(
+                    appInstanceId = "tailscale-peer",
+                    hostInfoList = emptyList(),
+                    port = 13129,
+                )
+            val dbFlow = MutableStateFlow(listOf(runtimeInfo))
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns dbFlow
+            val emittedEvents = mutableListOf<SyncEvent>()
+            coEvery { mocks.syncResolver.emitEvent(capture(emittedEvents)) } just runs
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+            syncManager.start()
+            advanceTimeBy(SMALL_ADVANCE_MS)
+            emittedEvents.clear()
+
+            syncManager.trustSyncInfo(
+                syncInfo = syncInfo,
+                host = "100.64.0.2",
+                observedRemoteAddress = "100.64.0.1",
+            )
+            advanceTimeBy(SMALL_ADVANCE_MS)
+
+            assertTrue(
+                emittedEvents.any {
+                    it is SyncEvent.ForceResolve && it.syncRuntimeInfo.appInstanceId == "tailscale-peer"
+                },
+                "Expected ForceResolve when a DISCONNECTED peer learns a new observed remote address",
+            )
+
+            // Once the observed address is already stored on the handler, a repeat heartbeat
+            // must not keep triggering ForceResolve (e.g. if an SNAT source is unroutable).
+            dbFlow.value = listOf(runtimeInfo.copy(hostInfoList = listOf(HostInfo(32, "100.64.0.1"))))
+            advanceTimeBy(SMALL_ADVANCE_MS)
+            emittedEvents.clear()
+
+            syncManager.trustSyncInfo(
+                syncInfo = syncInfo,
+                host = "100.64.0.2",
+                observedRemoteAddress = "100.64.0.1",
+            )
+            advanceTimeBy(SMALL_ADVANCE_MS)
+
+            assertTrue(
+                emittedEvents.none { it is SyncEvent.ForceResolve },
+                "Must not re-trigger ForceResolve when the observed address is already known",
+            )
+            childScope.cancel()
+        }
+
+    @Test
+    fun updateSyncInfoAndReconnect_triggersFastReconnectForExistingDisconnectedDevice() =
+        runTest {
+            val mocks = createMocks()
+            val runtimeInfo =
+                createTestSyncRuntimeInfo(
+                    appInstanceId = "manual-peer",
+                    connectState = SyncState.DISCONNECTED,
+                )
+            val updatedSyncInfo =
+                SyncTestFixtures.createSyncInfo(
+                    appInstanceId = "manual-peer",
+                    hostInfoList = listOf(HostInfo(32, "100.64.0.2")),
+                    port = 13129,
+                )
+            every { mocks.syncRuntimeInfoDao.getAllSyncRuntimeInfosFlow() } returns
+                MutableStateFlow(listOf(runtimeInfo))
+            val emittedEvents = mutableListOf<SyncEvent>()
+            coEvery { mocks.syncResolver.emitEvent(capture(emittedEvents)) } just runs
+
+            val childScope = CoroutineScope(coroutineContext + Job())
+            val syncManager = createSyncManager(mocks, childScope)
+            syncManager.start()
+            advanceTimeBy(SMALL_ADVANCE_MS)
+            emittedEvents.clear()
+
+            syncManager.updateSyncInfoAndReconnect(updatedSyncInfo)
+            advanceTimeBy(SMALL_ADVANCE_MS)
+
+            coVerify(exactly = 1) { mocks.syncRuntimeInfoDao.insertOrUpdateSyncInfo(updatedSyncInfo) }
+            assertTrue(
+                emittedEvents.any {
+                    it is SyncEvent.ForceResolve && it.syncRuntimeInfo.appInstanceId == "manual-peer"
+                },
+                "Expected ForceResolve after manually updating a DISCONNECTED paired device",
+            )
+            childScope.cancel()
         }
 }

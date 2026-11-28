@@ -8,6 +8,7 @@ import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
 import com.crosspaste.dto.secure.KeyExchangeResponse
 import com.crosspaste.exception.StandardErrorCode
+import com.crosspaste.net.NetworkInterfaceInfo
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.PasteBonjourService
 import com.crosspaste.net.SyncInfoFactory
@@ -57,15 +58,22 @@ class SyncResolver(
 
     private val deviceMutex = StripedMutex()
 
-    // Last subnet-matched address set we advertised to each peer over the liveness heartbeat,
+    private data class HeartbeatAdvertiseKey(
+        val peerHost: String,
+        val advertisedHosts: List<HostInfo>,
+        val localAddresses: List<String>,
+    )
+
+    // Last advertisement snapshot delivered to each peer over the liveness heartbeat,
     // keyed by appInstanceId. We piggyback our address onto the heartbeat so a peer learns our
     // (possibly changed) return address without waiting for the next mDNS round (#4509), but
     // only when it actually changed — re-posting every cycle would re-run the peer's
-    // trustSyncInfo (a DB write) on every heartbeat. A real IP change recomputes a different
-    // list, so the next heartbeat re-advertises; any non-success drops the entry so a
-    // reconnect re-advertises too. Cleared on MarkExit/RemoveDevice so a gracefully-departed
-    // device leaves nothing behind (no heartbeat would ever come to evict it otherwise).
-    private val lastHeartbeatAdvertised: MutableMap<String, List<HostInfo>> = ConcurrentMap()
+    // trustSyncInfo (a DB write) on every heartbeat. For cross-subnet/VPN peers where
+    // advertisedHosts is empty, localAddresses tracks all local interface IPs (including
+    // unselected VPN adapters) and forceResolve clears the entry so VPN route changes or
+    // WS reconnects re-advertise once. Any non-success drops the entry too, and
+    // MarkExit/RemoveDevice clear it on departure.
+    private val lastHeartbeatAdvertised: MutableMap<String, HeartbeatAdvertiseKey> = ConcurrentMap()
 
     private fun SyncEvent.appInstanceId(): String =
         when (this) {
@@ -488,6 +496,11 @@ class SyncResolver(
 
     private suspend fun SyncRuntimeInfo.forceResolve(callback: ResolveCallback) {
         logger.info { "Force resolve $appInstanceId" }
+        // Invalidate the heartbeat advertisement cache so explicit refreshes, fast reconnects,
+        // and WebSocket drop recoveries re-send one authenticated SyncInfo heartbeat (allowing
+        // cross-subnet/VPN peers to learn a changed source IP even when the subnet-matched list
+        // stays empty).
+        lastHeartbeatAdvertised.remove(appInstanceId)
         refreshSyncInfo(appInstanceId, hostInfoList)
         resolve(callback)
     }
@@ -580,13 +593,18 @@ class SyncResolver(
     ): Int {
         val hostAndPort = HostAndPort(host, port)
 
-        // Piggyback our current return address onto the heartbeat (#4509). Advertise only the
-        // local interface(s) on the peer's subnet — the address it can actually route to — and
-        // only when it differs from what we last delivered, so a steady connection tells each
-        // peer exactly once and then sends plain GET heartbeats.
-        val advertiseHostInfo = subnetMatchedHostInfo(host)
+        // Piggyback our current return address onto the heartbeat (#4509). Advertise the
+        // local interface(s) on the peer's subnet — and on first contact / reconnect with a
+        // cross-subnet or VPN peer (where subnetMatchedHostInfo is empty), still send one
+        // authenticated POST /sync/heartbeat/syncInfo so the peer can observe our real TCP
+        // source address and connect back. Once delivered, steady-state heartbeats drop back
+        // to plain GET until the advertised list changes or the connection fails.
+        val currentInterfaces = networkInterfaceService.getCurrentUseNetworkInterfaces()
+        val hasLocalInterface = currentInterfaces.isNotEmpty()
+        val advertiseHostInfo = subnetMatchedHostInfo(host, currentInterfaces)
+        val advertiseKey = buildHeartbeatAdvertiseKey(host, currentInterfaces, advertiseHostInfo)
         val advertiseSyncInfo =
-            if (advertiseHostInfo.isNotEmpty() && lastHeartbeatAdvertised[targetAppInstanceId] != advertiseHostInfo) {
+            if (hasLocalInterface && lastHeartbeatAdvertised[targetAppInstanceId] != advertiseKey) {
                 syncInfoFactory.createSyncInfo(advertiseHostInfo)
             } else {
                 null
@@ -602,7 +620,7 @@ class SyncResolver(
 
         if (result is SuccessResult) {
             // Mark delivered only on success, so a failed heartbeat re-advertises next time.
-            advertiseSyncInfo?.let { lastHeartbeatAdvertised[targetAppInstanceId] = advertiseHostInfo }
+            advertiseSyncInfo?.let { lastHeartbeatAdvertised[targetAppInstanceId] = advertiseKey }
         } else {
             // Forget on any failure so the next successful heartbeat (e.g. after a reconnect)
             // re-advertises our address to the peer.
@@ -825,13 +843,36 @@ class SyncResolver(
      * Our local interface address(es) on [host]'s subnet — the address the peer at [host] can
      * actually route back to. Reuses [HostInfo.filter], the same subnet match the discovery and
      * trust flows use. Empty when no local interface shares the peer's subnet (cross-subnet /
-     * offline), in which case we advertise nothing and leave reachability to the next mDNS round.
+     * offline).
      */
-    private fun subnetMatchedHostInfo(host: String): List<HostInfo> =
-        networkInterfaceService
-            .getCurrentUseNetworkInterfaces()
+    private fun subnetMatchedHostInfo(
+        host: String,
+        currentInterfaces: List<NetworkInterfaceInfo> =
+            networkInterfaceService.getCurrentUseNetworkInterfaces(),
+    ): List<HostInfo> =
+        currentInterfaces
             .map { it.toHostInfo() }
             .filter { it.filter(host) }
+
+    private fun buildHeartbeatAdvertiseKey(
+        peerHost: String,
+        currentInterfaces: List<NetworkInterfaceInfo>,
+        advertisedHosts: List<HostInfo>,
+    ): HeartbeatAdvertiseKey =
+        HeartbeatAdvertiseKey(
+            peerHost = peerHost,
+            advertisedHosts = advertisedHosts,
+            localAddresses =
+                if (advertisedHosts.isEmpty()) {
+                    networkInterfaceService
+                        .getAllNetworkInterfaceInfo()
+                        .ifEmpty { currentInterfaces }
+                        .map { it.hostAddress }
+                        .sorted()
+                } else {
+                    emptyList()
+                },
+        )
 
     /**
      * Heartbeat that always carries our subnet-matched address — used by the trust handshakes,
@@ -844,7 +885,8 @@ class SyncResolver(
         port: Int,
         appInstanceId: String,
     ) {
-        val advertiseHostInfo = subnetMatchedHostInfo(host)
+        val currentInterfaces = networkInterfaceService.getCurrentUseNetworkInterfaces()
+        val advertiseHostInfo = subnetMatchedHostInfo(host, currentInterfaces)
         val result =
             syncClientApi.heartbeat(
                 syncInfo = syncInfoFactory.createSyncInfo(advertiseHostInfo),
@@ -853,7 +895,8 @@ class SyncResolver(
                 buildUrl(HostAndPort(host, port))
             }
         if (result is SuccessResult) {
-            lastHeartbeatAdvertised[appInstanceId] = advertiseHostInfo
+            lastHeartbeatAdvertised[appInstanceId] =
+                buildHeartbeatAdvertiseKey(host, currentInterfaces, advertiseHostInfo)
         }
     }
 }

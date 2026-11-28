@@ -185,6 +185,7 @@ open class DefaultServerModule(
         appInstanceId: String,
         host: String?,
         preRegisteredSyncInfo: SyncInfo?,
+        observedRemoteAddress: String?,
     ) {
         // The pre-registered SyncInfo comes from a client-supplied header; the trust
         // decision was made for the AUTHENTICATED appInstanceId, so a header carrying
@@ -204,7 +205,7 @@ open class DefaultServerModule(
                 }
                 ?: verifiedPreRegistered
         if (syncInfo != null) {
-            syncRoutingApi.trustSyncInfo(syncInfo, host)
+            syncRoutingApi.trustSyncInfo(syncInfo, host, observedRemoteAddress)
         } else {
             logger.warn { "trustSyncInfo: $appInstanceId not found in nearby devices or preRegistered" }
         }

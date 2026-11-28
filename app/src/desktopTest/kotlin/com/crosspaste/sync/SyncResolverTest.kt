@@ -715,16 +715,19 @@ class SyncResolverTest {
         }
 
     @Test
-    fun verifyConnection_crossSubnetPeer_advertisesNothing() =
+    fun verifyConnection_crossSubnetPeer_advertisesOnceThenFallsBackToGet() =
         runTest {
-            // No local interface shares the peer's subnet → nothing routable to advertise;
-            // the heartbeat falls back to a plain GET and discovery self-healing covers it.
+            // No local interface shares the peer's subnet (e.g. Tailscale / VPN): the first
+            // heartbeat still sends one authenticated POST /sync/heartbeat/syncInfo (with an
+            // empty hostInfoList) so the peer can observe our real TCP source address, then
+            // steady-state heartbeats drop back to plain GET.
             val deps = TestDeps()
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "10.0.0.9")
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncInfoFactory.createSyncInfo(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
             every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns
                 listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.2"))
 
@@ -734,10 +737,135 @@ class SyncResolverTest {
             } returns SuccessResult(VersionRelation.EQUAL_TO)
 
             resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(2, advertised.size)
+            assertNotNull(advertised[0], "first cross-subnet heartbeat should send authenticated SyncInfo once")
+            assertNull(advertised[1], "subsequent steady-state cross-subnet heartbeat should fall back to GET")
+            coVerify(exactly = 1) { deps.syncInfoFactory.createSyncInfo(emptyList()) }
+        }
+
+    @Test
+    fun verifyConnection_noLocalInterface_advertisesNothing() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "10.0.0.9")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns emptyList()
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
 
             assertEquals(1, advertised.size)
-            assertNull(advertised[0], "cross-subnet peer must not be advertised to")
+            assertNull(advertised[0], "offline / discovery-off must not advertise SyncInfo")
             coVerify(exactly = 0) { deps.syncInfoFactory.createSyncInfo(any()) }
+        }
+
+    @Test
+    fun verifyConnection_crossSubnetLocalVpnAddressChanges_reAdvertisesOnce() =
+        runTest {
+            // /32 tunnel interfaces never subnet-match the peer, so advertiseHostInfo stays
+            // empty before and after a VPN IP change. The dedup key must still notice the
+            // local interface change and send one authenticated SyncInfo heartbeat.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "100.64.0.9")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncInfoFactory.createSyncInfo(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
+
+            var localInterfaces = listOf(NetworkInterfaceInfo("utun4", 32, "100.64.0.1"))
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } answers { localInterfaces }
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            localInterfaces = listOf(NetworkInterfaceInfo("utun4", 32, "100.64.0.3"))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(3, advertised.size)
+            assertNotNull(advertised[0], "initial cross-subnet heartbeat should advertise")
+            assertNotNull(advertised[1], "changed /32 VPN address should re-advertise even when matched list is empty")
+            assertNull(advertised[2], "steady-state heartbeat after re-advertise should return to GET")
+        }
+
+    @Test
+    fun forceResolve_crossSubnetPeer_reAdvertisesEvenWhenInterfacesUnchanged() =
+        runTest {
+            // When a WebSocket session closes or the user refreshes, ForceResolve must clear
+            // the advertisement cache so a cross-subnet peer can re-observe our source IP even
+            // if the selected LAN interface list did not change (e.g. an unselected VPN NIC rotated IP).
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "100.64.0.9")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncInfoFactory.createSyncInfo(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns
+                listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.2"))
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.ForceResolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(3, advertised.size)
+            assertNotNull(advertised[0], "initial cross-subnet heartbeat should advertise")
+            assertNotNull(advertised[1], "ForceResolve should re-advertise so peer observes current source IP")
+            assertNull(advertised[2], "subsequent steady-state Resolve should return to GET")
+        }
+
+    @Test
+    fun verifyConnection_crossSubnetUnselectedVpnAddressChanges_reAdvertisesOnRegularPoll() =
+        runTest {
+            // Only the LAN interface is selected for discovery, while traffic to the peer
+            // uses an unselected VPN interface over HTTP-only polling. When the unselected
+            // VPN address changes, the next regular poll must re-advertise once and then
+            // return to plain GET.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "100.64.0.9")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncInfoFactory.createSyncInfo(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
+
+            val lanInterface = NetworkInterfaceInfo("en0", 24, "192.168.1.2")
+            var allInterfaces = listOf(lanInterface, NetworkInterfaceInfo("utun4", 32, "100.64.0.1"))
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns listOf(lanInterface)
+            every { deps.networkInterfaceService.getAllNetworkInterfaceInfo() } answers { allInterfaces }
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            allInterfaces = listOf(lanInterface, NetworkInterfaceInfo("utun4", 32, "100.64.0.3"))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(3, advertised.size)
+            assertNotNull(advertised[0], "initial cross-subnet heartbeat should advertise")
+            assertNotNull(advertised[1], "changed unselected VPN address should re-advertise on regular poll")
+            assertNull(advertised[2], "steady-state poll after re-advertise should return to GET")
         }
 
     @Test

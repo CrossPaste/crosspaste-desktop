@@ -167,8 +167,9 @@ class SyncIntegrationTest {
             assertTrue(result is SuccessResult)
             assertEquals(VersionRelation.EQUAL_TO, result.getResult<VersionRelation>())
 
-            // A's syncRoutingApi should have received the syncInfo
+            // A's syncRoutingApi should have received the syncInfo and observed remote address
             assertNotNull(a.syncRoutingApi.syncInfo)
+            assertNotNull(a.syncRoutingApi.observedRemoteAddress)
             assertEquals(
                 b.appInfo.appInstanceId,
                 a.syncRoutingApi.syncInfo!!
