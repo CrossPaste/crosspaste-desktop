@@ -1,6 +1,7 @@
 package com.crosspaste.sync
 
 import com.crosspaste.app.AppInfo
+import com.crosspaste.app.EndpointInfoFactory
 import com.crosspaste.app.RatingPromptManager
 import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
@@ -13,6 +14,7 @@ import com.crosspaste.exception.StandardErrorCode
 import com.crosspaste.net.NetworkInterfaceInfo
 import com.crosspaste.net.NetworkInterfaceService
 import com.crosspaste.net.PasteBonjourService
+import com.crosspaste.net.Server
 import com.crosspaste.net.SyncInfoFactory
 import com.crosspaste.net.TelnetHelper
 import com.crosspaste.net.TelnetResult
@@ -34,12 +36,14 @@ import com.crosspaste.sync.SyncTestFixtures.createConnectingSyncRuntimeInfo
 import com.crosspaste.sync.SyncTestFixtures.createSyncRuntimeInfo
 import com.crosspaste.sync.SyncTestFixtures.createUnverifiedSyncRuntimeInfo
 import com.crosspaste.utils.CryptographyUtils
+import com.crosspaste.utils.DeviceUtils
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
@@ -86,7 +90,7 @@ class SyncResolverTest {
             coEvery { syncRuntimeInfoDao.getSyncRuntimeInfo(syncRuntimeInfo.appInstanceId) } returns syncRuntimeInfo
         }
 
-        fun createResolver(): SyncResolver =
+        fun createResolver(syncInfoFactoryOverride: SyncInfoFactory = syncInfoFactory): SyncResolver =
             SyncResolver(
                 appInfo = appInfo,
                 localPlatform = localPlatform,
@@ -98,7 +102,7 @@ class SyncResolverTest {
                 secureStore = secureStore,
                 syncClientApi = syncClientApi,
                 syncDeviceManager = syncDeviceManager,
-                syncInfoFactory = syncInfoFactory,
+                syncInfoFactory = syncInfoFactoryOverride,
                 syncRuntimeInfoDao = syncRuntimeInfoDao,
                 telnetHelper = telnetHelper,
                 tokenCache = tokenCache,
@@ -668,7 +672,7 @@ class SyncResolverTest {
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.wsSessionManager.isConnected(any()) } returns false
-            coEvery { deps.syncInfoFactory.createSyncInfo(any()) } returns mockk<SyncInfo>(relaxed = true)
+            every { deps.syncInfoFactory.createSyncInfoIfReady(any()) } returns mockk<SyncInfo>(relaxed = true)
 
             val advertised = mutableListOf<SyncInfo?>()
             coEvery {
@@ -694,7 +698,7 @@ class SyncResolverTest {
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.wsSessionManager.isConnected(any()) } returns false
-            coEvery { deps.syncInfoFactory.createSyncInfo(any()) } returns mockk<SyncInfo>(relaxed = true)
+            every { deps.syncInfoFactory.createSyncInfoIfReady(any()) } returns mockk<SyncInfo>(relaxed = true)
 
             var localInterfaces = listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.2"))
             every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } answers { localInterfaces }
@@ -727,7 +731,7 @@ class SyncResolverTest {
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.wsSessionManager.isConnected(any()) } returns false
-            coEvery { deps.syncInfoFactory.createSyncInfo(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
+            every { deps.syncInfoFactory.createSyncInfoIfReady(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
             every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns
                 listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.2"))
 
@@ -742,7 +746,79 @@ class SyncResolverTest {
             assertEquals(2, advertised.size)
             assertNotNull(advertised[0], "first cross-subnet heartbeat should send authenticated SyncInfo once")
             assertNull(advertised[1], "subsequent steady-state cross-subnet heartbeat should fall back to GET")
-            coVerify(exactly = 1) { deps.syncInfoFactory.createSyncInfo(emptyList()) }
+            verify(exactly = 1) { deps.syncInfoFactory.createSyncInfoIfReady(emptyList()) }
+        }
+
+    @Test
+    fun verifyConnection_crossSubnetPeer_serverPortNotReady_sendsGetWithoutBlockingAndAdvertisesOnceReady() =
+        runTest {
+            // If the local inbound server has not bound a port yet (e.g. mobile foreground
+            // resume before server.start() finishes, or after a bind failure), outbound
+            // heartbeats must not suspend on portFlow while holding deviceMutex. They fall
+            // back to plain GET and defer the authenticated SyncInfo advertisement until
+            // a listening port is available.
+            val deps = TestDeps()
+            val portFlow = MutableStateFlow(0)
+            val realSyncInfoFactory = createRealSyncInfoFactory(deps, portFlow)
+            val resolver = deps.createResolver(syncInfoFactoryOverride = realSyncInfoFactory)
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "100.64.0.9")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns
+                listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.2"))
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            // Pass 1: server port is 0 — must complete immediately with plain GET.
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            // Pass 2: server binds a port — next heartbeat advertises our SyncInfo once.
+            portFlow.value = 13129
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            // Pass 3: steady state returns to plain GET.
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(3, advertised.size)
+            assertNull(advertised[0], "unready port must fall back to GET without suspending")
+            val advertisedInfo = assertNotNull(advertised[1], "heartbeat must advertise once port becomes ready")
+            assertEquals(13129, advertisedInfo.endpointInfo.port)
+            assertEquals(emptyList(), advertisedInfo.endpointInfo.hostInfoList)
+            assertNull(advertised[2], "steady-state heartbeat after advertise should return to GET")
+        }
+
+    @Test
+    fun verifyConnection_sameSubnetPeer_serverPortNotReady_sendsGetWithoutBlockingAndAdvertisesOnceReady() =
+        runTest {
+            val deps = TestDeps()
+            val portFlow = MutableStateFlow(0)
+            val realSyncInfoFactory = createRealSyncInfoFactory(deps, portFlow)
+            val resolver = deps.createResolver(syncInfoFactoryOverride = realSyncInfoFactory)
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "192.168.1.108")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns
+                listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.2"))
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            portFlow.value = 13129
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(3, advertised.size)
+            assertNull(advertised[0], "unready port must fall back to GET without suspending")
+            val advertisedInfo = assertNotNull(advertised[1], "heartbeat must advertise once port becomes ready")
+            assertEquals(13129, advertisedInfo.endpointInfo.port)
+            assertEquals(listOf(HostInfo(24, "192.168.1.2")), advertisedInfo.endpointInfo.hostInfoList)
+            assertNull(advertised[2], "steady-state heartbeat after advertise should return to GET")
         }
 
     @Test
@@ -765,7 +841,7 @@ class SyncResolverTest {
 
             assertEquals(1, advertised.size)
             assertNull(advertised[0], "offline / discovery-off must not advertise SyncInfo")
-            coVerify(exactly = 0) { deps.syncInfoFactory.createSyncInfo(any()) }
+            verify(exactly = 0) { deps.syncInfoFactory.createSyncInfoIfReady(any()) }
         }
 
     @Test
@@ -780,7 +856,7 @@ class SyncResolverTest {
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.wsSessionManager.isConnected(any()) } returns false
-            coEvery { deps.syncInfoFactory.createSyncInfo(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
+            every { deps.syncInfoFactory.createSyncInfoIfReady(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
 
             var localInterfaces = listOf(NetworkInterfaceInfo("utun4", 32, "100.64.0.1"))
             every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } answers { localInterfaces }
@@ -813,7 +889,7 @@ class SyncResolverTest {
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.wsSessionManager.isConnected(any()) } returns false
-            coEvery { deps.syncInfoFactory.createSyncInfo(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
+            every { deps.syncInfoFactory.createSyncInfoIfReady(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
             every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns
                 listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.2"))
 
@@ -845,7 +921,7 @@ class SyncResolverTest {
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.wsSessionManager.isConnected(any()) } returns false
-            coEvery { deps.syncInfoFactory.createSyncInfo(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
+            every { deps.syncInfoFactory.createSyncInfoIfReady(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
 
             val lanInterface = NetworkInterfaceInfo("en0", 24, "192.168.1.2")
             var allInterfaces = listOf(lanInterface, NetworkInterfaceInfo("utun4", 32, "100.64.0.1"))
@@ -879,7 +955,7 @@ class SyncResolverTest {
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.wsSessionManager.isConnected(any()) } returns false
-            coEvery { deps.syncInfoFactory.createSyncInfo(any()) } returns mockk<SyncInfo>(relaxed = true)
+            every { deps.syncInfoFactory.createSyncInfoIfReady(any()) } returns mockk<SyncInfo>(relaxed = true)
             // Reconnect probes (after the failure) find nothing, so the pass settles without
             // changing the device we re-read from the DB on the next pass.
             coEvery { deps.telnetHelper.telnet(any(), any(), any()) } returns null
@@ -917,7 +993,7 @@ class SyncResolverTest {
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.wsSessionManager.isConnected(any()) } returns false
-            coEvery { deps.syncInfoFactory.createSyncInfo(any()) } returns mockk<SyncInfo>(relaxed = true)
+            every { deps.syncInfoFactory.createSyncInfoIfReady(any()) } returns mockk<SyncInfo>(relaxed = true)
 
             val advertised = mutableListOf<SyncInfo?>()
             coEvery {
@@ -932,6 +1008,26 @@ class SyncResolverTest {
             assertNotNull(advertised[0], "first heartbeat advertises")
             assertNotNull(advertised[1], "exit cleared the marker → reconnect re-advertises")
         }
+
+    private fun createRealSyncInfoFactory(
+        deps: TestDeps,
+        portFlow: MutableStateFlow<Int>,
+    ): SyncInfoFactory {
+        val deviceUtils =
+            mockk<DeviceUtils> {
+                every { getDeviceName() } returns "Local Test Device"
+                every { getDeviceId() } returns "local-device-id"
+            }
+        val server =
+            mockk<Server>(relaxed = true) {
+                every { this@mockk.portFlow } returns portFlow
+                every { port() } answers { portFlow.value }
+            }
+        return SyncInfoFactory(
+            appInfo = deps.appInfo,
+            endpointInfoFactory = EndpointInfoFactory(deviceUtils, lazy { server }, deps.localPlatform),
+        )
+    }
 
     @Test
     fun trustHandshake_recordsAdvertiseMarker_soNextHeartbeatStaysQuiet() =

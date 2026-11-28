@@ -605,7 +605,12 @@ class SyncResolver(
         val advertiseKey = buildHeartbeatAdvertiseKey(host, currentInterfaces, advertiseHostInfo)
         val advertiseSyncInfo =
             if (hasLocalInterface && lastHeartbeatAdvertised[targetAppInstanceId] != advertiseKey) {
-                syncInfoFactory.createSyncInfo(advertiseHostInfo)
+                // Non-blocking: if the local inbound server is not yet listening (e.g.
+                // during mobile foreground resume or after a bind failure), fall back to a
+                // plain GET heartbeat without stalling on portFlow while holding deviceMutex.
+                // Leaving lastHeartbeatAdvertised unset lets the next heartbeat advertise
+                // once a listening port becomes available.
+                syncInfoFactory.createSyncInfoIfReady(advertiseHostInfo)
             } else {
                 null
             }
