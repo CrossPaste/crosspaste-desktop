@@ -82,17 +82,26 @@ class MacAppWindowManager(
 
     override fun getCurrentActiveAppName(): String? =
         runCatching {
-            MacAppUtils.getCurrentActiveAppInfo()?.let {
-                createMacAppInfo(info = it)?.let { macAppInfo ->
-                    ioScope.launch {
-                        saveImagePathByApp(macAppInfo.bundleIdentifier, macAppInfo.localizedName)
-                    }
-                    macAppInfo.localizedName
-                }
-            }
+            MacAppUtils.getCurrentActiveAppInfo()?.let(::recordMacAppInfo)
         }.getOrElse { e ->
             logger.error(e) { "Failed to get current active app name" }
             null
+        }
+
+    override fun getPasteboardSourceAppName(expectedChangeCount: Int): String? =
+        runCatching {
+            MacAppUtils.getPasteboardSourceAppInfo(expectedChangeCount)?.let(::recordMacAppInfo)
+        }.getOrElse { e ->
+            logger.error(e) { "Failed to get pasteboard source app name" }
+            null
+        }
+
+    private fun recordMacAppInfo(info: String): String? =
+        createMacAppInfo(info = info)?.let { macAppInfo ->
+            ioScope.launch {
+                saveImagePathByApp(macAppInfo.bundleIdentifier, macAppInfo.localizedName)
+            }
+            macAppInfo.localizedName
         }
 
     override fun getRunningAppNames(): List<String> =

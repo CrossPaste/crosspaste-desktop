@@ -4,16 +4,14 @@ import com.sun.jna.Callback
 import com.sun.jna.Library
 import com.sun.jna.Native
 import com.sun.jna.Pointer
-import com.sun.jna.ptr.IntByReference
 
 interface MacosApi : Library {
 
-    fun getPasteboardChangeCount(
-        currentChangeCount: Int,
-        remote: IntByReference,
-        isCrossPaste: IntByReference,
-        isConcealed: IntByReference,
-    ): Int
+    fun getPasteboardChangeCount(): Int
+
+    fun getPasteboardTypes(expectedChangeCount: Int): Pointer?
+
+    fun getPasteboardSourceAppInfo(expectedChangeCount: Int): Pointer?
 
     fun writeFilesToPasteboard(
         count: Int,

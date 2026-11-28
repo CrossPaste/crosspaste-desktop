@@ -33,6 +33,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class WindowsPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
+    override val capturePolicy: ClipboardCapturePolicy,
     override val configManager: CommonConfigManager,
     override val currentPaste: CurrentPaste,
     override val notificationManager: NotificationManager,
@@ -41,7 +42,6 @@ class WindowsPasteboardService(
     override val pasteReleaseService: PasteReleaseService,
     private val platform: Platform,
     override val soundService: SoundService,
-    override val sourceExclusionService: DesktopSourceExclusionService,
 ) : AbstractPasteboardService(),
     User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}
@@ -65,44 +65,54 @@ class WindowsPasteboardService(
 
     private val clipboardFormatProbe = Win32ClipboardFormatProbe()
 
+    private data class WindowsClipboardSnapshot(
+        val transferable: Transferable,
+        val sourceContext: PasteSourceContext,
+    )
+
     // Single-consumer pipeline (#4793): the message-thread callback only records events;
     // this worker coalesces bursts, takes one snapshot per burst, and consumes serially.
     private val pipeline =
-        ClipboardEventPipeline<Transferable>(
+        ClipboardEventPipeline<WindowsClipboardSnapshot>(
             currentSequence = { User32.INSTANCE.GetClipboardSequenceNumber() },
             takeSnapshot = { event ->
-                if (sourceExclusionService.isExcluded(event.source)) {
-                    logger.debug { "Ignoring excluded source: ${event.source}" }
-                    null
-                } else {
-                    // Both the hint probe and the AWT snapshot are blocking native reads
-                    // (the latter retried on failure); keep them off the CPU worker pool.
-                    // The hint check must run before AWT opens the clipboard.
-                    withContext(ioDispatcher) {
-                        if (PasswordManagerHints.isConcealedOnWindows(clipboardFormatProbe)) {
-                            logger.debug { "Ignoring concealed clipboard content" }
+                // Both the format probes and the AWT snapshot are blocking native calls
+                // (the latter retried on failure); keep them off the CPU worker pool.
+                // Policy evaluation runs before AWT opens the clipboard.
+                withContext(ioDispatcher) {
+                    val decision =
+                        capturePolicy.evaluate(
+                            metadata = ClipboardMetadata(formatProbe = clipboardFormatProbe),
+                            resolveFallbackSource = { event.source },
+                        )
+                    when (decision) {
+                        is ClipboardCaptureDecision.Ignore -> {
+                            logger.debug { "Ignoring clipboard change: ${decision.reason}" }
                             null
-                        } else {
-                            controlUtils.exponentialBackoffUntilValid(
-                                initTime = 20L,
-                                maxTime = 1000L,
-                                isValidResult = ::isValidContents,
-                            ) {
-                                getPasteboardContentsBySafe()
-                            }
+                        }
+                        is ClipboardCaptureDecision.Capture -> {
+                            controlUtils
+                                .exponentialBackoffUntilValid(
+                                    initTime = 20L,
+                                    maxTime = 1000L,
+                                    isValidResult = ::isValidContents,
+                                ) {
+                                    getPasteboardContentsBySafe()
+                                }?.let { transferable ->
+                                    WindowsClipboardSnapshot(
+                                        transferable = transferable,
+                                        sourceContext = decision.sourceContext,
+                                    )
+                                }
                         }
                     }
                 }
             },
-            consume = { contents, event ->
-                if (contents != ownerTransferable) {
-                    ownerTransferable = contents
-                    val pasteTransferable = DesktopReadTransferable(contents)
-                    // in windows, we don't know if the pasteboard is local or remote
-                    pasteConsumer.consume(
-                        pasteTransferable,
-                        PasteSourceContext(source = event.source, remote = false),
-                    )
+            consume = { snapshot, _ ->
+                if (snapshot.transferable != ownerTransferable) {
+                    ownerTransferable = snapshot.transferable
+                    val pasteTransferable = DesktopReadTransferable(snapshot.transferable)
+                    pasteConsumer.consume(pasteTransferable, snapshot.sourceContext)
                 }
             },
         )

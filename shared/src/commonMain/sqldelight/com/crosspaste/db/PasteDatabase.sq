@@ -391,6 +391,7 @@ getRecentPasteDataByAppInstanceId:
 SELECT * FROM PasteDataEntity
 WHERE appInstanceId = :appInstanceId
   AND pasteState = 1
+  AND remote = 0
 ORDER BY id DESC, createTime DESC
 LIMIT :limit;
 
@@ -398,6 +399,7 @@ getRecentPasteDataAfterByCreateTime:
 SELECT * FROM PasteDataEntity
 WHERE appInstanceId = :appInstanceId
   AND pasteState = 1
+  AND remote = 0
   AND createTime > :afterCreateTime
 ORDER BY id DESC, createTime DESC
 LIMIT :limit;
@@ -426,7 +428,10 @@ SELECT changes() AS changes;
 
 getRecentPasteDataAfterRemoteId:
 SELECT * FROM PasteDataEntity
-WHERE appInstanceId = :appInstanceId AND pasteState = 1 AND id > :afterId
+WHERE appInstanceId = :appInstanceId
+  AND pasteState = 1
+  AND remote = 0
+  AND id > :afterId
 ORDER BY id DESC
 LIMIT :limit;
 

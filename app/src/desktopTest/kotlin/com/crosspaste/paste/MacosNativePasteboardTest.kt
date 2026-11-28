@@ -1,10 +1,10 @@
 package com.crosspaste.paste
 
+import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.platform.macos.api.FileResolverCallback
 import com.crosspaste.platform.macos.api.MacosApi
 import com.crosspaste.test.IntegrationTest
 import com.sun.jna.Pointer
-import com.sun.jna.ptr.IntByReference
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.condition.EnabledIf
@@ -18,7 +18,9 @@ import java.io.File
 import javax.swing.SwingUtilities
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 // Drives the real general pasteboard and spawns osascript to plant foreign
@@ -174,13 +176,19 @@ class MacosNativePasteboardTest {
             val writeChangeCount = MacosApi.INSTANCE.writeFilesToPasteboard(1, resolver)
             assertTrue(writeChangeCount >= 0)
 
-            val remote = IntByReference()
-            val isCrossPaste = IntByReference()
-            val isConcealed = IntByReference()
-            // Pass a stale changeCount so getPasteboardChangeCount inspects the items
-            MacosApi.INSTANCE.getPasteboardChangeCount(writeChangeCount - 1, remote, isCrossPaste, isConcealed)
-            assertTrue(isCrossPaste.value != 0, "isCrossPaste marker should be set")
-            assertEquals(0, isConcealed.value, "own writes must not look concealed")
+            val types = assertNotNull(MacAppUtils.getPasteboardTypes(writeChangeCount))
+            assertTrue(
+                ClipboardConflictRules.MACOS_CROSSPASTE_TYPE in types,
+                "com.crosspaste marker should be present in pasteboard types",
+            )
+            assertFalse(
+                PasswordManagerHints.isConcealedOnMacos(types),
+                "own writes must not look concealed",
+            )
+            assertNull(
+                MacAppUtils.getPasteboardTypes(writeChangeCount - 1),
+                "stale changeCount must return null",
+            )
         } finally {
             tempFile.delete()
             cleanupClipboard()
@@ -222,7 +230,7 @@ class MacosNativePasteboardTest {
     }
 
     @Test
-    fun `getPasteboardChangeCount detects concealed types`() {
+    fun `getPasteboardTypes detects concealed types`() {
         try {
             val process =
                 ProcessBuilder(
@@ -241,20 +249,18 @@ class MacosNativePasteboardTest {
             val exitCode = process.waitFor()
             assertEquals(0, exitCode, "osascript should set concealed type on pasteboard")
 
-            val remote = IntByReference()
-            val isCrossPaste = IntByReference()
-            val isConcealed = IntByReference()
-            val count = MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
+            val count = MacAppUtils.getPasteboardChangeCount()
             assertTrue(count > 0, "change count should be greater than 0")
-            assertEquals(0, isCrossPaste.value, "isCrossPaste should not be set")
-            assertTrue(isConcealed.value != 0, "isConcealed marker should be detected")
+            val types = assertNotNull(MacAppUtils.getPasteboardTypes(count))
+            assertFalse(ClipboardConflictRules.MACOS_CROSSPASTE_TYPE in types)
+            assertTrue(PasswordManagerHints.isConcealedOnMacos(types), "concealed type should be detected")
         } finally {
             cleanupClipboard()
         }
     }
 
     @Test
-    fun `getPasteboardChangeCount detects transient types`() {
+    fun `getPasteboardTypes detects transient types`() {
         try {
             val process =
                 ProcessBuilder(
@@ -273,20 +279,18 @@ class MacosNativePasteboardTest {
             val exitCode = process.waitFor()
             assertEquals(0, exitCode, "osascript should set transient type on pasteboard")
 
-            val remote = IntByReference()
-            val isCrossPaste = IntByReference()
-            val isConcealed = IntByReference()
-            val count = MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
+            val count = MacAppUtils.getPasteboardChangeCount()
             assertTrue(count > 0, "change count should be greater than 0")
-            assertEquals(0, isCrossPaste.value, "isCrossPaste should not be set")
-            assertTrue(isConcealed.value != 0, "isConcealed marker should be detected for transient type")
+            val types = assertNotNull(MacAppUtils.getPasteboardTypes(count))
+            assertFalse(ClipboardConflictRules.MACOS_CROSSPASTE_TYPE in types)
+            assertTrue(PasswordManagerHints.isConcealedOnMacos(types), "transient type should be detected")
         } finally {
             cleanupClipboard()
         }
     }
 
     @Test
-    fun `getPasteboardChangeCount marks Xcode device pasteboard sync as remote`() {
+    fun `getPasteboardTypes exposes Xcode device pasteboard sync marker`() {
         try {
             val process =
                 ProcessBuilder(
@@ -305,23 +309,18 @@ class MacosNativePasteboardTest {
             val exitCode = process.waitFor()
             assertEquals(0, exitCode, "osascript should set device sync type on pasteboard")
 
-            val remote = IntByReference()
-            val isCrossPaste = IntByReference()
-            val isConcealed = IntByReference()
-            MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
-            assertEquals(
-                2,
-                remote.value,
-                "Xcode device sync content should be marked remote, apart from Universal Clipboard",
-            )
-            assertEquals(0, isConcealed.value, "device sync must not look concealed")
+            val count = MacAppUtils.getPasteboardChangeCount()
+            val types = assertNotNull(MacAppUtils.getPasteboardTypes(count))
+            assertNotNull(ClipboardConflictRules.APPLE_XCODE_SYNC.match(ClipboardMetadata(types = types)))
+            assertNull(ClipboardConflictRules.APPLE_UNIVERSAL_CLIPBOARD.match(ClipboardMetadata(types = types)))
+            assertFalse(PasswordManagerHints.isConcealedOnMacos(types))
         } finally {
             cleanupClipboard()
         }
     }
 
     @Test
-    fun `getPasteboardChangeCount marks Universal Clipboard content as remote`() {
+    fun `getPasteboardTypes exposes Universal Clipboard marker`() {
         try {
             val process =
                 ProcessBuilder(
@@ -340,12 +339,91 @@ class MacosNativePasteboardTest {
             val exitCode = process.waitFor()
             assertEquals(0, exitCode, "osascript should set Universal Clipboard type on pasteboard")
 
-            val remote = IntByReference()
-            val isCrossPaste = IntByReference()
-            val isConcealed = IntByReference()
-            MacosApi.INSTANCE.getPasteboardChangeCount(0, remote, isCrossPaste, isConcealed)
-            assertEquals(1, remote.value, "Universal Clipboard content should be marked remote")
-            assertEquals(0, isConcealed.value, "Universal Clipboard content must not look concealed")
+            val count = MacAppUtils.getPasteboardChangeCount()
+            val types = assertNotNull(MacAppUtils.getPasteboardTypes(count))
+            assertNotNull(ClipboardConflictRules.APPLE_UNIVERSAL_CLIPBOARD.match(ClipboardMetadata(types = types)))
+            assertFalse(PasswordManagerHints.isConcealedOnMacos(types))
+        } finally {
+            cleanupClipboard()
+        }
+    }
+
+    @Test
+    fun `getPasteboardTypes exposes RustDesk owner marker`() {
+        try {
+            val process =
+                ProcessBuilder(
+                    "osascript",
+                    "-l",
+                    "JavaScript",
+                    "-e",
+                    """
+                    ObjC.import("AppKit");
+                    var pb = $.NSPasteboard.generalPasteboard;
+                    pb.clearContents;
+                    pb.setStringForType($("remote-text"), $("public.utf8-plain-text"));
+                    pb.setStringForType($("client"), $("dyn.com.rustdesk.owner"));
+                    """.trimIndent(),
+                ).start()
+            val exitCode = process.waitFor()
+            assertEquals(0, exitCode, "osascript should set RustDesk owner marker on pasteboard")
+
+            val count = MacAppUtils.getPasteboardChangeCount()
+            val types = assertNotNull(MacAppUtils.getPasteboardTypes(count))
+            val action = ClipboardConflictRules.RUSTDESK.match(ClipboardMetadata(types = types))
+            assertEquals(
+                ClipboardConflictAction.Capture(
+                    sourceOverride = ClipboardConflictRules.RUSTDESK_SOURCE,
+                    syncPolicy = ClipboardSyncPolicy.LocalOnly,
+                ),
+                action,
+            )
+            assertFalse(PasswordManagerHints.isConcealedOnMacos(types))
+        } finally {
+            cleanupClipboard()
+        }
+    }
+
+    @Test
+    fun `getPasteboardSourceAppInfo resolves org nspasteboard source when changeCount matches`() {
+        try {
+            val process =
+                ProcessBuilder(
+                    "osascript",
+                    "-l",
+                    "JavaScript",
+                    "-e",
+                    """
+                    ObjC.import("AppKit");
+                    var pb = $.NSPasteboard.generalPasteboard;
+                    pb.clearContents;
+                    pb.setStringForType($("from-calculator"), $("public.utf8-plain-text"));
+                    pb.setStringForType($("com.apple.calculator"), $("org.nspasteboard.source"));
+                    """.trimIndent(),
+                ).start()
+            val exitCode = process.waitFor()
+            assertEquals(0, exitCode, "osascript should set org.nspasteboard.source on pasteboard")
+
+            val changeCount = MacAppUtils.getPasteboardChangeCount()
+            assertEquals(
+                "com.apple.calculator\nCalculator",
+                MacAppUtils.getPasteboardSourceAppInfo(changeCount),
+            )
+            assertNull(
+                MacAppUtils.getPasteboardSourceAppInfo(changeCount - 1),
+                "stale changeCount must return null",
+            )
+        } finally {
+            cleanupClipboard()
+        }
+    }
+
+    @Test
+    fun `getPasteboardSourceAppInfo returns null when org nspasteboard source is absent`() {
+        try {
+            systemClipboard.setContents(StringSelection("plain-text"), null)
+            val changeCount = MacAppUtils.getPasteboardChangeCount()
+            assertNull(MacAppUtils.getPasteboardSourceAppInfo(changeCount))
         } finally {
             cleanupClipboard()
         }

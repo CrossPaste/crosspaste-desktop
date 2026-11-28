@@ -56,6 +56,7 @@ import java.nio.charset.Charset
  */
 class LinuxPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
+    override val capturePolicy: ClipboardCapturePolicy,
     override val configManager: CommonConfigManager,
     override val currentPaste: CurrentPaste,
     override val notificationManager: NotificationManager,
@@ -63,7 +64,6 @@ class LinuxPasteboardService(
     override val pasteProducer: TransferableProducer,
     override val pasteReleaseService: PasteReleaseService,
     override val soundService: SoundService,
-    override val sourceExclusionService: DesktopSourceExclusionService,
 ) : AbstractPasteboardService() {
 
     companion object {
@@ -159,28 +159,28 @@ class LinuxPasteboardService(
             logger.info { "notify change event (wayland)" }
             changeCount++
         }
-        if (mimeTypes.contains(PasteDataFlavors.CROSSPASTE_ORIGIN_MIME)) {
-            logger.debug { "Ignoring the bridged echo of our own clipboard write" }
-            return
-        }
-        if (PasswordManagerHints.isConcealedOnLinux(mimeTypes)) {
-            logger.debug { "Ignoring concealed clipboard content" }
-            return
-        }
-
-        val source =
-            if (selection.initial) {
-                null
-            } else {
-                controlUtils
-                    .ensureMinExecutionTime(delayTime = 20) {
-                        appWindowManager.getCurrentActiveAppName()
-                    }.getOrNull()
+        val decision =
+            capturePolicy.evaluate(
+                metadata = ClipboardMetadata(types = mimeTypes.toSet()),
+                resolveFallbackSource = {
+                    if (selection.initial) {
+                        null
+                    } else {
+                        controlUtils
+                            .ensureMinExecutionTime(delayTime = 20) {
+                                appWindowManager.getCurrentActiveAppName()
+                            }.getOrNull()
+                    }
+                },
+            )
+        val capture =
+            when (decision) {
+                is ClipboardCaptureDecision.Ignore -> {
+                    logger.debug { "Ignoring Wayland selection: ${decision.reason}" }
+                    return
+                }
+                is ClipboardCaptureDecision.Capture -> decision
             }
-        if (sourceExclusionService.isExcluded(source)) {
-            logger.debug { "Ignoring excluded source: $source" }
-            return
-        }
 
         val contents =
             WaylandClipboardSnapshot.create(mimeTypes) { mimeType -> monitor.read(selection, mimeType) }
@@ -198,7 +198,7 @@ class LinuxPasteboardService(
         scope.launch(CoroutineName("LinuxPasteboardServiceConsumer")) {
             pasteConsumer.consume(
                 DesktopReadTransferable(contents),
-                PasteSourceContext(source = source, remote = false),
+                capture.sourceContext,
             )
         }
     }
@@ -272,7 +272,7 @@ class LinuxPasteboardService(
         scope: CoroutineScope,
         firstChange: Boolean = false,
     ) {
-        val source =
+        val foregroundSource =
             if (firstChange) {
                 null
             } else {
@@ -282,26 +282,32 @@ class LinuxPasteboardService(
                     }.getOrNull()
             }
 
-        if (sourceExclusionService.isExcluded(source)) {
-            logger.debug { "Ignoring excluded source: $source" }
-            return
-        }
-
         // XFixes only says the selection owner changed, not that the owner can
         // already serve data. Under XWayland the bridge keeps failing conversions
         // ("Owner failed to convert data") for hundreds of ms after the notify,
         // so probe TARGETS directly and start the AWT read only once the owner
         // actually answers — the read below then almost always succeeds first try.
-        // The same TARGETS answer carries the password-manager hint, if any.
+        // The same TARGETS answer carries password-manager and external-sync hints.
         val targets = X11ClipboardReader.awaitClipboardTargets(CLIPBOARD_READY_TIMEOUT_MS)
         if (targets == null) {
             logger.warn {
                 "Clipboard owner not ready within ${CLIPBOARD_READY_TIMEOUT_MS}ms, reading anyway"
             }
-        } else if (PasswordManagerHints.isConcealedOnLinux(targets)) {
-            logger.debug { "Ignoring concealed clipboard content" }
-            return
         }
+
+        val decision =
+            capturePolicy.evaluate(
+                metadata = ClipboardMetadata(types = targets?.toSet().orEmpty()),
+                resolveFallbackSource = { foregroundSource },
+            )
+        val capture =
+            when (decision) {
+                is ClipboardCaptureDecision.Ignore -> {
+                    logger.debug { "Ignoring X11 clipboard change: ${decision.reason}" }
+                    return
+                }
+                is ClipboardCaptureDecision.Capture -> decision
+            }
 
         val contents =
             controlUtils.linearBackoffUntilValid(
@@ -319,10 +325,7 @@ class LinuxPasteboardService(
                 ownerTransferable = it
                 scope.launch(CoroutineName("LinuxPasteboardServiceConsumer")) {
                     val pasteTransferable = DesktopReadTransferable(correctHtmlEncoding(it))
-                    pasteConsumer.consume(
-                        pasteTransferable,
-                        PasteSourceContext(source = source, remote = false),
-                    )
+                    pasteConsumer.consume(pasteTransferable, capture.sourceContext)
                 }
             }
         }

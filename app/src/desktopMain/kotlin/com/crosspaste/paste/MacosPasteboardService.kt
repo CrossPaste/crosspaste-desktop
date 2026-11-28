@@ -4,11 +4,9 @@ import com.crosspaste.app.AppName
 import com.crosspaste.app.DesktopAppWindowManager
 import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.notification.NotificationManager
-import com.crosspaste.platform.macos.api.MacosApi
+import com.crosspaste.platform.macos.MacAppUtils
 import com.crosspaste.sound.SoundService
-import com.crosspaste.sync.SyncManager
 import com.crosspaste.utils.getControlUtils
-import com.sun.jna.ptr.IntByReference
 import io.github.oshai.kotlinlogging.KLogger
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineName
@@ -24,6 +22,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class MacosPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
+    override val capturePolicy: ClipboardCapturePolicy,
     override val configManager: CommonConfigManager,
     override val currentPaste: CurrentPaste,
     override val notificationManager: NotificationManager,
@@ -31,9 +30,6 @@ class MacosPasteboardService(
     override val pasteProducer: TransferableProducer,
     override val pasteReleaseService: PasteReleaseService,
     override val soundService: SoundService,
-    override val sourceExclusionService: DesktopSourceExclusionService,
-    private val syncManager: SyncManager,
-    private val universalClipboardHint: UniversalClipboardHint,
 ) : AbstractPasteboardService() {
     override val logger: KLogger = KotlinLogging.logger {}
 
@@ -70,16 +66,12 @@ class MacosPasteboardService(
         }
 
     /**
-     * One poll of the pasteboard change count. Decides whether the change is
-     * worth reading at all (not our own write, not a password-manager secret,
-     * not stale content from before launch) before touching the contents.
+     * One poll of the pasteboard change count. Reads the raw type list only
+     * when the count moved, then hands classification, source exclusion, and
+     * sync-policy selection to [capturePolicy] before touching the contents.
      */
     private suspend fun CoroutineScope.pollPasteboard(firstRead: Boolean) {
-        val remote = IntByReference()
-        val isCrossPaste = IntByReference()
-        val isConcealed = IntByReference()
-        val currentChangeCount =
-            MacosApi.INSTANCE.getPasteboardChangeCount(changeCount, remote, isCrossPaste, isConcealed)
+        val currentChangeCount = MacAppUtils.getPasteboardChangeCount()
         if (changeCount == currentChangeCount) return
 
         logger.info { "currentChangeCount $currentChangeCount changeCount $changeCount" }
@@ -87,43 +79,52 @@ class MacosPasteboardService(
         val firstChange = firstRead && changeCount == config.lastPasteboardChangeCount
         changeCount = currentChangeCount
 
-        if (remote.value == REMOTE_UNIVERSAL_CLIPBOARD) {
-            universalClipboardHint.onUniversalClipboardContent()
+        if (firstChange && config.enableSkipPreLaunchPasteboardContent) {
+            logger.debug { "Ignoring prior pasteboard" }
+            return
         }
 
-        when {
-            firstChange && config.enableSkipPreLaunchPasteboardContent -> {
-                logger.debug { "Ignoring prior pasteboard" }
-            }
-            isCrossPaste.value != 0 -> {
-                logger.debug { "Ignoring crosspaste change" }
-            }
-            isConcealed.value != 0 -> {
-                logger.debug { "Ignoring concealed pasteboard content" }
-            }
-            else -> {
-                consumeChange(
-                    expectedChangeCount = currentChangeCount,
-                    firstChange = firstChange,
-                    remote = remote.value != 0,
-                )
-            }
+        val types = MacAppUtils.getPasteboardTypes(currentChangeCount)
+        if (types == null) {
+            logger.debug { "Pasteboard moved past change count $currentChangeCount while reading types" }
+            return
         }
+
+        consumeChange(
+            expectedChangeCount = currentChangeCount,
+            firstChange = firstChange,
+            types = types,
+        )
     }
 
     private suspend fun CoroutineScope.consumeChange(
         expectedChangeCount: Int,
         firstChange: Boolean,
-        remote: Boolean,
+        types: Set<String>,
     ) {
-        val source = resolveSource(firstChange)
-        if (sourceExclusionService.isExcluded(source)) {
-            logger.debug { "Ignoring excluded source: $source" }
-            return
-        }
+        val decision =
+            capturePolicy.evaluate(
+                metadata = ClipboardMetadata(types = types),
+                resolveExplicitSource = {
+                    if (ClipboardConflictRules.MACOS_PASTEBOARD_SOURCE_TYPE in types) {
+                        appWindowManager.getPasteboardSourceAppName(expectedChangeCount)
+                    } else {
+                        null
+                    }
+                },
+                resolveFallbackSource = { resolveFrontmostSource(firstChange) },
+            )
+        val capture =
+            when (decision) {
+                is ClipboardCaptureDecision.Ignore -> {
+                    logger.debug { "Ignoring pasteboard change: ${decision.reason}" }
+                    return
+                }
+                is ClipboardCaptureDecision.Capture -> decision
+            }
 
         val contents =
-            readUnchangedSnapshot(expectedChangeCount, ::readChangeCount, logger) {
+            readUnchangedSnapshot(expectedChangeCount, MacAppUtils::getPasteboardChangeCount, logger) {
                 controlUtils.exponentialBackoffUntilValid(
                     initTime = 20L,
                     maxTime = 1000L,
@@ -135,31 +136,15 @@ class MacosPasteboardService(
         if (contents == null || contents == ownerTransferable) return
 
         ownerTransferable = contents
-        // Content that arrived via Universal Clipboard is already on every Apple
-        // device; only push it to the others.
-        val targetAppInstanceIds = if (remote) nonAppleSyncTargets() else null
         launch(CoroutineName("MacPasteboardServiceConsumer")) {
             pasteConsumer.consume(
                 DesktopReadTransferable(contents),
-                PasteSourceContext(
-                    source = source,
-                    remote = false,
-                    targetAppInstanceIds = targetAppInstanceIds,
-                ),
+                capture.sourceContext,
             )
         }
     }
 
-    // With the count unchanged the native side only returns it, no item scan
-    private fun readChangeCount(): Int =
-        MacosApi.INSTANCE.getPasteboardChangeCount(
-            changeCount,
-            IntByReference(),
-            IntByReference(),
-            IntByReference(),
-        )
-
-    private suspend fun resolveSource(firstChange: Boolean): String? {
+    private suspend fun resolveFrontmostSource(firstChange: Boolean): String? {
         val source =
             controlUtils
                 .ensureMinExecutionTime(delayTime = 20) {
@@ -170,12 +155,6 @@ class MacosPasteboardService(
         // we should ignore its source
         return if (firstChange && source == AppName) null else source
     }
-
-    private fun nonAppleSyncTargets(): Set<String> =
-        syncManager
-            .getSyncHandlers()
-            .filterValues { handler -> !handler.currentSyncRuntimeInfo.platform.isApple() }
-            .keys
 
     override fun lostOwnership(
         clipboard: Clipboard?,
@@ -198,10 +177,6 @@ class MacosPasteboardService(
     }
 
     companion object {
-        // getPasteboardChangeCount's remote value for Universal Clipboard content;
-        // 2 marks Xcode's pasteboard sync with an attached device
-        private const val REMOTE_UNIVERSAL_CLIPBOARD = 1
-
         /**
          * Reads the pasteboard and keeps the result only if no other write landed
          * while it was being read. AWT reads one type at a time, so a write in

@@ -5,10 +5,10 @@ import com.crosspaste.config.CommonConfigManager
 import com.crosspaste.notification.NotificationManager
 import com.crosspaste.platform.Platform
 import com.crosspaste.sound.SoundService
-import com.crosspaste.sync.SyncManager
 
 fun getDesktopPasteboardService(
     appWindowManager: DesktopAppWindowManager,
+    capturePolicy: ClipboardCapturePolicy,
     configManager: CommonConfigManager,
     currentPaste: CurrentPaste,
     notificationManager: NotificationManager,
@@ -17,13 +17,11 @@ fun getDesktopPasteboardService(
     pasteReleaseService: PasteReleaseService,
     platform: Platform,
     soundService: SoundService,
-    sourceExclusionService: DesktopSourceExclusionService,
-    syncManager: SyncManager,
-    universalClipboardHint: UniversalClipboardHint,
 ): AbstractPasteboardService =
     if (platform.isMacos()) {
         MacosPasteboardService(
             appWindowManager,
+            capturePolicy,
             configManager,
             currentPaste,
             notificationManager,
@@ -31,13 +29,11 @@ fun getDesktopPasteboardService(
             pasteProducer,
             pasteReleaseService,
             soundService,
-            sourceExclusionService,
-            syncManager,
-            universalClipboardHint,
         )
     } else if (platform.isWindows()) {
         WindowsPasteboardService(
             appWindowManager,
+            capturePolicy,
             configManager,
             currentPaste,
             notificationManager,
@@ -46,11 +42,11 @@ fun getDesktopPasteboardService(
             pasteReleaseService,
             platform,
             soundService,
-            sourceExclusionService,
         )
     } else if (platform.isLinux()) {
         LinuxPasteboardService(
             appWindowManager,
+            capturePolicy,
             configManager,
             currentPaste,
             notificationManager,
@@ -58,7 +54,6 @@ fun getDesktopPasteboardService(
             pasteProducer,
             pasteReleaseService,
             soundService,
-            sourceExclusionService,
         )
     } else {
         throw IllegalStateException("Unsupported platform: ${platform.name}")

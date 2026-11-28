@@ -91,6 +91,7 @@ class PasteDaoTest {
         appInstanceId: String = "test-instance",
         source: String? = null,
         favorite: Boolean = false,
+        remote: Boolean = false,
     ): PasteData {
         val textItem =
             createTextPasteItem(
@@ -108,6 +109,7 @@ class PasteDaoTest {
             hash = textItem.hash,
             pasteState = PasteState.LOADED,
             createTime = DateUtils.nowEpochMilliseconds(),
+            remote = remote,
         )
     }
 
@@ -1108,6 +1110,35 @@ class PasteDaoTest {
                     addedSize = 0L,
                     expectedHash = expectedPasteData.hash,
                 ),
+            )
+        }
+
+    @Test
+    fun `history pull queries exclude remote-marked items stored under local instance while keeping them searchable`() =
+        runTest {
+            val localId =
+                pasteDao.createPasteData(
+                    createTestPasteData(text = "local-copy", source = "Ghostty", remote = false),
+                )
+            val rustDeskId =
+                pasteDao.createPasteData(
+                    createTestPasteData(text = "rustdesk-copy", source = "RustDesk", remote = true),
+                )
+
+            val localHistory = pasteDao.searchPasteData(searchTerms = emptyList(), local = true, limit = 10)
+            assertEquals(setOf(localId, rustDeskId), localHistory.map { it.id }.toSet())
+
+            assertEquals(
+                listOf(localId),
+                pasteDao.getRecentPasteDataByAppInstanceId(limit = 1).map { it.id },
+            )
+            assertEquals(
+                listOf(localId),
+                pasteDao.getRecentPasteDataAfterCreateTime(createTime = 0L, limit = 1).map { it.id },
+            )
+            assertEquals(
+                listOf(localId),
+                pasteDao.getRecentPasteDataAfterRemoteId(afterId = 0L, limit = 1).map { it.id },
             )
         }
 }

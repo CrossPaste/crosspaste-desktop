@@ -202,12 +202,7 @@ class PastePullServiceTest {
             }
             h.service.pullDevice("peer")
             assertEquals(0, historyWrites)
-            assertEquals(
-                1,
-                h.store.dao
-                    .getRecentPasteDataByAppInstanceId(50)
-                    .size,
-            )
+            assertEquals(1L, h.store.dao.getActiveCount())
         }
 
     @Test fun `pulling all devices keeps a single clipboard write for the combined batch`() =
