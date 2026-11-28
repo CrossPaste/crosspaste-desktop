@@ -69,6 +69,19 @@ object MacAppUtils {
 
     fun getCurrentActiveAppInfo(): String? = MacosApi.getString(INSTANCE.getCurrentActiveAppInfo())
 
+    fun getPasteboardChangeCount(): Int = INSTANCE.getPasteboardChangeCount()
+
+    /**
+     * Returns the distinct UTI/type strings on the general pasteboard when its
+     * change count still equals [expectedChangeCount], or null if another write
+     * has already landed.
+     */
+    fun getPasteboardTypes(expectedChangeCount: Int): Set<String>? {
+        val raw = MacosApi.getString(INSTANCE.getPasteboardTypes(expectedChangeCount)) ?: return null
+        if (raw.isEmpty()) return emptySet()
+        return raw.split('\n').filterTo(LinkedHashSet()) { it.isNotEmpty() }
+    }
+
     fun getPasteboardSourceAppInfo(expectedChangeCount: Int): String? =
         MacosApi.getString(INSTANCE.getPasteboardSourceAppInfo(expectedChangeCount))
 

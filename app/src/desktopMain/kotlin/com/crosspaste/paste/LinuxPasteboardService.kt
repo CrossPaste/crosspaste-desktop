@@ -56,6 +56,7 @@ import java.nio.charset.Charset
  */
 class LinuxPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
+    override val capturePolicy: ClipboardCapturePolicy,
     override val configManager: CommonConfigManager,
     override val currentPaste: CurrentPaste,
     override val notificationManager: NotificationManager,
@@ -63,7 +64,6 @@ class LinuxPasteboardService(
     override val pasteProducer: TransferableProducer,
     override val pasteReleaseService: PasteReleaseService,
     override val soundService: SoundService,
-    override val sourceExclusionService: DesktopSourceExclusionService,
 ) : AbstractPasteboardService() {
 
     companion object {
@@ -72,18 +72,6 @@ class LinuxPasteboardService(
         // Generous headroom for XWayland's bridge to start serving the new
         // selection; native X11 owners typically answer the first probe.
         private const val CLIPBOARD_READY_TIMEOUT_MS = 2000L
-
-        internal fun resolveX11EffectiveSource(
-            foregroundSource: String?,
-            targets: List<String>?,
-        ): Pair<String?, Boolean> {
-            val externalSyncSource = targets?.let(ExternalClipboardSyncHints::sourceFromLinux)
-            return if (externalSyncSource != null) {
-                externalSyncSource to true
-            } else {
-                foregroundSource to false
-            }
-        }
     }
 
     override val logger: KLogger = KotlinLogging.logger {}
@@ -171,29 +159,28 @@ class LinuxPasteboardService(
             logger.info { "notify change event (wayland)" }
             changeCount++
         }
-        if (mimeTypes.contains(PasteDataFlavors.CROSSPASTE_ORIGIN_MIME)) {
-            logger.debug { "Ignoring the bridged echo of our own clipboard write" }
-            return
-        }
-        if (PasswordManagerHints.isConcealedOnLinux(mimeTypes)) {
-            logger.debug { "Ignoring concealed clipboard content" }
-            return
-        }
-
-        val externalSyncSource = ExternalClipboardSyncHints.sourceFromLinux(mimeTypes)
-        val source =
-            externalSyncSource ?: if (selection.initial) {
-                null
-            } else {
-                controlUtils
-                    .ensureMinExecutionTime(delayTime = 20) {
-                        appWindowManager.getCurrentActiveAppName()
-                    }.getOrNull()
+        val decision =
+            capturePolicy.evaluate(
+                metadata = ClipboardMetadata(types = mimeTypes.toSet()),
+                resolveFallbackSource = {
+                    if (selection.initial) {
+                        null
+                    } else {
+                        controlUtils
+                            .ensureMinExecutionTime(delayTime = 20) {
+                                appWindowManager.getCurrentActiveAppName()
+                            }.getOrNull()
+                    }
+                },
+            )
+        val capture =
+            when (decision) {
+                is ClipboardCaptureDecision.Ignore -> {
+                    logger.debug { "Ignoring Wayland selection: ${decision.reason}" }
+                    return
+                }
+                is ClipboardCaptureDecision.Capture -> decision
             }
-        if (sourceExclusionService.isExcluded(source)) {
-            logger.debug { "Ignoring excluded source: $source" }
-            return
-        }
 
         val contents =
             WaylandClipboardSnapshot.create(mimeTypes) { mimeType -> monitor.read(selection, mimeType) }
@@ -211,11 +198,7 @@ class LinuxPasteboardService(
         scope.launch(CoroutineName("LinuxPasteboardServiceConsumer")) {
             pasteConsumer.consume(
                 DesktopReadTransferable(contents),
-                PasteSourceContext(
-                    source = source,
-                    remote = externalSyncSource != null,
-                    targetAppInstanceIds = if (externalSyncSource != null) emptySet() else null,
-                ),
+                capture.sourceContext,
             )
         }
     }
@@ -310,16 +293,21 @@ class LinuxPasteboardService(
             logger.warn {
                 "Clipboard owner not ready within ${CLIPBOARD_READY_TIMEOUT_MS}ms, reading anyway"
             }
-        } else if (PasswordManagerHints.isConcealedOnLinux(targets)) {
-            logger.debug { "Ignoring concealed clipboard content" }
-            return
         }
 
-        val (effectiveSource, isExternalSync) = resolveX11EffectiveSource(foregroundSource, targets)
-        if (sourceExclusionService.isExcluded(effectiveSource)) {
-            logger.debug { "Ignoring excluded source: $effectiveSource" }
-            return
-        }
+        val decision =
+            capturePolicy.evaluate(
+                metadata = ClipboardMetadata(types = targets?.toSet().orEmpty()),
+                resolveFallbackSource = { foregroundSource },
+            )
+        val capture =
+            when (decision) {
+                is ClipboardCaptureDecision.Ignore -> {
+                    logger.debug { "Ignoring X11 clipboard change: ${decision.reason}" }
+                    return
+                }
+                is ClipboardCaptureDecision.Capture -> decision
+            }
 
         val contents =
             controlUtils.linearBackoffUntilValid(
@@ -337,14 +325,7 @@ class LinuxPasteboardService(
                 ownerTransferable = it
                 scope.launch(CoroutineName("LinuxPasteboardServiceConsumer")) {
                     val pasteTransferable = DesktopReadTransferable(correctHtmlEncoding(it))
-                    pasteConsumer.consume(
-                        pasteTransferable,
-                        PasteSourceContext(
-                            source = effectiveSource,
-                            remote = isExternalSync,
-                            targetAppInstanceIds = if (isExternalSync) emptySet() else null,
-                        ),
-                    )
+                    pasteConsumer.consume(pasteTransferable, capture.sourceContext)
                 }
             }
         }

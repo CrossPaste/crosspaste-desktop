@@ -7,6 +7,8 @@ import com.crosspaste.headless.HeadlessPasteboardService
 import com.crosspaste.i18n.GlobalCopywriter
 import com.crosspaste.image.GenerateImageService
 import com.crosspaste.image.ImageHandler
+import com.crosspaste.paste.ClipboardCapturePolicy
+import com.crosspaste.paste.ClipboardConflictRules
 import com.crosspaste.paste.CurrentPaste
 import com.crosspaste.paste.DefaultPasteSyncProcessManager
 import com.crosspaste.paste.DesktopCurrentPaste
@@ -90,6 +92,19 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
         // region Pasteboard & transfer
         single<CurrentPaste> { DesktopCurrentPaste(lazy { get() }) }
         single<DesktopSourceExclusionService> { DesktopSourceExclusionService(get()) }
+        single<ClipboardCapturePolicy> {
+            val universalClipboardHint = UniversalClipboardHint(get(), get(), get())
+            ClipboardCapturePolicy(
+                sourceExclusionService = get(),
+                syncManager = get(),
+                conflictRules = ClipboardConflictRules.defaultRules,
+                conflictNotifiers =
+                    mapOf(
+                        ClipboardConflictRules.APPLE_UNIVERSAL_CLIPBOARD_ID to
+                            universalClipboardHint::onUniversalClipboardContent,
+                    ),
+            )
+        }
         single<PasteboardService> {
             if (headless) {
                 HeadlessPasteboardService(get(), get())
@@ -105,8 +120,6 @@ fun desktopPasteComponentModule(headless: Boolean): Module =
                     get(),
                     get(),
                     get(),
-                    get(),
-                    UniversalClipboardHint(get(), get(), get()),
                 )
             }
         }

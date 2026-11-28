@@ -79,4 +79,14 @@ class PasswordManagerHintsTest {
         assertFalse(PasswordManagerHints.isConcealedOnLinux(listOf("TARGETS", "UTF8_STRING", "text/html")))
         assertFalse(PasswordManagerHints.isConcealedOnLinux(emptyList()))
     }
+
+    @Test
+    fun `macos concealed types conceal via metadata`() {
+        for (type in PasswordManagerHints.MACOS_CONCEALED_TYPES) {
+            assertTrue(
+                PasswordManagerHints.isConcealed(ClipboardMetadata(types = setOf("public.utf8-plain-text", type))),
+            )
+        }
+        assertFalse(PasswordManagerHints.isConcealed(ClipboardMetadata(types = setOf("public.utf8-plain-text"))))
+    }
 }

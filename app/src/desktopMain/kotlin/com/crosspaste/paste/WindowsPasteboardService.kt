@@ -33,6 +33,7 @@ import kotlin.time.Duration.Companion.seconds
 
 class WindowsPasteboardService(
     override val appWindowManager: DesktopAppWindowManager,
+    override val capturePolicy: ClipboardCapturePolicy,
     override val configManager: CommonConfigManager,
     override val currentPaste: CurrentPaste,
     override val notificationManager: NotificationManager,
@@ -41,7 +42,6 @@ class WindowsPasteboardService(
     override val pasteReleaseService: PasteReleaseService,
     private val platform: Platform,
     override val soundService: SoundService,
-    override val sourceExclusionService: DesktopSourceExclusionService,
 ) : AbstractPasteboardService(),
     User32.WNDPROC {
     override val logger: KLogger = KotlinLogging.logger {}
@@ -67,8 +67,7 @@ class WindowsPasteboardService(
 
     private data class WindowsClipboardSnapshot(
         val transferable: Transferable,
-        val source: String?,
-        val externalSync: Boolean,
+        val sourceContext: PasteSourceContext,
     )
 
     // Single-consumer pipeline (#4793): the message-thread callback only records events;
@@ -79,20 +78,19 @@ class WindowsPasteboardService(
             takeSnapshot = { event ->
                 // Both the format probes and the AWT snapshot are blocking native calls
                 // (the latter retried on failure); keep them off the CPU worker pool.
-                // The format probes must run before AWT opens the clipboard.
+                // Policy evaluation runs before AWT opens the clipboard.
                 withContext(ioDispatcher) {
-                    val externalSyncSource = ExternalClipboardSyncHints.sourceFromWindows(clipboardFormatProbe)
-                    val effectiveSource = externalSyncSource ?: event.source
-                    when {
-                        sourceExclusionService.isExcluded(effectiveSource) -> {
-                            logger.debug { "Ignoring excluded source: $effectiveSource" }
+                    val decision =
+                        capturePolicy.evaluate(
+                            metadata = ClipboardMetadata(formatProbe = clipboardFormatProbe),
+                            resolveFallbackSource = { event.source },
+                        )
+                    when (decision) {
+                        is ClipboardCaptureDecision.Ignore -> {
+                            logger.debug { "Ignoring clipboard change: ${decision.reason}" }
                             null
                         }
-                        PasswordManagerHints.isConcealedOnWindows(clipboardFormatProbe) -> {
-                            logger.debug { "Ignoring concealed clipboard content" }
-                            null
-                        }
-                        else -> {
+                        is ClipboardCaptureDecision.Capture -> {
                             controlUtils
                                 .exponentialBackoffUntilValid(
                                     initTime = 20L,
@@ -103,8 +101,7 @@ class WindowsPasteboardService(
                                 }?.let { transferable ->
                                     WindowsClipboardSnapshot(
                                         transferable = transferable,
-                                        source = effectiveSource,
-                                        externalSync = externalSyncSource != null,
+                                        sourceContext = decision.sourceContext,
                                     )
                                 }
                         }
@@ -115,14 +112,7 @@ class WindowsPasteboardService(
                 if (snapshot.transferable != ownerTransferable) {
                     ownerTransferable = snapshot.transferable
                     val pasteTransferable = DesktopReadTransferable(snapshot.transferable)
-                    pasteConsumer.consume(
-                        pasteTransferable,
-                        PasteSourceContext(
-                            source = snapshot.source,
-                            remote = snapshot.externalSync,
-                            targetAppInstanceIds = if (snapshot.externalSync) emptySet() else null,
-                        ),
-                    )
+                    pasteConsumer.consume(pasteTransferable, snapshot.sourceContext)
                 }
             },
         )
