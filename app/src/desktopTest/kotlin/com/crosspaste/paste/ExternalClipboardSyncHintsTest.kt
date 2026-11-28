@@ -4,7 +4,9 @@ import com.crosspaste.app.AppName
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ExternalClipboardSyncHintsTest {
 
@@ -142,5 +144,31 @@ class ExternalClipboardSyncHintsTest {
             ),
         )
         assertEquals(2, nonAppleQueries)
+    }
+
+    @Test
+    fun `macos marks only RustDesk remote writes as persisted remote items`() {
+        assertTrue(MacosPasteboardService.isExternalRemoteSync(MacosPasteboardService.REMOTE_RUSTDESK))
+        assertFalse(MacosPasteboardService.isExternalRemoteSync(0))
+        assertFalse(MacosPasteboardService.isExternalRemoteSync(MacosPasteboardService.REMOTE_UNIVERSAL_CLIPBOARD))
+        assertFalse(MacosPasteboardService.isExternalRemoteSync(MacosPasteboardService.REMOTE_XCODE_SYNC))
+    }
+
+    @Test
+    fun `linux x11 overrides excluded foreground source when RustDesk target is present`() {
+        val rustDeskTargets =
+            listOf("TARGETS", "UTF8_STRING", ExternalClipboardSyncHints.RUSTDESK_OWNER_FORMAT)
+        assertEquals(
+            ExternalClipboardSyncHints.RUSTDESK_SOURCE to true,
+            LinuxPasteboardService.resolveX11EffectiveSource("Bitwarden", rustDeskTargets),
+        )
+        assertEquals(
+            "Bitwarden" to false,
+            LinuxPasteboardService.resolveX11EffectiveSource("Bitwarden", listOf("TARGETS", "UTF8_STRING")),
+        )
+        assertEquals(
+            "Ghostty" to false,
+            LinuxPasteboardService.resolveX11EffectiveSource("Ghostty", null),
+        )
     }
 }

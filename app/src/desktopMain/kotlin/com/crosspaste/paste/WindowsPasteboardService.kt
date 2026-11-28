@@ -119,7 +119,7 @@ class WindowsPasteboardService(
                         pasteTransferable,
                         PasteSourceContext(
                             source = snapshot.source,
-                            remote = false,
+                            remote = snapshot.externalSync,
                             targetAppInstanceIds = if (snapshot.externalSync) emptySet() else null,
                         ),
                     )

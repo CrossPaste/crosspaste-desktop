@@ -137,14 +137,16 @@ class MacosPasteboardService(
         ownerTransferable = contents
         // Content that arrived via an external sync channel must not be relayed
         // back through it: Apple sync (Universal Clipboard / Xcode) skips Apple
-        // peers; RustDesk can connect to any OS, so it stays local-only.
+        // peers; RustDesk can connect to any OS, so it is persisted as remote
+        // (stays visible in local history, never pushed or exported via pull).
+        val externalRemote = isExternalRemoteSync(remoteType)
         val targetAppInstanceIds = resolveSyncTargets(remoteType, ::nonAppleSyncTargets)
         launch(CoroutineName("MacPasteboardServiceConsumer")) {
             pasteConsumer.consume(
                 DesktopReadTransferable(contents),
                 PasteSourceContext(
                     source = source,
-                    remote = false,
+                    remote = externalRemote,
                     targetAppInstanceIds = targetAppInstanceIds,
                 ),
             )
@@ -211,6 +213,8 @@ class MacosPasteboardService(
         internal const val REMOTE_UNIVERSAL_CLIPBOARD = 1
         internal const val REMOTE_XCODE_SYNC = 2
         internal const val REMOTE_RUSTDESK = 3
+
+        internal fun isExternalRemoteSync(remoteType: Int): Boolean = remoteType == REMOTE_RUSTDESK
 
         internal fun resolveSyncTargets(
             remoteType: Int,

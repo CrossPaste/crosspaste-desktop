@@ -72,6 +72,18 @@ class LinuxPasteboardService(
         // Generous headroom for XWayland's bridge to start serving the new
         // selection; native X11 owners typically answer the first probe.
         private const val CLIPBOARD_READY_TIMEOUT_MS = 2000L
+
+        internal fun resolveX11EffectiveSource(
+            foregroundSource: String?,
+            targets: List<String>?,
+        ): Pair<String?, Boolean> {
+            val externalSyncSource = targets?.let(ExternalClipboardSyncHints::sourceFromLinux)
+            return if (externalSyncSource != null) {
+                externalSyncSource to true
+            } else {
+                foregroundSource to false
+            }
+        }
     }
 
     override val logger: KLogger = KotlinLogging.logger {}
@@ -201,7 +213,7 @@ class LinuxPasteboardService(
                 DesktopReadTransferable(contents),
                 PasteSourceContext(
                     source = source,
-                    remote = false,
+                    remote = externalSyncSource != null,
                     targetAppInstanceIds = if (externalSyncSource != null) emptySet() else null,
                 ),
             )
@@ -277,7 +289,7 @@ class LinuxPasteboardService(
         scope: CoroutineScope,
         firstChange: Boolean = false,
     ) {
-        val source =
+        val foregroundSource =
             if (firstChange) {
                 null
             } else {
@@ -287,17 +299,12 @@ class LinuxPasteboardService(
                     }.getOrNull()
             }
 
-        if (sourceExclusionService.isExcluded(source)) {
-            logger.debug { "Ignoring excluded source: $source" }
-            return
-        }
-
         // XFixes only says the selection owner changed, not that the owner can
         // already serve data. Under XWayland the bridge keeps failing conversions
         // ("Owner failed to convert data") for hundreds of ms after the notify,
         // so probe TARGETS directly and start the AWT read only once the owner
         // actually answers — the read below then almost always succeeds first try.
-        // The same TARGETS answer carries the password-manager hint, if any.
+        // The same TARGETS answer carries password-manager and external-sync hints.
         val targets = X11ClipboardReader.awaitClipboardTargets(CLIPBOARD_READY_TIMEOUT_MS)
         if (targets == null) {
             logger.warn {
@@ -308,9 +315,8 @@ class LinuxPasteboardService(
             return
         }
 
-        val externalSyncSource = targets?.let(ExternalClipboardSyncHints::sourceFromLinux)
-        val effectiveSource = externalSyncSource ?: source
-        if (externalSyncSource != null && sourceExclusionService.isExcluded(effectiveSource)) {
+        val (effectiveSource, isExternalSync) = resolveX11EffectiveSource(foregroundSource, targets)
+        if (sourceExclusionService.isExcluded(effectiveSource)) {
             logger.debug { "Ignoring excluded source: $effectiveSource" }
             return
         }
@@ -335,8 +341,8 @@ class LinuxPasteboardService(
                         pasteTransferable,
                         PasteSourceContext(
                             source = effectiveSource,
-                            remote = false,
-                            targetAppInstanceIds = if (externalSyncSource != null) emptySet() else null,
+                            remote = isExternalSync,
+                            targetAppInstanceIds = if (isExternalSync) emptySet() else null,
                         ),
                     )
                 }
