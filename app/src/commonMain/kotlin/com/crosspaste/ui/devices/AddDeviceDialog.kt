@@ -158,7 +158,7 @@ fun AddDeviceDialog(onDismiss: () -> Unit) {
 
                     when {
                         syncInfo != null && syncInfo.endpointInfo.hostInfoList.isNotEmpty() -> {
-                            syncManager.updateSyncInfo(syncInfo)
+                            syncManager.updateSyncInfoAndReconnect(syncInfo)
                             onDismiss() // Close dialog after success
                         }
                         // Reached the device, but it named no address we could reach it at.

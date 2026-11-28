@@ -9,6 +9,8 @@ class TestSyncRoutingApi : SyncRoutingApi {
 
     var syncInfo: SyncInfo? = null
 
+    var observedRemoteAddress: String? = null
+
     val innerSyncHandlers = mutableMapOf<String, SyncHandler>()
 
     override val realTimeSyncScope: CoroutineScope = CoroutineScope(ioDispatcher)
@@ -22,8 +24,10 @@ class TestSyncRoutingApi : SyncRoutingApi {
     override fun trustSyncInfo(
         syncInfo: SyncInfo,
         host: String?,
+        observedRemoteAddress: String?,
     ) {
         this.syncInfo = syncInfo
+        this.observedRemoteAddress = observedRemoteAddress
     }
 
     override fun removeSyncHandler(appInstanceId: String) {

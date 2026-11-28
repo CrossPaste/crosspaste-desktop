@@ -36,6 +36,7 @@ import com.crosspaste.utils.getAppInstanceId
 import com.crosspaste.utils.successResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.server.application.*
+import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 
@@ -52,7 +53,7 @@ fun Routing.syncRouting(
     syncApi: SyncApi,
     syncInfoFactory: SyncInfoFactory,
     syncRoutingApi: SyncRoutingApi,
-    trustSyncInfo: (String, String?, SyncInfo?) -> Unit,
+    trustSyncInfo: (String, String?, SyncInfo?, String?) -> Unit,
     releasePendingKeyExchange: (String) -> Unit,
     pairingVersionCoordinator: PairingVersionCoordinator,
     // No-downgrade rule (pairing v3 design §17.2): while a v3 pairing session is
@@ -118,7 +119,8 @@ fun Routing.syncRouting(
                         appInfo = receivedSyncInfo.appInfo.copy(appInstanceId = appInstanceId),
                     )
                 val host = call.request.host()
-                syncRoutingApi.trustSyncInfo(syncInfo, host)
+                val remoteAddress = runCatching { call.request.origin.remoteAddress }.getOrNull()
+                syncRoutingApi.trustSyncInfo(syncInfo, host, remoteAddress)
                 logger.info { "$appInstanceId heartbeat to ${appInfo.appInstanceId} success" }
             }.onSuccess {
                 successResponse(call, syncApi.VERSION)
@@ -329,12 +331,13 @@ fun Routing.syncRouting(
                     )
                 }.onSuccess { trustResponse ->
                     val host = call.request.headers["crosspaste-host"]
+                    val remoteAddress = runCatching { call.request.origin.remoteAddress }.getOrNull()
                     val clientSyncInfo = call.clientSyncInfo()
                     // Atomic release: decrements the refresh count only if this
                     // verifier was still pending (a QR token-cache trust never
                     // requested /sync/showToken, so it has nothing to release).
                     appTokenApi.releaseVerifier(appInstanceId)
-                    trustSyncInfo(appInstanceId, host, clientSyncInfo)
+                    trustSyncInfo(appInstanceId, host, clientSyncInfo, remoteAddress)
                     successResponse(call, trustResponse)
                 }.onFailure { e ->
                     logger.error(e) { "Trust request failed for $appInstanceId" }
@@ -501,12 +504,13 @@ fun Routing.syncRouting(
                     )
                 }.onSuccess { response ->
                     val host = call.request.headers["crosspaste-host"]
+                    val remoteAddress = runCatching { call.request.origin.remoteAddress }.getOrNull()
                     val clientSyncInfo = call.clientSyncInfo()
                     // Consumes the pending exchange and unconditionally releases
                     // its refresh count + verifier — the stored entry, not the
                     // overlay's visibility, owns those resources.
                     releasePendingKeyExchange(appInstanceId)
-                    trustSyncInfo(appInstanceId, host, clientSyncInfo)
+                    trustSyncInfo(appInstanceId, host, clientSyncInfo, remoteAddress)
                     successResponse(call, response)
                 }.onFailure { e ->
                     logger.error(e) { "v2 confirm failed for $appInstanceId" }

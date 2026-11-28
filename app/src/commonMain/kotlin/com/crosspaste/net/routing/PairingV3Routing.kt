@@ -37,7 +37,7 @@ fun Routing.pairingV3Routing(
     pairingProtocolV3Service: PairingProtocolV3Service,
     pairingVersionCoordinator: PairingVersionCoordinator,
     releasePendingKeyExchange: (String) -> Unit,
-    trustSyncInfo: (String, String?, SyncInfo?) -> Unit,
+    trustSyncInfo: (String, String?, SyncInfo?, String?) -> Unit,
 ) {
     post("/sync/pairing/v3/intent") {
         getAppInstanceId(call)?.let { appInstanceId ->
@@ -117,7 +117,7 @@ fun Routing.pairingV3Routing(
                                     logger.warn(e) { "Failed to parse ${SyncInfoHeaderCodec.HEADER} header" }
                                 }.getOrNull()
                         }
-                    trustSyncInfo(appInstanceId, host, clientSyncInfo)
+                    trustSyncInfo(appInstanceId, host, clientSyncInfo, host)
                     successResponse(call, result.value)
                 }
 

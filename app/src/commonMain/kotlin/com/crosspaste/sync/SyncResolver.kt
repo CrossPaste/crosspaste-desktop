@@ -580,13 +580,16 @@ class SyncResolver(
     ): Int {
         val hostAndPort = HostAndPort(host, port)
 
-        // Piggyback our current return address onto the heartbeat (#4509). Advertise only the
-        // local interface(s) on the peer's subnet — the address it can actually route to — and
-        // only when it differs from what we last delivered, so a steady connection tells each
-        // peer exactly once and then sends plain GET heartbeats.
+        // Piggyback our current return address onto the heartbeat (#4509). Advertise the
+        // local interface(s) on the peer's subnet — and on first contact / reconnect with a
+        // cross-subnet or VPN peer (where subnetMatchedHostInfo is empty), still send one
+        // authenticated POST /sync/heartbeat/syncInfo so the peer can observe our real TCP
+        // source address and connect back. Once delivered, steady-state heartbeats drop back
+        // to plain GET until the advertised list changes or the connection fails.
+        val hasLocalInterface = networkInterfaceService.getCurrentUseNetworkInterfaces().isNotEmpty()
         val advertiseHostInfo = subnetMatchedHostInfo(host)
         val advertiseSyncInfo =
-            if (advertiseHostInfo.isNotEmpty() && lastHeartbeatAdvertised[targetAppInstanceId] != advertiseHostInfo) {
+            if (hasLocalInterface && lastHeartbeatAdvertised[targetAppInstanceId] != advertiseHostInfo) {
                 syncInfoFactory.createSyncInfo(advertiseHostInfo)
             } else {
                 null

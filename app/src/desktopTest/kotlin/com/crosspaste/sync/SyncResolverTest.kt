@@ -715,16 +715,19 @@ class SyncResolverTest {
         }
 
     @Test
-    fun verifyConnection_crossSubnetPeer_advertisesNothing() =
+    fun verifyConnection_crossSubnetPeer_advertisesOnceThenFallsBackToGet() =
         runTest {
-            // No local interface shares the peer's subnet → nothing routable to advertise;
-            // the heartbeat falls back to a plain GET and discovery self-healing covers it.
+            // No local interface shares the peer's subnet (e.g. Tailscale / VPN): the first
+            // heartbeat still sends one authenticated POST /sync/heartbeat/syncInfo (with an
+            // empty hostInfoList) so the peer can observe our real TCP source address, then
+            // steady-state heartbeats drop back to plain GET.
             val deps = TestDeps()
             val resolver = deps.createResolver()
             val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "10.0.0.9")
 
             deps.stubDbRead(syncRuntimeInfo)
             coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncInfoFactory.createSyncInfo(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
             every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns
                 listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.2"))
 
@@ -734,9 +737,34 @@ class SyncResolverTest {
             } returns SuccessResult(VersionRelation.EQUAL_TO)
 
             resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(2, advertised.size)
+            assertNotNull(advertised[0], "first cross-subnet heartbeat should send authenticated SyncInfo once")
+            assertNull(advertised[1], "subsequent steady-state cross-subnet heartbeat should fall back to GET")
+            coVerify(exactly = 1) { deps.syncInfoFactory.createSyncInfo(emptyList()) }
+        }
+
+    @Test
+    fun verifyConnection_noLocalInterface_advertisesNothing() =
+        runTest {
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "10.0.0.9")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns emptyList()
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
 
             assertEquals(1, advertised.size)
-            assertNull(advertised[0], "cross-subnet peer must not be advertised to")
+            assertNull(advertised[0], "offline / discovery-off must not advertise SyncInfo")
             coVerify(exactly = 0) { deps.syncInfoFactory.createSyncInfo(any()) }
         }
 

@@ -1,6 +1,7 @@
 package com.crosspaste.sync
 
 import com.crosspaste.db.sync.ConnectInfo
+import com.crosspaste.db.sync.HostInfo
 import com.crosspaste.db.sync.SyncRuntimeInfo
 import com.crosspaste.db.sync.SyncRuntimeInfoDao
 import com.crosspaste.db.sync.SyncState
@@ -13,6 +14,7 @@ import com.crosspaste.net.ws.WsSessionManager
 import com.crosspaste.pairing.v3.PairingCapabilityFlag
 import com.crosspaste.pairing.v3.PairingV3
 import com.crosspaste.utils.HostAndPort
+import com.crosspaste.utils.NetUtils
 import com.crosspaste.utils.buildUrl
 import com.crosspaste.utils.ioDispatcher
 import com.crosspaste.utils.mainDispatcher
@@ -443,9 +445,26 @@ class GeneralSyncManager(
         }
     }
 
+    override fun updateSyncInfoAndReconnect(syncInfo: SyncInfo) {
+        rememberPairingCredentialType(syncInfo)
+        realTimeSyncScope.launch {
+            val written =
+                writeSyncInfoUnlessRemoving(syncInfo) {
+                    syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo)
+                }
+            if (written) {
+                val handler = internalSyncHandlers[syncInfo.appInfo.appInstanceId]
+                if (handler != null && handler.currentSyncRuntimeInfo.connectState == SyncState.DISCONNECTED) {
+                    handler.fastReconnect()
+                }
+            }
+        }
+    }
+
     override fun trustSyncInfo(
         syncInfo: SyncInfo,
         host: String?,
+        observedRemoteAddress: String?,
     ) {
         rememberPairingCredentialType(syncInfo)
         realTimeSyncScope.launch {
@@ -455,8 +474,50 @@ class GeneralSyncManager(
                         ConnectInfo(it.networkPrefixLength, it.hostAddress)
                     }
                 }
-            writeSyncInfoUnlessRemoving(syncInfo) {
-                syncRuntimeInfoDao.insertOrUpdateSyncInfo(syncInfo, connectInfo)
+            val normalizedRemote = NetUtils.normalizeRoutableIpv4(observedRemoteAddress)
+            // When an authenticated peer connects over a VPN/cross-subnet link (e.g. Tailscale),
+            // its self-advertised addresses may only list its LAN interface or carry a /32 mask.
+            // Keep the observed TCP source IP as a candidate for normal reachability verification
+            // (never forcing CONNECTED directly, so an unroutable SNAT source simply fails probing).
+            val effectiveSyncInfo =
+                if (normalizedRemote != null &&
+                    !syncInfo.endpointInfo.platform.isExtension() &&
+                    syncInfo.endpointInfo.port > 0 &&
+                    syncInfo.endpointInfo.hostInfoList.none { it.hostAddress == normalizedRemote }
+                ) {
+                    val observedHost =
+                        HostInfo(
+                            networkPrefixLength = 32,
+                            hostAddress = normalizedRemote,
+                        )
+                    val mergedHosts =
+                        if (connectInfo == null) {
+                            listOf(observedHost) + syncInfo.endpointInfo.hostInfoList
+                        } else {
+                            syncInfo.endpointInfo.hostInfoList + observedHost
+                        }
+                    syncInfo.copy(
+                        endpointInfo = syncInfo.endpointInfo.copy(hostInfoList = mergedHosts),
+                    )
+                } else {
+                    syncInfo
+                }
+
+            val existingHandler = internalSyncHandlers[syncInfo.appInfo.appInstanceId]
+            val shouldFastReconnect =
+                existingHandler != null &&
+                    existingHandler.currentSyncRuntimeInfo.connectState == SyncState.DISCONNECTED &&
+                    connectInfo == null &&
+                    normalizedRemote != null &&
+                    effectiveSyncInfo.endpointInfo.hostInfoList.any { it.hostAddress == normalizedRemote } &&
+                    existingHandler.currentSyncRuntimeInfo.hostInfoList.none { it.hostAddress == normalizedRemote }
+
+            val written =
+                writeSyncInfoUnlessRemoving(effectiveSyncInfo) {
+                    syncRuntimeInfoDao.insertOrUpdateSyncInfo(effectiveSyncInfo, connectInfo)
+                }
+            if (written && shouldFastReconnect) {
+                existingHandler.fastReconnect()
             }
         }
     }
@@ -464,13 +525,15 @@ class GeneralSyncManager(
     private suspend fun writeSyncInfoUnlessRemoving(
         syncInfo: SyncInfo,
         write: suspend () -> Unit,
-    ) {
+    ): Boolean {
         val appInstanceId = syncInfo.appInfo.appInstanceId
-        syncInfoWriteMutex.withLock {
+        return syncInfoWriteMutex.withLock {
             if (appInstanceId in removingDevices) {
                 logger.info { "Drop SyncInfo write for $appInstanceId: removal in progress" }
+                false
             } else {
                 write()
+                true
             }
         }
     }
