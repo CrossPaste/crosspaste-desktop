@@ -18,12 +18,29 @@ class EndpointInfoFactory(
 
     suspend fun createEndpointInfo(hostInfoList: List<HostInfo>): EndpointInfo {
         val port = pasteServer.value.portFlow.first { it > 0 }
-        return EndpointInfo(
+        return buildEndpointInfo(hostInfoList, port)
+    }
+
+    /**
+     * Non-blocking variant of [createEndpointInfo]. Returns null when the local
+     * server is not yet listening (`port <= 0`), avoiding indefinite suspension
+     * on callers that hold per-device locks (such as outbound heartbeats).
+     */
+    fun createEndpointInfoIfReady(hostInfoList: List<HostInfo>): EndpointInfo? {
+        val port = pasteServer.value.portFlow.value
+        if (port <= 0) return null
+        return buildEndpointInfo(hostInfoList, port)
+    }
+
+    private fun buildEndpointInfo(
+        hostInfoList: List<HostInfo>,
+        port: Int,
+    ): EndpointInfo =
+        EndpointInfo(
             deviceId = deviceId,
             deviceName = deviceName,
             platform = platform,
             hostInfoList = hostInfoList,
             port = port,
         )
-    }
 }

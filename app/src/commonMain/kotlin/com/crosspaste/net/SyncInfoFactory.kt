@@ -15,4 +15,12 @@ class SyncInfoFactory(
             appInfo = appInfo,
             endpointInfo = endpointInfoFactory.createEndpointInfo(hostInfoList),
         )
+
+    fun createSyncInfoIfReady(hostInfoList: List<HostInfo>): SyncInfo? =
+        endpointInfoFactory.createEndpointInfoIfReady(hostInfoList)?.let { endpointInfo ->
+            SyncInfo(
+                appInfo = appInfo,
+                endpointInfo = endpointInfo,
+            )
+        }
 }
