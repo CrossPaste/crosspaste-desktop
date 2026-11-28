@@ -769,6 +769,70 @@ class SyncResolverTest {
         }
 
     @Test
+    fun verifyConnection_crossSubnetLocalVpnAddressChanges_reAdvertisesOnce() =
+        runTest {
+            // /32 tunnel interfaces never subnet-match the peer, so advertiseHostInfo stays
+            // empty before and after a VPN IP change. The dedup key must still notice the
+            // local interface change and send one authenticated SyncInfo heartbeat.
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "100.64.0.9")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncInfoFactory.createSyncInfo(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
+
+            var localInterfaces = listOf(NetworkInterfaceInfo("utun4", 32, "100.64.0.1"))
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } answers { localInterfaces }
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            localInterfaces = listOf(NetworkInterfaceInfo("utun4", 32, "100.64.0.3"))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(3, advertised.size)
+            assertNotNull(advertised[0], "initial cross-subnet heartbeat should advertise")
+            assertNotNull(advertised[1], "changed /32 VPN address should re-advertise even when matched list is empty")
+            assertNull(advertised[2], "steady-state heartbeat after re-advertise should return to GET")
+        }
+
+    @Test
+    fun forceResolve_crossSubnetPeer_reAdvertisesEvenWhenInterfacesUnchanged() =
+        runTest {
+            // When a WebSocket session closes or the user refreshes, ForceResolve must clear
+            // the advertisement cache so a cross-subnet peer can re-observe our source IP even
+            // if the selected LAN interface list did not change (e.g. an unselected VPN NIC rotated IP).
+            val deps = TestDeps()
+            val resolver = deps.createResolver()
+            val syncRuntimeInfo = createConnectedSyncRuntimeInfo(hostAddress = "100.64.0.9")
+
+            deps.stubDbRead(syncRuntimeInfo)
+            coEvery { deps.wsSessionManager.isConnected(any()) } returns false
+            coEvery { deps.syncInfoFactory.createSyncInfo(emptyList()) } returns mockk<SyncInfo>(relaxed = true)
+            every { deps.networkInterfaceService.getCurrentUseNetworkInterfaces() } returns
+                listOf(NetworkInterfaceInfo("en0", 24, "192.168.1.2"))
+
+            val advertised = mutableListOf<SyncInfo?>()
+            coEvery {
+                deps.syncClientApi.heartbeat(captureNullable(advertised), any(), any())
+            } returns SuccessResult(VersionRelation.EQUAL_TO)
+
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.ForceResolve(syncRuntimeInfo, createTestCallback()))
+            resolver.emitEvent(SyncEvent.Resolve(syncRuntimeInfo, createTestCallback()))
+
+            assertEquals(3, advertised.size)
+            assertNotNull(advertised[0], "initial cross-subnet heartbeat should advertise")
+            assertNotNull(advertised[1], "ForceResolve should re-advertise so peer observes current source IP")
+            assertNull(advertised[2], "subsequent steady-state Resolve should return to GET")
+        }
+
+    @Test
     fun verifyConnection_failedHeartbeatReAdvertisesOnReconnect() =
         runTest {
             // A non-success heartbeat must forget what we advertised, so the next successful
